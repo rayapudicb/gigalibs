@@ -4,10 +4,12 @@ import type { Type } from '@nestjs/common';
 import { AppModule as Hosted0 } from '@gigalibs/business-partners-api';
 import { AppModule as Hosted1 } from '@gigalibs/financial-operations-api';
 import { AppModule as Hosted2 } from '@gigalibs/product-catalogue-api';
-import { AppModule as Hosted3 } from '@gigalibs/universal-inventory-api';
-import { AppModule as Hosted4 } from '@gigalibs/universal-manufacturing-api';
-import { AppModule as Hosted5 } from '@gigalibs/universal-orders-api';
-import { AppModule as Hosted6 } from '@gigalibs/universal-procurement-api';
+import { AppModule as Hosted3 } from '@gigalibs/project-operations-api';
+import { AppModule as Hosted4 } from '@gigalibs/universal-inventory-api';
+import { AppModule as Hosted5 } from '@gigalibs/universal-manufacturing-api';
+import { AppModule as Hosted6 } from '@gigalibs/universal-orders-api';
+import { AppModule as Hosted7 } from '@gigalibs/universal-procurement-api';
+import { AppModule as Hosted8 } from '@gigalibs/universal-returns-api';
 
 export interface HostedModule {
   readonly name: string;
@@ -19,8 +21,10 @@ export const hostedModules: readonly HostedModule[] = [
   { name: 'business-partners', path: 'business-partners', module: Hosted0 },
   { name: 'financial-operations', path: 'financial-operations', module: Hosted1 },
   { name: 'product-catalogue', path: 'product-catalogue', module: Hosted2 },
-  { name: 'universal-inventory', path: 'universal-inventory', module: Hosted3 },
-  { name: 'universal-manufacturing', path: 'universal-manufacturing', module: Hosted4 },
-  { name: 'universal-orders', path: 'universal-orders', module: Hosted5 },
-  { name: 'universal-procurement', path: 'universal-procurement', module: Hosted6 },
+  { name: 'project-operations', path: 'project-operations', module: Hosted3 },
+  { name: 'universal-inventory', path: 'universal-inventory', module: Hosted4 },
+  { name: 'universal-manufacturing', path: 'universal-manufacturing', module: Hosted5 },
+  { name: 'universal-orders', path: 'universal-orders', module: Hosted6 },
+  { name: 'universal-procurement', path: 'universal-procurement', module: Hosted7 },
+  { name: 'universal-returns', path: 'universal-returns', module: Hosted8 },
 ];

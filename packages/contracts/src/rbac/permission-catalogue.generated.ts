@@ -1359,6 +1359,18 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "project-operations.records.manage",
+    "entries": [
+      "project-operations"
+    ]
+  },
+  {
+    "code": "project-operations.records.read",
+    "entries": [
+      "project-operations"
+    ]
+  },
+  {
     "code": "recovery:action",
     "entries": [
       "autonomous-recovery-studio",
@@ -1681,6 +1693,18 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "universal-manufacturing.records.read",
     "entries": [
       "universal-manufacturing"
+    ]
+  },
+  {
+    "code": "universal-returns.records.manage",
+    "entries": [
+      "universal-returns"
+    ]
+  },
+  {
+    "code": "universal-returns.records.read",
+    "entries": [
+      "universal-returns"
     ]
   },
   {

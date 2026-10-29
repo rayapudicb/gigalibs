@@ -2362,6 +2362,40 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
     "transformBody": null,
     "unavailable": []
   },
+  "project-operations": {
+    "module": "project-operations",
+    "basePaths": [
+      "/api/project-operations"
+    ],
+    "catalogKey": "project-operations",
+    "audience": "gigalibs-project-operations-api",
+    "upstream": "project-operations",
+    "signingKeyEnvironment": "PROJECT_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "PROJECT_OPERATIONS",
+    "routeNoun": "Project Operations",
+    "serviceName": "Project Operations",
+    "entitlementName": "Project Operations",
+    "routes": [
+      {
+        "template": "v1/records",
+        "pattern": "^v1/records$",
+        "methods": {
+          "GET": "project-operations.records.read",
+          "POST": "project-operations.records.manage"
+        }
+      },
+      {
+        "template": "v1/records/{id}",
+        "pattern": "^v1/records/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "project-operations.records.read",
+          "PATCH": "project-operations.records.manage"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "universal-inventory": {
     "module": "universal-inventory",
     "basePaths": [
@@ -3106,6 +3140,40 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "procurement:read",
           "POST": "procurement:orders:approve"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
+  "universal-returns": {
+    "module": "universal-returns",
+    "basePaths": [
+      "/api/universal-returns"
+    ],
+    "catalogKey": "universal-returns",
+    "audience": "gigalibs-universal-returns-api",
+    "upstream": "universal-returns",
+    "signingKeyEnvironment": "UNIVERSAL_RETURNS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "UNIVERSAL_RETURNS",
+    "routeNoun": "Returns and RMA",
+    "serviceName": "Returns and RMA",
+    "entitlementName": "Returns and RMA",
+    "routes": [
+      {
+        "template": "v1/records",
+        "pattern": "^v1/records$",
+        "methods": {
+          "GET": "universal-returns.records.read",
+          "POST": "universal-returns.records.manage"
+        }
+      },
+      {
+        "template": "v1/records/{id}",
+        "pattern": "^v1/records/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "universal-returns.records.read",
+          "PATCH": "universal-returns.records.manage"
         }
       }
     ],

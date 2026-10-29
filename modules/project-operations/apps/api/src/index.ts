@@ -1,0 +1,2 @@
+// Project Operations: the Nest module the shared module host loads (WI-OI-085e). `main.ts` runs it as its own service instead.
+export { AppModule } from './app.module.js';

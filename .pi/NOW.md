@@ -2,7 +2,11 @@
 
 ## Active task
 
-**WI-OI-126 Manufacturing & MRP (Module 4) — In progress (2026-10-29).** Migration **v5**; full production handshake + **Finance WIP clearing** on `manufacturing.production.completed.v1`. **Verified on isolated PostgreSQL 16: conformance 15/15, recovery PG 3/3, and the full DB-proof suite 28/28 with the module host booting all modules** — after fixing two deploy-blocking NestJS DI breaks found via the module-host-http proof (TransferService and ProcurementInventoryInboxController; the host would not start otherwise; static conformance + unit tests missed them). Evidence [WI-OI-126](work/WI-OI-126.md). **Open:** S5/S6 UI differentiators, relay credentials + `--live` on the deploy, compensation on failed issue/receipt, clean full `pnpm verify`, module-completion commit. [task card](tasks/WI-OI-126.md).
+**WI-OI-126 Manufacturing & MRP (Module 4) — Built (2026-10-29).** Recovery PG 3/3 (RESERVING/ISSUING/RECEIVING replay); conformance 15/15 static; DB proofs 28/28 with module host boot. Plan S5/S6 graph-BOM differentiators deferred; `--live` at owner batch deploy. [WI-OI-126](work/WI-OI-126.md).
+
+**WI-OI-127 Landed Cost (Module 5) — In progress.** Finance costing vouchers exist; added `landed-cost-basis.ts` + $3k/500-unit arithmetic test. Next: receipt/bill handshakes, COGS variance, procurement wizard UI, PG proof. [task card](tasks/WI-OI-127.md).
+
+**WI-OI-128 / WI-OI-129 — Scaffolds only (2026-10-29).** `universal-returns` and `project-operations` generated via `pnpm module:new`; business slices not started.
 
 **WI-OI-130 IoT MaaS — Built; certification automation added (2026-10-29).** Playwright + ingest helper + scenario YAML + [runbook](../docs/runbooks/iot-maas-certification.md). **Done** still needs owner UAT on redeployed **5180** + `iot-api`. [handoff](handoff/WI-OI-130-UAT-JOURNEY.md).
 

@@ -66,6 +66,28 @@
       "auth_revocation_events"
     ]
   },
+  "project-operations": {
+    "hosting": "host",
+    "basePath": "/project-operations",
+    "package": "@gigalibs/project-operations-api",
+    "directory": "modules/project-operations",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Project Operations",
+    "workItem": "WI-OI-129",
+    "prefix": "PROJECT_OPERATIONS",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_project_operations",
+    "migrationVersion": 1,
+    "audience": "gigalibs-project-operations-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
+  },
   "universal-inventory": {
     "hosting": "host",
     "basePath": "/universal-inventory",
@@ -147,6 +169,28 @@
     "schema": "gigalibs_procurement",
     "migrationVersion": 4,
     "audience": "gigalibs-universal-procurement-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
+  },
+  "universal-returns": {
+    "hosting": "host",
+    "basePath": "/universal-returns",
+    "package": "@gigalibs/universal-returns-api",
+    "directory": "modules/universal-returns",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Returns and RMA",
+    "workItem": "WI-OI-128",
+    "prefix": "UNIVERSAL_RETURNS",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_universal_returns",
+    "migrationVersion": 1,
+    "audience": "gigalibs-universal-returns-api",
     "appendOnlyTables": [
       "audit_events"
     ],

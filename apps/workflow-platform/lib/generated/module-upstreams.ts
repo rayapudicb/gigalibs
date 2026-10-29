@@ -64,6 +64,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "module-host",
     "basePath": "/product-catalogue"
   },
+  "project-operations": {
+    "module": "project-operations",
+    "environmentKey": "PROJECT_OPERATIONS_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/project-operations"
+  },
   "universal-inventory": {
     "module": "universal-inventory",
     "environmentKey": "UNIVERSAL_INVENTORY_API_URL",
@@ -91,6 +98,13 @@ export const generatedModuleUpstreams = {
     "port": "4790",
     "serviceHostname": "module-host",
     "basePath": "/universal-procurement"
+  },
+  "universal-returns": {
+    "module": "universal-returns",
+    "environmentKey": "UNIVERSAL_RETURNS_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/universal-returns"
   },
   "workforce": {
     "module": "gigaops",

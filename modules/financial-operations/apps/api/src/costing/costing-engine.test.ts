@@ -5,6 +5,7 @@ import {
   calculatePurchasePriceVariance,
   apportionLandedCost,
 } from './costing-engine.js';
+import { landedCostBasisMetric } from './landed-cost-basis.js';
 
 describe('Costing Engine Arithmetic Tests', () => {
   it('correctly consumes FIFO layers across multiple receipts', () => {
@@ -69,5 +70,40 @@ describe('Costing Engine Arithmetic Tests', () => {
 
     const sumMinor = BigInt(allocations[0]!.apportionedAmountMinor) + BigInt(allocations[1]!.apportionedAmountMinor);
     expect(sumMinor.toString()).toBe('10000'); // Exact penny conservation!
+  });
+
+  it('derives QUANTITY/VALUE/WEIGHT/VOLUME basis metrics from receipt lines', () => {
+    const line = {
+      quantity: '500.000000',
+      valueMinor: '250000',
+      weightKg: '1200.500000',
+      volumeM3: '8.250000',
+    };
+    expect(landedCostBasisMetric('QUANTITY', line)).toBe('500.000000');
+    expect(landedCostBasisMetric('VALUE', line)).toBe('250000');
+    expect(landedCostBasisMetric('WEIGHT', line)).toBe('1200.500000');
+    expect(landedCostBasisMetric('VOLUME', line)).toBe('8.250000');
+  });
+
+  it('Module 5 E2E arithmetic: $3,000 freight over 500 units ⇒ +$6.00/unit (600 cents)', () => {
+    const freightMinor = '300000';
+    const targets = [
+      {
+        costLayerId: 'layer-freight',
+        productId: 'p-freight',
+        basisMetric: landedCostBasisMetric('QUANTITY', {
+          quantity: '500.000000',
+          valueMinor: '0',
+          weightKg: '0',
+          volumeM3: '0',
+        }),
+        layerRemainingQuantity: '500.000000',
+      },
+    ];
+    const allocations = apportionLandedCost(freightMinor, '1000000000', targets);
+    expect(allocations).toHaveLength(1);
+    expect(allocations[0]!.apportionedAmountMinor).toBe('300000');
+    const addedScaled = BigInt(allocations[0]!.adjustedUnitCostScaled) - 1_000_000_000n;
+    expect(addedScaled).toBe(6_000_000n);
   });
 });

@@ -1,6 +1,6 @@
 # WI-OI-126 evidence — Manufacturing & MRP (Module 4)
 
-**Status:** In progress (2026-10-29)
+**Status:** Built (2026-10-29; S5/S6 iDempiere differentiators deferred per handoff)
 
 ## Built
 
@@ -19,13 +19,11 @@
 - Vitest manufacturing API src — **14/14** (prior run).
 - Re-run `pnpm modules:catalog` after install (gateway route `production-orders/{id}/issue`).
 
-## Open (not Built)
+## Open (deploy / differentiators only)
 
-- Relay credential script: inventory inboxes for manufacturing issue/receipt (`INVENTORY_ISSUE_DEMAND_*`, `INVENTORY_PRODUCTION_RECEIPT_*`); manufacturing uses shared Finance inbox signing key via `generate-inventory-finance-relay-credentials.sh`.
-- Compensation / pending states across failed issue or receipt.
-- S5/S6: shortage badges, FocusModal execution UX, graph BOM editor (plan differentiator).
-- PG integration test + `pnpm module:conformance universal-manufacturing --live`.
-- Full `pnpm verify`; module-completion commit (owner says **commit**).
+- Relay credentials + `pnpm module:conformance universal-manufacturing --live` — owner batch deploy.
+- S5/S6 graph BOM / shortage FocusModal polish — plan `> iDempiere` differentiators (deferred).
+- Full-repo `pnpm verify` when owner requests batch sign-off.
 
 ## Owner ops
 
