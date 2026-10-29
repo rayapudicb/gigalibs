@@ -54,7 +54,7 @@ describe.skipIf(!enabled)('AR organization ownership migration on isolated Postg
       encoding: 'utf8',
       env: { ...process.env, DATABASE_URL: adminUrl, MODULE_RUNTIME_DATABASE_URL: runtimeUrl.toString(),
         MODULE_MIGRATIONS_DIRECTORY: join(root, 'modules/accounts-receivable/db/migrations'),
-        MODULE_SCHEMA: 'gigalibs_ar', MODULE_EXPECTED_MIGRATION_VERSION: '18',
+        MODULE_SCHEMA: 'gigalibs_ar', MODULE_EXPECTED_MIGRATION_VERSION: '19',
         MODULE_APPEND_ONLY_TABLES: 'audit_events', MODULE_READ_ONLY_TABLES: 'auth_revocation_events' },
     });
     expect(run.status, `${run.stdout}\n${run.stderr}`).toBe(0);

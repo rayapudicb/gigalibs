@@ -2,9 +2,11 @@
 
 ## Active task
 
-**WI-OI-122 F0 — Built (2026-10-29).** Coordinator + org PG proofs; Business Partner hold **release** uses `executeTransactionalDocumentAction`. [task](tasks/WI-OI-122.md) · [evidence](work/WI-OI-122.md).
+**Deploy sequence Group 1 — CMMS M-CM1 (owner).** Product ready in git: CMMS mig **24**, **`9eb14717`** (120gd execute-own), journey **`jsjmyx`** with **0 CMMS blockers**. **You:** release worktree → backup → build **cmms-api** + **web** → `deploy-uat.sh` → `pnpm e2e:uat:journey` → tick [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md). Runbook: [GROUP-1-CMMS-M-CM1-DEPLOY-2026-10-29.md](handoff/GROUP-1-CMMS-M-CM1-DEPLOY-2026-10-29.md). Agents do **not** deploy (**WI-OI-120bo**).
 
-**WI-OI-123 Universal Business Partner (Module 1) — Built (2026-10-29).** Procurement migration **000005** + OPEN_AP credit relay; static conformance **15/15**. Owner: seven-module batch deploy + UAT. [task](tasks/WI-OI-123.md) · [evidence](work/WI-OI-123.md).
+**Seven iDempiere modules (WI-OI-122–129) — Built;** separate owner batch after Group 1 acceptance (or per your ordering).
+
+**Uncommitted on main (optional before release cut):** AR compose pins **18 → 19** for verify migration-pins.
 
 **WI-OI-126 Manufacturing & MRP (Module 4) — Built (2026-10-29).** Recovery PG 3/3 (RESERVING/ISSUING/RECEIVING replay); conformance 15/15 static; DB proofs 28/28 with module host boot. Plan S5/S6 graph-BOM differentiators deferred; `--live` at owner batch deploy. [WI-OI-126](work/WI-OI-126.md).
 
@@ -25,9 +27,8 @@
 On 2026-10-28 the owner directed F0 then Modules 1–7 in order, without UAT pauses; the owner will deploy all seven
 in one batch after implementation. The source plan is
 [`idempiere-parity-modules-plan.md`](../docs/plans/idempiere-parity-modules-plan.md). The accepted ADR-0018/0033/0007
-contracts replace the plan's earlier Org-0 and cross-module ACID shorthand. Work items are WI-OI-122–129. The active
-card is [WI-OI-124](tasks/WI-OI-124.md); WI-OI-123 is marked Built in the canonical tracker but its row still lists
-live proof and full verification outstanding. Modules 3–7 are queued; none of the seven has been deployed from this directive.
+contracts replace the plan's earlier Org-0 and cross-module ACID shorthand. Work items WI-OI-122–129 are **Built**;
+**Done** awaits owner batch deploy + journey acceptance. None of the seven has been deployed from this directive yet.
 The existing Workforce and release state below remains historical context; its unrelated working-tree edits are
 untouched.
 
