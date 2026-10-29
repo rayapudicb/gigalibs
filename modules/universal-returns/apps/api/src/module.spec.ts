@@ -24,7 +24,7 @@ const environment = {
   UNIVERSAL_RETURNS_CORS_ORIGINS: 'http://127.0.0.1:5180',
   UNIVERSAL_RETURNS_DATABASE_URL: 'postgresql://runtime:secret@postgres:5432/gigalibs',
   UNIVERSAL_RETURNS_DATABASE_POOL_SIZE: '10',
-  UNIVERSAL_RETURNS_EXPECTED_MIGRATION_VERSION: '1',
+  UNIVERSAL_RETURNS_EXPECTED_MIGRATION_VERSION: '3',
   UNIVERSAL_RETURNS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: publicKeyBase64,
 };
 
@@ -72,7 +72,7 @@ describe('Returns and RMA runtime configuration', () => {
     }
   };
   it('loads the UNIVERSAL_RETURNS_* variables', () => {
-    expect(load()).toMatchObject({ platformContextAudience: AUDIENCE, expectedMigrationVersion: 1 });
+    expect(load()).toMatchObject({ platformContextAudience: AUDIENCE, expectedMigrationVersion: 3 });
   });
   it('refuses another audience', () => {
     expect(() => load({ UNIVERSAL_RETURNS_PLATFORM_CONTEXT_AUDIENCE: 'gigalibs-other-api' })).toThrow(AUDIENCE);

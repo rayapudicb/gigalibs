@@ -6,7 +6,7 @@
 
 **WI-OI-127 Landed Cost (Module 5) — Built (2026-10-29).** Committed **`dcd2cc5c`**. Verify fixes in working tree (relay test path, catalogue/navigation/gateway for returns/projects). Full `pnpm verify` still hits pre-existing **product-catalogue** lock + **platform-context** header tests; layer audit clean after relay test move. [task card](tasks/WI-OI-127.md).
 
-**WI-OI-128 Returns / RMA (Module 6) — In progress.** S1 migration **000002** (`rma`, `rma_lines`, `rma_types`, `dispositions`, Orders `orders_return_id` uniqueness); contracts qty guard. Next: DocAction service, disposition handshakes, checklist UI, PG proof. [task card](tasks/WI-OI-128.md).
+**WI-OI-128 Returns / RMA (Module 6) — In progress.** S1 **000002** + contracts; **S2** migration **000003** (`document_action_outcomes`), `RmaService` + `RmaController` (create/submit/authorize, disposition, credit-memo outbox), gateway routes + permission catalogue, schema contract **v3**. Next: inventory restock/scrap relay, Orders credit-memo consumer, checklist UI, PG proof, verify, commit. [task card](tasks/WI-OI-128.md).
 
 **WI-OI-129 — Scaffold only.** `project-operations` foundation only.
 

@@ -3196,6 +3196,49 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
           "GET": "universal-returns.records.read",
           "PATCH": "universal-returns.records.manage"
         }
+      },
+      {
+        "template": "v1/rmas",
+        "pattern": "^v1/rmas$",
+        "methods": {
+          "GET": "universal-returns.rma.read",
+          "POST": "universal-returns.rma.manage"
+        }
+      },
+      {
+        "template": "v1/rmas/{id}",
+        "pattern": "^v1/rmas/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "universal-returns.rma.read"
+        }
+      },
+      {
+        "template": "v1/rmas/{id}/submit",
+        "pattern": "^v1/rmas/[0-9a-fA-F-]{36}/submit$",
+        "methods": {
+          "POST": "universal-returns.rma.manage"
+        }
+      },
+      {
+        "template": "v1/rmas/{id}/authorize",
+        "pattern": "^v1/rmas/[0-9a-fA-F-]{36}/authorize$",
+        "methods": {
+          "POST": "universal-returns.rma.authorize"
+        }
+      },
+      {
+        "template": "v1/rmas/{id}/dispositions",
+        "pattern": "^v1/rmas/[0-9a-fA-F-]{36}/dispositions$",
+        "methods": {
+          "POST": "universal-returns.disposition.manage"
+        }
+      },
+      {
+        "template": "v1/rmas/{id}/credit-memo-request",
+        "pattern": "^v1/rmas/[0-9a-fA-F-]{36}/credit-memo-request$",
+        "methods": {
+          "POST": "universal-returns.rma.manage"
+        }
       }
     ],
     "transformBody": null,

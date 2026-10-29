@@ -2,3 +2,4 @@
 # order, are copied into the module image and installed by run-module-migrations.mjs.
 000001_universal_returns_foundation.up.sql
 000002_rma_domain.up.sql
+000003_rma_document_actions.up.sql

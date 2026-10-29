@@ -1696,6 +1696,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "universal-returns.disposition.manage",
+    "entries": [
+      "universal-returns"
+    ]
+  },
+  {
     "code": "universal-returns.records.manage",
     "entries": [
       "universal-returns"
@@ -1703,6 +1709,24 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   },
   {
     "code": "universal-returns.records.read",
+    "entries": [
+      "universal-returns"
+    ]
+  },
+  {
+    "code": "universal-returns.rma.authorize",
+    "entries": [
+      "universal-returns"
+    ]
+  },
+  {
+    "code": "universal-returns.rma.manage",
+    "entries": [
+      "universal-returns"
+    ]
+  },
+  {
+    "code": "universal-returns.rma.read",
     "entries": [
       "universal-returns"
     ]

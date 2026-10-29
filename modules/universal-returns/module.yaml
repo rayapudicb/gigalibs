@@ -77,3 +77,9 @@ spec:
     routes:
       - { path: 'v1/records', GET: universal-returns.records.read, POST: universal-returns.records.manage }
       - { path: 'v1/records/{id}', GET: universal-returns.records.read, PATCH: universal-returns.records.manage }
+      - { path: 'v1/rmas', GET: universal-returns.rma.read, POST: universal-returns.rma.manage }
+      - { path: 'v1/rmas/{id}', GET: universal-returns.rma.read }
+      - { path: 'v1/rmas/{id}/submit', POST: universal-returns.rma.manage }
+      - { path: 'v1/rmas/{id}/authorize', POST: universal-returns.rma.authorize }
+      - { path: 'v1/rmas/{id}/dispositions', POST: universal-returns.disposition.manage }
+      - { path: 'v1/rmas/{id}/credit-memo-request', POST: universal-returns.rma.manage }
