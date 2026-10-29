@@ -1041,6 +1041,284 @@ export class InvoicesService {
       };
     });
   }
+
+  async issueInvoiceFromProjectBilling(
+    principal: ArPrincipal,
+    event: import('@gigalibs/contracts').ProjectInvoiceDraftRequestedPayloadV1,
+    correlationId: string,
+    messageId: string,
+  ): Promise<{ invoiceId: string; invoiceNumber: string; totalAmountMinor: string; sealHash: string; duplicate: boolean }> {
+    if (!event.orgUnitId?.trim() || event.orgUnitId.length > 64) {
+      throw new ArConflictError('INVOICE_ORGANIZATION_REQUIRED', 'The billing request must name its owning organization unit.');
+    }
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await assertActiveTenant(client, principal.tenantId, principal.issuer);
+
+      const sha256 = hashCanonicalJson(event);
+
+      const existingInbox = await client.query<{ status: string; payload_sha256: string }>(
+        `SELECT status, payload_sha256 FROM gigalibs_ar.inbox_receipts
+         WHERE tenant_id = $1 AND consumer_name = 'ar_projects_billing_consumer' AND message_id = $2`,
+        [principal.tenantId, messageId],
+      );
+
+      if (existingInbox.rows.length > 0 && existingInbox.rows[0]?.payload_sha256 !== sha256) {
+        throw new ArConflictError('PROJECT_BILLING_REPLAY_CONFLICT', 'A project billing message was replayed with different content.');
+      }
+      if (existingInbox.rows.length > 0 && existingInbox.rows[0]?.status === 'PROCESSED') {
+        const invRes = await client.query<{ id: string; invoice_number: string; total_minor: string; seal_hash: string }>(
+          `SELECT id, invoice_number, total_minor::text, seal_hash FROM gigalibs_ar.invoices
+           WHERE tenant_id = $1 AND source_project_billing_id = $2`,
+          [principal.tenantId, event.billingRequestId],
+        );
+        const inv = invRes.rows[0];
+        if (inv) {
+          return {
+            invoiceId: inv.id,
+            invoiceNumber: inv.invoice_number,
+            totalAmountMinor: inv.total_minor,
+            sealHash: inv.seal_hash,
+            duplicate: true,
+          };
+        }
+        throw new ArConflictError('PROJECT_BILLING_RECEIPT_INCOMPLETE', 'The billing receipt has no matching invoice.');
+      }
+      if (existingInbox.rows.length > 0) {
+        throw new ServiceUnavailableException('The project billing request is still processing; retry delivery.');
+      }
+
+      await client.query(
+        `INSERT INTO gigalibs_ar.inbox_receipts (
+          id, tenant_id, consumer_name, message_id, event_type, source_module,
+          source_version, correlation_id, payload_sha256, status, created_at
+        ) VALUES ($1, $2, 'ar_projects_billing_consumer', $3, 'projects.invoice_draft_requested.v1', 'project-operations', 1, $4, $5, 'PROCESSING', NOW())`,
+        [randomUUID(), principal.tenantId, messageId, correlationId, sha256],
+      );
+
+      const customerResult = await client.query<CustomerSnapshotRow>(
+        `SELECT id, legal_name, billing_email, external_reference, currency, status
+         FROM gigalibs_ar.customers
+         WHERE tenant_id = $1 AND external_reference = $2 AND currency = $3 AND status = 'ACTIVE'`,
+        [principal.tenantId, event.customerPartyId, event.currencyCode],
+      );
+      const customer = customerResult.rows[0];
+      if (!customer) {
+        throw new ArConflictError('CUSTOMER_MAPPING_REQUIRED', 'Map the Party to an active AR customer before invoicing.');
+      }
+
+      const entity = await resolveBillingEntity(client, principal.tenantId);
+      if (entity.default_currency !== event.currencyCode) {
+        throw new ArConflictError('BILLING_CURRENCY_MISMATCH', 'The billing entity currency does not match the project.');
+      }
+      const series = await resolveInvoiceSeries(client, principal.tenantId, entity.id);
+
+      const draftLinesInput: InvoiceDraftLineInput[] = event.lines.map((line) => ({
+        description: line.description,
+        quantity: line.quantity,
+        unitAmountMinor: Number(line.unitPriceMinor),
+      }));
+      const calculation = calculateInvoiceDraft(event.currencyCode, draftLinesInput);
+
+      const invoiceId = randomUUID();
+      const issueDate = new Date().toISOString().slice(0, 10);
+      const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+
+      await client.query(
+        `INSERT INTO gigalibs_ar.invoice_drafts (
+          tenant_id, id, billing_entity_id, invoice_series_id, customer_id,
+          org_unit_id, currency, issue_date, due_date, purchase_order_reference,
+          subtotal_minor, tax_minor, total_minor, status, created_by, updated_by
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8::date, $9::date, $10, $11, $12, $13, 'DRAFT', $14, $14
+        )`,
+        [
+          principal.tenantId,
+          invoiceId,
+          entity.id,
+          series.id,
+          customer.id,
+          event.orgUnitId,
+          event.currencyCode,
+          issueDate,
+          dueDate,
+          event.projectCode,
+          calculation.subtotalMinor,
+          calculation.taxMinor,
+          calculation.totalMinor,
+          principal.subject,
+        ],
+      );
+      await insertDraftLines(client, principal.tenantId, invoiceId, calculation.lines);
+
+      const nextValue = Number(series.next_value);
+      const invoiceNumber = formatInvoiceNumber(series.prefix, nextValue, series.padding);
+
+      const latestSealResult = await client.query<{ seal_sequence: string; seal_hash: string }>(
+        `SELECT seal_sequence::text, seal_hash
+         FROM gigalibs_ar.invoices
+         WHERE tenant_id = $1 AND seal_sequence IS NOT NULL
+         ORDER BY seal_sequence DESC LIMIT 1 FOR UPDATE`,
+        [principal.tenantId],
+      );
+      const latestSeal = latestSealResult.rows[0];
+      const nextSealSequence = latestSeal ? Number(latestSeal.seal_sequence) + 1 : 1;
+      const previousSealHash = latestSeal?.seal_hash ?? GENESIS_SEAL_HASH;
+      const issuedAt = new Date().toISOString();
+
+      const sealHash = computeInvoiceSealHash({
+        tenantId: principal.tenantId,
+        sequence: nextSealSequence,
+        invoiceId,
+        invoiceNumber,
+        currency: event.currencyCode,
+        subtotalMinor: calculation.subtotalMinor,
+        taxMinor: calculation.taxMinor,
+        totalMinor: calculation.totalMinor,
+        issuedAt,
+        previousSealHash,
+      });
+
+      await client.query(
+        `INSERT INTO gigalibs_ar.invoices (
+          tenant_id, id, source_draft_id, billing_entity_id, invoice_series_id, customer_id,
+          org_unit_id, source_project_billing_id, invoice_number, currency, issue_date, due_date, purchase_order_reference,
+          seller_snapshot, buyer_snapshot, terms_snapshot,
+          subtotal_minor, tax_minor, total_minor, issued_by, issued_at,
+          seal_sequence, seal_hash, previous_seal_hash
+        ) VALUES (
+          $1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10::date, $11::date, $12,
+          $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19, $20::timestamptz,
+          $21, $22, $23
+        )`,
+        [
+          principal.tenantId,
+          invoiceId,
+          entity.id,
+          series.id,
+          customer.id,
+          event.orgUnitId,
+          event.billingRequestId,
+          invoiceNumber,
+          event.currencyCode,
+          issueDate,
+          dueDate,
+          event.projectCode,
+          JSON.stringify({ id: entity.id, legalName: entity.legal_name, legalIdentifier: entity.legal_identifier }),
+          JSON.stringify({
+            id: customer.id,
+            legalName: customer.legal_name,
+            billingEmail: customer.billing_email,
+            externalReference: event.customerPartyId,
+          }),
+          JSON.stringify({
+            reason: `Project ${event.projectCode} ${event.billingKind} billing ${event.billingRequestId}`,
+          }),
+          calculation.subtotalMinor,
+          calculation.taxMinor,
+          calculation.totalMinor,
+          principal.subject,
+          issuedAt,
+          nextSealSequence,
+          sealHash,
+          previousSealHash,
+        ],
+      );
+
+      await client.query(
+        `INSERT INTO gigalibs_ar.invoice_lines (
+          tenant_id, id, invoice_id, position, description, quantity, unit_amount_minor, amount_minor
+        )
+        SELECT tenant_id, id, draft_id, position, description, quantity, unit_amount_minor, amount_minor
+        FROM gigalibs_ar.invoice_draft_lines
+        WHERE tenant_id = $1 AND draft_id = $2
+        ORDER BY position`,
+        [principal.tenantId, invoiceId],
+      );
+
+      await client.query(
+        `UPDATE gigalibs_ar.invoice_series
+         SET next_value = next_value + 1, version = version + 1, updated_at = transaction_timestamp()
+         WHERE tenant_id = $1 AND id = $2 AND next_value = $3`,
+        [principal.tenantId, series.id, nextValue],
+      );
+
+      await client.query(
+        `UPDATE gigalibs_ar.invoice_drafts
+         SET status = 'ISSUED', issued_invoice_id = id, version = version + 1,
+             updated_by = $3, updated_at = transaction_timestamp()
+         WHERE tenant_id = $1 AND id = $2`,
+        [principal.tenantId, invoiceId, principal.subject],
+      );
+
+      const eventId = randomUUID();
+      const outboxEvent = {
+        specversion: '1.0',
+        id: eventId,
+        source: 'gigalibs.accounts-receivable',
+        type: 'ar.invoice.issued.v1',
+        tenantId: principal.tenantId,
+        subject: `invoices/${invoiceId}`,
+        time: issuedAt,
+        correlationId,
+        causationId: event.billingRequestId,
+        data: {
+          invoiceId,
+          invoiceNumber,
+          orgUnitId: event.orgUnitId,
+          customerPartyId: event.customerPartyId,
+          totalAmountMinor: calculation.totalMinor.toString(),
+          currencyCode: event.currencyCode,
+          sealHash,
+          sealSequence: nextSealSequence,
+          billingEntityId: entity.id,
+          issuedAt,
+        },
+      };
+
+      await client.query(
+        `INSERT INTO gigalibs_ar.outbox_events (
+          tenant_id, id, event_type, aggregate_type, aggregate_id, subject,
+          correlation_id, causation_id, payload, occurred_at
+        ) VALUES ($1, $2, $3, 'invoice', $4, $5, $6, $7, $8::jsonb, $9::timestamptz)`,
+        [
+          principal.tenantId,
+          eventId,
+          outboxEvent.type,
+          invoiceId,
+          outboxEvent.subject,
+          correlationId,
+          event.billingRequestId,
+          JSON.stringify(outboxEvent),
+          issuedAt,
+        ],
+      );
+
+      await writeAudit(client, {
+        principal,
+        aggregateId: invoiceId,
+        action: 'ar.invoice.issued-from-project-billing',
+        reason: `Project billing ${event.billingRequestId}`,
+        priorState: null,
+        newState: await loadInvoice(client, principal.tenantId, invoiceId),
+        correlationId,
+      });
+
+      await client.query(
+        `UPDATE gigalibs_ar.inbox_receipts
+         SET status = 'PROCESSED', processed_at = NOW()
+         WHERE tenant_id = $1 AND consumer_name = 'ar_projects_billing_consumer' AND message_id = $2`,
+        [principal.tenantId, messageId],
+      );
+
+      return {
+        invoiceId,
+        invoiceNumber,
+        totalAmountMinor: calculation.totalMinor.toString(),
+        sealHash,
+        duplicate: false,
+      };
+    });
+  }
 }
 
 async function loadInvoice(

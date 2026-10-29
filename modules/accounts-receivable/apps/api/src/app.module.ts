@@ -30,6 +30,12 @@ import { InvoicesController } from './invoices/invoices.controller.js';
 import { InvoicesService } from './invoices/invoices.service.js';
 import { OrdersFulfillmentInboxController } from './invoices/orders-fulfillment-inbox.controller.js';
 import { OrdersFulfillmentInboxGuard, ORDERS_FULFILLMENT_INBOX_CONFIG, loadOrdersFulfillmentInboxConfig } from './invoices/orders-fulfillment-inbox.guard.js';
+import { ProjectsBillingInboxController } from './invoices/projects-billing-inbox.controller.js';
+import {
+  ProjectsBillingInboxGuard,
+  PROJECTS_BILLING_INBOX_CONFIG,
+  loadProjectsBillingInboxConfig,
+} from './invoices/projects-billing-inbox.guard.js';
 import { ArOrganizationSyncGuard, OrganizationController } from './organization/organization.controller.js';
 import { PaymentsController } from './payments/payments.controller.js';
 import { PaymentsService } from './payments/payments.service.js';
@@ -125,6 +131,7 @@ const ArRecordController = createRecordController({
     CustomersController,
     InvoicesController,
     OrdersFulfillmentInboxController,
+    ProjectsBillingInboxController,
     OrganizationController,
     DeliveriesController,
     PaymentsController,
@@ -152,6 +159,8 @@ const ArRecordController = createRecordController({
     InvoicesService,
     { provide: ORDERS_FULFILLMENT_INBOX_CONFIG, useFactory: loadOrdersFulfillmentInboxConfig },
     OrdersFulfillmentInboxGuard,
+    { provide: PROJECTS_BILLING_INBOX_CONFIG, useFactory: loadProjectsBillingInboxConfig },
+    ProjectsBillingInboxGuard,
     StorageService,
     DeliveriesService,
     PaymentsService,

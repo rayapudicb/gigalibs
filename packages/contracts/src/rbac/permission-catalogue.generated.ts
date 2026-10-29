@@ -1359,6 +1359,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "project-operations.billing.post",
+    "entries": [
+      "project-operations"
+    ]
+  },
+  {
     "code": "project-operations.cost.post",
     "entries": [
       "project-operations"

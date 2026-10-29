@@ -2412,6 +2412,20 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "POST": "project-operations.cost.post"
         }
+      },
+      {
+        "template": "v1/projects/{id}/bill-time-materials",
+        "pattern": "^v1/projects/[0-9a-fA-F-]{36}/bill-time-materials$",
+        "methods": {
+          "POST": "project-operations.billing.post"
+        }
+      },
+      {
+        "template": "v1/projects/{id}/bill-milestone",
+        "pattern": "^v1/projects/[0-9a-fA-F-]{36}/bill-milestone$",
+        "methods": {
+          "POST": "project-operations.billing.post"
+        }
       }
     ],
     "transformBody": null,

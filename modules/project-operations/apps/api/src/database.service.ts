@@ -4,6 +4,7 @@ import { RUNTIME_CONFIG, SCHEMA } from './config.js';
 
 export const PROJECT_DEFINER_FUNCTIONS = [
   'relay_lease_project_finance_events',
+  'relay_lease_project_ar_events',
   'relay_settle_project_event',
 ] as const;
 

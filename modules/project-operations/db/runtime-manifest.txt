@@ -3,3 +3,4 @@
 000001_project_operations_foundation.up.sql
 000002_wbs_domain.up.sql
 000003_project_wip_posting.up.sql
+000004_project_billing_ar.up.sql
