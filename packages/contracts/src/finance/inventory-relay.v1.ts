@@ -27,11 +27,25 @@ export const financeFiscalPeriodSnapshotCompletedV1 = {
   aggregateType: 'fiscal_period_snapshot' as const,
 } as const;
 
+/** Authoritative Finance valuation for one Inventory receipt line. */
+export const FinanceInventoryReceiptCostLineV1Schema = z.object({
+  receiptLineId: z.string().uuid(),
+  financeCostLayerId: z.string().uuid(),
+  productId: z.string().uuid(),
+  quantity: z.string().regex(/^(?:0|[1-9]\d*)(?:\.\d{1,6})?$/),
+  valuationMethod: z.enum(['STANDARD', 'FIFO', 'AVERAGE']),
+  unitCostScaled: z.string().regex(/^\d+$/),
+  totalCostMinor: z.string().regex(/^\d+$/),
+}).strict();
+export type FinanceInventoryReceiptCostLineV1 = z.infer<typeof FinanceInventoryReceiptCostLineV1Schema>;
+
 export const FinanceInventoryReceiptPostingOutcomePayloadSchema = z
   .object({
     receiptId: z.string().uuid(),
     status: z.enum(['POSTED', 'POSTING_REJECTED']),
     rejectionCode: z.string().optional(),
+    /** Additive for older posting outcomes; absence leaves the cost projection pending. */
+    costLines: z.array(FinanceInventoryReceiptCostLineV1Schema).optional(),
   })
   .strict();
 

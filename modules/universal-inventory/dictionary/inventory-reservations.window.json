@@ -1,0 +1,303 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/inventory",
+    "label": "Reservations",
+    "description": "Demand allocations by warehouse and locator.",
+    "readPermission": "inventory:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-inventory",
+    "entityKey": "inventory-reservations",
+    "surfaceKey": "inventory-reservations",
+    "title": "Stock reservations",
+    "dictionary": {
+      "packageKey": "inventory-reservations-module-baseline",
+      "name": "Stock reservations",
+      "version": "1.0.0",
+      "moduleKey": "universal-inventory",
+      "targetEntityKey": "inventory.reservations",
+      "entities": [
+        {
+          "entityKey": "inventory.reservations",
+          "moduleKey": "universal-inventory",
+          "label": "Reservations",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "created-at",
+          "entityKey": "inventory.reservations",
+          "label": "Created",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "demand-type",
+          "entityKey": "inventory.reservations",
+          "label": "Demand type",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "demand-reference-id",
+          "entityKey": "inventory.reservations",
+          "label": "Demand reference",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "demand-line-id",
+          "entityKey": "inventory.reservations",
+          "label": "Demand line",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "warehouse-id",
+          "entityKey": "inventory.reservations",
+          "label": "Warehouse",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref"
+        },
+        {
+          "fieldKey": "location-id",
+          "entityKey": "inventory.reservations",
+          "label": "Locator",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "location-ref"
+        },
+        {
+          "fieldKey": "product-id",
+          "entityKey": "inventory.reservations",
+          "label": "Product",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-ref"
+        },
+        {
+          "fieldKey": "uom-id",
+          "entityKey": "inventory.reservations",
+          "label": "Unit",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "uom-ref"
+        },
+        {
+          "fieldKey": "quantity",
+          "entityKey": "inventory.reservations",
+          "label": "Reserved quantity",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 6
+        },
+        {
+          "fieldKey": "fulfilled-quantity",
+          "entityKey": "inventory.reservations",
+          "label": "Issued quantity",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 6
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "inventory.reservations",
+          "label": "Status",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "expiry-date",
+          "entityKey": "inventory.reservations",
+          "label": "Expires",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses",
+          "createWith": {
+            "moduleKey": "universal-inventory",
+            "surfaceKey": "inventory-warehouses",
+            "permission": "inventory:warehouses:manage"
+          }
+        },
+        {
+          "referenceKey": "location-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-locations"
+        },
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-products",
+            "permission": "products:create"
+          }
+        },
+        {
+          "referenceKey": "uom-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-uoms",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-units",
+            "permission": "uoms:manage"
+          }
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "reservations",
+          "label": "Reservations",
+          "mode": "LIST",
+          "device": "ALL",
+          "searchFields": [
+            "demand-reference-id"
+          ],
+          "defaultSortField": "created-at",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "reservation",
+              "label": "Reservation",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "inventory.reservations",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "created-at",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "datetime-input"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 1,
+                  "span": 3,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "demand-type",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "demand-reference-id",
+                  "position": 3,
+                  "span": 6,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "product-id",
+                  "position": 4,
+                  "span": 5,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "warehouse-id",
+                  "position": 5,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "location-id",
+                  "position": 6,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "quantity",
+                  "position": 7,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "fulfilled-quantity",
+                  "position": 8,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "expiry-date",
+                  "position": 9,
+                  "span": 4,
+                  "componentKey": "datetime-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

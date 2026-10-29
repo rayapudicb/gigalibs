@@ -54,6 +54,7 @@ fix_redis_name_conflict() {
 }
 
 MIGRATIONS=(
+  business-partners-migrations
   financial-operations-migrations
   product-catalogue-migrations
   universal-inventory-migrations

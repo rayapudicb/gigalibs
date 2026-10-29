@@ -74,12 +74,12 @@
     "image": "gigalibs/module-host",
     "component": "module-host",
     "title": "Universal Inventory & Warehouse Operations",
-    "workItem": "WI-OI-091",
+    "workItem": "WI-OI-124",
     "prefix": "UNIVERSAL_INVENTORY",
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_inventory",
-    "migrationVersion": 9,
+    "migrationVersion": 10,
     "audience": "gigalibs-universal-inventory-api",
     "appendOnlyTables": [
       "audit_events"

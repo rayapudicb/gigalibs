@@ -8,6 +8,7 @@ const LOC_TYPES = [
 ];
 const STOCK = [['AVAILABLE', 'Available'], ['RESERVED', 'Reserved'], ['QUARANTINED', 'Quarantined'], ['INSPECTION', 'Inspection'], ['DAMAGED', 'Damaged'], ['BLOCKED', 'Blocked'], ['EXPIRED', 'Expired']];
 const VALUATION = [['STANDARD', 'Standard cost'], ['MOVING_AVERAGE', 'Moving average'], ['FIFO', 'FIFO']];
+const FINANCE_VALUATION = [['STANDARD', 'Standard cost'], ['FIFO', 'FIFO'], ['AVERAGE', 'Weighted average']];
 const RECEIPT = [['DRAFT', 'Draft'], ['EXPECTED', 'Expected'], ['RECEIVING', 'Receiving'], ['COMPLETED', 'Completed'], ['CANCELLED', 'Cancelled']];
 // WI-OI-120fv (F2.5): Finance's posting outcome on a completed receipt (ADR-0033 D3).
 const FINANCE_POSTING = [['NOT_APPLICABLE', 'Not applicable'], ['AWAITING_POSTING', 'Awaiting posting'], ['POSTED', 'Posted'], ['POSTING_REJECTED', 'Posting rejected']];
@@ -46,7 +47,8 @@ export function windowSource(builderFor) {
   const L = 'inventory.locations';
   const wf = [
     field(W, 'code', 'Code', 'TEXT', { required: true, help: 'Short unique code, for example WH-MAIN.' }), field(W, 'name', 'Name', 'TEXT', { required: true }),
-    field(W, 'warehouse-type', 'Type', 'SELECT', { required: true, ref: 'warehouse-types' }), field(W, 'description', 'Description', 'TEXTAREA'),
+    field(W, 'warehouse-type', 'Type', 'SELECT', { required: true, ref: 'warehouse-types' }),
+    field(W, 'org-unit-id', 'Owning organization unit', 'TEXT', { required: true }), field(W, 'description', 'Description', 'TEXTAREA'),
     field(W, 'address', 'Address', 'TEXTAREA'), field(W, 'is-active', 'Active', 'BOOLEAN', { readOnly: true }),
     field(L, 'warehouse-id', 'Warehouse', 'REFERENCE', { ref: 'warehouse-ref' }), field(L, 'code', 'Code', 'TEXT', { required: true }), field(L, 'name', 'Name', 'TEXT', { required: true }),
     field(L, 'location-type', 'Type', 'SELECT', { required: true, ref: 'location-types' }), field(L, 'aisle', 'Aisle'), field(L, 'rack', 'Rack'),
@@ -58,7 +60,8 @@ export function windowSource(builderFor) {
       [relationship('warehouse-locations', W, L, 'warehouse-id')], [values('warehouse-types', WH_TYPES), values('location-types', LOC_TYPES), WAREHOUSE_REF], [
         view('warehouses', 'Warehouses', [
           tab('warehouse', 'Warehouse', 0, W, [
-            ['code', 4, 'main'], ['name', 8, 'main'], ['warehouse-type', 4, 'main'], ['is-active', 4, 'main'], ['description', 12, 'details'], ['address', 12, 'details'],
+            ['code', 4, 'main'], ['name', 8, 'main'], ['warehouse-type', 4, 'main'], ['org-unit-id', 4, 'main'],
+            ['is-active', 4, 'main'], ['description', 12, 'details'], ['address', 12, 'details'],
           ], wf, { sections: [section('main', 'Warehouse', 0), section('details', 'Details', 1)] }),
           tab('locations', 'Locations', 1, L, [
             ['code', 3], ['name', 5], ['location-type', 4], ['aisle', 3], ['rack', 3], ['shelf', 3], ['bin', 3], ['barcode', 6], ['allow-negative', 6], ['is-active', 4],
@@ -137,6 +140,8 @@ export function windowSource(builderFor) {
       ], [
         action(R, 'complete', 'Complete receipt', 'inventory:receive', ['status', 'EQ', 'DRAFT'],
           'Complete this receipt? The stock is posted to the put-away locations and the receipt can no longer change.'),
+        action(R, 'retry-posting', 'Retry Finance posting', 'inventory:receive', ['finance-posting-status', 'EQ', 'POSTING_REJECTED'],
+          'Retry Finance posting? Only rejections known to have posted no cost are eligible; other cases require reconciliation.'),
       ]));
 
   // 5. Balances and 6. Stock ledger (read only)
@@ -156,6 +161,31 @@ export function windowSource(builderFor) {
         ], bf),
       ], { sort: 'last-movement-at', direction: 'DESC' }),
     ]));
+  const RV = 'inventory.reservations';
+  const rvf = [
+    field(RV, 'created-at', 'Created', 'DATETIME', { readOnly: true }),
+    field(RV, 'demand-type', 'Demand type', 'TEXT', { readOnly: true }),
+    field(RV, 'demand-reference-id', 'Demand reference', 'TEXT', { readOnly: true }),
+    field(RV, 'demand-line-id', 'Demand line', 'TEXT', { readOnly: true }),
+    field(RV, 'warehouse-id', 'Warehouse', 'REFERENCE', { readOnly: true, ref: 'warehouse-ref' }),
+    field(RV, 'location-id', 'Locator', 'REFERENCE', { readOnly: true, ref: 'location-ref' }),
+    field(RV, 'product-id', 'Product', 'REFERENCE', { readOnly: true, ref: 'product-ref' }),
+    field(RV, 'uom-id', 'Unit', 'REFERENCE', { readOnly: true, ref: 'uom-ref' }),
+    field(RV, 'quantity', 'Reserved quantity', 'NUMBER', { readOnly: true, scale: 6 }),
+    field(RV, 'fulfilled-quantity', 'Issued quantity', 'NUMBER', { readOnly: true, scale: 6 }),
+    field(RV, 'status', 'Status', 'TEXT', { readOnly: true }),
+    field(RV, 'expiry-date', 'Expires', 'DATETIME', { readOnly: true }),
+  ];
+  windows['inventory-reservations'] = window('inventory-reservations', 'Stock reservations', 'Reservations', 'Demand allocations by warehouse and locator.', 'inventory:read',
+    dictionary('inventory-reservations', 'Stock reservations', RV, [entity(RV, 'Reservations')], rvf, [], [WAREHOUSE_REF, LOCATION_REF, PRODUCT_REF, UOM_REF], [
+      view('reservations', 'Reservations', [
+        tab('reservation', 'Reservation', 0, RV, [
+          ['created-at', 4], ['status', 3], ['demand-type', 4], ['demand-reference-id', 6],
+          ['product-id', 5], ['warehouse-id', 4], ['location-id', 4], ['quantity', 3], ['fulfilled-quantity', 3],
+          ['expiry-date', 4],
+        ], rvf),
+      ], { search: ['demand-reference-id'], sort: 'created-at', direction: 'DESC' }),
+    ]));
   const G = 'inventory.ledger';
   const gf = [
     field(G, 'created-at', 'Posted', 'DATETIME', { readOnly: true }), field(G, 'direction', 'Direction', 'SELECT', { readOnly: true, ref: 'directions' }),
@@ -163,6 +193,72 @@ export function windowSource(builderFor) {
     field(G, 'location-id', 'Location', 'REFERENCE', { readOnly: true, ref: 'location-ref' }), field(G, 'quantity', 'Quantity', 'NUMBER', { readOnly: true, scale: 3 }),
     field(G, 'stock-status', 'Status', 'SELECT', { readOnly: true, ref: 'stock-statuses' }), field(G, 'transaction-id', 'Transaction', 'TEXT', { readOnly: true }),
   ];
+  const C = 'inventory.cost-layers';
+  const cf = [
+    field(C, 'product-id', 'Product', 'REFERENCE', { readOnly: true, ref: 'product-ref' }),
+    field(C, 'warehouse-id', 'Warehouse', 'REFERENCE', { readOnly: true, ref: 'warehouse-ref' }),
+    field(C, 'location-id', 'Location', 'REFERENCE', { readOnly: true, ref: 'location-ref' }),
+    field(C, 'valuation-method', 'Valuation', 'SELECT', { readOnly: true, ref: 'valuation-methods' }),
+    field(C, 'quantity', 'Quantity', 'NUMBER', { readOnly: true, scale: 3 }),
+    field(C, 'unit-cost-minor', 'Unit cost (minor)', 'NUMBER', { readOnly: true, scale: 0 }),
+    field(C, 'total-cost-minor', 'Total cost (minor)', 'NUMBER', { readOnly: true, scale: 0 }),
+    field(C, 'created-at', 'Posted', 'DATETIME', { readOnly: true }),
+  ];
+  windows['inventory-cost-layers'] = window('inventory-cost-layers', 'Cost layers', 'Cost layers', 'Append-only valuation layers mirrored from stock ledger debits.', 'inventory:ledger:read',
+    dictionary('inventory-cost-layers', 'Cost layers', C, [entity(C, 'Cost layers')], cf, [], [PRODUCT_REF, WAREHOUSE_REF, LOCATION_REF, values('valuation-methods', VALUATION)], [
+      view('cost-layers', 'Cost layers', [
+        tab('layer', 'Layer', 0, C, [
+          ['created-at', 4], ['product-id', 5], ['warehouse-id', 4], ['location-id', 4], ['valuation-method', 3],
+          ['quantity', 3], ['unit-cost-minor', 4], ['total-cost-minor', 4],
+        ], cf),
+      ], { sort: 'created-at', direction: 'DESC' }),
+    ]));
+
+  const PC = 'inventory.posted-receipt-costs';
+  const pcf = [
+    field(PC, 'created-at', 'Posted', 'DATETIME', { readOnly: true }),
+    field(PC, 'receipt-id', 'Receipt', 'TEXT', { readOnly: true }),
+    field(PC, 'receipt-line-id', 'Receipt line', 'TEXT', { readOnly: true }),
+    field(PC, 'product-id', 'Product', 'REFERENCE', { readOnly: true, ref: 'product-ref' }),
+    field(PC, 'warehouse-id', 'Warehouse', 'REFERENCE', { readOnly: true, ref: 'warehouse-ref' }),
+    field(PC, 'location-id', 'Location', 'REFERENCE', { readOnly: true, ref: 'location-ref' }),
+    field(PC, 'valuation-method', 'Finance method', 'SELECT', { readOnly: true, ref: 'finance-valuation-methods' }),
+    field(PC, 'quantity', 'Quantity', 'NUMBER', { readOnly: true, scale: 6 }),
+    field(PC, 'unit-cost-scaled', 'Unit cost (scaled)', 'NUMBER', { readOnly: true, scale: 0 }),
+    field(PC, 'total-cost-minor', 'Posted cost (minor)', 'NUMBER', { readOnly: true, scale: 0 }),
+    field(PC, 'finance-cost-layer-id', 'Finance layer', 'TEXT', { readOnly: true }),
+  ];
+  windows['inventory-posted-receipt-costs'] = window('inventory-posted-receipt-costs', 'Posted receipt costs', 'Posted costs', 'Finance-posted receipt valuation received through the signed inbox.', 'inventory:ledger:read',
+    dictionary('inventory-posted-receipt-costs', 'Posted receipt costs', PC, [entity(PC, 'Posted receipt costs')], pcf, [],
+      [PRODUCT_REF, WAREHOUSE_REF, LOCATION_REF, values('finance-valuation-methods', FINANCE_VALUATION)], [
+        view('posted-receipt-costs', 'Posted receipt costs', [
+          tab('posted-cost', 'Posted cost', 0, PC, [
+            ['created-at', 4], ['receipt-id', 5], ['product-id', 5], ['warehouse-id', 4], ['location-id', 4],
+            ['valuation-method', 3], ['quantity', 3], ['unit-cost-scaled', 4], ['total-cost-minor', 4],
+          ], pcf),
+        ], { sort: 'created-at', direction: 'DESC' }),
+      ]));
+
+  const M = 'inventory.warehouse-map';
+  const mf = [
+    field(M, 'warehouse-id', 'Warehouse', 'REFERENCE', { readOnly: true, ref: 'warehouse-ref' }),
+    field(M, 'location-id', 'Location', 'REFERENCE', { readOnly: true, ref: 'location-ref' }),
+    field(M, 'aisle', 'Aisle', 'TEXT', { readOnly: true }), field(M, 'rack', 'Rack', 'TEXT', { readOnly: true }),
+    field(M, 'shelf', 'Shelf', 'TEXT', { readOnly: true }), field(M, 'bin', 'Bin', 'TEXT', { readOnly: true }),
+    field(M, 'on-hand-quantity', 'On hand', 'NUMBER', { readOnly: true, scale: 3 }),
+    field(M, 'available-quantity', 'Available', 'NUMBER', { readOnly: true, scale: 3 }),
+    field(M, 'nearest-lot-expiry', 'Nearest expiry', 'DATETIME', { readOnly: true }),
+  ];
+  windows['inventory-warehouse-map'] = window('inventory-warehouse-map', 'Warehouse map', 'Warehouse map', 'Locator grid with live quantities and lot expiry hints.', 'inventory:read',
+    dictionary('inventory-warehouse-map', 'Warehouse map', M, [entity(M, 'Warehouse map')], mf, [], [WAREHOUSE_REF, LOCATION_REF], [
+      view('warehouse-map', 'Warehouse map', [
+        tab('map', 'Map', 0, M, [
+          ['warehouse-id', 4], ['location-id', 4], ['aisle', 2], ['rack', 2], ['shelf', 2], ['bin', 2],
+          ['on-hand-quantity', 3], ['available-quantity', 3], ['nearest-lot-expiry', 4],
+        ], mf),
+      ], { sort: 'aisle' }),
+    ]));
+
   windows['inventory-ledger'] = window('inventory-ledger', 'Stock ledger', 'Stock ledger', 'Every posted stock movement. Reading entries needs inventory:ledger:read.', 'inventory:read',
     dictionary('inventory-ledger', 'Stock ledger', G, [entity(G, 'Stock ledger')], gf, [],
       [WAREHOUSE_REF, LOCATION_REF, PRODUCT_REF, values('directions', DIRECTION), values('stock-statuses', STOCK)], [

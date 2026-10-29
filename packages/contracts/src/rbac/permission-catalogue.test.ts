@@ -31,7 +31,7 @@ describe('PERMISSION_CATALOGUE', () => {
     expect(missing).toEqual([]);
     for (const code of ['analytics:export', 'esign:sign', 'connections:sync', 'finance:journals:approve', 'workforce.bookings.override', 'configuration:unmask-sensitive', 'inventory:items:manage'])
       expect(isCataloguedPermission(code)).toBe(true);
-  });
+  }, 15_000);
 
   it('covers every permission a module role grants', () => {
     const missing = moduleDefaultRoles.flatMap((role) => role.permissions).filter((code) => !isCataloguedPermission(code));

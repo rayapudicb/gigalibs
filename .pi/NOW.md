@@ -1,17 +1,19 @@
-# NOW: where the work stands (2026-10-28)
+# NOW: where the work stands (2026-10-29)
 
 ## Active task
 
-**WI-OI-124 Material Ledger** — [task card](tasks/WI-OI-124.md), [evidence](work/WI-OI-124.md). Module 1 (WI-OI-123) is **Built**; Module 2 extends `universal-inventory`. S2 in progress: ATP + `inventory.reserve/release` gateway, signed command inboxes, Orders allocation ATP gate when relay env is set. S3–S7 (cost records, warehouse map, concurrency proof) remain.
+**WI-OI-125 Advanced SCM & inter-warehouse transfers (Module 3)** — [task card](tasks/WI-OI-125.md). Next in the owner-directed seven-module build; extends `universal-inventory` on top of the Material Ledger. Queued to start.
+
+**WI-OI-124 Material Ledger (Module 2) — Built (2026-10-29).** Committed. S1–S7 complete: locators + lot/serial, exact never-negative ATP + atomic reserve/release, immutable ledger + cost layers with the org-selected Finance cost-profile handshake, warehouse-map/scanner/reservation/ledger windows, live ATP panel (client-polling). Proven on isolated PostgreSQL 16: full proof verify **28/28, 0 fail**; inventory suite **39/39** (migration v9→v10 upgrade + 12 reservation-concurrency). Bounded verify-baseline role fixes to the U2 / finance-bootstrap / F0.5 harnesses (canonical `gigalibs_<schema>_runtime` role the finance migrations 12–15 grant to) plus F0.5 owning-unit + cost-profile seed. True ATP-over-WebSocket streaming is deferred (the plan's `> iDempiere` differentiator, not a numbered slice). Live on-stack journey is validated in the owner's single batch deploy with Modules 1–7. See [evidence](work/WI-OI-124.md). No `configuration-local`/UAT service or data was changed.
 
 ## Current owner-directed build — seven iDempiere-reference modules
 
 On 2026-10-28 the owner directed F0 then Modules 1–7 in order, without UAT pauses; the owner will deploy all seven
 in one batch after implementation. The source plan is
 [`idempiere-parity-modules-plan.md`](../docs/plans/idempiere-parity-modules-plan.md). The accepted ADR-0018/0033/0007
-contracts replace the plan's earlier Org-0 and cross-module ACID shorthand. Work items are WI-OI-122–129; the active
-card is [WI-OI-122](tasks/WI-OI-122.md) for shared foundations, followed by Business Partner, Material Ledger,
-Advanced SCM, Manufacturing, Landed Cost, RMA and Project Accounting. No module is Built or deployed from this directive.
+contracts replace the plan's earlier Org-0 and cross-module ACID shorthand. Work items are WI-OI-122–129. The active
+card is [WI-OI-124](tasks/WI-OI-124.md); WI-OI-123 is marked Built in the canonical tracker but its row still lists
+live proof and full verification outstanding. Modules 3–7 are queued; none of the seven has been deployed from this directive.
 The existing Workforce and release state below remains historical context; its unrelated working-tree edits are
 untouched.
 

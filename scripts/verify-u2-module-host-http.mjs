@@ -72,7 +72,9 @@ symlinkSync(join(root, 'node_modules/.pnpm', pgDirectory, 'node_modules/pg'), jo
 const runtimePassword = randomUUID().replaceAll('-', '');
 const runtimeUrl = (schema) => {
   const url = new URL(adminUrl);
-  url.username = `${schema}_u2proof`;
+  // Migrations GRANT to the canonical gigalibs_<schema>_runtime role (e.g. inventory 000007/000010,
+  // finance 000012–000015), so the module host must connect as that exact role — matching F2.7.
+  url.username = `${schema}_runtime`;
   url.password = runtimePassword;
   return url.toString();
 };

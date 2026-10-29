@@ -235,9 +235,9 @@ export const generatedPlatformModuleCatalog = [
     maturity: 'CORE_IMPLEMENTED',
     entitlementEligible: true,
     trialEligible: false,
-    requiredPermission: 'inventory:read',
+    requiredPermission: 'inventory.read',
     platformInspection: true,
-    reason: 'The module boundary is implemented under WI-OI-091 and remains PLANNED until live module conformance and independent review are recorded.',
+    reason: 'Material Ledger parity (WI-OI-124) extends the WI-OI-091 inventory boundary; remains PLANNED until live module conformance and independent review are recorded.',
   },
   // modules/universal-procurement/module.yaml
   {

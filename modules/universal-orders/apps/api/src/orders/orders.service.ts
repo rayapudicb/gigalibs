@@ -25,6 +25,10 @@ import {
   InventoryAtpCheckClient,
   isOrdersInventoryAtpCheckConfigured,
 } from '../inventory/inventory-atp-check.client.js';
+import {
+  InventoryReserveReleaseClient,
+  isOrdersInventoryReserveReleaseConfigured,
+} from '../inventory/inventory-reserve-release.client.js';
 import { DatabaseService } from '../database.service.js';
 import { assertWritableUnit, canReadUnit, orgReadCondition, resolveOrganizationAccess } from '../organization/organization-scope.js';
 import { requireActiveCustomerParty } from './party-reference.js';
@@ -53,6 +57,7 @@ export class OrderService {
     private readonly database: DatabaseService,
     private readonly businessPartnersCreditCheck: BusinessPartnersCreditCheckClient,
     private readonly inventoryAtpCheck: InventoryAtpCheckClient,
+    private readonly inventoryReserveRelease: InventoryReserveReleaseClient,
   ) {}
 
   // ─── 1. Sales Quotations ───────────────────────────────────────────────────
@@ -613,6 +618,29 @@ export class OrderService {
             code: 'ORDERS_ATP_SHORT',
             availableQuantity: atp.availableQuantity,
             requestedQuantity: input.allocatedQuantity,
+          });
+        }
+      }
+
+      if (isOrdersInventoryReserveReleaseConfigured()) {
+        const reserve = await this.inventoryReserveRelease.execute(principal, {
+          commandKey: randomUUID(),
+          action: 'RESERVE',
+          reservationType: 'HARD',
+          demandType: 'SALES_ORDER',
+          demandReferenceId: input.orderId,
+          demandLineId: input.orderLineId,
+          warehouseId: input.warehouseId,
+          locationId: input.locationId ?? null,
+          productId: line.product_id,
+          uomId: line.uom_id,
+          quantity: input.allocatedQuantity,
+        });
+        if (reserve.outcome !== 'RESERVED') {
+          throw new BadRequestException({
+            code: 'ORDERS_INVENTORY_RESERVE_REJECTED',
+            availableQuantity: reserve.availableQuantity,
+            reason: reserve.reason,
           });
         }
       }

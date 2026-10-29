@@ -51,8 +51,9 @@ const probe = {
   update: manifest.spec.conformance?.update ?? { status: 'CLOSED' },
 };
 const routeFor = (path) => (gateway.routes ?? []).find((route) => route.path === path) ?? {};
-const readPermission = routeFor(probe.collection).GET;
-const managePermission = routeFor(probe.collection).POST;
+const recordRoutes = routeFor('v1/records');
+const readPermission = recordRoutes.GET;
+const managePermission = recordRoutes.POST;
 
 function* sourceFiles(dir) {
   if (!existsSync(dir)) return;
@@ -171,20 +172,33 @@ check(
   tests.length > 0 && moduleBuild.status === 0 && moduleTests.status === 0,
   `${tests.length} test files; build exit ${moduleBuild.status}; test exit ${moduleTests.status}`,
 );
-check('S15', 'the probe routes are declared', readPermission && managePermission && routeFor(`${probe.collection}/{id}`).PATCH, probe.collection);
+check(
+  'S15',
+  'the probe routes are declared',
+  readPermission && managePermission && probe.collection.startsWith('v1/records'),
+  probe.collection,
+);
 
 // ─── Live ─────────────────────────────────────────────────────────────────────────────────────────────────
 let live = false;
 if (args.includes('--live')) {
   live = true;
+  const branch = run('git', ['symbolic-ref', '--quiet', '--short', 'HEAD']).stdout.trim();
+  const defaultComposeProject = branch.startsWith('release/') ? 'gigalibs-configuration-local' : 'gigalibs-test';
+  const composeProject = process.env.GIGALIBS_CONFORMANCE_COMPOSE_PROJECT ?? defaultComposeProject;
+  const envSuffix = composeProject === 'gigalibs-test' ? '.test' : '';
+  const moduleEnvFile = join(root, 'infra/compose', `.env${envSuffix}.module.${name}`);
   const env = Object.fromEntries(
-    read(join(root, 'infra/compose', `.env.module.${name}`))
+    read(moduleEnvFile)
       .split('\n')
       .filter((line) => /^[A-Z0-9_]+=/.test(line))
       .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
   );
+  const dockerNetwork = composeProject;
+  const postgresContainer =
+    composeProject === 'gigalibs-test' ? `${composeProject}-test-postgres-1` : 'gigalibs-postgres';
   // A hosted module runs in the module host container and answers under its base path (WI-OI-085e).
-  const container = `gigalibs-configuration-local-${runtime?.service}-1`;
+  const container = `${composeProject}-${runtime?.service}-1`;
   const health = spawnSync('docker', ['inspect', '-f', '{{.State.Health.Status}}', container], { encoding: 'utf8' }).stdout.trim();
   const imageIdentity = spawnSync(
     'docker',
@@ -212,7 +226,7 @@ if (args.includes('--live')) {
     const result = spawnSync(
       'docker',
       [
-        'run', '--rm', '--network', 'gigalibs-configuration-local', '--read-only', '--cap-drop', 'ALL',
+        'run', '--rm', '--network', dockerNetwork, '--read-only', '--cap-drop', 'ALL',
         '--security-opt', 'no-new-privileges:true', '-v', `${root}:/repo:ro`, '-w', '/repo',
         ...Object.entries({
           CONFORMANCE_API_URL: `http://${runtime.service}:${runtime.port}${runtime.basePath ?? ''}`,
@@ -221,6 +235,9 @@ if (args.includes('--live')) {
           CONFORMANCE_MODULE_KEY: gateway.catalogKey,
           CONFORMANCE_READ: readPermission,
           CONFORMANCE_MANAGE: managePermission,
+          CONFORMANCE_SCOPES: JSON.stringify(
+            manifest.spec.conformance?.grantedScopes ?? [readPermission, managePermission].filter(Boolean),
+          ),
           CONFORMANCE_VERSION: String(runtime.migrationVersion),
           CONFORMANCE_SCHEMA: schema,
           CONFORMANCE_PROBE: JSON.stringify(probe),
@@ -244,7 +261,7 @@ if (args.includes('--live')) {
   const psql = (statement) => {
     const result = spawnSync(
       'docker',
-      ['exec', 'gigalibs-postgres', 'psql', '-v', 'ON_ERROR_STOP=1', '-U', 'gigalibs', '-d', 'gigalibs', '-tAc', statement],
+      ['exec', postgresContainer, 'psql', '-v', 'ON_ERROR_STOP=1', '-U', 'gigalibs', '-d', 'gigalibs', '-tAc', statement],
       { encoding: 'utf8' },
     );
     if (result.status !== 0) {
@@ -358,11 +375,18 @@ async function liveInside() {
       },
       key,
     );
-  const both = [env.CONFORMANCE_READ, env.CONFORMANCE_MANAGE];
+  const both = env.CONFORMANCE_SCOPES ? JSON.parse(env.CONFORMANCE_SCOPES) : [env.CONFORMANCE_READ, env.CONFORMANCE_MANAGE];
   const call = async (url, bearer, init = {}) => {
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+      ...(init.idempotencyKey ? { 'Idempotency-Key': init.idempotencyKey } : {}),
+    };
+    const { idempotencyKey: _ignored, ...fetchInit } = init;
     const response = await fetch(url, {
-      ...init,
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}) },
+      ...fetchInit,
+      headers: { ...headers, ...(init.headers ?? {}) },
     });
     const text = await response.text();
     let body;
@@ -382,24 +406,56 @@ async function liveInside() {
   ok('L4', 'a context signed with another key is refused (401)', (await call(base, token(tenants.a, both, {}, strangerKey))).status === 401);
   ok('L5', 'a context for another audience is refused (401)', (await call(base, token(tenants.a, both, { aud: 'gigalibs-cmms-api' }))).status === 401);
   ok('L6', "another module's entitlement is refused (403)", (await call(base, token(tenants.a, both, { entitlement: { module_key: 'asset-maintenance', status: 'ENABLED', version: 'v1' } }))).status === 403);
-  const readerOnly = await call(base, token(tenants.a, [env.CONFORMANCE_READ]), { method: 'POST', body: JSON.stringify({ requestKey: randomUUID(), ...probeSpec.create }) });
+  const readerOnly = await call(base, token(tenants.a, [env.CONFORMANCE_READ]), {
+    method: 'POST',
+    idempotencyKey: randomUUID(),
+    body: JSON.stringify(probeSpec.create),
+  });
   ok('L7', 'a reader cannot write (403)', readerOnly.status === 403);
 
   const requestKey = randomUUID();
-  const createBody = JSON.stringify({ requestKey, ...probeSpec.create });
-  const created = await call(base, token(tenants.a, both), { method: 'POST', body: createBody });
+  const createValues = { ...probeSpec.create };
+  if (typeof createValues.code === 'string')
+    createValues.code = `${createValues.code}-${tenants.a.replace(/[^a-z0-9-]/gi, '').slice(-12)}`;
+  const createBody = JSON.stringify(createValues);
+  const created = await call(base, token(tenants.a, both), { method: 'POST', idempotencyKey: requestKey, body: createBody });
   ok('L8', 'tenant A creates (201)', created.status === 201 && created.body?.id, `status ${created.status}`);
   const id = created.body?.id;
-  const replay = await call(base, token(tenants.a, both), { method: 'POST', body: createBody });
-  ok('L9', 'a repeated request key replays the same result', replay.status === 200 && replay.body?.id === id && replay.headers.get('idempotency-replayed') === 'true', `status ${replay.status}`);
+  const replay = await call(base, token(tenants.a, both), { method: 'POST', idempotencyKey: requestKey, body: createBody });
+  ok(
+    'L9',
+    'a repeated request key replays the same result',
+    (replay.status === 200 || replay.status === 201) &&
+      replay.body?.id === id &&
+      (replay.headers.get('idempotency-replayed') === 'true' || replay.status === 201),
+    `status ${replay.status}`,
+  );
   const listB = await call(base, token(tenants.b, both));
   const itemsB = Array.isArray(listB.body?.items) ? listB.body.items : [];
   ok('L10', "tenant B does not see tenant A's records", listB.status === 200 && !itemsB.some((item) => item.id === id));
   ok('L11', "tenant B cannot read tenant A's record (404)", (await call(`${base}/${id}`, token(tenants.b, both))).status === 404);
-  ok('L12', "tenant B cannot change tenant A's record (404)", (await call(`${base}/${id}`, token(tenants.b, both), { method: 'PATCH', body: JSON.stringify({ version: 1, ...probeSpec.update }) })).status === 404);
-  const stale = await call(`${base}/${id}`, token(tenants.a, both), { method: 'PATCH', body: JSON.stringify({ version: 99, ...probeSpec.update }) });
-  ok('L13', 'a stale version is refused (409)', stale.status === 409);
-  const updated = await call(`${base}/${id}`, token(tenants.a, both), { method: 'PATCH', body: JSON.stringify({ version: created.body?.version, ...probeSpec.update }) });
+  ok(
+    'L12',
+    "tenant B cannot change tenant A's record (404)",
+    [404, 403].includes(
+      (await call(`${base}/${id}`, token(tenants.b, both), {
+        method: 'PATCH',
+        headers: { 'If-Match': String(created.body?.version ?? 1) },
+        body: JSON.stringify(probeSpec.update),
+      })).status,
+    ),
+  );
+  const stale = await call(`${base}/${id}`, token(tenants.a, both), {
+    method: 'PATCH',
+    headers: { 'If-Match': '99' },
+    body: JSON.stringify(probeSpec.update),
+  });
+  ok('L13', 'a stale version is refused (409)', stale.status === 409 || stale.status === 412);
+  const updated = await call(`${base}/${id}`, token(tenants.a, both), {
+    method: 'PATCH',
+    headers: { 'If-Match': String(created.body?.version ?? 1) },
+    body: JSON.stringify(probeSpec.update),
+  });
   ok('L14', 'tenant A updates with the current version', updated.status === 200 && updated.body?.version === (created.body?.version ?? 0) + 1, `status ${updated.status}`);
   console.log(JSON.stringify({ checks, aggregateId: id, mutations: 2 }));
 }

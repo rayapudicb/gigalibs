@@ -1,0 +1,253 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/inventory",
+    "label": "Cost layers",
+    "description": "Append-only valuation layers mirrored from stock ledger debits.",
+    "readPermission": "inventory:ledger:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-inventory",
+    "entityKey": "inventory-cost-layers",
+    "surfaceKey": "inventory-cost-layers",
+    "title": "Cost layers",
+    "dictionary": {
+      "packageKey": "inventory-cost-layers-module-baseline",
+      "name": "Cost layers",
+      "version": "1.0.0",
+      "moduleKey": "universal-inventory",
+      "targetEntityKey": "inventory.cost-layers",
+      "entities": [
+        {
+          "entityKey": "inventory.cost-layers",
+          "moduleKey": "universal-inventory",
+          "label": "Cost layers",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "product-id",
+          "entityKey": "inventory.cost-layers",
+          "label": "Product",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-ref"
+        },
+        {
+          "fieldKey": "warehouse-id",
+          "entityKey": "inventory.cost-layers",
+          "label": "Warehouse",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref"
+        },
+        {
+          "fieldKey": "location-id",
+          "entityKey": "inventory.cost-layers",
+          "label": "Location",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "location-ref"
+        },
+        {
+          "fieldKey": "valuation-method",
+          "entityKey": "inventory.cost-layers",
+          "label": "Valuation",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "valuation-methods"
+        },
+        {
+          "fieldKey": "quantity",
+          "entityKey": "inventory.cost-layers",
+          "label": "Quantity",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 3
+        },
+        {
+          "fieldKey": "unit-cost-minor",
+          "entityKey": "inventory.cost-layers",
+          "label": "Unit cost (minor)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "total-cost-minor",
+          "entityKey": "inventory.cost-layers",
+          "label": "Total cost (minor)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "created-at",
+          "entityKey": "inventory.cost-layers",
+          "label": "Posted",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-products",
+            "permission": "products:create"
+          }
+        },
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses",
+          "createWith": {
+            "moduleKey": "universal-inventory",
+            "surfaceKey": "inventory-warehouses",
+            "permission": "inventory:warehouses:manage"
+          }
+        },
+        {
+          "referenceKey": "location-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-locations"
+        },
+        {
+          "referenceKey": "valuation-methods",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "STANDARD",
+              "label": "Standard cost"
+            },
+            {
+              "value": "MOVING_AVERAGE",
+              "label": "Moving average"
+            },
+            {
+              "value": "FIFO",
+              "label": "FIFO"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "cost-layers",
+          "label": "Cost layers",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortField": "created-at",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "layer",
+              "label": "Layer",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "inventory.cost-layers",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "created-at",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "datetime-input"
+                },
+                {
+                  "fieldKey": "product-id",
+                  "position": 1,
+                  "span": 5,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "warehouse-id",
+                  "position": 2,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "location-id",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "valuation-method",
+                  "position": 4,
+                  "span": 3,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "quantity",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "unit-cost-minor",
+                  "position": 6,
+                  "span": 4,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "total-cost-minor",
+                  "position": 7,
+                  "span": 4,
+                  "componentKey": "number-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

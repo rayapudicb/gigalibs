@@ -15121,6 +15121,259 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
     "contractVersion": "1.0",
     "window": {
       "route": "/inventory",
+      "label": "Cost layers",
+      "description": "Append-only valuation layers mirrored from stock ledger debits.",
+      "readPermission": "inventory:ledger:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "universal-inventory",
+      "entityKey": "inventory-cost-layers",
+      "surfaceKey": "inventory-cost-layers",
+      "title": "Cost layers",
+      "dictionary": {
+        "packageKey": "inventory-cost-layers-module-baseline",
+        "name": "Cost layers",
+        "version": "1.0.0",
+        "moduleKey": "universal-inventory",
+        "targetEntityKey": "inventory.cost-layers",
+        "entities": [
+          {
+            "entityKey": "inventory.cost-layers",
+            "moduleKey": "universal-inventory",
+            "label": "Cost layers",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "product-id",
+            "entityKey": "inventory.cost-layers",
+            "label": "Product",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref"
+          },
+          {
+            "fieldKey": "warehouse-id",
+            "entityKey": "inventory.cost-layers",
+            "label": "Warehouse",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "warehouse-ref"
+          },
+          {
+            "fieldKey": "location-id",
+            "entityKey": "inventory.cost-layers",
+            "label": "Location",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "location-ref"
+          },
+          {
+            "fieldKey": "valuation-method",
+            "entityKey": "inventory.cost-layers",
+            "label": "Valuation",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "valuation-methods"
+          },
+          {
+            "fieldKey": "quantity",
+            "entityKey": "inventory.cost-layers",
+            "label": "Quantity",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 3
+          },
+          {
+            "fieldKey": "unit-cost-minor",
+            "entityKey": "inventory.cost-layers",
+            "label": "Unit cost (minor)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "total-cost-minor",
+            "entityKey": "inventory.cost-layers",
+            "label": "Total cost (minor)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "inventory.cost-layers",
+            "label": "Posted",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
+          },
+          {
+            "referenceKey": "warehouse-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
+          },
+          {
+            "referenceKey": "location-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-locations"
+          },
+          {
+            "referenceKey": "valuation-methods",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "STANDARD",
+                "label": "Standard cost"
+              },
+              {
+                "value": "MOVING_AVERAGE",
+                "label": "Moving average"
+              },
+              {
+                "value": "FIFO",
+                "label": "FIFO"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "cost-layers",
+            "label": "Cost layers",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortField": "created-at",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "layer",
+                "label": "Layer",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "inventory.cost-layers",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "created-at",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "product-id",
+                    "position": 1,
+                    "span": 5,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "warehouse-id",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "location-id",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "valuation-method",
+                    "position": 4,
+                    "span": 3,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "quantity",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "unit-cost-minor",
+                    "position": 6,
+                    "span": 4,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "total-cost-minor",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "number-input"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/inventory",
       "label": "Items",
       "description": "Products held in stock and how they are replenished and valued.",
       "readPermission": "inventory:read"
@@ -15984,6 +16237,298 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
     "contractVersion": "1.0",
     "window": {
       "route": "/inventory",
+      "label": "Posted costs",
+      "description": "Finance-posted receipt valuation received through the signed inbox.",
+      "readPermission": "inventory:ledger:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "universal-inventory",
+      "entityKey": "inventory-posted-receipt-costs",
+      "surfaceKey": "inventory-posted-receipt-costs",
+      "title": "Posted receipt costs",
+      "dictionary": {
+        "packageKey": "inventory-posted-receipt-costs-module-baseline",
+        "name": "Posted receipt costs",
+        "version": "1.0.0",
+        "moduleKey": "universal-inventory",
+        "targetEntityKey": "inventory.posted-receipt-costs",
+        "entities": [
+          {
+            "entityKey": "inventory.posted-receipt-costs",
+            "moduleKey": "universal-inventory",
+            "label": "Posted receipt costs",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "created-at",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Posted",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "receipt-id",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Receipt",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "receipt-line-id",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Receipt line",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "product-id",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Product",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref"
+          },
+          {
+            "fieldKey": "warehouse-id",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Warehouse",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "warehouse-ref"
+          },
+          {
+            "fieldKey": "location-id",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Location",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "location-ref"
+          },
+          {
+            "fieldKey": "valuation-method",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Finance method",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "finance-valuation-methods"
+          },
+          {
+            "fieldKey": "quantity",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Quantity",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6
+          },
+          {
+            "fieldKey": "unit-cost-scaled",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Unit cost (scaled)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "total-cost-minor",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Posted cost (minor)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 0
+          },
+          {
+            "fieldKey": "finance-cost-layer-id",
+            "entityKey": "inventory.posted-receipt-costs",
+            "label": "Finance layer",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
+          },
+          {
+            "referenceKey": "warehouse-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
+          },
+          {
+            "referenceKey": "location-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-locations"
+          },
+          {
+            "referenceKey": "finance-valuation-methods",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "STANDARD",
+                "label": "Standard cost"
+              },
+              {
+                "value": "FIFO",
+                "label": "FIFO"
+              },
+              {
+                "value": "AVERAGE",
+                "label": "Weighted average"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "posted-receipt-costs",
+            "label": "Posted receipt costs",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortField": "created-at",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "posted-cost",
+                "label": "Posted cost",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "inventory.posted-receipt-costs",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "created-at",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "receipt-id",
+                    "position": 1,
+                    "span": 5,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "product-id",
+                    "position": 2,
+                    "span": 5,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "warehouse-id",
+                    "position": 3,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "location-id",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "valuation-method",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "quantity",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "unit-cost-scaled",
+                    "position": 7,
+                    "span": 4,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "total-cost-minor",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "number-input"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/inventory",
       "label": "Receipts",
       "description": "Receive goods into warehouse locations.",
       "readPermission": "inventory:read"
@@ -16525,8 +17070,565 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "operator": "EQ",
               "value": "DRAFT"
             }
+          },
+          {
+            "actionKey": "retry-posting",
+            "label": "Retry Finance posting",
+            "type": "COMMAND",
+            "handlerKey": "inventory.receipts.retry-posting",
+            "requiredPermissions": [
+              "inventory:receive"
+            ],
+            "confirmationPrompt": "Retry Finance posting? Only rejections known to have posted no cost are eligible; other cases require reconciliation.",
+            "visibilityCondition": {
+              "field": "finance-posting-status",
+              "operator": "EQ",
+              "value": "POSTING_REJECTED"
+            }
           }
         ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/inventory",
+      "label": "Reservations",
+      "description": "Demand allocations by warehouse and locator.",
+      "readPermission": "inventory:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "universal-inventory",
+      "entityKey": "inventory-reservations",
+      "surfaceKey": "inventory-reservations",
+      "title": "Stock reservations",
+      "dictionary": {
+        "packageKey": "inventory-reservations-module-baseline",
+        "name": "Stock reservations",
+        "version": "1.0.0",
+        "moduleKey": "universal-inventory",
+        "targetEntityKey": "inventory.reservations",
+        "entities": [
+          {
+            "entityKey": "inventory.reservations",
+            "moduleKey": "universal-inventory",
+            "label": "Reservations",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "created-at",
+            "entityKey": "inventory.reservations",
+            "label": "Created",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "demand-type",
+            "entityKey": "inventory.reservations",
+            "label": "Demand type",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "demand-reference-id",
+            "entityKey": "inventory.reservations",
+            "label": "Demand reference",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "demand-line-id",
+            "entityKey": "inventory.reservations",
+            "label": "Demand line",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "warehouse-id",
+            "entityKey": "inventory.reservations",
+            "label": "Warehouse",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "warehouse-ref"
+          },
+          {
+            "fieldKey": "location-id",
+            "entityKey": "inventory.reservations",
+            "label": "Locator",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "location-ref"
+          },
+          {
+            "fieldKey": "product-id",
+            "entityKey": "inventory.reservations",
+            "label": "Product",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "product-ref"
+          },
+          {
+            "fieldKey": "uom-id",
+            "entityKey": "inventory.reservations",
+            "label": "Unit",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "uom-ref"
+          },
+          {
+            "fieldKey": "quantity",
+            "entityKey": "inventory.reservations",
+            "label": "Reserved quantity",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6
+          },
+          {
+            "fieldKey": "fulfilled-quantity",
+            "entityKey": "inventory.reservations",
+            "label": "Issued quantity",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 6
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "inventory.reservations",
+            "label": "Status",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "expiry-date",
+            "entityKey": "inventory.reservations",
+            "label": "Expires",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "warehouse-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
+          },
+          {
+            "referenceKey": "location-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-locations"
+          },
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
+            }
+          },
+          {
+            "referenceKey": "uom-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-uoms",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-units",
+              "permission": "uoms:manage"
+            }
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "reservations",
+            "label": "Reservations",
+            "mode": "LIST",
+            "device": "ALL",
+            "searchFields": [
+              "demand-reference-id"
+            ],
+            "defaultSortField": "created-at",
+            "defaultSortDirection": "DESC",
+            "tabs": [
+              {
+                "tabKey": "reservation",
+                "label": "Reservation",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "inventory.reservations",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "created-at",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "demand-type",
+                    "position": 2,
+                    "span": 4,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "demand-reference-id",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "product-id",
+                    "position": 4,
+                    "span": 5,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "warehouse-id",
+                    "position": 5,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "location-id",
+                    "position": 6,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "quantity",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "fulfilled-quantity",
+                    "position": 8,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "expiry-date",
+                    "position": 9,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/inventory",
+      "label": "Warehouse map",
+      "description": "Locator grid with live quantities and lot expiry hints.",
+      "readPermission": "inventory:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "universal-inventory",
+      "entityKey": "inventory-warehouse-map",
+      "surfaceKey": "inventory-warehouse-map",
+      "title": "Warehouse map",
+      "dictionary": {
+        "packageKey": "inventory-warehouse-map-module-baseline",
+        "name": "Warehouse map",
+        "version": "1.0.0",
+        "moduleKey": "universal-inventory",
+        "targetEntityKey": "inventory.warehouse-map",
+        "entities": [
+          {
+            "entityKey": "inventory.warehouse-map",
+            "moduleKey": "universal-inventory",
+            "label": "Warehouse map",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "warehouse-id",
+            "entityKey": "inventory.warehouse-map",
+            "label": "Warehouse",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "warehouse-ref"
+          },
+          {
+            "fieldKey": "location-id",
+            "entityKey": "inventory.warehouse-map",
+            "label": "Location",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "location-ref"
+          },
+          {
+            "fieldKey": "aisle",
+            "entityKey": "inventory.warehouse-map",
+            "label": "Aisle",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "rack",
+            "entityKey": "inventory.warehouse-map",
+            "label": "Rack",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "shelf",
+            "entityKey": "inventory.warehouse-map",
+            "label": "Shelf",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "bin",
+            "entityKey": "inventory.warehouse-map",
+            "label": "Bin",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "on-hand-quantity",
+            "entityKey": "inventory.warehouse-map",
+            "label": "On hand",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 3
+          },
+          {
+            "fieldKey": "available-quantity",
+            "entityKey": "inventory.warehouse-map",
+            "label": "Available",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 3
+          },
+          {
+            "fieldKey": "nearest-lot-expiry",
+            "entityKey": "inventory.warehouse-map",
+            "label": "Nearest expiry",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "warehouse-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
+          },
+          {
+            "referenceKey": "location-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-locations"
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "warehouse-map",
+            "label": "Warehouse map",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortField": "aisle",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "map",
+                "label": "Map",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "inventory.warehouse-map",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "warehouse-id",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "location-id",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "lookup"
+                  },
+                  {
+                    "fieldKey": "aisle",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "rack",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "shelf",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "bin",
+                    "position": 5,
+                    "span": 2,
+                    "componentKey": "text-input"
+                  },
+                  {
+                    "fieldKey": "on-hand-quantity",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "available-quantity",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "nearest-lot-expiry",
+                    "position": 8,
+                    "span": 4,
+                    "componentKey": "datetime-input"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "navigation": [],
+        "actions": [],
         "messages": []
       }
     }
@@ -16609,6 +17711,17 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "classification": "INTERNAL",
             "maskOnDisplay": false,
             "referenceKey": "warehouse-types"
+          },
+          {
+            "fieldKey": "org-unit-id",
+            "entityKey": "inventory.warehouses",
+            "label": "Owning organization unit",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
           },
           {
             "fieldKey": "description",
@@ -16923,22 +18036,29 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "sectionKey": "main"
                   },
                   {
-                    "fieldKey": "is-active",
+                    "fieldKey": "org-unit-id",
                     "position": 3,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "is-active",
+                    "position": 4,
                     "span": 4,
                     "componentKey": "checkbox",
                     "sectionKey": "main"
                   },
                   {
                     "fieldKey": "description",
-                    "position": 4,
+                    "position": 5,
                     "span": 12,
                     "componentKey": "textarea",
                     "sectionKey": "details"
                   },
                   {
                     "fieldKey": "address",
-                    "position": 5,
+                    "position": 6,
                     "span": 12,
                     "componentKey": "textarea",
                     "sectionKey": "details"

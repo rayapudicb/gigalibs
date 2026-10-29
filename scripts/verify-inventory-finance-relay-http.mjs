@@ -51,7 +51,9 @@ symlinkSync(join(root, 'node_modules/.pnpm', pgDirectory, 'node_modules/pg'), jo
 const runtimePassword = randomUUID().replaceAll('-', '');
 const runtimeUrl = (schema) => {
   const url = new URL(adminUrl);
-  url.username = `${schema}_if2proof`;
+  // Additive migrations grant to the canonical module runtime role. This proof
+  // uses its own disposable database, so the canonical role name is isolated.
+  url.username = `${schema}_runtime`;
   url.password = runtimePassword;
   return url.toString();
 };
@@ -72,6 +74,7 @@ for (const name of PROOF_MODULES) {
     },
   });
   check(`migrate ${name} to ${module.migrationVersion}`, run.status === 0, `${run.stdout}${run.stderr}`.trim().split('\n').pop());
+  if (run.status !== 0) console.error(run.stderr.slice(-2500));
 }
 
 const platformKeys = generateKeyPairSync('ed25519');
@@ -256,6 +259,32 @@ try {
   });
   check('finance: default cost profile with standard cost', ok(profile), profile.text.slice(0, 120));
 
+  // The receipt fact must name an active owning unit and its explicit Finance
+  // cost profile. The isolated fixture receives one synthetic organization version.
+  const orgUnitId = 'unit-if2-proof';
+  await admin.query(
+    `INSERT INTO gigalibs_inventory.org_replica_versions
+       (tenant_id, version_id, tree_id, tree_kind, version_number, checksum, status, unit_count, ready_at)
+     VALUES ($1, 'if2-proof-v1', 'if2-proof-tree', 'PRIMARY', 1, $2, 'READY', 1, now())`,
+    [tenant, `sha256:${'0'.repeat(64)}`],
+  );
+  await admin.query(
+    `INSERT INTO gigalibs_inventory.org_replica_units
+       (tenant_id, version_id, unit_id, code, name, sort_order, status, holds_records, type_code)
+     VALUES ($1, 'if2-proof-v1', $2, $2, 'IF2 proof unit', 0, 'ACTIVE', true, 'OPERATING_UNIT')`,
+    [tenant, orgUnitId],
+  );
+  await admin.query(
+    `INSERT INTO gigalibs_inventory.org_replica_closure
+       (tenant_id, version_id, ancestor_unit_id, descendant_unit_id, depth)
+     VALUES ($1, 'if2-proof-v1', $2, $2, 0)`,
+    [tenant, orgUnitId],
+  );
+  const valuation = await call('universal-inventory', 'PUT', '/v1/valuation-settings', {
+    orgUnitId, valuationMethod: 'FIFO', financeCostProfileId: profile.json?.id,
+  });
+  check('inventory: owning-unit Finance cost profile', ok(valuation), valuation.text.slice(0, 120));
+
   const uom = await call('product-catalogue', 'POST', '/v1/uoms', { code: 'EA', name: 'Each', symbol: 'ea', dimension: 'COUNT' }, { 'Idempotency-Key': randomUUID() });
   const product = await call(
     'product-catalogue',
@@ -293,6 +322,7 @@ try {
     code: 'WH-IF2',
     name: 'IF2 warehouse',
     'warehouse-type': 'PHYSICAL',
+    'org-unit-id': orgUnitId,
   }, { 'Idempotency-Key': randomUUID() });
   const warehouseId = warehouse.json?.id;
   const location = await call('universal-inventory', 'POST', '/v1/records/inventory.locations', {
@@ -371,6 +401,31 @@ try {
 
   check('inventory: finance-posting-status POSTED (product A)', await waitForReceiptFinancePosted(receiptId), receiptId);
 
+  const barcode = await call('universal-inventory', 'POST', '/v1/barcodes/resolve', { rawCode: 'RCV' });
+  check('inventory: scanner resolves an owned locator', ok(barcode) &&
+    barcode.json?.matchedEntityId === location.json?.id, barcode.text.slice(0, 100));
+  const atp = await call('universal-inventory', 'POST', '/v1/atp/check', {
+    requestKey: randomUUID(), warehouseId, productId: product.json?.id,
+    uomId: uom.json?.id, requestedQuantity: '1.000000',
+  });
+  check('inventory: exact ATP over signed HTTP', ok(atp) && atp.json?.decision === 'AVAILABLE', atp.text.slice(0, 100));
+  const staging = await call('universal-inventory', 'POST', '/v1/records/inventory.locations', {
+    'warehouse-id': warehouseId, code: 'STAGE', name: 'Stage', 'location-type': 'STAGING',
+  }, { 'Idempotency-Key': randomUUID() });
+  const moved = await call('universal-inventory', 'POST', '/v1/movements', {
+    documentType: 'IF2_PROOF_PUTAWAY', reason: 'PUTAWAY', correlationId: randomUUID(),
+    idempotencyKey: randomUUID(), sourceWarehouseId: warehouseId,
+    sourceLocationId: location.json?.id, targetWarehouseId: warehouseId,
+    targetLocationId: staging.json?.id, productId: product.json?.id,
+    uomId: uom.json?.id, quantity: '1.000000', stockStatus: 'AVAILABLE',
+  });
+  check('inventory: signed internal putaway movement', ok(staging) && ok(moved), moved.text.slice(0, 100));
+  const reversed = await call('universal-inventory', 'POST',
+    `/v1/movements/${moved.json?.transaction?.id}/reverse`);
+  check('inventory: signed counter-movement restores putaway', ok(reversed) &&
+    reversed.json?.transaction?.documentReferenceId === moved.json?.transaction?.id,
+    reversed.text.slice(0, 100));
+
   const productB = await call(
     'product-catalogue',
     'POST',
@@ -418,6 +473,35 @@ try {
     costA === '2500000' && costB === '4000000' && costA !== costB,
     JSON.stringify({ costA, costB }),
   );
+
+  const mismatchedProfile = await call('financial-operations', 'POST', '/v1/costing/profiles', {
+    code: 'IF2-MISMATCH', name: 'IF2 mismatch proof', costingMethod: 'STANDARD',
+    ...accounts, standardUnitCostScaled: '2500000', isDefault: false,
+  });
+  check('finance: alternate method profile for rejection proof', ok(mismatchedProfile),
+    mismatchedProfile.text.slice(0, 100));
+  await call('universal-inventory', 'PUT', '/v1/valuation-settings', {
+    orgUnitId, valuationMethod: 'FIFO', financeCostProfileId: mismatchedProfile.json?.id,
+  });
+  const mismatchedReceiptId = await completeGoodsReceipt(product.json?.id, '1.000');
+  let mismatchRejected = false;
+  for (let attempt = 0; attempt < 40 && !mismatchRejected; attempt += 1) {
+    await sleep(500);
+    const read = await call('universal-inventory', 'GET',
+      `/v1/records/inventory.receipts/${mismatchedReceiptId}`);
+    mismatchRejected = read.json?.['finance-posting-status'] === 'POSTING_REJECTED' &&
+      read.json?.['finance-posting-rejection-code'] === 'FINANCE_COST_METHOD_MISMATCH';
+  }
+  check('inventory: mismatched organization cost method rejected', mismatchRejected, mismatchedReceiptId);
+  await call('universal-inventory', 'PUT', '/v1/valuation-settings', {
+    orgUnitId, valuationMethod: 'FIFO', financeCostProfileId: profile.json?.id,
+  });
+  const republished = await call('universal-inventory', 'POST',
+    `/v1/receipts/${mismatchedReceiptId}/retry-posting`, { requestKey: randomUUID() });
+  check('inventory: safe Finance retry republishes the receipt fact', ok(republished) &&
+    republished.json?.financePostingStatus === 'AWAITING_POSTING', republished.text.slice(0, 100));
+  check('inventory: corrected profile posts after replay',
+    await waitForReceiptFinancePosted(mismatchedReceiptId), mismatchedReceiptId);
 
   const productC = await call(
     'product-catalogue',

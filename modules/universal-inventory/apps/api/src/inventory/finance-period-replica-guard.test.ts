@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { assertInventoryReceiptFinancePeriodOpenFromReplica } from './finance-period-replica-guard.js';
 
 const query = vi.fn();
 
@@ -8,7 +9,6 @@ describe('assertInventoryReceiptFinancePeriodOpenFromReplica', () => {
       if (sql.includes('finance_period_replica_meta')) return { rows: [] };
       return { rows: [] };
     });
-    const { assertInventoryReceiptFinancePeriodOpenFromReplica } = await import('./finance-period-replica-guard.js');
     await expect(
       assertInventoryReceiptFinancePeriodOpenFromReplica({ query } as never, 'tenant-1', '2026-10-18T12:00:00.000Z'),
     ).resolves.toBeUndefined();
@@ -24,7 +24,6 @@ describe('assertInventoryReceiptFinancePeriodOpenFromReplica', () => {
       }
       return { rows: [] };
     });
-    const { assertInventoryReceiptFinancePeriodOpenFromReplica } = await import('./finance-period-replica-guard.js');
     await expect(
       assertInventoryReceiptFinancePeriodOpenFromReplica({ query } as never, 'tenant-1', '2026-09-15T10:00:00.000Z'),
     ).rejects.toSatisfy(
@@ -43,7 +42,6 @@ describe('assertInventoryReceiptFinancePeriodOpenFromReplica', () => {
       }
       return { rows: [] };
     });
-    const { assertInventoryReceiptFinancePeriodOpenFromReplica } = await import('./finance-period-replica-guard.js');
     await expect(
       assertInventoryReceiptFinancePeriodOpenFromReplica({ query } as never, 'tenant-1', '2026-09-15T10:00:00.000Z'),
     ).rejects.toSatisfy(

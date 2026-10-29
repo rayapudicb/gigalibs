@@ -3,6 +3,10 @@
 import type { BarcodeResolutionResultV1 } from '@gigalibs/contracts';
 import { createRecordClient, MetadataWindow, usePublishedManifest } from '@gigalibs/configuration-react';
 import { type FormEvent, useMemo, useState } from 'react';
+import { WarehouseMapPanel } from './WarehouseMapPanel.js';
+import { InventoryScannerDrawer } from './InventoryScannerDrawer.js';
+import { ValuationSettingsPanel } from './ValuationSettingsPanel.js';
+import { AtpLivePanel } from './AtpLivePanel.js';
 
 // WI-OI-120f (F0.5, ADR-0033 D1; owner decisions 2026-10-05): Inventory's screens are metadata windows drawn from the
 // dictionary each tenant has published, over Inventory's own record dispatcher. The hand-written screen with
@@ -19,10 +23,13 @@ const WINDOWS = [
   { surface: 'inventory-lots', label: 'Lots' },
   { surface: 'inventory-receipts', label: 'Receipts' },
   { surface: 'inventory-balances', label: 'Balances' },
+  { surface: 'inventory-reservations', label: 'Reservations' },
   { surface: 'inventory-ledger', label: 'Stock ledger' },
+  { surface: 'inventory-cost-layers', label: 'Movement cost mirror' },
+  { surface: 'inventory-posted-receipt-costs', label: 'Posted receipt costs' },
 ] as const;
 
-type Tab = (typeof WINDOWS)[number]['surface'] | 'barcode';
+type Tab = (typeof WINDOWS)[number]['surface'] | 'barcode' | 'warehouse-map' | 'valuation-settings' | 'atp';
 
 export interface UniversalInventoryWorkspaceProps {
   /** The signed-in user's permissions, for the windows' deny-by-default rules (the server still decides). */
@@ -31,17 +38,27 @@ export interface UniversalInventoryWorkspaceProps {
 
 export function UniversalInventoryWorkspace({ permissions = [] }: UniversalInventoryWorkspaceProps = {}) {
   const [tab, setTab] = useState<Tab>('inventory-warehouses');
+  const [scannerOpen, setScannerOpen] = useState(false);
   const client = useMemo(() => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: LOOKUP_BASE_PATHS }), []);
   // WI-OI-120 (F0.6): "Add new product" or "Add new unit" from a picker opens the Catalogue's own window.
   const clients = useMemo(() => ({ 'product-catalogue': createRecordClient({ basePath: CATALOGUE_PATH }) }), []);
   return (
     <div className="space-y-6 p-6">
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-ui-fg-base">Inventory &amp; Warehouses</h1>
-        <p className="text-sm text-ui-fg-subtle">Warehouses, stocked items, lots, goods receipts, balances and the stock ledger of your organization.</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold text-ui-fg-base">Inventory &amp; Warehouses</h1>
+          <p className="text-sm text-ui-fg-subtle">Warehouses, stocked items, lots, goods receipts, balances and the stock ledger of your organization.</p>
+        </div>
+        <button type="button" className="rounded-md bg-ui-button-inverted px-4 py-2 text-sm font-medium text-ui-fg-on-inverted" onClick={() => setScannerOpen(true)}>Open scanner</button>
       </header>
       <nav role="tablist" aria-label="Inventory" className="flex flex-wrap gap-1 border-b border-ui-border-base">
-        {[...WINDOWS, { surface: 'barcode' as const, label: 'Barcode lookup' }].map((entry) => (
+        {[
+          ...WINDOWS,
+          { surface: 'warehouse-map' as const, label: 'Warehouse map' },
+          { surface: 'atp' as const, label: 'Live ATP' },
+          { surface: 'valuation-settings' as const, label: 'Valuation setup' },
+          { surface: 'barcode' as const, label: 'Barcode lookup' },
+        ].map((entry) => (
           <button
             key={entry.surface}
             type="button"
@@ -54,7 +71,18 @@ export function UniversalInventoryWorkspace({ permissions = [] }: UniversalInven
           </button>
         ))}
       </nav>
-      {tab === 'barcode' ? <BarcodeLookup /> : <InventoryWindow key={tab} surface={tab} client={client} clients={clients} permissions={permissions} />}
+      {tab === 'barcode' ? (
+        <BarcodeLookup />
+      ) : tab === 'warehouse-map' ? (
+        <WarehouseMapPanel />
+      ) : tab === 'atp' ? (
+        <AtpLivePanel />
+      ) : tab === 'valuation-settings' ? (
+        <ValuationSettingsPanel />
+      ) : (
+        <InventoryWindow key={tab} surface={tab} client={client} clients={clients} permissions={permissions} />
+      )}
+      {scannerOpen ? <InventoryScannerDrawer onClose={() => setScannerOpen(false)} /> : null}
     </div>
   );
 }

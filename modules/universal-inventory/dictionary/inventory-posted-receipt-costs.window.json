@@ -1,0 +1,292 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/inventory",
+    "label": "Posted costs",
+    "description": "Finance-posted receipt valuation received through the signed inbox.",
+    "readPermission": "inventory:ledger:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-inventory",
+    "entityKey": "inventory-posted-receipt-costs",
+    "surfaceKey": "inventory-posted-receipt-costs",
+    "title": "Posted receipt costs",
+    "dictionary": {
+      "packageKey": "inventory-posted-receipt-costs-module-baseline",
+      "name": "Posted receipt costs",
+      "version": "1.0.0",
+      "moduleKey": "universal-inventory",
+      "targetEntityKey": "inventory.posted-receipt-costs",
+      "entities": [
+        {
+          "entityKey": "inventory.posted-receipt-costs",
+          "moduleKey": "universal-inventory",
+          "label": "Posted receipt costs",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "created-at",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Posted",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "receipt-id",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Receipt",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "receipt-line-id",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Receipt line",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "product-id",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Product",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "product-ref"
+        },
+        {
+          "fieldKey": "warehouse-id",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Warehouse",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref"
+        },
+        {
+          "fieldKey": "location-id",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Location",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "location-ref"
+        },
+        {
+          "fieldKey": "valuation-method",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Finance method",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "finance-valuation-methods"
+        },
+        {
+          "fieldKey": "quantity",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Quantity",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 6
+        },
+        {
+          "fieldKey": "unit-cost-scaled",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Unit cost (scaled)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "total-cost-minor",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Posted cost (minor)",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 0
+        },
+        {
+          "fieldKey": "finance-cost-layer-id",
+          "entityKey": "inventory.posted-receipt-costs",
+          "label": "Finance layer",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-products",
+            "permission": "products:create"
+          }
+        },
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses",
+          "createWith": {
+            "moduleKey": "universal-inventory",
+            "surfaceKey": "inventory-warehouses",
+            "permission": "inventory:warehouses:manage"
+          }
+        },
+        {
+          "referenceKey": "location-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-locations"
+        },
+        {
+          "referenceKey": "finance-valuation-methods",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "STANDARD",
+              "label": "Standard cost"
+            },
+            {
+              "value": "FIFO",
+              "label": "FIFO"
+            },
+            {
+              "value": "AVERAGE",
+              "label": "Weighted average"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "posted-receipt-costs",
+          "label": "Posted receipt costs",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortField": "created-at",
+          "defaultSortDirection": "DESC",
+          "tabs": [
+            {
+              "tabKey": "posted-cost",
+              "label": "Posted cost",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "inventory.posted-receipt-costs",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "created-at",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "datetime-input"
+                },
+                {
+                  "fieldKey": "receipt-id",
+                  "position": 1,
+                  "span": 5,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "product-id",
+                  "position": 2,
+                  "span": 5,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "warehouse-id",
+                  "position": 3,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "location-id",
+                  "position": 4,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "valuation-method",
+                  "position": 5,
+                  "span": 3,
+                  "componentKey": "select"
+                },
+                {
+                  "fieldKey": "quantity",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "unit-cost-scaled",
+                  "position": 7,
+                  "span": 4,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "total-cost-minor",
+                  "position": 8,
+                  "span": 4,
+                  "componentKey": "number-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

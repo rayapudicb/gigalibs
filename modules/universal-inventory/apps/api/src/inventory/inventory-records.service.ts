@@ -6,12 +6,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { ModulePrincipal } from '@gigalibs/module-sdk';
+import { OrganizationReplica, assertOrganizationWrite, organizationAccess, type ModulePrincipal } from '@gigalibs/module-sdk';
 import type pg from 'pg';
-import { SCHEMA } from '../config.js';
+import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
 import {
   mapBalance,
+  mapCostLayer,
+  mapPostedReceiptCost,
+  mapReservation,
   mapItem,
   mapLedgerEntry,
   mapLocation,
@@ -24,7 +27,18 @@ import {
 // domain service. Every query is tenant-bound (forced RLS plus tenant_id), paged in SQL, and accepts only the columns
 // each entity declares for search, filter and sort; values are always bound parameters.
 
-export type InventoryEntity = 'warehouses' | 'locations' | 'items' | 'lots' | 'receipts' | 'receiptLines' | 'balances' | 'ledger';
+export type InventoryEntity =
+  | 'warehouses'
+  | 'locations'
+  | 'items'
+  | 'lots'
+  | 'receipts'
+  | 'receiptLines'
+  | 'balances'
+  | 'ledger'
+  | 'costLayers'
+  | 'postedReceiptCosts'
+  | 'reservations';
 
 export interface InventoryPageQuery {
   readonly page: number;
@@ -112,6 +126,14 @@ const SPECS: Readonly<Record<InventoryEntity, EntitySpec>> = {
     defaultSort: 'last_movement_at',
     map: (row) => ({ ...mapBalance(row) }),
   },
+  reservations: {
+    table: 'inventory_reservations',
+    search: ['demand_reference_id'],
+    filter: { warehouseId: 'warehouse_id', status: 'status', demandType: 'demand_type' },
+    sort: { createdAt: 'created_at' },
+    defaultSort: 'created_at',
+    map: (row) => ({ ...mapReservation(row) }),
+  },
   ledger: {
     table: 'stock_ledger_entries',
     search: [],
@@ -119,6 +141,22 @@ const SPECS: Readonly<Record<InventoryEntity, EntitySpec>> = {
     sort: { createdAt: 'created_at' },
     defaultSort: 'created_at',
     map: (row) => ({ ...mapLedgerEntry(row) }),
+  },
+  costLayers: {
+    table: 'inventory_cost_layers',
+    search: [],
+    filter: { productId: 'product_id', warehouseId: 'warehouse_id', valuationMethod: 'valuation_method' },
+    sort: { createdAt: 'created_at' },
+    defaultSort: 'created_at',
+    map: (row) => ({ ...mapCostLayer(row) }),
+  },
+  postedReceiptCosts: {
+    table: 'inventory_receipt_cost_records',
+    search: [],
+    filter: { productId: 'product_id', warehouseId: 'warehouse_id', valuationMethod: 'valuation_method' },
+    sort: { createdAt: 'created_at' },
+    defaultSort: 'created_at',
+    map: (row) => ({ ...mapPostedReceiptCost(row) }),
   },
 };
 
@@ -159,37 +197,72 @@ export class InventoryVersionConflict extends ConflictException {
 
 @Injectable()
 export class InventoryRecordsService {
+  private readonly orgReplica = new OrganizationReplica(SCHEMA);
+
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
+
+  private async readScope(
+    client: pg.PoolClient,
+    principal: ModulePrincipal,
+    entity: InventoryEntity,
+    values: unknown[],
+  ): Promise<string> {
+    const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+    if (access.denied) return 'FALSE';
+    if (access.readUnits === null) return 'TRUE';
+    if (entity === 'items' || entity === 'lots') return 'TRUE'; // tenant-shared product master data
+    const placeholder = `$${values.push([...access.readUnits])}::text[]`;
+    if (entity === 'warehouses') return `(t.org_unit_id IS NULL OR t.org_unit_id = ANY(${placeholder}))`;
+    if (entity === 'receiptLines') {
+      return `EXISTS (SELECT 1 FROM ${SCHEMA}.receipts r
+        JOIN ${SCHEMA}.warehouses w ON w.tenant_id = r.tenant_id AND w.id = r.warehouse_id
+        WHERE r.tenant_id = t.tenant_id AND r.id = t.receipt_id
+          AND (w.org_unit_id IS NULL OR w.org_unit_id = ANY(${placeholder})))`;
+    }
+    return `EXISTS (SELECT 1 FROM ${SCHEMA}.warehouses w
+      WHERE w.tenant_id = t.tenant_id AND w.id = t.warehouse_id
+        AND (w.org_unit_id IS NULL OR w.org_unit_id = ANY(${placeholder})))`;
+  }
+
+  private async assertWarehouseWrite(client: pg.PoolClient, principal: ModulePrincipal, warehouseId: string): Promise<void> {
+    const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+    const result = await client.query(
+      `SELECT org_unit_id FROM ${SCHEMA}.warehouses WHERE tenant_id = $1 AND id = $2`,
+      [principal.tenantId, warehouseId],
+    );
+    if (result.rowCount === 0) throw new NotFoundException('Warehouse not found.');
+    assertOrganizationWrite(access, result.rows[0].org_unit_id);
+  }
 
   page(principal: ModulePrincipal, entity: InventoryEntity, query: InventoryPageQuery): Promise<InventoryPage> {
     const spec = SPECS[entity];
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
-      const where = ['tenant_id = $1'];
+      const where = ['t.tenant_id = $1', await this.readScope(client, principal, entity, values)];
       if (query.parentId !== undefined) {
         if (!spec.parent) throw new BadRequestException(`${entity} has no parent.`);
         values.push(query.parentId);
-        where.push(`${spec.parent} = $${values.length}`);
+        where.push(`t.${spec.parent} = $${values.length}`);
       }
       if (query.search && spec.search.length > 0) {
         values.push(`%${query.search.replace(/[\\%_]/g, (character) => `\\${character}`)}%`);
-        where.push(`(${spec.search.map((column) => `${column} ILIKE $${values.length}`).join(' OR ')})`);
+        where.push(`(${spec.search.map((column) => `t.${column} ILIKE $${values.length}`).join(' OR ')})`);
       }
       for (const [field, value] of Object.entries(query.filters)) {
         const column = spec.filter[field];
         if (!column) throw new BadRequestException(`${entity} cannot be filtered by ${field}.`);
         values.push(value);
-        where.push(`${column} = $${values.length}`);
+        where.push(`t.${column} = $${values.length}`);
       }
       const sortColumn = query.sortField ? spec.sort[query.sortField] : spec.defaultSort;
       if (!sortColumn) throw new BadRequestException(`${entity} cannot be sorted by ${query.sortField}.`);
       const direction = query.sortDirection === 'DESC' ? 'DESC' : 'ASC';
       values.push(query.pageSize, (query.page - 1) * query.pageSize);
       const result = await client.query(
-        `SELECT *, count(*) OVER () AS total_rows
-           FROM ${SCHEMA}.${spec.table}
+        `SELECT t.*, count(*) OVER () AS total_rows
+           FROM ${SCHEMA}.${spec.table} t
           WHERE ${where.join(' AND ')}
-          ORDER BY ${sortColumn} ${direction}, id ASC
+          ORDER BY t.${sortColumn} ${direction}, t.id ASC
           LIMIT $${values.length - 1} OFFSET $${values.length}`,
         values,
       );
@@ -203,7 +276,7 @@ export class InventoryRecordsService {
   }
 
   private async count(client: pg.PoolClient, spec: EntitySpec, where: readonly string[], values: readonly unknown[]): Promise<number> {
-    const result = await client.query(`SELECT count(*)::int AS n FROM ${SCHEMA}.${spec.table} WHERE ${where.join(' AND ')}`, [...values]);
+    const result = await client.query(`SELECT count(*)::int AS n FROM ${SCHEMA}.${spec.table} t WHERE ${where.join(' AND ')}`, [...values]);
     return Number(result.rows[0]?.n ?? 0);
   }
 
@@ -211,7 +284,12 @@ export class InventoryRecordsService {
     if (!UUID.test(id)) return Promise.resolve(null);
     const spec = SPECS[entity];
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const result = await client.query(`SELECT * FROM ${SCHEMA}.${spec.table} WHERE tenant_id = $1 AND id = $2`, [principal.tenantId, id]);
+      const values: unknown[] = [principal.tenantId, id];
+      const scope = await this.readScope(client, principal, entity, values);
+      const result = await client.query(
+        `SELECT t.* FROM ${SCHEMA}.${spec.table} t WHERE t.tenant_id = $1 AND t.id = $2 AND ${scope}`,
+        values,
+      );
       return result.rows[0] ? spec.map(result.rows[0]) : null;
     });
   }
@@ -219,6 +297,7 @@ export class InventoryRecordsService {
   /** Changes a warehouse's descriptive fields when the caller holds its current version. */
   updateWarehouse(principal: ModulePrincipal, id: string, fields: UpdateWarehouseFields, expectedVersion: number) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await this.assertWarehouseWrite(client, principal, id);
       const result = await client.query(
         `UPDATE ${SCHEMA}.warehouses
             SET name = COALESCE($4, name),
@@ -243,7 +322,28 @@ export class InventoryRecordsService {
           principal.subject,
         ],
       );
-      if (result.rowCount === 1) return { ...mapWarehouse(result.rows[0]) };
+      if (result.rowCount === 1) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.audit_events (id, tenant_id, entity_type, entity_id, action, actor_id, payload)
+           VALUES ($1, $2, 'warehouse', $3, 'UPDATE', $4, $5::jsonb)`,
+          [randomUUID(), principal.tenantId, id, principal.subject, JSON.stringify({ name: fields.name, warehouseType: fields.warehouseType })],
+        );
+        await client.query(
+          `INSERT INTO ${SCHEMA}.outbox_events (
+             id, tenant_id, topic, event_type, aggregate_type, aggregate_id,
+             aggregate_version, correlation_id, schema_version, payload, status, created_at
+           ) VALUES ($1, $2, $3, 'inventory.warehouse.updated.v1', 'warehouse', $4, $5, $4, 1, $6, 'PENDING', now())`,
+          [
+            randomUUID(),
+            principal.tenantId,
+            TOPIC,
+            id,
+            expectedVersion + 1,
+            JSON.stringify({ warehouseId: id, updatedBy: principal.subject }),
+          ],
+        );
+        return { ...mapWarehouse(result.rows[0]) };
+      }
       const exists = await client.query(`SELECT 1 FROM ${SCHEMA}.warehouses WHERE tenant_id = $1 AND id = $2`, [principal.tenantId, id]);
       if (exists.rowCount === 0) throw new NotFoundException('Warehouse not found.');
       throw new InventoryVersionConflict();
@@ -253,8 +353,9 @@ export class InventoryRecordsService {
   /** Adds a line to a DRAFT receipt; a completed receipt cannot change. */
   addReceiptLine(principal: ModulePrincipal, receiptId: string, line: AddReceiptLineFields) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const receipt = await client.query(`SELECT status FROM ${SCHEMA}.receipts WHERE tenant_id = $1 AND id = $2 FOR UPDATE`, [principal.tenantId, receiptId]);
+      const receipt = await client.query(`SELECT status, warehouse_id FROM ${SCHEMA}.receipts WHERE tenant_id = $1 AND id = $2 FOR UPDATE`, [principal.tenantId, receiptId]);
       if (receipt.rowCount === 0) throw new NotFoundException('Receipt not found.');
+      await this.assertWarehouseWrite(client, principal, receipt.rows[0].warehouse_id);
       if (receipt.rows[0].status !== 'DRAFT') throw new ConflictException('Only a draft receipt can take new lines.');
       const next = await client.query(
         `SELECT COALESCE(MAX(line_number), 0) + 1 AS n FROM ${SCHEMA}.receipt_lines WHERE tenant_id = $1 AND receipt_id = $2`,
@@ -283,6 +384,17 @@ export class InventoryRecordsService {
         principal.tenantId,
         receiptId,
       ]);
+      const lineId = inserted.rows[0].id as string;
+      await client.query(
+        `INSERT INTO ${SCHEMA}.audit_events (id, tenant_id, entity_type, entity_id, action, actor_id, payload)
+         VALUES ($1, $2, 'receipt_line', $3, 'CREATE', $4, $5::jsonb)`,
+        [randomUUID(), principal.tenantId, lineId, principal.subject, JSON.stringify({ receiptId, productId: line.productId })],
+      );
+      await client.query(
+        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, event_type, payload, status, created_at)
+         VALUES ($1, $2, 'inventory.receipt.line.added.v1', $3::jsonb, 'PENDING', now())`,
+        [randomUUID(), principal.tenantId, JSON.stringify({ receiptId, lineId, productId: line.productId })],
+      );
       return SPECS.receiptLines.map(inserted.rows[0]);
     });
   }
@@ -291,17 +403,17 @@ export class InventoryRecordsService {
   lookup(principal: ModulePrincipal, entity: 'warehouses' | 'locations', request: { search?: string; ids?: readonly string[]; limit: number }) {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
-      const where = ['tenant_id = $1', 'active = true'];
+      const where = ['t.tenant_id = $1', 't.active = true', await this.readScope(client, principal, entity, values)];
       if (request.ids?.length) {
         values.push(request.ids);
-        where.push(`id = ANY($${values.length}::uuid[])`);
+        where.push(`t.id = ANY($${values.length}::uuid[])`);
       } else if (request.search) {
         values.push(`%${request.search.replace(/[\\%_]/g, (character) => `\\${character}`)}%`);
-        where.push(`(code ILIKE $${values.length} OR name ILIKE $${values.length})`);
+        where.push(`(t.code ILIKE $${values.length} OR t.name ILIKE $${values.length})`);
       }
       values.push(request.limit);
       const result = await client.query(
-        `SELECT id, code || ' — ' || name AS label FROM ${SCHEMA}.${entity} WHERE ${where.join(' AND ')} ORDER BY code ASC LIMIT $${values.length}`,
+        `SELECT t.id, t.code || ' — ' || t.name AS label FROM ${SCHEMA}.${entity} t WHERE ${where.join(' AND ')} ORDER BY t.code ASC LIMIT $${values.length}`,
         values,
       );
       return result.rows.map((row) => ({ value: String(row.id), label: String(row.label) }));

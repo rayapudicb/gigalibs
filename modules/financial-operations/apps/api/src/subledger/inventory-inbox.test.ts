@@ -20,6 +20,7 @@ function keyPair() {
 const inboxKeys = keyPair();
 const config = loadFinanceRelayConfig({ FINANCE_INBOX_RELAY_PUBLIC_KEY_BASE64: inboxKeys.publicBase64 });
 const TENANT = 'invtenant001';
+const FINANCE_PROFILE_ID = randomUUID();
 
 function receiptEnvelope(overrides: Record<string, unknown> = {}) {
   return {
@@ -36,6 +37,9 @@ function receiptEnvelope(overrides: Record<string, unknown> = {}) {
       receiptId: randomUUID(),
       receiptNumber: 'GR-120FQ-1',
       warehouseId: randomUUID(),
+      orgUnitId: 'operating-unit-a',
+      financeCostProfileId: FINANCE_PROFILE_ID,
+      valuationMethod: 'FIFO',
       receivedAt: '2026-10-18T00:00:00.000Z',
       lines: [
         {
@@ -86,9 +90,9 @@ describe('Finance inventory relay inbox guard', () => {
 });
 
 describe('Finance inventory subledger inbox', () => {
-  function inboxWith(options: { receiptInserted: boolean; costProfile?: { id: string; standard_unit_cost_scaled: string } }) {
+  function inboxWith(options: { receiptInserted: boolean; costProfile?: { id: string; standard_unit_cost_scaled: string; costing_method?: string } }) {
     const costing = {
-      ingestReceiptLayer: vi.fn(async () => ({})),
+      ingestReceiptLayer: vi.fn(async () => ({ id: randomUUID(), totalInitialCostMinor: '500' })),
       resolveProductStandardUnitCostScaled: vi.fn(async () =>
         options.costProfile ? options.costProfile.standard_unit_cost_scaled : null,
       ),
@@ -106,7 +110,7 @@ describe('Finance inventory subledger inbox', () => {
         }
         if (sql.includes('FROM gigalibs_finance.cost_profiles')) {
           return {
-            rows: options.costProfile ? [{ id: options.costProfile.id }] : [],
+            rows: options.costProfile ? [{ id: options.costProfile.id, costing_method: options.costProfile.costing_method ?? 'FIFO' }] : [],
             rowCount: options.costProfile ? 1 : 0,
           };
         }
@@ -156,13 +160,15 @@ describe('Finance inventory subledger inbox', () => {
     };
   }
 
-  it('ingests receipt layers when a default cost profile exists', async () => {
+  it('ingests receipt layers through the organization-selected Finance cost profile', async () => {
     const { inbox, costing, client } = inboxWith({
       receiptInserted: true,
-      costProfile: { id: randomUUID(), standard_unit_cost_scaled: '1000000000' },
+      costProfile: { id: FINANCE_PROFILE_ID, standard_unit_cost_scaled: '1000000000' },
     });
     const body = receiptEnvelope();
     await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'PROCESSED' });
+    expect(client.query.mock.calls.some(([sql, params]) => String(sql).includes('FROM gigalibs_finance.cost_profiles') &&
+      (params as unknown[])?.[1] === FINANCE_PROFILE_ID)).toBe(true);
     const outboxInserts = client.query.mock.calls.filter(
       ([sql]) => typeof sql === 'string' && sql.includes('INSERT INTO gigalibs_finance.outbox_events'),
     );
@@ -191,7 +197,7 @@ describe('Finance inventory subledger inbox', () => {
   it('treats a redelivered message as DUPLICATE without calling costing', async () => {
     const { inbox, costing } = inboxWith({
       receiptInserted: false,
-      costProfile: { id: randomUUID(), standard_unit_cost_scaled: '1000000000' },
+      costProfile: { id: FINANCE_PROFILE_ID, standard_unit_cost_scaled: '1000000000' },
     });
     const body = receiptEnvelope();
     await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'DUPLICATE' });
@@ -276,7 +282,7 @@ describe('Finance inventory subledger inbox', () => {
           return { rows: [{ id: 'period-1', status: 'OPEN', period_name: '2026-10' }] };
         }
         if (sql.includes('FROM gigalibs_finance.cost_profiles')) {
-          return { rows: [{ id: randomUUID() }], rowCount: 1 };
+          return { rows: [{ id: FINANCE_PROFILE_ID, costing_method: 'FIFO' }], rowCount: 1 };
         }
         if (sql.includes('product_standard_costs')) {
           return { rows: [{ standard_unit_cost_scaled: '1000000000' }], rowCount: 1 };
@@ -301,6 +307,9 @@ describe('Finance inventory subledger inbox', () => {
         receiptId: randomUUID(),
         receiptNumber: 'GR-MULTI',
         warehouseId: randomUUID(),
+        orgUnitId: 'operating-unit-a',
+        financeCostProfileId: FINANCE_PROFILE_ID,
+        valuationMethod: 'FIFO',
         receivedAt: '2026-10-18T00:00:00.000Z',
         lines: [
           { receiptLineId: line1, productId: randomUUID(), receivedQuantity: '2', uomId: randomUUID() },
@@ -330,5 +339,39 @@ describe('Finance inventory subledger inbox', () => {
         JSON.stringify(params ?? []).includes('POSTING_REJECTED'),
       ),
     ).toBe(true);
+  });
+
+  it('rejects a missing organization profile and a method mismatch before costing', async () => {
+    const { inbox, costing } = inboxWith({ receiptInserted: true,
+      costProfile: { id: FINANCE_PROFILE_ID, standard_unit_cost_scaled: '1000000000', costing_method: 'STANDARD' } });
+    const missing = receiptEnvelope({
+      payload: { ...receiptEnvelope().payload, financeCostProfileId: undefined },
+    });
+    await expect(inbox.receive(missing, JSON.stringify(missing))).resolves.toEqual({
+      status: 'REJECTED', code: 'FINANCE_ORG_COST_PROFILE_MISSING',
+    });
+    const mismatch = receiptEnvelope();
+    await expect(inbox.receive(mismatch, JSON.stringify(mismatch))).resolves.toEqual({
+      status: 'REJECTED', code: 'FINANCE_COST_METHOD_MISMATCH',
+    });
+    expect(costing.ingestReceiptLayer).not.toHaveBeenCalled();
+  });
+
+  it('checks every receipt line cost before posting any layer or journal', async () => {
+    const { inbox, costing } = inboxWith({ receiptInserted: true,
+      costProfile: { id: FINANCE_PROFILE_ID, standard_unit_cost_scaled: '1000000000' } });
+    costing.resolveProductStandardUnitCostScaled
+      .mockResolvedValueOnce('1000000000')
+      .mockResolvedValueOnce(null);
+    const base = receiptEnvelope();
+    const first = base.payload.lines[0]!;
+    const body = receiptEnvelope({ payload: {
+      ...base.payload,
+      lines: [first, { ...first, receiptLineId: randomUUID(), productId: randomUUID() }],
+    } });
+    await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({
+      status: 'REJECTED', code: 'FINANCE_STANDARD_COST_MISSING',
+    });
+    expect(costing.ingestReceiptLayer).not.toHaveBeenCalled();
   });
 });

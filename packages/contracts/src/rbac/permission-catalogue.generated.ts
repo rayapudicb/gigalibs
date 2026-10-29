@@ -791,61 +791,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
-    "code": "inventory:adjust",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:adjust:approve",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:count",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:counts:approve",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:issue",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:items:manage",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:kits:manage",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:kits:read",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
     "code": "inventory:ledger:read",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:putaway",
     "entries": [
       "universal-inventory"
     ]
@@ -860,26 +806,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "inventory:receive",
     "entries": [
-      "platform",
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:reserve",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:return",
-    "entries": [
-      "universal-inventory"
-    ]
-  },
-  {
-    "code": "inventory:transfer",
-    "entries": [
-      "universal-inventory"
+      "platform"
     ]
   },
   {
@@ -888,6 +815,114 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
       "universal-inventory",
       "universal-orders",
       "universal-procurement"
+    ]
+  },
+  {
+    "code": "inventory.adjust",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.adjust.approve",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.count",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.counts.approve",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.issue",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.items.manage",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.kits.manage",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.kits.read",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.ledger.read",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.putaway",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.read",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.receive",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.records.manage",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.records.read",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.reserve",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.return",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.transfer",
+    "entries": [
+      "universal-inventory"
+    ]
+  },
+  {
+    "code": "inventory.warehouses.manage",
+    "entries": [
+      "universal-inventory"
     ]
   },
   {

@@ -25,6 +25,7 @@ compose_modules_local_env_paths() {
   MODULE_HOST_ENV="${COMPOSE_DIR}/.env${suffix}.module.host"
   TEST_DATABASE_ENV="${COMPOSE_DIR}/.env.test.database"
   TABLE1_MODULE_ENVS=(
+    "${COMPOSE_DIR}/.env${suffix}.module.business-partners"
     "${COMPOSE_DIR}/.env${suffix}.module.financial-operations"
     "${COMPOSE_DIR}/.env${suffix}.module.product-catalogue"
     "${COMPOSE_DIR}/.env${suffix}.module.universal-procurement"

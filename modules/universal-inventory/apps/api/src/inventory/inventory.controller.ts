@@ -2,6 +2,7 @@ import {
   type ApproveAdjustmentInputV1,
   ApproveAdjustmentInputV1Schema,
   type BarcodeResolutionResultV1,
+  ResolveBarcodeInputV1Schema,
   type CountEntryV1,
   type CountPlanV1,
   type CreateCountPlanInputV1,
@@ -16,8 +17,10 @@ import {
   CreateLotInputV1Schema,
   type CreateReceiptInputV1,
   CreateReceiptInputV1Schema,
+  RetryReceiptPostingInputV1Schema,
   type CreateReservationInputV1,
   CreateReservationInputV1Schema,
+  IssueReservationInputV1Schema,
   type InventoryAtpCheckResponseV1,
   InventoryAtpCheckRequestV1Schema,
   type InventoryReserveReleaseResponseV1,
@@ -25,6 +28,11 @@ import {
   type CreateWarehouseInputV1,
   CreateWarehouseInputV1Schema,
   type InventoryAdjustmentV1,
+  type MaterialLedgerCostLayerV1,
+  type InventoryReceiptCostRecordV1,
+  type OrgValuationSettingV1,
+  UpsertOrgValuationSettingInputV1Schema,
+  type InventoryWarehouseMapCellV1,
   type InventoryItemV1,
   type InventoryKitV1,
   type InventoryLocationV1,
@@ -50,6 +58,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -64,13 +73,13 @@ export class InventoryController {
   // ─── Warehouses ─────────────────────────────────────────────────────────────
 
   @Get('warehouses')
-  @RequirePermissions('inventory:read')
+  @RequirePermissions('inventory.read')
   async listWarehouses(@CurrentPrincipal() principal: ModulePrincipal): Promise<InventoryWarehouseV1[]> {
     return this.service.listWarehouses(principal);
   }
 
   @Post('warehouses')
-  @RequirePermissions('inventory:warehouses:manage')
+  @RequirePermissions('inventory.warehouses.manage')
   async createWarehouse(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -80,7 +89,7 @@ export class InventoryController {
   }
 
   @Get('warehouses/:id')
-  @RequirePermissions('inventory:read')
+  @RequirePermissions('inventory.read')
   async getWarehouse(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
@@ -88,10 +97,19 @@ export class InventoryController {
     return this.service.getWarehouse(principal, id);
   }
 
+  @Get('warehouses/:id/location-map')
+  @RequirePermissions('inventory.read')
+  async getWarehouseLocationMap(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Param('id') id: string,
+  ): Promise<InventoryWarehouseMapCellV1[]> {
+    return this.service.getWarehouseLocationMap(principal, id);
+  }
+
   // ─── Locations ──────────────────────────────────────────────────────────────
 
   @Get('locations')
-  @RequirePermissions('inventory:read')
+  @RequirePermissions('inventory.read')
   async listLocations(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Query('warehouseId') warehouseId?: string,
@@ -100,7 +118,7 @@ export class InventoryController {
   }
 
   @Post('locations')
-  @RequirePermissions('inventory:warehouses:manage')
+  @RequirePermissions('inventory.warehouses.manage')
   async createLocation(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -112,7 +130,7 @@ export class InventoryController {
   // ─── Items ──────────────────────────────────────────────────────────────────
 
   @Post('items')
-  @RequirePermissions('inventory:items:manage')
+  @RequirePermissions('inventory.items.manage')
   async createItem(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -124,7 +142,7 @@ export class InventoryController {
   // ─── Lots ───────────────────────────────────────────────────────────────────
 
   @Post('lots')
-  @RequirePermissions('inventory:receive')
+  @RequirePermissions('inventory.receive')
   async createLot(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -135,8 +153,26 @@ export class InventoryController {
 
   // ─── Balances & Ledger ──────────────────────────────────────────────────────
 
+  @Get('cost-layers')
+  @RequirePermissions('inventory.ledger.read')
+  async listCostLayers(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Query('productId') productId?: string,
+  ): Promise<MaterialLedgerCostLayerV1[]> {
+    return this.service.listCostLayers(principal, productId);
+  }
+
+  @Get('posted-receipt-costs')
+  @RequirePermissions('inventory.ledger.read')
+  async listPostedReceiptCosts(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Query('productId') productId?: string,
+  ): Promise<InventoryReceiptCostRecordV1[]> {
+    return this.service.listPostedReceiptCosts(principal, productId);
+  }
+
   @Get('balances')
-  @RequirePermissions('inventory:read')
+  @RequirePermissions('inventory.read')
   async listBalances(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Query('warehouseId') warehouseId?: string,
@@ -145,7 +181,7 @@ export class InventoryController {
   }
 
   @Get('ledger')
-  @RequirePermissions('inventory:ledger:read')
+  @RequirePermissions('inventory.ledger.read')
   async listLedger(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Query('productId') productId?: string,
@@ -156,19 +192,31 @@ export class InventoryController {
   // ─── Movements ──────────────────────────────────────────────────────────────
 
   @Post('movements')
-  @RequirePermissions('inventory:transfer')
+  @RequirePermissions('inventory.transfer')
   async postMovement(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
   ): Promise<{ transaction: StockLedgerTransactionV1; entries: StockLedgerEntryV1[] }> {
     const input = parse(PostStockMovementInputV1Schema, body);
+    if (input.documentType === 'STOCK_REVERSAL') {
+      throw new BadRequestException('Use the stock movement reversal action.');
+    }
     return this.service.postMovement(principal, input);
+  }
+
+  @Post('movements/:id/reverse')
+  @RequirePermissions('inventory.transfer')
+  async reverseMovement(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Param('id') id: string,
+  ): Promise<{ transaction: StockLedgerTransactionV1; entries: StockLedgerEntryV1[] }> {
+    return this.service.reverseMovement(principal, id);
   }
 
   // ─── Receipts ───────────────────────────────────────────────────────────────
 
   @Get('receipts')
-  @RequirePermissions('inventory:read')
+  @RequirePermissions('inventory.read')
   async listReceipts(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Query('id') id?: string,
@@ -178,7 +226,7 @@ export class InventoryController {
   }
 
   @Post('receipts')
-  @RequirePermissions('inventory:receive')
+  @RequirePermissions('inventory.receive')
   async createReceipt(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -188,7 +236,7 @@ export class InventoryController {
   }
 
   @Post('receipts/:id/complete')
-  @RequirePermissions('inventory:receive')
+  @RequirePermissions('inventory.receive')
   async completeReceipt(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
@@ -196,10 +244,45 @@ export class InventoryController {
     return this.service.completeReceipt(principal, id);
   }
 
+  @Post('receipts/:id/retry-posting')
+  @RequirePermissions('inventory.receive')
+  async retryReceiptPosting(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<InventoryReceiptV1> {
+    const input = parse(RetryReceiptPostingInputV1Schema, body);
+    return this.service.retryReceiptFinancePosting(principal, id, input.requestKey);
+  }
+
+  // ─── Org valuation (Material Ledger S4) ─────────────────────────────────────
+
+  @Get('valuation-settings')
+  @RequirePermissions('inventory.items.manage')
+  async getOrgValuationSetting(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Query('orgUnitId') orgUnitId: string,
+  ): Promise<OrgValuationSettingV1> {
+    if (!orgUnitId?.trim()) {
+      throw new BadRequestException({ code: 'UNIVERSAL_INVENTORY_VALIDATION_FAILED', message: 'orgUnitId is required.' });
+    }
+    return this.service.getOrgValuationSetting(principal, orgUnitId.trim());
+  }
+
+  @Put('valuation-settings')
+  @RequirePermissions('inventory.items.manage')
+  async upsertOrgValuationSetting(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Body() body: unknown,
+  ): Promise<OrgValuationSettingV1> {
+    const input = parse(UpsertOrgValuationSettingInputV1Schema, body);
+    return this.service.upsertOrgValuationSetting(principal, input.orgUnitId, input);
+  }
+
   // ─── ATP ────────────────────────────────────────────────────────────────────
 
   @Post('atp/check')
-  @RequirePermissions('inventory:read')
+  @RequirePermissions('inventory.read')
   async checkAtp(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -209,7 +292,7 @@ export class InventoryController {
   }
 
   @Post('reserve-release')
-  @RequirePermissions('inventory:reserve')
+  @RequirePermissions('inventory.reserve')
   async reserveRelease(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -220,8 +303,14 @@ export class InventoryController {
 
   // ─── Reservations ───────────────────────────────────────────────────────────
 
+  @Get('reservations')
+  @RequirePermissions('inventory.read')
+  async listReservations(@CurrentPrincipal() principal: ModulePrincipal): Promise<InventoryReservationV1[]> {
+    return this.service.listReservations(principal);
+  }
+
   @Post('reservations')
-  @RequirePermissions('inventory:reserve')
+  @RequirePermissions('inventory.reserve')
   async createReservation(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -231,7 +320,7 @@ export class InventoryController {
   }
 
   @Post('reservations/:id/release')
-  @RequirePermissions('inventory:reserve')
+  @RequirePermissions('inventory.reserve')
   async releaseReservation(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
@@ -240,25 +329,23 @@ export class InventoryController {
   }
 
   @Post('reservations/:id/issue')
-  @RequirePermissions('inventory:reserve')
+  @RequirePermissions('inventory.issue')
   async issueStock(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: unknown,
   ) {
+    const input = parse(IssueReservationInputV1Schema, body);
     return this.service.issueStockForOrderFulfillment(principal, {
       reservationId: id,
-      orderId: body?.orderId,
-      fulfillmentId: body?.fulfillmentId,
-      quantity: body?.quantity,
-      correlationId: body?.correlationId,
+      ...input,
     });
   }
 
   // ─── Kits & Staging (CMMS) ──────────────────────────────────────────────────
 
   @Post('kits')
-  @RequirePermissions('inventory:kits:manage')
+  @RequirePermissions('inventory.kits.manage')
   async createKit(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -268,7 +355,7 @@ export class InventoryController {
   }
 
   @Get('kits/:id')
-  @RequirePermissions('inventory:kits:read')
+  @RequirePermissions('inventory.kits.read')
   async getKit(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
@@ -277,7 +364,7 @@ export class InventoryController {
   }
 
   @Post('kits/:id/stage')
-  @RequirePermissions('inventory:kits:manage')
+  @RequirePermissions('inventory.kits.manage')
   async stageKit(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
@@ -288,7 +375,7 @@ export class InventoryController {
   }
 
   @Post('kits/:id/issue')
-  @RequirePermissions('inventory:issue')
+  @RequirePermissions('inventory.issue')
   async issueKit(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
@@ -301,7 +388,7 @@ export class InventoryController {
   // ─── Cycle Counts & Adjustments ─────────────────────────────────────────────
 
   @Post('count-plans')
-  @RequirePermissions('inventory:counts:approve')
+  @RequirePermissions('inventory.counts.approve')
   async createCountPlan(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Body() body: unknown,
@@ -311,7 +398,7 @@ export class InventoryController {
   }
 
   @Post('count-entries')
-  @RequirePermissions('inventory:count')
+  @RequirePermissions('inventory.count')
   async submitCountEntry(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Query('countPlanId') countPlanId: string,
@@ -323,7 +410,7 @@ export class InventoryController {
   }
 
   @Post('adjustments/:id/approve')
-  @RequirePermissions('inventory:adjust:approve')
+  @RequirePermissions('inventory.adjust.approve')
   async approveAdjustment(
     @CurrentPrincipal() principal: ModulePrincipal,
     @Param('id') id: string,
@@ -336,13 +423,13 @@ export class InventoryController {
   // ─── Barcode Resolution ─────────────────────────────────────────────────────
 
   @Post('barcodes/resolve')
-  @RequirePermissions('inventory:read')
+  @RequirePermissions('inventory.read')
   async resolveBarcode(
     @CurrentPrincipal() principal: ModulePrincipal,
-    @Body() body: { rawCode: string },
+    @Body() body: unknown,
   ): Promise<BarcodeResolutionResultV1> {
-    if (!body?.rawCode) throw new BadRequestException('rawCode is required.');
-    return this.service.resolveBarcode(principal, body.rawCode);
+    const input = parse(ResolveBarcodeInputV1Schema, body);
+    return this.service.resolveBarcode(principal, input.rawCode);
   }
 }
 

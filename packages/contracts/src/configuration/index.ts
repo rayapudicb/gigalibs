@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { permissionParts } from '../rbac/permission-match.js';
 import { GovernedCatalogueDefinitionSchema } from './catalogue.js';
 import {
   DictionaryChangeSetDefinitionSchema,
@@ -109,12 +110,13 @@ export const ConfigurationOptionSchema = z
 
 export type ConfigurationOption = z.infer<typeof ConfigurationOptionSchema>;
 
+/** Window and record metadata permissions — same family/action parts as tenant grants (colon or dot). */
 export const ConfigurationPermissionSchema = z
   .string()
   .trim()
   .min(3)
   .max(120)
-  .regex(/^[a-z][a-z0-9-]*:(?:\*|[a-z][a-z0-9-]*)$/, 'Use a registered resource:action permission');
+  .refine((code) => permissionParts(code) !== null, 'Use a registered permission code');
 
 export const ConfigurationConditionOperatorSchema = z.enum([
   'EQUALS',

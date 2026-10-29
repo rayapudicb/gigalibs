@@ -56,6 +56,11 @@ try {
     );
   }
 
+  // Later additive migrations may grant a newly-created table or function to
+  // the runtime role. The role must exist before those migration statements run;
+  // its table privileges are still finalized only after all migrations succeed.
+  await ensureRuntimeRole(admin, runtimeRole, runtimePassword);
+
   for (const [index, filename] of migrationFiles.entries()) {
     const version = versions[index];
     if (version <= currentVersion) continue;
@@ -126,18 +131,7 @@ async function provisionRuntimeRole(
   client,
   { database, schema: schemaName, role, password, appendOnlyTables: appendOnly, readOnlyTables: readOnly },
 ) {
-  const roleSql = await formattedSql(
-    client,
-    "SELECT format('CREATE ROLE %I LOGIN PASSWORD %L NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION', $1::text, $2::text) AS sql",
-    [role, password],
-  );
-  const alterSql = await formattedSql(
-    client,
-    "SELECT format('ALTER ROLE %I WITH LOGIN PASSWORD %L NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION', $1::text, $2::text) AS sql",
-    [role, password],
-  );
-  const exists = await client.query('SELECT 1 FROM pg_roles WHERE rolname = $1', [role]);
-  await client.query(exists.rowCount === 0 ? roleSql : alterSql);
+  await ensureRuntimeRole(client, role, password);
 
   const roleIdent = quoted(role);
   const schemaIdent = quoted(schemaName);
@@ -173,6 +167,21 @@ async function provisionRuntimeRole(
       `REVOKE UPDATE, DELETE, TRUNCATE ON ${schemaIdent}.${quoted(table)} FROM ${roleIdent}`,
     );
   }
+}
+
+async function ensureRuntimeRole(client, role, password) {
+  const roleSql = await formattedSql(
+    client,
+    "SELECT format('CREATE ROLE %I LOGIN PASSWORD %L NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION', $1::text, $2::text) AS sql",
+    [role, password],
+  );
+  const alterSql = await formattedSql(
+    client,
+    "SELECT format('ALTER ROLE %I WITH LOGIN PASSWORD %L NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION', $1::text, $2::text) AS sql",
+    [role, password],
+  );
+  const exists = await client.query('SELECT 1 FROM pg_roles WHERE rolname = $1', [role]);
+  await client.query(exists.rowCount === 0 ? roleSql : alterSql);
 }
 
 async function formattedSql(client, query, params) {

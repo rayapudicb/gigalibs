@@ -1,0 +1,239 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/inventory",
+    "label": "Warehouse map",
+    "description": "Locator grid with live quantities and lot expiry hints.",
+    "readPermission": "inventory:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "universal-inventory",
+    "entityKey": "inventory-warehouse-map",
+    "surfaceKey": "inventory-warehouse-map",
+    "title": "Warehouse map",
+    "dictionary": {
+      "packageKey": "inventory-warehouse-map-module-baseline",
+      "name": "Warehouse map",
+      "version": "1.0.0",
+      "moduleKey": "universal-inventory",
+      "targetEntityKey": "inventory.warehouse-map",
+      "entities": [
+        {
+          "entityKey": "inventory.warehouse-map",
+          "moduleKey": "universal-inventory",
+          "label": "Warehouse map",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "warehouse-id",
+          "entityKey": "inventory.warehouse-map",
+          "label": "Warehouse",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "warehouse-ref"
+        },
+        {
+          "fieldKey": "location-id",
+          "entityKey": "inventory.warehouse-map",
+          "label": "Location",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "location-ref"
+        },
+        {
+          "fieldKey": "aisle",
+          "entityKey": "inventory.warehouse-map",
+          "label": "Aisle",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "rack",
+          "entityKey": "inventory.warehouse-map",
+          "label": "Rack",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "shelf",
+          "entityKey": "inventory.warehouse-map",
+          "label": "Shelf",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "bin",
+          "entityKey": "inventory.warehouse-map",
+          "label": "Bin",
+          "type": "TEXT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "on-hand-quantity",
+          "entityKey": "inventory.warehouse-map",
+          "label": "On hand",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 3
+        },
+        {
+          "fieldKey": "available-quantity",
+          "entityKey": "inventory.warehouse-map",
+          "label": "Available",
+          "type": "NUMBER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "scale": 3
+        },
+        {
+          "fieldKey": "nearest-lot-expiry",
+          "entityKey": "inventory.warehouse-map",
+          "label": "Nearest expiry",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses",
+          "createWith": {
+            "moduleKey": "universal-inventory",
+            "surfaceKey": "inventory-warehouses",
+            "permission": "inventory:warehouses:manage"
+          }
+        },
+        {
+          "referenceKey": "location-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-locations"
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "warehouse-map",
+          "label": "Warehouse map",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortField": "aisle",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "map",
+              "label": "Map",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "inventory.warehouse-map",
+              "sections": [],
+              "fields": [
+                {
+                  "fieldKey": "warehouse-id",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "location-id",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "lookup"
+                },
+                {
+                  "fieldKey": "aisle",
+                  "position": 2,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "rack",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "shelf",
+                  "position": 4,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "bin",
+                  "position": 5,
+                  "span": 2,
+                  "componentKey": "text-input"
+                },
+                {
+                  "fieldKey": "on-hand-quantity",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "available-quantity",
+                  "position": 7,
+                  "span": 3,
+                  "componentKey": "number-input"
+                },
+                {
+                  "fieldKey": "nearest-lot-expiry",
+                  "position": 8,
+                  "span": 4,
+                  "componentKey": "datetime-input"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "navigation": [],
+      "actions": [],
+      "messages": []
+    }
+  }
+}

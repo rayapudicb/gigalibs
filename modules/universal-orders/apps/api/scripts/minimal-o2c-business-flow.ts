@@ -68,6 +68,7 @@ try {
     db,
     { check: async () => ({ decision: 'APPROVED' }) } as never,
     { check: async () => ({ decision: 'AVAILABLE', onHandQuantity: '0', reservedQuantity: '0', availableQuantity: '0' }) } as never,
+    { execute: async () => ({ outcome: 'RESERVED', commandKey: '00000000-0000-4000-a000-000000000001', reservationId: '00000000-0000-4000-a000-000000000002' }) } as never,
   );
   const tenantId = 'tenant-alpha';
   const subject = 'usr-sales';

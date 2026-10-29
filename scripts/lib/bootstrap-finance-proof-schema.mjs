@@ -50,7 +50,9 @@ export async function bootstrapFinanceProofSchema(adminUrl) {
 
   const runtimePassword = randomUUID().replaceAll('-', '');
   const runtimeUrl = new URL(adminUrl);
-  runtimeUrl.username = `${module.schema}_proof`;
+  // Finance migrations 000012–000015 GRANT to the canonical gigalibs_finance_runtime role, so the runner
+  // must create and connect as that exact role (the stale `_proof` name made those grants fail with 42704).
+  runtimeUrl.username = `${module.schema}_runtime`;
   runtimeUrl.password = runtimePassword;
 
   const run = spawnSync(process.execPath, [join(work, 'run.mjs')], {

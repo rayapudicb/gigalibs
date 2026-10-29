@@ -37,6 +37,19 @@ spec:
         component: UniversalInventoryWorkspace
         # WI-OI-120e (U3.2): the dictionary renderer gets the signed-in user's permissions.
         sessionPermissions: true
+  conformance:
+    collection: v1/records/inventory.warehouses
+    grantedScopes:
+      - inventory.read
+      - inventory.records.read
+      - inventory.records.manage
+      - inventory.warehouses.manage
+    create:
+      code: CONC-PROBE
+      name: Conformance probe warehouse
+      warehouse-type: PHYSICAL
+    update:
+      name: Conformance probe warehouse updated
   api:
     application: apps/api
     port: 4790
@@ -52,11 +65,16 @@ spec:
       - inventory.stock.moved.v1
       - inventory.balance.changed.v1
       - inventory.reservation.changed.v1
+      - inventory.stock.issued.v1
+      - inventory.valuation.setting.updated.v1
       - inventory.kit.staged.v1
       - inventory.kit.issued.v1
       - inventory.count.closed.v1
       - inventory.adjustment.approved.v1
     consumes:
+      - finance.inventory-receipt.posting-outcome.v1
+      - finance.fiscal-period.state-changed.v1
+      - finance.fiscal-period.snapshot-completed.v1
       - platform.authorization.revoked.v1
       - platform.organization.version.v1
       - product.created.v1
@@ -89,7 +107,7 @@ spec:
       maturity: CORE_IMPLEMENTED
       entitlementEligible: true
       trialEligible: false
-      requiredPermission: inventory:read
+      requiredPermission: inventory.read
       platformInspection: true
       reason: Material Ledger parity (WI-OI-124) extends the WI-OI-091 inventory boundary; remains PLANNED until live module conformance and independent review are recorded.
       navigationOrder: 126
@@ -98,11 +116,11 @@ spec:
         - key: inventory-operator
           name: Inventory Operator
           description: Executes warehouse receiving, putaway, transfers, picks, kitting and counts.
-          permissions: [inventory:read, inventory:receive, inventory:putaway, inventory:transfer, inventory:issue, inventory:return, inventory:count, 'inventory:kits:read']
+          permissions: [inventory.read, inventory.receive, inventory.putaway, inventory.transfer, inventory.issue, inventory.return, inventory.count, 'inventory.kits.read']
         - key: inventory-controller
           name: Inventory Controller
           description: Manages warehouses, locations, reservations, kits, and four-eyes count adjustments.
-          permissions: [inventory:read, 'inventory:ledger:read', 'inventory:warehouses:manage', 'inventory:items:manage', inventory:reserve, 'inventory:counts:approve', inventory:adjust, 'inventory:adjust:approve', 'inventory:kits:manage']
+          permissions: [inventory.read, 'inventory.ledger.read', 'inventory.warehouses.manage', 'inventory.items.manage', inventory.reserve, 'inventory.counts.approve', inventory.adjust, 'inventory.adjust.approve', 'inventory.kits.manage']
   gateway:
     basePaths: [/api/universal-inventory]
     catalogKey: universal-inventory
@@ -116,27 +134,36 @@ spec:
     # WI-OI-120f (F0.3/F0.5): the module SDK's record routes for metadata windows and lookups.
     records: true
     routes:
-      - { path: 'v1/warehouses', GET: inventory:read, POST: 'inventory:warehouses:manage' }
-      - { path: 'v1/warehouses/{id}', GET: inventory:read, PATCH: 'inventory:warehouses:manage' }
-      - { path: 'v1/locations', GET: inventory:read, POST: 'inventory:warehouses:manage' }
-      - { path: 'v1/items', GET: inventory:read, POST: 'inventory:items:manage' }
-      - { path: 'v1/lots', GET: inventory:read, POST: inventory:receive }
-      - { path: 'v1/atp/check', POST: inventory:read }
-      - { path: 'v1/reserve-release', POST: inventory:reserve }
-      - { path: 'v1/balances', GET: inventory:read }
-      - { path: 'v1/ledger', GET: 'inventory:ledger:read' }
-      - { path: 'v1/movements', POST: inventory:transfer }
-      - { path: 'v1/receipts', GET: inventory:read, POST: inventory:receive }
-      - { path: 'v1/receipts/{id}/complete', POST: inventory:receive }
-      - { path: 'v1/transfers', GET: inventory:read, POST: inventory:transfer }
-      - { path: 'v1/reservations', GET: inventory:read, POST: inventory:reserve }
-      - { path: 'v1/reservations/{id}/release', POST: inventory:reserve }
-      - { path: 'v1/kits', GET: 'inventory:kits:read', POST: 'inventory:kits:manage' }
-      - { path: 'v1/kits/{id}/stage', POST: 'inventory:kits:manage' }
-      - { path: 'v1/kits/{id}/issue', POST: inventory:issue }
-      - { path: 'v1/kits/{id}/return', POST: inventory:return }
-      - { path: 'v1/count-plans', GET: inventory:read, POST: 'inventory:counts:approve' }
-      - { path: 'v1/count-entries', POST: inventory:count }
-      - { path: 'v1/adjustments', GET: inventory:read, POST: inventory:adjust }
-      - { path: 'v1/adjustments/{id}/approve', POST: 'inventory:adjust:approve' }
-      - { path: 'v1/barcodes/resolve', POST: inventory:read }
+      - { path: 'v1/records', GET: inventory.records.read, POST: inventory.records.manage }
+      - { path: 'v1/records/{id}', GET: inventory.records.read, PATCH: inventory.records.manage }
+      - { path: 'v1/warehouses', GET: inventory.read, POST: 'inventory.warehouses.manage' }
+      - { path: 'v1/warehouses/{id}', GET: inventory.read, PATCH: 'inventory.warehouses.manage' }
+      - { path: 'v1/warehouses/{id}/location-map', GET: inventory.read }
+      - { path: 'v1/cost-layers', GET: 'inventory.ledger.read' }
+      - { path: 'v1/posted-receipt-costs', GET: 'inventory.ledger.read' }
+      - { path: 'v1/valuation-settings', GET: 'inventory.items.manage', PUT: 'inventory.items.manage' }
+      - { path: 'v1/locations', GET: inventory.read, POST: 'inventory.warehouses.manage' }
+      - { path: 'v1/items', GET: inventory.read, POST: 'inventory.items.manage' }
+      - { path: 'v1/lots', GET: inventory.read, POST: inventory.receive }
+      - { path: 'v1/atp/check', POST: inventory.read }
+      - { path: 'v1/reserve-release', POST: inventory.reserve }
+      - { path: 'v1/balances', GET: inventory.read }
+      - { path: 'v1/ledger', GET: 'inventory.ledger.read' }
+      - { path: 'v1/movements', POST: inventory.transfer }
+      - { path: 'v1/movements/{id}/reverse', POST: inventory.transfer }
+      - { path: 'v1/receipts', GET: inventory.read, POST: inventory.receive }
+      - { path: 'v1/receipts/{id}/complete', POST: inventory.receive }
+      - { path: 'v1/receipts/{id}/retry-posting', POST: inventory.receive }
+      - { path: 'v1/transfers', GET: inventory.read, POST: inventory.transfer }
+      - { path: 'v1/reservations', GET: inventory.read, POST: inventory.reserve }
+      - { path: 'v1/reservations/{id}/release', POST: inventory.reserve }
+      - { path: 'v1/reservations/{id}/issue', POST: inventory.issue }
+      - { path: 'v1/kits', GET: 'inventory.kits.read', POST: 'inventory.kits.manage' }
+      - { path: 'v1/kits/{id}/stage', POST: 'inventory.kits.manage' }
+      - { path: 'v1/kits/{id}/issue', POST: inventory.issue }
+      - { path: 'v1/kits/{id}/return', POST: inventory.return }
+      - { path: 'v1/count-plans', GET: inventory.read, POST: 'inventory.counts.approve' }
+      - { path: 'v1/count-entries', POST: inventory.count }
+      - { path: 'v1/adjustments', GET: inventory.read, POST: inventory.adjust }
+      - { path: 'v1/adjustments/{id}/approve', POST: 'inventory.adjust.approve' }
+      - { path: 'v1/barcodes/resolve', POST: inventory.read }

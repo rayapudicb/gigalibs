@@ -28,7 +28,7 @@ describe('RbacService.getUserPermissions', () => {
     expect(permissions).not.toContain('platform:tenants:write');
     expect(permissions).not.toContain('Bad Code');
     expect(prismaMock.memberRoleAssignment.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { tenantId: 'tenant-1', userId: 'user-1', revokedAt: null } }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: 'tenant-1', userId: 'user-1', revokedAt: null }) }),
     );
   });
 

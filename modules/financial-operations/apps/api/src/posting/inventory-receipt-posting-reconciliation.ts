@@ -55,8 +55,15 @@ export async function summarizeInventoryReceiptPostingInbox(
   );
 
   const failed = await client.query<{ message_id: string; last_error_code: string | null }>(
-    `SELECT message_id, last_error_code FROM ${schema}.inbox_receipts
+    `SELECT message_id, last_error_code FROM ${schema}.inbox_receipts ir
       WHERE tenant_id = $1 AND consumer_name = $2 AND event_type = $3 AND status = 'FAILED'${periodFilter}
+        AND NOT EXISTS (
+          SELECT 1 FROM ${schema}.outbox_events posted
+           WHERE posted.tenant_id = ir.tenant_id
+             AND posted.event_type = 'finance.inventory-receipt.posting-outcome.v1'
+             AND posted.aggregate_id = ir.raw_body::jsonb ->> 'aggregateId'
+             AND posted.payload ->> 'status' = 'POSTED'
+        )
       ORDER BY created_at DESC
       LIMIT 200`,
     [tenantId, CONSUMER, eventType, ...periodParams],

@@ -259,6 +259,86 @@ export const StockBalanceV1Schema = z
   .strict();
 export type StockBalanceV1 = z.infer<typeof StockBalanceV1Schema>;
 
+/** WI-OI-124: warehouse map cell (locator grid + live quantities). */
+export const InventoryWarehouseMapCellV1Schema = z
+  .object({
+    locationId: z.string().uuid(),
+    code: z.string().min(1).max(64),
+    name: z.string().min(1).max(200),
+    aisle: z.string().max(32).optional().nullable(),
+    rack: z.string().max(32).optional().nullable(),
+    shelf: z.string().max(32).optional().nullable(),
+    bin: z.string().max(32).optional().nullable(),
+    onHandQuantity: DecimalQuantitySchema,
+    reservedQuantity: DecimalQuantitySchema,
+    availableQuantity: DecimalQuantitySchema,
+    nearestLotExpiry: z.string().datetime().optional().nullable(),
+  })
+  .strict();
+export type InventoryWarehouseMapCellV1 = z.infer<typeof InventoryWarehouseMapCellV1Schema>;
+
+/** WI-OI-124: append-only valuation layer mirrored from ledger debits (Material Ledger; not Finance FIFO layers). */
+export const MaterialLedgerCostLayerV1Schema = z
+  .object({
+    id: z.string().uuid(),
+    tenantId: z.string().min(1).max(64),
+    ledgerEntryId: z.string().uuid(),
+    transactionId: z.string().uuid(),
+    warehouseId: z.string().uuid(),
+    locationId: z.string().uuid(),
+    productId: z.string().uuid(),
+    uomId: z.string().uuid(),
+    lotId: z.string().uuid().optional().nullable(),
+    valuationMethod: z.enum(['STANDARD', 'MOVING_AVERAGE', 'FIFO']),
+    quantity: DecimalQuantitySchema,
+    unitCostMinor: MoneyMinorSchema,
+    totalCostMinor: MoneyMinorSchema,
+    orgUnitId: z.string().max(64).optional().nullable(),
+    createdAt: z.string().datetime(),
+  })
+  .strict();
+export type MaterialLedgerCostLayerV1 = z.infer<typeof MaterialLedgerCostLayerV1Schema>;
+
+/** Finance-posted receipt cost, projected through the signed Finance → Inventory inbox. */
+export const InventoryReceiptCostRecordV1Schema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().min(1).max(64),
+  receiptId: z.string().uuid(),
+  receiptLineId: z.string().uuid(),
+  financeCostLayerId: z.string().uuid(),
+  warehouseId: z.string().uuid(),
+  locationId: z.string().uuid(),
+  productId: z.string().uuid(),
+  orgUnitId: z.string().max(64).nullable(),
+  valuationMethod: z.enum(['STANDARD', 'FIFO', 'AVERAGE']),
+  quantity: DecimalQuantitySchema,
+  unitCostScaled: z.string().regex(/^\d+$/),
+  totalCostMinor: MoneyMinorSchema,
+  createdAt: z.string().datetime(),
+}).strict();
+export type InventoryReceiptCostRecordV1 = z.infer<typeof InventoryReceiptCostRecordV1Schema>;
+
+export const UpsertOrgValuationSettingInputV1Schema = z
+  .object({
+    orgUnitId: z.string().min(1).max(64),
+    valuationMethod: z.enum(['STANDARD', 'MOVING_AVERAGE', 'FIFO']),
+    financeCostProfileId: z.string().uuid(),
+  })
+  .strict();
+export type UpsertOrgValuationSettingInputV1 = z.infer<typeof UpsertOrgValuationSettingInputV1Schema>;
+
+export const OrgValuationSettingV1Schema = z
+  .object({
+    tenantId: z.string().min(1).max(64),
+    orgUnitId: z.string().min(1).max(64),
+    valuationMethod: z.enum(['STANDARD', 'MOVING_AVERAGE', 'FIFO']),
+    financeCostProfileId: z.string().uuid().nullable(),
+    updatedAt: z.string().datetime(),
+    updatedBy: z.string().min(1).max(128),
+  })
+  .strict();
+export type OrgValuationSettingV1 = z.infer<typeof OrgValuationSettingV1Schema>;
+
 export const InventoryReservationV1Schema = z
   .object({
     id: z.string().uuid(),
@@ -483,6 +563,11 @@ export const BarcodeResolutionResultV1Schema = z
   .strict();
 export type BarcodeResolutionResultV1 = z.infer<typeof BarcodeResolutionResultV1Schema>;
 
+export const ResolveBarcodeInputV1Schema = z.object({
+  rawCode: z.string().trim().min(1).max(128),
+}).strict();
+export type ResolveBarcodeInputV1 = z.infer<typeof ResolveBarcodeInputV1Schema>;
+
 export const InventoryReferenceMappingV1Schema = z
   .object({
     id: z.string().uuid(),
@@ -611,6 +696,14 @@ export const CreateReservationInputV1Schema = z
   .strict();
 export type CreateReservationInputV1 = z.infer<typeof CreateReservationInputV1Schema>;
 
+export const IssueReservationInputV1Schema = z.object({
+  orderId: z.string().uuid(),
+  fulfillmentId: z.string().uuid(),
+  quantity: PositiveDecimalQuantitySchema.optional(),
+  correlationId: z.string().min(1).max(128).optional(),
+}).strict();
+export type IssueReservationInputV1 = z.infer<typeof IssueReservationInputV1Schema>;
+
 export const CreateKitInputV1Schema = z
   .object({
     workOrderId: z.string().max(128),
@@ -667,6 +760,11 @@ export const CreateReceiptInputV1Schema = z
   })
   .strict();
 export type CreateReceiptInputV1 = z.infer<typeof CreateReceiptInputV1Schema>;
+
+export const RetryReceiptPostingInputV1Schema = z.object({
+  requestKey: z.string().uuid(),
+}).strict();
+export type RetryReceiptPostingInputV1 = z.infer<typeof RetryReceiptPostingInputV1Schema>;
 
 export const CreateCountPlanInputV1Schema = z
   .object({

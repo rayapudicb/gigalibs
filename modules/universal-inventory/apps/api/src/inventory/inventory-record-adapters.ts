@@ -103,6 +103,7 @@ const WAREHOUSE_FIELDS: readonly FieldSpec[] = [
   { key: 'code', writable: true },
   { key: 'name', writable: true },
   { key: 'warehouse-type', writable: true },
+  { key: 'org-unit-id', writable: true },
   { key: 'description', writable: true },
   { key: 'address', writable: true },
   { key: 'is-active' },
@@ -175,6 +176,54 @@ const BALANCE_FIELDS: readonly FieldSpec[] = [
   { key: 'available-quantity' },
   { key: 'last-movement-at' },
 ];
+const RESERVATION_FIELDS: readonly FieldSpec[] = [
+  { key: 'created-at' },
+  { key: 'demand-type' },
+  { key: 'demand-reference-id' },
+  { key: 'demand-line-id' },
+  { key: 'warehouse-id' },
+  { key: 'location-id' },
+  { key: 'product-id' },
+  { key: 'uom-id' },
+  { key: 'quantity' },
+  { key: 'fulfilled-quantity' },
+  { key: 'status' },
+  { key: 'expiry-date' },
+];
+const COST_LAYER_FIELDS: readonly FieldSpec[] = [
+  { key: 'created-at' },
+  { key: 'product-id' },
+  { key: 'warehouse-id' },
+  { key: 'location-id' },
+  { key: 'valuation-method' },
+  { key: 'quantity' },
+  { key: 'unit-cost-minor' },
+  { key: 'total-cost-minor' },
+];
+const POSTED_RECEIPT_COST_FIELDS: readonly FieldSpec[] = [
+  { key: 'created-at' },
+  { key: 'receipt-id' },
+  { key: 'receipt-line-id' },
+  { key: 'product-id' },
+  { key: 'warehouse-id' },
+  { key: 'location-id' },
+  { key: 'valuation-method' },
+  { key: 'quantity' },
+  { key: 'unit-cost-scaled' },
+  { key: 'total-cost-minor' },
+  { key: 'finance-cost-layer-id' },
+];
+const WAREHOUSE_MAP_FIELDS: readonly FieldSpec[] = [
+  { key: 'warehouse-id' },
+  { key: 'location-id' },
+  { key: 'aisle' },
+  { key: 'rack' },
+  { key: 'shelf' },
+  { key: 'bin' },
+  { key: 'on-hand-quantity' },
+  { key: 'available-quantity' },
+  { key: 'nearest-lot-expiry' },
+];
 const LEDGER_FIELDS: readonly FieldSpec[] = [
   { key: 'created-at' },
   { key: 'direction' },
@@ -187,7 +236,17 @@ const LEDGER_FIELDS: readonly FieldSpec[] = [
 ];
 
 export interface InventoryRecordDependencies {
-  readonly inventory: Pick<InventoryService, 'createWarehouse' | 'createLocation' | 'createItem' | 'createLot' | 'createReceipt' | 'completeReceipt'>;
+  readonly inventory: Pick<
+    InventoryService,
+    | 'createWarehouse'
+    | 'createLocation'
+    | 'createItem'
+    | 'createLot'
+    | 'createReceipt'
+    | 'completeReceipt'
+    | 'retryReceiptFinancePosting'
+    | 'getWarehouseLocationMap'
+  >;
   readonly records: Pick<InventoryRecordsService, 'page' | 'get' | 'updateWarehouse' | 'addReceiptLine' | 'lookup'>;
 }
 
@@ -225,12 +284,12 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
       create: 'POST v1/warehouses',
       update: 'PATCH v1/warehouses/{id}',
     },
-    ...readAdapter(deps, 'inventory.warehouses', 'warehouses', WAREHOUSE_FIELDS, 'inventory:read', {
+    ...readAdapter(deps, 'inventory.warehouses', 'warehouses', WAREHOUSE_FIELDS, 'inventory.read', {
       search: ['code', 'name'],
       filter: ['warehouse-type'],
       sort: ['code', 'name'],
     }),
-    permissions: { read: 'inventory:read', create: 'inventory:warehouses:manage', update: 'inventory:warehouses:manage' },
+    permissions: { read: 'inventory.read', create: 'inventory.warehouses.manage', update: 'inventory.warehouses.manage' },
     async create(context, values) {
       const input = parse(CreateWarehouseInputV1Schema, toDomain(WAREHOUSE_FIELDS, values));
       return toWindow(WAREHOUSE_FIELDS, { ...(await deps.inventory.createWarehouse(context.principal, input, context)) });
@@ -250,13 +309,13 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
 
   const locations: RecordAdapter = {
     rest: { read: 'GET v1/locations', create: 'POST v1/locations' },
-    ...readAdapter(deps, 'inventory.locations', 'locations', LOCATION_FIELDS, 'inventory:read', {
+    ...readAdapter(deps, 'inventory.locations', 'locations', LOCATION_FIELDS, 'inventory.read', {
       search: ['code', 'name', 'barcode'],
       filter: ['location-type'],
       sort: ['code', 'name'],
       parent: 'warehouse-id',
     }),
-    permissions: { read: 'inventory:read', create: 'inventory:warehouses:manage' },
+    permissions: { read: 'inventory.read', create: 'inventory.warehouses.manage' },
     async create(context, values) {
       const input = parse(CreateLocationInputV1Schema, toDomain(LOCATION_FIELDS, values));
       return toWindow(LOCATION_FIELDS, { ...(await deps.inventory.createLocation(context.principal, input)) });
@@ -265,8 +324,8 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
 
   const items: RecordAdapter = {
     rest: { read: 'GET v1/items', create: 'POST v1/items' },
-    ...readAdapter(deps, 'inventory.items', 'items', ITEM_FIELDS, 'inventory:read', { filter: ['valuation-method'] }),
-    permissions: { read: 'inventory:read', create: 'inventory:items:manage' },
+    ...readAdapter(deps, 'inventory.items', 'items', ITEM_FIELDS, 'inventory.read', { filter: ['valuation-method'] }),
+    permissions: { read: 'inventory.read', create: 'inventory.items.manage' },
     async create(context, values) {
       const input = toDomain(ITEM_FIELDS, values);
       if (typeof input.shelfLifeDays === 'string') input.shelfLifeDays = Number(input.shelfLifeDays);
@@ -276,12 +335,12 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
 
   const lots: RecordAdapter = {
     rest: { read: 'GET v1/lots', create: 'POST v1/lots' },
-    ...readAdapter(deps, 'inventory.lots', 'lots', LOT_FIELDS, 'inventory:read', {
+    ...readAdapter(deps, 'inventory.lots', 'lots', LOT_FIELDS, 'inventory.read', {
       search: ['lot-number', 'batch-code', 'supplier-lot-number'],
       filter: ['status'],
       sort: ['lot-number', 'expiry-date'],
     }),
-    permissions: { read: 'inventory:read', create: 'inventory:receive' },
+    permissions: { read: 'inventory.read', create: 'inventory.receive' },
     async create(context, values) {
       const input = parse(CreateLotInputV1Schema, toDomain(LOT_FIELDS, values));
       return toWindow(LOT_FIELDS, { ...(await deps.inventory.createLot(context.principal, input)) });
@@ -292,14 +351,14 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
     rest: {
       read: 'GET v1/receipts',
       create: 'POST v1/receipts',
-      actions: { complete: 'POST v1/receipts/{id}/complete' },
+      actions: { complete: 'POST v1/receipts/{id}/complete', 'retry-posting': 'POST v1/receipts/{id}/retry-posting' },
     },
-    ...readAdapter(deps, 'inventory.receipts', 'receipts', RECEIPT_FIELDS, 'inventory:read', {
+    ...readAdapter(deps, 'inventory.receipts', 'receipts', RECEIPT_FIELDS, 'inventory.read', {
       search: ['receipt-number', 'external-document-reference'],
       filter: ['status'],
       sort: ['receipt-number', 'created-at'],
     }),
-    permissions: { read: 'inventory:read', create: 'inventory:receive' },
+    permissions: { read: 'inventory.read', create: 'inventory.receive' },
     async create(context, values) {
       const input = parse(CreateReceiptInputV1Schema, toDomain(RECEIPT_FIELDS, values));
       const { lines: _lines, ...receipt } = await deps.inventory.createReceipt(context.principal, input);
@@ -307,9 +366,18 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
     },
     actions: {
       complete: {
-        permission: 'inventory:receive',
+        permission: 'inventory.receive',
         async run(context, id) {
           const { lines: _lines, ...receipt } = await deps.inventory.completeReceipt(context.principal, id);
+          return toWindow(RECEIPT_FIELDS, receipt);
+        },
+      },
+      'retry-posting': {
+        permission: 'inventory.receive',
+        async run(context, id) {
+          const { lines: _lines, ...receipt } = await deps.inventory.retryReceiptFinancePosting(
+            context.principal, id, context.idempotencyKey ?? context.correlationId,
+          );
           return toWindow(RECEIPT_FIELDS, receipt);
         },
       },
@@ -319,13 +387,13 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
   const receiptLines: RecordAdapter = {
     // A line is received with its receipt: REST adds lines when it creates the receipt.
     rest: { read: 'GET v1/receipts', create: 'POST v1/receipts' },
-    ...readAdapter(deps, 'inventory.receipt-lines', 'receiptLines', RECEIPT_LINE_FIELDS, 'inventory:read', {
+    ...readAdapter(deps, 'inventory.receipt-lines', 'receiptLines', RECEIPT_LINE_FIELDS, 'inventory.read', {
       search: ['lot-number'],
       filter: ['inspection-status'],
       sort: ['line-number'],
       parent: 'receipt-id',
     }),
-    permissions: { read: 'inventory:read', create: 'inventory:receive' },
+    permissions: { read: 'inventory.read', create: 'inventory.receive' },
     async create(context, values) {
       const { receiptId, ...line } = toDomain(RECEIPT_LINE_FIELDS, values);
       if (typeof receiptId !== 'string') throw new BadRequestException({ code: 'UNIVERSAL_INVENTORY_VALIDATION_FAILED', message: 'receipt-id is required.' });
@@ -336,24 +404,85 @@ export function inventoryRecordDispatcher(deps: InventoryRecordDependencies, ide
 
   const balances: RecordAdapter = {
     rest: { read: 'GET v1/balances' },
-    ...readAdapter(deps, 'inventory.balances', 'balances', BALANCE_FIELDS, 'inventory:read', {
+    ...readAdapter(deps, 'inventory.balances', 'balances', BALANCE_FIELDS, 'inventory.read', {
       filter: ['stock-status'],
       sort: ['last-movement-at'],
     }),
   };
   const ledger: RecordAdapter = {
     rest: { read: 'GET v1/ledger' },
-    ...readAdapter(deps, 'inventory.ledger', 'ledger', LEDGER_FIELDS, 'inventory:ledger:read', {
+    ...readAdapter(deps, 'inventory.ledger', 'ledger', LEDGER_FIELDS, 'inventory.ledger.read', {
       filter: ['direction', 'stock-status'],
       sort: ['created-at'],
     }),
   };
+  const reservations: RecordAdapter = {
+    rest: { read: 'GET v1/reservations' },
+    ...readAdapter(deps, 'inventory.reservations', 'reservations', RESERVATION_FIELDS, 'inventory.read', {
+      search: ['demand-reference-id'],
+      filter: ['warehouse-id', 'status', 'demand-type'],
+      sort: ['created-at'],
+    }),
+  };
+  const costLayers: RecordAdapter = {
+    rest: { read: 'GET v1/cost-layers' },
+    ...readAdapter(deps, 'inventory.cost-layers', 'costLayers', COST_LAYER_FIELDS, 'inventory.ledger.read', {
+      filter: ['product-id', 'warehouse-id', 'valuation-method'],
+      sort: ['created-at'],
+    }),
+  };
+  const postedReceiptCosts: RecordAdapter = {
+    rest: { read: 'GET v1/posted-receipt-costs' },
+    ...readAdapter(deps, 'inventory.posted-receipt-costs', 'postedReceiptCosts', POSTED_RECEIPT_COST_FIELDS, 'inventory.ledger.read', {
+      filter: ['product-id', 'warehouse-id', 'valuation-method'],
+      sort: ['created-at'],
+    }),
+  };
+  const warehouseMap: RecordAdapter = {
+    entityKey: 'inventory.warehouse-map',
+    rest: { read: 'GET v1/warehouses/{id}/location-map' },
+    permissions: { read: 'inventory.read' },
+    fields: fieldPolicies(WAREHOUSE_MAP_FIELDS),
+    searchFields: [],
+    filterFields: ['warehouse-id'],
+    sortFields: ['aisle'],
+    async list(principal, query) {
+      const warehouseId = query.filters['warehouse-id'] ?? query.filters['warehouseId'];
+      if (!warehouseId) {
+        throw new BadRequestException({ code: 'UNIVERSAL_INVENTORY_VALIDATION_FAILED', message: 'warehouse-id filter is required.' });
+      }
+      const cells = await deps.inventory.getWarehouseLocationMap(principal, warehouseId);
+      const values = cells.map((cell) =>
+        toWindow(WAREHOUSE_MAP_FIELDS, {
+          id: cell.locationId,
+          warehouseId,
+          locationId: cell.locationId,
+          aisle: cell.aisle,
+          rack: cell.rack,
+          shelf: cell.shelf,
+          bin: cell.bin,
+          onHandQuantity: cell.onHandQuantity,
+          availableQuantity: cell.availableQuantity,
+          nearestLotExpiry: cell.nearestLotExpiry,
+        }),
+      );
+      return { items: values, total: values.length, page: 1, pageSize: values.length };
+    },
+    async get() {
+      return null;
+    },
+  };
 
   const resolvers: LookupResolver[] = [
-    { key: 'inventory-warehouses', permission: 'inventory:read', resolve: (principal, request) => deps.records.lookup(principal, 'warehouses', request) },
-    { key: 'inventory-locations', permission: 'inventory:read', resolve: (principal, request) => deps.records.lookup(principal, 'locations', request) },
+    { key: 'inventory-warehouses', permission: 'inventory.read', resolve: (principal, request) => deps.records.lookup(principal, 'warehouses', request) },
+    { key: 'inventory-locations', permission: 'inventory.read', resolve: (principal, request) => deps.records.lookup(principal, 'locations', request) },
   ];
 
   // WI-OI-120r (S1): the field rules of Inventory's windows, enforced on every create and change.
-  return new RecordDispatcher([warehouses, locations, items, lots, receipts, receiptLines, balances, ledger], resolvers, idempotency, shippedRecordRules('universal-inventory'));
+  return new RecordDispatcher(
+    [warehouses, locations, items, lots, receipts, receiptLines, balances, reservations, ledger, costLayers, postedReceiptCosts, warehouseMap],
+    resolvers,
+    idempotency,
+    shippedRecordRules('universal-inventory'),
+  );
 }

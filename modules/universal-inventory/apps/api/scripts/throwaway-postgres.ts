@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 
@@ -24,7 +24,10 @@ export interface ThrowawayPostgres {
 }
 
 /** A new anonymous-volume PostgreSQL. It cannot read or modify the owner's local database. */
-export async function startThrowawayPostgres(name: string): Promise<ThrowawayPostgres> {
+export async function startThrowawayPostgres(
+  name: string,
+  beforeMigration?: (admin: pg.Client, migrationName: string) => Promise<void>,
+): Promise<ThrowawayPostgres> {
   const adminPassword = randomBytes(18).toString('hex');
   const runtimePassword = randomBytes(18).toString('hex');
   execFileSync(
@@ -74,6 +77,7 @@ export async function startThrowawayPostgres(name: string): Promise<ThrowawayPos
       `CREATE ROLE gigalibs_inventory_runtime LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOBYPASSRLS`,
     );
     for (const migration of migrationFiles()) {
+      await beforeMigration?.(admin, basename(migration));
       await admin.query(readFileSync(migration, 'utf8'));
     }
     await admin.query('GRANT USAGE ON SCHEMA gigalibs_inventory TO gigalibs_inventory_runtime');

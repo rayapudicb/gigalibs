@@ -57,14 +57,14 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     "name": "Inventory Operator",
     "description": "Executes warehouse receiving, putaway, transfers, picks, kitting and counts.",
     "permissions": [
-      "inventory:read",
-      "inventory:receive",
-      "inventory:putaway",
-      "inventory:transfer",
-      "inventory:issue",
-      "inventory:return",
-      "inventory:count",
-      "inventory:kits:read"
+      "inventory.read",
+      "inventory.receive",
+      "inventory.putaway",
+      "inventory.transfer",
+      "inventory.issue",
+      "inventory.return",
+      "inventory.count",
+      "inventory.kits.read"
     ]
   },
   {
@@ -73,15 +73,15 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     "name": "Inventory Controller",
     "description": "Manages warehouses, locations, reservations, kits, and four-eyes count adjustments.",
     "permissions": [
-      "inventory:read",
-      "inventory:ledger:read",
-      "inventory:warehouses:manage",
-      "inventory:items:manage",
-      "inventory:reserve",
-      "inventory:counts:approve",
-      "inventory:adjust",
-      "inventory:adjust:approve",
-      "inventory:kits:manage"
+      "inventory.read",
+      "inventory.ledger.read",
+      "inventory.warehouses.manage",
+      "inventory.items.manage",
+      "inventory.reserve",
+      "inventory.counts.approve",
+      "inventory.adjust",
+      "inventory.adjust.approve",
+      "inventory.kits.manage"
     ]
   },
   {

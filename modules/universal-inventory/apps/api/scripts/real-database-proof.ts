@@ -8,6 +8,7 @@ import {
 } from '@gigalibs/module-sdk';
 import pg from 'pg';
 import { DatabaseService } from '../src/database.service.js';
+import { InventoryPostingCutoffService } from '../src/inventory/inventory-posting-cutoff.service.js';
 import { InventoryService } from '../src/inventory/inventory.service.js';
 import { startThrowawayPostgres } from './throwaway-postgres.js';
 
@@ -79,7 +80,7 @@ const postgres = await startThrowawayPostgres(`gigalibs-inventory-proof-${proces
 const db = new DatabaseService({
   databaseUrl: postgres.runtimeUrl,
   databasePoolSize: 5,
-  expectedMigrationVersion: 9,
+  expectedMigrationVersion: 10,
   platformContextAudience: 'proof',
   platformContextPublicKey: 'proof',
   corsOrigins: [],
@@ -97,7 +98,7 @@ try {
     });
   }
 
-  const inventory = new InventoryService(db);
+  const inventory = new InventoryService(db, new InventoryPostingCutoffService());
   const maker = scoped('tenant-a', 'maker-a', 'unit-a');
   const checker = scoped('tenant-a', 'checker-a', 'unit-a');
   const sibling = scoped('tenant-a', 'sibling-b', 'unit-b');
@@ -123,6 +124,14 @@ try {
   });
   assert.equal(wh.code, 'WH-MAIN');
   assert.equal(wh.tenantId, 'tenant-a');
+  await db.withTenantTransaction('tenant-a', async (client) => {
+    await client.query(
+      `INSERT INTO gigalibs_inventory.inventory_org_valuation_settings
+         (tenant_id, org_unit_id, valuation_method, finance_cost_profile_id, updated_by)
+       VALUES ('tenant-a', 'unit-a', 'FIFO', $1, 'proof:inventory')`,
+      [randomUUID()],
+    );
+  });
 
   const locStorage = await inventory.createLocation(maker, {
     warehouseId: wh.id,

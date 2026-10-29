@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { FinanceInventoryReceiptCostLineV1 } from '@gigalibs/contracts';
 import {
   financeFiscalPeriodSnapshotCompletedV1,
   financeFiscalPeriodStateChangedV1,
@@ -136,6 +137,7 @@ export async function appendInventoryReceiptPostingOutcome(
   receiptId: string,
   status: FinanceInventoryReceiptPostingOutcomeStatus,
   rejectionCode: string | null,
+  costLines?: readonly FinanceInventoryReceiptCostLineV1[],
 ): Promise<void> {
   const eventId = randomUUID();
   await appendOutboxEvent(client, tenantId, {
@@ -148,6 +150,7 @@ export async function appendInventoryReceiptPostingOutcome(
       receiptId,
       status,
       rejectionCode: rejectionCode ?? undefined,
+      costLines: costLines ? [...costLines] : undefined,
     },
   });
 }

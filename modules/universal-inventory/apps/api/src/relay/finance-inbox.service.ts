@@ -6,8 +6,10 @@ import {
   FinanceFiscalPeriodSnapshotCompletedPayloadSchema,
   FinanceFiscalPeriodStateChangedPayloadSchema,
   FinanceInventoryReceiptPostingOutcomePayloadSchema,
+  ExactDecimal,
   RelayEnvelopeV1Schema,
   type RelayEnvelopeV1,
+  type FinanceInventoryReceiptCostLineV1,
 } from '@gigalibs/contracts';
 import { type InboxReceiptOptions, receiveOnce } from '@gigalibs/module-sdk';
 import type { PoolClient } from 'pg';
@@ -67,6 +69,11 @@ export class FinanceInventoryInboxService {
       return { status: 'PROCESSED' };
     }
 
+    if (payload.data.status === 'POSTED' && payload.data.costLines) {
+      const projection = await this.projectReceiptCosts(client, envelope.tenantId, payload.data.receiptId, payload.data.costLines);
+      if (projection.status === 'REJECTED') return projection;
+    }
+
     const rejection =
       payload.data.status === 'POSTING_REJECTED' ? (payload.data.rejectionCode ?? 'FINANCE_POSTING_REJECTED').slice(0, 128) : null;
 
@@ -96,6 +103,67 @@ export class FinanceInventoryInboxService {
           new Date(completedAt).toISOString(),
         );
       }
+    }
+    return { status: 'PROCESSED' };
+  }
+
+  private async projectReceiptCosts(
+    client: PoolClient,
+    tenantId: string,
+    receiptId: string,
+    costLines: readonly FinanceInventoryReceiptCostLineV1[],
+  ): Promise<FinanceInventoryInboxOutcome> {
+    const expected = await client.query<{
+      id: string; product_id: string; received_quantity: string; target_location_id: string | null;
+      warehouse_id: string; org_unit_id: string | null;
+    }>(
+      `SELECT rl.id, rl.product_id, rl.received_quantity, rl.target_location_id,
+              r.warehouse_id, w.org_unit_id
+         FROM ${SCHEMA}.receipt_lines rl
+         JOIN ${SCHEMA}.receipts r ON r.tenant_id = rl.tenant_id AND r.id = rl.receipt_id
+         JOIN ${SCHEMA}.warehouses w ON w.tenant_id = r.tenant_id AND w.id = r.warehouse_id
+        WHERE rl.tenant_id = $1 AND rl.receipt_id = $2 AND rl.received_quantity > 0`,
+      [tenantId, receiptId],
+    );
+    const rowsById = new Map(expected.rows.map((row) => [row.id, row]));
+    if (costLines.length !== rowsById.size || new Set(costLines.map((line) => line.receiptLineId)).size !== costLines.length) {
+      return { status: 'REJECTED', code: 'INVENTORY_COST_LINE_SET_MISMATCH' };
+    }
+    const inserts: Array<{ line: FinanceInventoryReceiptCostLineV1; source: NonNullable<ReturnType<typeof rowsById.get>> }> = [];
+    for (const line of costLines) {
+      const source = rowsById.get(line.receiptLineId);
+      if (!source || !source.target_location_id || source.product_id !== line.productId ||
+          ExactDecimal.toScaledBigInt(String(source.received_quantity)) !== ExactDecimal.toScaledBigInt(line.quantity)) {
+        return { status: 'REJECTED', code: 'INVENTORY_COST_LINE_MISMATCH' };
+      }
+      const prior = await client.query<{
+        finance_cost_layer_id: string; valuation_method: string; unit_cost_scaled: string; total_cost_minor: string;
+      }>(
+        `SELECT finance_cost_layer_id, valuation_method, unit_cost_scaled, total_cost_minor
+           FROM ${SCHEMA}.inventory_receipt_cost_records
+          WHERE tenant_id = $1 AND receipt_line_id = $2`,
+        [tenantId, line.receiptLineId],
+      );
+      if (prior.rowCount) {
+        const old = prior.rows[0]!;
+        if (old.finance_cost_layer_id !== line.financeCostLayerId || old.valuation_method !== line.valuationMethod ||
+            String(old.unit_cost_scaled) !== line.unitCostScaled || String(old.total_cost_minor) !== line.totalCostMinor) {
+          return { status: 'REJECTED', code: 'INVENTORY_COST_REPLAY_CONFLICT' };
+        }
+        continue;
+      }
+      inserts.push({ line, source });
+    }
+    for (const { line, source } of inserts) {
+      await client.query(
+        `INSERT INTO ${SCHEMA}.inventory_receipt_cost_records
+           (tenant_id, receipt_id, receipt_line_id, finance_cost_layer_id, warehouse_id, location_id,
+            product_id, org_unit_id, valuation_method, quantity, unit_cost_scaled, total_cost_minor)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [tenantId, receiptId, line.receiptLineId, line.financeCostLayerId, source.warehouse_id,
+          source.target_location_id, line.productId, source.org_unit_id, line.valuationMethod,
+          line.quantity, line.unitCostScaled, line.totalCostMinor],
+      );
     }
     return { status: 'PROCESSED' };
   }

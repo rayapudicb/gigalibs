@@ -4,7 +4,7 @@ import {
   inventoryReceiptCompletedPostingPolicyV1,
   inventoryReceiptPostingDate,
 } from '@gigalibs/posting-rules';
-import { RelayEnvelopeV1Schema, type RelayEnvelopeV1 } from '@gigalibs/contracts';
+import { ExactDecimal, RelayEnvelopeV1Schema, type RelayEnvelopeV1, type FinanceInventoryReceiptCostLineV1 } from '@gigalibs/contracts';
 import { type InboxReceiptOptions, receiveOnce } from '@gigalibs/module-sdk';
 import { randomUUID } from 'node:crypto';
 import type { PoolClient } from 'pg';
@@ -34,6 +34,9 @@ const ReceiptCompletedPayloadSchema = z
     receiptId: z.string().uuid(),
     receiptNumber: z.string(),
     warehouseId: z.string().uuid(),
+    orgUnitId: z.string().min(1).max(64).optional(),
+    financeCostProfileId: z.string().uuid().optional(),
+    valuationMethod: z.enum(['STANDARD', 'FIFO', 'AVERAGE']).optional(),
     receivedAt: z.string(),
     lines: z.array(
       z.object({
@@ -245,14 +248,19 @@ export class InventorySubledgerInboxService {
       return { result: { status: 'REJECTED', code: postingContext }, postingDate };
     }
 
-    const profile = await client.query<{ id: string }>(
-      `SELECT id FROM ${SCHEMA}.cost_profiles
-        WHERE tenant_id = $1 AND is_default = true AND is_active = true LIMIT 1`,
-      [envelope.tenantId],
+    if (!payload.data.orgUnitId || !payload.data.financeCostProfileId || !payload.data.valuationMethod) {
+      await appendInventoryReceiptPostingOutcome(client, envelope.tenantId, payload.data.receiptId,
+        'POSTING_REJECTED', 'FINANCE_ORG_COST_PROFILE_MISSING');
+      return { result: { status: 'REJECTED', code: 'FINANCE_ORG_COST_PROFILE_MISSING' }, postingDate };
+    }
+    const profile = await client.query<{ id: string; costing_method: FinanceInventoryReceiptCostLineV1['valuationMethod'] }>(
+      `SELECT id, costing_method FROM ${SCHEMA}.cost_profiles
+        WHERE tenant_id = $1 AND id = $2 AND is_active = true LIMIT 1`,
+      [envelope.tenantId, payload.data.financeCostProfileId],
     );
     const costProfile = profile.rows[0];
     if (!costProfile) {
-      this.logger.warn(`Receipt ${payload.data.receiptId}: no default cost profile on tenant ${envelope.tenantId}.`);
+      this.logger.warn(`Receipt ${payload.data.receiptId}: Finance cost profile ${payload.data.financeCostProfileId} is unavailable on tenant ${envelope.tenantId}.`);
       await appendInventoryReceiptPostingOutcome(
         client,
         envelope.tenantId,
@@ -262,10 +270,16 @@ export class InventorySubledgerInboxService {
       );
       return { result: { status: 'REJECTED', code: 'FINANCE_COST_PROFILE_MISSING' }, postingDate };
     }
+    if (costProfile.costing_method !== payload.data.valuationMethod) {
+      await appendInventoryReceiptPostingOutcome(client, envelope.tenantId, payload.data.receiptId,
+        'POSTING_REJECTED', 'FINANCE_COST_METHOD_MISMATCH');
+      return { result: { status: 'REJECTED', code: 'FINANCE_COST_METHOD_MISMATCH' }, postingDate };
+    }
 
+    const pricedLines: Array<{ line: (typeof payload.data.lines)[number]; unitCostScaled: string }> = [];
     for (const line of payload.data.lines) {
       const qty = line.receivedQuantity;
-      if (!qty || qty === '0') continue;
+      if (ExactDecimal.isZero(qty)) continue;
       const unitCostScaled = await this.costing.resolveProductStandardUnitCostScaled(
         client,
         envelope.tenantId,
@@ -283,11 +297,17 @@ export class InventorySubledgerInboxService {
         );
         return { result: { status: 'REJECTED', code: 'FINANCE_STANDARD_COST_MISSING' }, postingDate };
       }
+      pricedLines.push({ line, unitCostScaled });
+    }
+
+    const costLines: FinanceInventoryReceiptCostLineV1[] = [];
+    for (const { line, unitCostScaled } of pricedLines) {
+      const qty = line.receivedQuantity;
       const sourceDocumentId = inventoryReceiptCompletedPostingPolicyV1.sourceLineDocumentId(
         payload.data.receiptId,
         line.receiptLineId,
       );
-      await this.costing.ingestReceiptLayer(
+      const costLayer = await this.costing.ingestReceiptLayer(
         envelope.tenantId,
         'relay:inventory',
         {
@@ -307,6 +327,15 @@ export class InventorySubledgerInboxService {
         },
         client,
       );
+      costLines.push({
+        receiptLineId: line.receiptLineId,
+        financeCostLayerId: costLayer.id,
+        productId: line.productId,
+        quantity: qty,
+        valuationMethod: costProfile.costing_method,
+        unitCostScaled,
+        totalCostMinor: costLayer.totalInitialCostMinor,
+      });
       await recordInventoryReceiptLinePosting(client, SCHEMA, {
         tenantId: envelope.tenantId,
         messageId: envelope.messageId,
@@ -315,7 +344,7 @@ export class InventorySubledgerInboxService {
       });
     }
 
-    await appendInventoryReceiptPostingOutcome(client, envelope.tenantId, payload.data.receiptId, 'POSTED', null);
+    await appendInventoryReceiptPostingOutcome(client, envelope.tenantId, payload.data.receiptId, 'POSTED', null, costLines);
     return { result: { status: 'PROCESSED' }, postingDate };
   }
 

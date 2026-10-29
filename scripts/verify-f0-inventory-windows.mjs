@@ -140,13 +140,15 @@ try {
   check("picker: tenant B does not see tenant A's product", otherPick.status === 200 && otherPick.json?.length === 0, otherPick.text);
 
   // 4. Warehouses: create once per key, a child location, and updates with If-Match.
+  // Warehouses carry an owning organization unit (Module 2 org-scoping); TENANT scope may write any unit.
+  const orgUnitId = 'unit-a';
   const createKey = key();
-  const warehouse = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-A', name: 'Main warehouse', 'warehouse-type': 'PHYSICAL' }, createKey);
+  const warehouse = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-A', name: 'Main warehouse', 'warehouse-type': 'PHYSICAL', 'org-unit-id': orgUnitId }, createKey);
   check('warehouse: created with version 1 and ETag "1"', warehouse.status === 201 && warehouse.json?.version === 1 && warehouse.etag === '"1"' && warehouse.json?.code === 'WH-A', `${warehouse.etag} ${warehouse.text}`);
   const warehouseId = warehouse.json?.id;
-  const replay = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-A', name: 'Main warehouse', 'warehouse-type': 'PHYSICAL' }, createKey);
+  const replay = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-A', name: 'Main warehouse', 'warehouse-type': 'PHYSICAL', 'org-unit-id': orgUnitId }, createKey);
   check('warehouse: the same Idempotency-Key returns the first answer, not a second warehouse', replay.json?.id === warehouseId, replay.text);
-  const reused = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-Z', name: 'Other', 'warehouse-type': 'PHYSICAL' }, createKey);
+  const reused = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-Z', name: 'Other', 'warehouse-type': 'PHYSICAL', 'org-unit-id': orgUnitId }, createKey);
   check('warehouse: the same key with a different body is refused (409)', reused.status === 409, reused.text);
   const location = await inv(tenantA, 'POST', '/v1/records/inventory.locations', { 'warehouse-id': warehouseId, code: 'RCV-01', name: 'Receiving dock', 'location-type': 'RECEIVING' }, key());
   const children = await inv(tenantA, 'GET', `/v1/records/inventory.locations?parentId=${warehouseId}`);
@@ -159,12 +161,12 @@ try {
   check('warehouse: a stale version is refused (412) and a missing one too (428)', stale.status === 412 && noVersion.status === 428, `${stale.status} ${noVersion.status}`);
 
   // 5. Refusals: system-set and unknown fields, permissions, another tenant.
-  const systemField = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-X', name: 'X', 'warehouse-type': 'PHYSICAL', 'is-active': false }, key());
-  const unknownField = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-Y', name: 'Y', 'warehouse-type': 'PHYSICAL', 'tenant-id': tenantB }, key());
+  const systemField = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-X', name: 'X', 'warehouse-type': 'PHYSICAL', 'org-unit-id': orgUnitId, 'is-active': false }, key());
+  const unknownField = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-Y', name: 'Y', 'warehouse-type': 'PHYSICAL', 'org-unit-id': orgUnitId, 'tenant-id': tenantB }, key());
   check('fields: system-set and unknown fields are refused (400)', systemField.status === 400 && unknownField.status === 400, `${systemField.status} ${unknownField.status}`);
-  const readOnlyList = await inv(tenantA, 'GET', '/v1/records/inventory.warehouses', undefined, {}, ['inventory:read']);
-  const readOnlyCreate = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-R', name: 'R', 'warehouse-type': 'PHYSICAL' }, key(), ['inventory:read']);
-  check('permissions: inventory:read lists but may not create (403)', readOnlyList.status === 200 && readOnlyCreate.status === 403, `${readOnlyList.status} ${readOnlyCreate.status}`);
+  const readOnlyList = await inv(tenantA, 'GET', '/v1/records/inventory.warehouses', undefined, {}, ['inventory.read']);
+  const readOnlyCreate = await inv(tenantA, 'POST', '/v1/records/inventory.warehouses', { code: 'WH-R', name: 'R', 'warehouse-type': 'PHYSICAL', 'org-unit-id': orgUnitId }, key(), ['inventory.read']);
+  check('permissions: inventory.read lists but may not create (403)', readOnlyList.status === 200 && readOnlyCreate.status === 403, `${readOnlyList.status} ${readOnlyCreate.status}`);
   const otherRead = await inv(tenantB, 'GET', `/v1/records/inventory.warehouses/${warehouseId}`);
   const otherList = await inv(tenantB, 'GET', '/v1/records/inventory.warehouses');
   check("tenants: tenant B gets 404 for tenant A's warehouse and an empty list", otherRead.status === 404 && otherList.json?.total === 0, `${otherRead.status} ${otherList.text.slice(0, 80)}`);
@@ -172,8 +174,45 @@ try {
   check('picker: the warehouse lookup labels by code and name', whLabel.json?.[0]?.label === 'WH-A — Main warehouse (north)', whLabel.text);
 
   // 6. An item, then a receipt with a line, completed once.
-  const item = await inv(tenantA, 'POST', '/v1/records/inventory.items', { 'product-id': productId, 'default-warehouse-id': warehouseId, 'valuation-method': 'STANDARD', 'reorder-point': '10.000' }, key());
+  const item = await inv(tenantA, 'POST', '/v1/records/inventory.items', { 'product-id': productId, 'default-warehouse-id': warehouseId, 'valuation-method': 'FIFO', 'reorder-point': '10.000' }, key());
   check('item: the product is stocked in Inventory', item.status === 201 && item.json?.['product-id'] === productId, item.text);
+
+  // Receipt completion posts a valued stock movement, so the warehouse's owning unit needs an active Finance
+  // cost profile — the same handshake F2.7 proves. Seed the minimal Finance costing and org replica for unit-a.
+  const fin = (method, path, body) => call(tenantA, 'financial-operations', method, path, body, { 'Idempotency-Key': randomUUID() });
+  const book = await fin('POST', '/v1/books', { bookCode: 'F0-BOOK', bookName: 'F0 proof book', legalEntityPartyId: randomUUID(), currencyCode: 'USD', isPrimary: true });
+  await fin('POST', '/v1/fiscal-years/standard', { accountingBookId: book.json?.id, year: 2026 });
+  const account = async (accountCode, accountName, accountClass, accountSubtype, normalBalance) =>
+    (await fin('POST', '/v1/accounts', { accountingBookId: book.json?.id, accountCode, accountName, accountClass, accountSubtype, normalBalance })).json?.id;
+  const costAccounts = {
+    inventoryGlAccountId: await account('1400', 'Inventory', 'ASSET', 'CURRENT_ASSET', 'DEBIT'),
+    grniGlAccountId: await account('2150', 'GRNI', 'LIABILITY', 'CURRENT_LIABILITY', 'CREDIT'),
+    cogsGlAccountId: await account('5000', 'COGS', 'EXPENSE', 'COST_OF_GOODS_SOLD', 'DEBIT'),
+    landedCostClearingGlAccountId: await account('2160', 'Landed clearing', 'LIABILITY', 'CURRENT_LIABILITY', 'CREDIT'),
+    purchasePriceVarianceGlAccountId: await account('5100', 'PPV', 'EXPENSE', 'OPERATING_EXPENSE', 'DEBIT'),
+    scrapGlAccountId: await account('5200', 'Scrap', 'EXPENSE', 'OPERATING_EXPENSE', 'DEBIT'),
+    valuationLossGlAccountId: await account('5300', 'Val loss', 'EXPENSE', 'OPERATING_EXPENSE', 'DEBIT'),
+  };
+  const profile = await fin('POST', '/v1/costing/profiles', { code: 'F0-COST', name: 'F0 default cost', costingMethod: 'FIFO', ...costAccounts, standardUnitCostScaled: '2500000', isDefault: true });
+  await fin('POST', '/v1/costing/product-standard-costs', { costProfileId: profile.json?.id, productId, standardUnitCostScaled: '2500000', effectiveFrom: '2026-01-01', changeReason: 'F0.5 proof seed' });
+  await admin.query(
+    `INSERT INTO gigalibs_inventory.org_replica_versions (tenant_id, version_id, tree_id, tree_kind, version_number, checksum, status, unit_count, ready_at)
+     VALUES ($1, 'f0proof-v1', 'f0proof-tree', 'PRIMARY', 1, $2, 'READY', 1, now())`,
+    [tenantA, `sha256:${'0'.repeat(64)}`],
+  );
+  await admin.query(
+    `INSERT INTO gigalibs_inventory.org_replica_units (tenant_id, version_id, unit_id, code, name, sort_order, status, holds_records, type_code)
+     VALUES ($1, 'f0proof-v1', $2, $2, 'F0 proof unit', 0, 'ACTIVE', true, 'OPERATING_UNIT')`,
+    [tenantA, orgUnitId],
+  );
+  await admin.query(
+    `INSERT INTO gigalibs_inventory.org_replica_closure (tenant_id, version_id, ancestor_unit_id, descendant_unit_id, depth)
+     VALUES ($1, 'f0proof-v1', $2, $2, 0)`,
+    [tenantA, orgUnitId],
+  );
+  const valuation = await inv(tenantA, 'PUT', '/v1/valuation-settings', { orgUnitId, valuationMethod: 'FIFO', financeCostProfileId: profile.json?.id });
+  check('finance: owning-unit cost profile seeded so the receipt can post', valuation.status === 200 || valuation.status === 201, `${valuation.status} ${valuation.text.slice(0, 120)}`);
+
   const receipt = await inv(tenantA, 'POST', '/v1/records/inventory.receipts', { 'warehouse-id': warehouseId, 'external-document-reference': 'ASN-1001' }, key());
   const receiptId = receipt.json?.id;
   const line = await inv(tenantA, 'POST', '/v1/records/inventory.receipt-lines', { 'receipt-id': receiptId, 'product-id': productId, 'uom-id': uomId, 'expected-quantity': '5.000', 'target-location-id': locationId }, key());
@@ -193,8 +232,8 @@ try {
   check('balance: 5 on hand at the receiving location', balance && Number(balance['on-hand-quantity']) === 5 && balance['location-id'] === locationId, balances.text.slice(0, 200));
   const ledger = await inv(tenantA, 'GET', '/v1/records/inventory.ledger');
   check('ledger: exactly one entry, even though Complete was sent twice', ledger.json?.total === 1 && ledger.json.items[0].direction === 'DEBIT', ledger.text.slice(0, 200));
-  const ledgerNoRight = await inv(tenantA, 'GET', '/v1/records/inventory.ledger', undefined, {}, ['inventory:read']);
-  check('ledger: reading it needs inventory:ledger:read (403 without)', ledgerNoRight.status === 403, ledgerNoRight.text);
+  const ledgerNoRight = await inv(tenantA, 'GET', '/v1/records/inventory.ledger', undefined, {}, ['inventory.read']);
+  check('ledger: reading it needs inventory.ledger.read (403 without)', ledgerNoRight.status === 403, ledgerNoRight.text);
 } finally {
   host.kill('SIGTERM');
   for (const module of Object.values(modules)) {

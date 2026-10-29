@@ -4,7 +4,7 @@ import { z } from 'zod';
 // but cannot write (countries, currencies, units of measure, languages, time zones, tax jurisdictions). This module is
 // the shared, browser-safe core: the set keys, the per-set entry shapes, the provenance every loaded set records
 // (source, version, checksum, when), the read-only lookup shape, and the canonical serialization the checksum is taken
-// over. The card's rule is "zero mock, loaded from the published files with a checksum" — so nothing here hand-types
+// over. The card requires loading published files with a checksum, so nothing here hand-types
 // data; the sha256 itself is computed by the node loader/generator over `canonicalReferenceString` (crypto is not
 // browser-safe). M-CUR and M-TAX read these instead of keeping their own lists.
 

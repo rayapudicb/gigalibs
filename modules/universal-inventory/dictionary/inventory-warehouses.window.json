@@ -78,6 +78,17 @@
           "referenceKey": "warehouse-types"
         },
         {
+          "fieldKey": "org-unit-id",
+          "entityKey": "inventory.warehouses",
+          "label": "Owning organization unit",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
           "fieldKey": "description",
           "entityKey": "inventory.warehouses",
           "label": "Description",
@@ -390,22 +401,29 @@
                   "sectionKey": "main"
                 },
                 {
-                  "fieldKey": "is-active",
+                  "fieldKey": "org-unit-id",
                   "position": 3,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "main"
+                },
+                {
+                  "fieldKey": "is-active",
+                  "position": 4,
                   "span": 4,
                   "componentKey": "checkbox",
                   "sectionKey": "main"
                 },
                 {
                   "fieldKey": "description",
-                  "position": 4,
+                  "position": 5,
                   "span": 12,
                   "componentKey": "textarea",
                   "sectionKey": "details"
                 },
                 {
                   "fieldKey": "address",
-                  "position": 5,
+                  "position": 6,
                   "span": 12,
                   "componentKey": "textarea",
                   "sectionKey": "details"

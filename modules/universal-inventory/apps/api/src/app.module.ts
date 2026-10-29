@@ -42,8 +42,8 @@ import {
 const InventoryRelayHealthController = createRelayHealthController('v1/health');
 
 // WI-OI-120f (F0.5): the record routes behind Inventory's metadata windows. The signed-context guard checks the
-// Universal Inventory entitlement and inventory:read on every route; the dispatcher checks each entity's permissions.
-const InventoryRecordController = createRecordController({ guard: AuthorizationGuard, readPermission: 'inventory:read' });
+// Universal Inventory entitlement and inventory.read on every route; the dispatcher checks each entity's permissions.
+const InventoryRecordController = createRecordController({ guard: AuthorizationGuard, readPermission: 'inventory.read' });
 
 @Module({
   controllers: [

@@ -23,9 +23,11 @@ const quarantinedPaths = new Set(quarantinedPackages.map(({ path }) => path));
 // WI-OI-120ak (S3b, Security review M1): every tracked app and module is scanned, so a new module cannot be missed. The
 // list comes from git (untracked folders, such as an owner's work in progress, are not part of the product); the
 // retired app keeps its own check below.
-const trackedRoots = execFileSync('git', ['ls-files', '-z', '--', 'apps', 'modules'], { cwd: repositoryRoot, encoding: 'utf8' })
+const trackedFiles = execFileSync('git', ['ls-files', '-z'], { cwd: repositoryRoot, encoding: 'utf8' })
   .split('\0')
-  .filter(Boolean)
+  .filter(Boolean);
+const trackedRoots = trackedFiles
+  .filter((file) => file.startsWith('apps/') || file.startsWith('modules/'))
   .map((file) => file.split('/').slice(0, 2).join('/'));
 const roots = [
   ...[...new Set(trackedRoots)].filter((root) => root !== 'apps/playground-web').sort(),
@@ -398,13 +400,13 @@ function verifyQuarantineBoundary() {
     seenPaths.add(configuredRoot);
 
     const expectedExclusion = `- "!${configuredRoot}"`;
-    // WI-OI-120aj (owner decision E3a, 2026-10-14): a quarantined root that is not in the checkout at all has nothing to
-    // contain; the TextFly apps live in the owner's untracked folder. It keeps its workspace exclusion, so it stays out
-    // of the build if it appears. A root that is present must still have a named package manifest.
+    // WI-OI-120aj (owner decision E3a, 2026-10-14): a quarantined root without tracked source is outside the
+    // release inventory even if the owner's untracked workspace contains files there. Its workspace exclusion still
+    // applies. A tracked root must carry its named package manifest.
     // Security review L1: the registry records each package's name (`packageNames`), so imports of and dependencies on
     // it are still refused while the root is absent, and a present root must carry that name.
     const recordedName = quarantineRegistry.packageNames?.[configuredRoot];
-    if (!existsSync(join(repositoryRoot, configuredRoot))) {
+    if (!trackedFiles.some((file) => file.startsWith(`${configuredRoot}/`))) {
       absentQuarantinedRoots.push(configuredRoot);
       if (typeof recordedName !== 'string' || !recordedName) {
         violations.push({

@@ -27,6 +27,11 @@ import {
   type InventoryWarehouseV1,
   type PostStockMovementInputV1,
   type StockBalanceV1,
+  type MaterialLedgerCostLayerV1,
+  type InventoryReceiptCostRecordV1,
+  type OrgValuationSettingV1,
+  type UpsertOrgValuationSettingInputV1,
+  type InventoryWarehouseMapCellV1,
   type StockLedgerEntryV1,
   type StockLedgerTransactionV1,
   type SubmitCountEntryInputV1,
@@ -39,6 +44,7 @@ import {
   type ModulePrincipal,
   OrganizationReplica,
   assertOwningUnit,
+  assertOrganizationWrite,
   organizationAccess,
   moduleErrors,
 } from '@gigalibs/module-sdk';
@@ -121,6 +127,51 @@ export class InventoryService {
     private readonly postingCutoff: InventoryPostingCutoffService,
   ) {}
 
+  private async requireWarehouseAccess(
+    client: pg.PoolClient,
+    principal: ModulePrincipal,
+    warehouseId: string,
+    mode: 'read' | 'write',
+  ): Promise<void> {
+    const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+    const result = await client.query(
+      `SELECT org_unit_id FROM ${SCHEMA}.warehouses WHERE tenant_id = $1 AND id = $2`,
+      [principal.tenantId, warehouseId],
+    );
+    if (result.rowCount === 0) throw new NotFoundException('Warehouse not found.');
+    const orgUnitId: string | null = result.rows[0].org_unit_id;
+    if (mode === 'write') {
+      assertOrganizationWrite(access, orgUnitId);
+    } else if (access.denied || (orgUnitId !== null && access.readUnits !== null && !access.readUnits.includes(orgUnitId))) {
+      throw new ForbiddenException('Warehouse is outside your organization access.');
+    }
+  }
+
+  private async recordReservationChange(
+    client: pg.PoolClient,
+    principal: ModulePrincipal,
+    reservation: InventoryReservationV1,
+    action: 'CREATE' | 'RELEASE' | 'ISSUE',
+  ): Promise<void> {
+    const now = new Date().toISOString();
+    await client.query(
+      `INSERT INTO ${SCHEMA}.audit_events (id, tenant_id, entity_type, entity_id, action, actor_id, payload)
+       VALUES ($1, $2, 'inventory_reservation', $3, $4, $5, $6::jsonb)`,
+      [randomUUID(), principal.tenantId, reservation.id, action, principal.subject,
+        JSON.stringify({ status: reservation.status, quantity: reservation.quantity, fulfilledQuantity: reservation.fulfilledQuantity })],
+    );
+    await client.query(
+      `INSERT INTO ${SCHEMA}.outbox_events
+         (id, tenant_id, topic, event_type, aggregate_type, aggregate_id,
+          aggregate_version, correlation_id, schema_version, payload, status, created_at)
+       VALUES ($1, $2, $3, 'inventory.reservation.changed.v1', 'reservation', $4,
+               $5, $4, 1, $6::jsonb, 'PENDING', $7)`,
+      [randomUUID(), principal.tenantId, TOPIC, reservation.id, reservation.version,
+        JSON.stringify({ reservationId: reservation.id, demandReferenceId: reservation.demandReferenceId,
+          productId: reservation.productId, status: reservation.status, quantity: reservation.quantity }), now],
+    );
+  }
+
   // ─── Warehouses ─────────────────────────────────────────────────────────────
 
   async createWarehouse(
@@ -129,10 +180,9 @@ export class InventoryService {
     context?: ModuleCommandContext,
   ): Promise<InventoryWarehouseV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      if (input.orgUnitId) {
-        const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
-        await assertOwningUnit(this.orgReplica, client, principal.tenantId, access, 'EITHER', input.orgUnitId);
-      }
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      await assertOwningUnit(this.orgReplica, client, principal.tenantId, access, 'EITHER', input.orgUnitId ?? null);
+      assertOrganizationWrite(access, input.orgUnitId ?? null);
       const existing = await client.query(
         `SELECT id FROM ${SCHEMA}.warehouses WHERE tenant_id = $1 AND code = $2`,
         [principal.tenantId, input.code],
@@ -163,15 +213,46 @@ export class InventoryService {
           now,
         ],
       );
+      await client.query(
+        `INSERT INTO ${SCHEMA}.audit_events (id, tenant_id, entity_type, entity_id, action, actor_id, payload)
+         VALUES ($1, $2, 'warehouse', $3, 'CREATE', $4, $5::jsonb)`,
+        [
+          randomUUID(),
+          principal.tenantId,
+          id,
+          principal.subject,
+          JSON.stringify({ code: input.code, name: input.name, warehouseType: input.warehouseType }),
+        ],
+      );
+      await client.query(
+        `INSERT INTO ${SCHEMA}.outbox_events (
+          id, tenant_id, topic, event_type, aggregate_type, aggregate_id,
+          aggregate_version, correlation_id, schema_version, payload, status, created_at
+        ) VALUES ($1, $2, $3, $4, 'warehouse', $5, 1, $5, 1, $6, 'PENDING', $7)`,
+        [
+          randomUUID(),
+          principal.tenantId,
+          TOPIC,
+          'inventory.warehouse.created.v1',
+          id,
+          JSON.stringify({ warehouseId: id, code: input.code, createdBy: principal.subject }),
+          now,
+        ],
+      );
       return mapWarehouse(res.rows[0]);
     });
   }
 
   async listWarehouses(principal: ModulePrincipal): Promise<InventoryWarehouseV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      if (access.denied) return [];
+      const params: unknown[] = [principal.tenantId];
+      const scope = access.readUnits === null ? '' : ` AND (org_unit_id IS NULL OR org_unit_id = ANY($2::text[]))`;
+      if (access.readUnits !== null) params.push([...access.readUnits]);
       const res = await client.query(
-        `SELECT * FROM ${SCHEMA}.warehouses WHERE tenant_id = $1 ORDER BY code ASC`,
-        [principal.tenantId],
+        `SELECT * FROM ${SCHEMA}.warehouses WHERE tenant_id = $1${scope} ORDER BY code ASC`,
+        params,
       );
       return res.rows.map(mapWarehouse);
     });
@@ -179,6 +260,7 @@ export class InventoryService {
 
   async getWarehouse(principal: ModulePrincipal, id: string): Promise<InventoryWarehouseV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await this.requireWarehouseAccess(client, principal, id, 'read');
       const res = await client.query(
         `SELECT * FROM ${SCHEMA}.warehouses WHERE tenant_id = $1 AND id = $2`,
         [principal.tenantId, id],
@@ -195,6 +277,7 @@ export class InventoryService {
     input: CreateLocationInputV1,
   ): Promise<InventoryLocationV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await this.requireWarehouseAccess(client, principal, input.warehouseId, 'write');
       const existing = await client.query(
         `SELECT id FROM ${SCHEMA}.locations WHERE tenant_id = $1 AND warehouse_id = $2 AND code = $3`,
         [principal.tenantId, input.warehouseId, input.code],
@@ -234,10 +317,14 @@ export class InventoryService {
 
   async listLocations(principal: ModulePrincipal, warehouseId?: string): Promise<InventoryLocationV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const query = warehouseId
-        ? `SELECT * FROM ${SCHEMA}.locations WHERE tenant_id = $1 AND warehouse_id = $2 ORDER BY code ASC`
-        : `SELECT * FROM ${SCHEMA}.locations WHERE tenant_id = $1 ORDER BY code ASC`;
-      const params = warehouseId ? [principal.tenantId, warehouseId] : [principal.tenantId];
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      if (access.denied) return [];
+      const params: unknown[] = [principal.tenantId];
+      const warehouseFilter = warehouseId ? ` AND loc.warehouse_id = $${params.push(warehouseId)}` : '';
+      const scope = access.readUnits === null ? '' : ` AND (w.org_unit_id IS NULL OR w.org_unit_id = ANY($${params.push([...access.readUnits])}::text[]))`;
+      const query = `SELECT loc.* FROM ${SCHEMA}.locations loc
+        JOIN ${SCHEMA}.warehouses w ON w.tenant_id = loc.tenant_id AND w.id = loc.warehouse_id
+        WHERE loc.tenant_id = $1${warehouseFilter}${scope} ORDER BY loc.code ASC`;
       const res = await client.query(query, params);
       return res.rows.map(mapLocation);
     });
@@ -335,13 +422,50 @@ export class InventoryService {
     input: PostStockMovementInputV1,
   ): Promise<{ transaction: StockLedgerTransactionV1; entries: StockLedgerEntryV1[] }> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await this.requireWarehouseAccess(client, principal, input.targetWarehouseId, 'write');
+      if (input.sourceWarehouseId) await this.requireWarehouseAccess(client, principal, input.sourceWarehouseId, 'write');
+      const targetLocation = await client.query<{ warehouse_id: string }>(
+        `SELECT warehouse_id FROM ${SCHEMA}.locations WHERE tenant_id = $1 AND id = $2 AND active = true`,
+        [principal.tenantId, input.targetLocationId],
+      );
+      if (targetLocation.rows[0]?.warehouse_id !== input.targetWarehouseId) {
+        throw new BadRequestException('Target locator does not belong to the target warehouse.');
+      }
+      if (input.sourceLocationId === input.targetLocationId) {
+        throw new BadRequestException('Source and target locators must differ.');
+      }
       // Idempotency verification
       const existingIdempotency = await client.query(
-        `SELECT response_payload FROM ${SCHEMA}.idempotency_records WHERE tenant_id = $1 AND idempotency_key = $2`,
+        `SELECT action, response_payload FROM ${SCHEMA}.idempotency_records WHERE tenant_id = $1 AND idempotency_key = $2`,
         [principal.tenantId, input.idempotencyKey],
       );
       if (existingIdempotency.rowCount && existingIdempotency.rowCount > 0) {
-        return existingIdempotency.rows[0].response_payload;
+        const prior = existingIdempotency.rows[0];
+        const response = prior.response_payload as {
+          transaction?: StockLedgerTransactionV1;
+          entries?: StockLedgerEntryV1[];
+        };
+        const source = response.entries?.find((entry) => entry.direction === 'CREDIT');
+        const target = response.entries?.find((entry) => entry.direction === 'DEBIT');
+        const matchesEntry = (entry: StockLedgerEntryV1 | undefined, locationId: string | null | undefined,
+          warehouseId: string | null | undefined) => Boolean(entry && entry.locationId === locationId &&
+          (!warehouseId || entry.warehouseId === warehouseId) && entry.productId === input.productId &&
+          entry.uomId === input.uomId && entry.lotId === (input.lotId ?? null) &&
+          entry.serialId === (input.serialId ?? null) && entry.stockStatus === input.stockStatus &&
+          ExactDecimal.toScaledBigInt(entry.quantity) === ExactDecimal.toScaledBigInt(input.quantity) &&
+          entry.unitCostMinor === (input.unitCostMinor ?? null));
+        if (prior.action !== 'STOCK_MOVEMENT' || !response.transaction ||
+            response.transaction.documentType !== input.documentType ||
+            response.transaction.documentReferenceId !== (input.documentReferenceId ?? null) ||
+            response.transaction.reason !== input.reason ||
+            response.transaction.correlationId !== input.correlationId ||
+            response.entries?.length !== (input.sourceLocationId ? 2 : 1) ||
+            Boolean(source) !== Boolean(input.sourceLocationId) ||
+            (source && !matchesEntry(source, input.sourceLocationId, input.sourceWarehouseId)) ||
+            !matchesEntry(target, input.targetLocationId, input.targetWarehouseId)) {
+          throw new ConflictException('Idempotency key was already used for a different stock movement.');
+        }
+        return prior.response_payload;
       }
 
       const txId = randomUUID();
@@ -380,13 +504,18 @@ export class InventoryService {
         );
         if (sourceLocRes.rowCount === 0) throw new NotFoundException('Source location not found.');
         const { allow_negative: allowNegative, warehouse_id: srcWarehouseId } = sourceLocRes.rows[0];
+        if (input.sourceWarehouseId && input.sourceWarehouseId !== srcWarehouseId) {
+          throw new BadRequestException('Source locator does not belong to the source warehouse.');
+        }
+        await this.requireWarehouseAccess(client, principal, srcWarehouseId, 'write');
 
         // Fetch or create source balance FOR UPDATE
         const srcBalRes = await client.query(
           `SELECT * FROM ${SCHEMA}.stock_balances
            WHERE tenant_id = $1 AND warehouse_id = $2 AND location_id = $3 AND product_id = $4 AND uom_id = $5
              AND COALESCE(lot_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($6, '00000000-0000-0000-0000-000000000000'::uuid)
-             AND stock_status = $7
+             AND COALESCE(serial_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($7, '00000000-0000-0000-0000-000000000000'::uuid)
+             AND stock_status = $8
            FOR UPDATE`,
           [
             principal.tenantId,
@@ -395,6 +524,7 @@ export class InventoryService {
             input.productId,
             input.uomId,
             input.lotId ?? null,
+            input.serialId ?? null,
             stockStatus,
           ],
         );
@@ -406,9 +536,11 @@ export class InventoryService {
           ? String(srcBalRes.rows[0].reserved_quantity)
           : '0.000000';
 
-        if (ExactDecimal.isLessThan(currentOnHand, input.quantity) && !allowNegative) {
+        const movable = ExactDecimal.subtract(currentOnHand, currentReserved);
+        if (ExactDecimal.isLessThan(movable, input.quantity) &&
+            (!allowNegative || ExactDecimal.isGreaterThan(currentReserved, '0.000000'))) {
           throw new BadRequestException(
-            `Insufficient stock at source location (On Hand: ${currentOnHand}, Requested: ${input.quantity}). Negative stock is not permitted.`,
+            `Insufficient unreserved stock at source location (Available: ${movable}, Requested: ${input.quantity}).`,
           );
         }
 
@@ -475,7 +607,8 @@ export class InventoryService {
         `SELECT * FROM ${SCHEMA}.stock_balances
          WHERE tenant_id = $1 AND warehouse_id = $2 AND location_id = $3 AND product_id = $4 AND uom_id = $5
            AND COALESCE(lot_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($6, '00000000-0000-0000-0000-000000000000'::uuid)
-           AND stock_status = $7
+           AND COALESCE(serial_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($7, '00000000-0000-0000-0000-000000000000'::uuid)
+           AND stock_status = $8
          FOR UPDATE`,
         [
           principal.tenantId,
@@ -484,6 +617,7 @@ export class InventoryService {
           input.productId,
           input.uomId,
           input.lotId ?? null,
+          input.serialId ?? null,
           stockStatus,
         ],
       );
@@ -575,6 +709,16 @@ export class InventoryService {
 
       const result = { transaction: tx, entries };
 
+      await client.query(
+        `INSERT INTO ${SCHEMA}.audit_events
+          (id, tenant_id, entity_type, entity_id, action, actor_id, payload)
+         VALUES ($1, $2, 'stock_movement', $3, 'POST', $4, $5::jsonb)`,
+        [randomUUID(), principal.tenantId, txId, principal.subject,
+          JSON.stringify({ documentType: input.documentType, documentReferenceId: input.documentReferenceId ?? null,
+            reason: input.reason, sourceLocationId: input.sourceLocationId ?? null,
+            targetLocationId: input.targetLocationId, productId: input.productId, quantity: input.quantity })],
+      );
+
       // 5. Store Idempotency Record
       await client.query(
         `INSERT INTO ${SCHEMA}.idempotency_records (
@@ -587,27 +731,164 @@ export class InventoryService {
     });
   }
 
+  /** Counter-document for a same-warehouse transfer with no Finance-valued movement. */
+  async reverseMovement(
+    principal: ModulePrincipal,
+    originalTransactionId: string,
+  ): Promise<{ transaction: StockLedgerTransactionV1; entries: StockLedgerEntryV1[] }> {
+    const original = await this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const header = await client.query(
+        `SELECT * FROM ${SCHEMA}.stock_ledger_transactions WHERE tenant_id = $1 AND id = $2`,
+        [principal.tenantId, originalTransactionId],
+      );
+      if (!header.rows[0]) throw new NotFoundException('Stock movement not found.');
+      const entries = await client.query(
+        `SELECT * FROM ${SCHEMA}.stock_ledger_entries
+          WHERE tenant_id = $1 AND transaction_id = $2 ORDER BY id`,
+        [principal.tenantId, originalTransactionId],
+      );
+      const credit = entries.rows.find((row) => row.direction === 'CREDIT');
+      const debit = entries.rows.find((row) => row.direction === 'DEBIT');
+      if (!credit || !debit || entries.rows.length !== 2 ||
+          !['TRANSFER', 'PUTAWAY'].includes(header.rows[0].reason) ||
+          credit.warehouse_id !== debit.warehouse_id ||
+          credit.product_id !== debit.product_id || credit.uom_id !== debit.uom_id ||
+          credit.lot_id !== debit.lot_id || credit.serial_id !== debit.serial_id ||
+          credit.stock_status !== debit.stock_status ||
+          String(credit.quantity) !== String(debit.quantity) ||
+          credit.unit_cost_minor !== null || debit.unit_cost_minor !== null) {
+        throw new ConflictException('Only balanced, uncosted internal transfers can be reversed here.');
+      }
+      await this.requireWarehouseAccess(client, principal, debit.warehouse_id, 'write');
+      return { credit, debit, reason: header.rows[0].reason as 'TRANSFER' | 'PUTAWAY' };
+    });
+    return this.postMovement(principal, {
+      documentType: 'STOCK_REVERSAL', documentReferenceId: originalTransactionId,
+      reason: original.reason, correlationId: `reverse:${originalTransactionId}`,
+      idempotencyKey: `stock-reverse:${originalTransactionId}`,
+      sourceWarehouseId: original.debit.warehouse_id, sourceLocationId: original.debit.location_id,
+      targetWarehouseId: original.credit.warehouse_id, targetLocationId: original.credit.location_id,
+      productId: original.debit.product_id, uomId: original.debit.uom_id,
+      quantity: String(original.debit.quantity), lotId: original.debit.lot_id,
+      serialId: original.debit.serial_id, stockStatus: original.debit.stock_status,
+    });
+  }
+
   // ─── Balances & Ledger Queries ──────────────────────────────────────────────
 
   async listBalances(principal: ModulePrincipal, warehouseId?: string): Promise<StockBalanceV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const query = warehouseId
-        ? `SELECT * FROM ${SCHEMA}.stock_balances WHERE tenant_id = $1 AND warehouse_id = $2 ORDER BY updated_at DESC`
-        : `SELECT * FROM ${SCHEMA}.stock_balances WHERE tenant_id = $1 ORDER BY updated_at DESC`;
-      const params = warehouseId ? [principal.tenantId, warehouseId] : [principal.tenantId];
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      if (access.denied) return [];
+      const params: unknown[] = [principal.tenantId];
+      const warehouseFilter = warehouseId ? ` AND sb.warehouse_id = $${params.push(warehouseId)}` : '';
+      const scope = access.readUnits === null ? '' : ` AND (w.org_unit_id IS NULL OR w.org_unit_id = ANY($${params.push([...access.readUnits])}::text[]))`;
+      const query = `SELECT sb.* FROM ${SCHEMA}.stock_balances sb
+        JOIN ${SCHEMA}.warehouses w ON w.tenant_id = sb.tenant_id AND w.id = sb.warehouse_id
+        WHERE sb.tenant_id = $1${warehouseFilter}${scope} ORDER BY sb.updated_at DESC`;
       const res = await client.query(query, params);
       return res.rows.map(mapBalance);
     });
   }
 
+  async listReservations(principal: ModulePrincipal): Promise<InventoryReservationV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      if (access.denied) return [];
+      const params: unknown[] = [principal.tenantId];
+      const scope = access.readUnits === null ? '' :
+        ` AND (w.org_unit_id IS NULL OR w.org_unit_id = ANY($${params.push([...access.readUnits])}::text[]))`;
+      const result = await client.query(
+        `SELECT r.* FROM ${SCHEMA}.inventory_reservations r
+         JOIN ${SCHEMA}.warehouses w ON w.tenant_id = r.tenant_id AND w.id = r.warehouse_id
+         WHERE r.tenant_id = $1${scope} ORDER BY r.created_at DESC LIMIT 100`, params,
+      );
+      return result.rows.map(mapReservation);
+    });
+  }
+
   async listLedgerEntries(principal: ModulePrincipal, productId?: string): Promise<StockLedgerEntryV1[]> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      const query = productId
-        ? `SELECT * FROM ${SCHEMA}.stock_ledger_entries WHERE tenant_id = $1 AND product_id = $2 ORDER BY created_at DESC LIMIT 100`
-        : `SELECT * FROM ${SCHEMA}.stock_ledger_entries WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 100`;
-      const params = productId ? [principal.tenantId, productId] : [principal.tenantId];
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      if (access.denied) return [];
+      const params: unknown[] = [principal.tenantId];
+      const productFilter = productId ? ` AND e.product_id = $${params.push(productId)}` : '';
+      const scope = access.readUnits === null ? '' : ` AND (w.org_unit_id IS NULL OR w.org_unit_id = ANY($${params.push([...access.readUnits])}::text[]))`;
+      const query = `SELECT e.* FROM ${SCHEMA}.stock_ledger_entries e
+        JOIN ${SCHEMA}.warehouses w ON w.tenant_id = e.tenant_id AND w.id = e.warehouse_id
+        WHERE e.tenant_id = $1${productFilter}${scope} ORDER BY e.created_at DESC LIMIT 100`;
       const res = await client.query(query, params);
       return res.rows.map(mapLedgerEntry);
+    });
+  }
+
+  async listCostLayers(principal: ModulePrincipal, productId?: string): Promise<MaterialLedgerCostLayerV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      if (access.denied) return [];
+      const params: unknown[] = [principal.tenantId];
+      const productFilter = productId ? ` AND c.product_id = $${params.push(productId)}` : '';
+      const scope = access.readUnits === null ? '' : ` AND (w.org_unit_id IS NULL OR w.org_unit_id = ANY($${params.push([...access.readUnits])}::text[]))`;
+      const query = `SELECT c.* FROM ${SCHEMA}.inventory_cost_layers c
+        JOIN ${SCHEMA}.warehouses w ON w.tenant_id = c.tenant_id AND w.id = c.warehouse_id
+        WHERE c.tenant_id = $1${productFilter}${scope} ORDER BY c.created_at DESC LIMIT 200`;
+      const res = await client.query(query, params);
+      return res.rows.map(mapCostLayer);
+    });
+  }
+
+  async listPostedReceiptCosts(principal: ModulePrincipal, productId?: string): Promise<InventoryReceiptCostRecordV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      if (access.denied) return [];
+      const params: unknown[] = [principal.tenantId];
+      const productFilter = productId ? ` AND c.product_id = $${params.push(productId)}` : '';
+      const scope = access.readUnits === null ? '' : ` AND (w.org_unit_id IS NULL OR w.org_unit_id = ANY($${params.push([...access.readUnits])}::text[]))`;
+      const query = `SELECT c.* FROM ${SCHEMA}.inventory_receipt_cost_records c
+        JOIN ${SCHEMA}.warehouses w ON w.tenant_id = c.tenant_id AND w.id = c.warehouse_id
+        WHERE c.tenant_id = $1${productFilter}${scope} ORDER BY c.created_at DESC LIMIT 200`;
+      const result = await client.query(query, params);
+      return result.rows.map(mapPostedReceiptCost);
+    });
+  }
+
+  async getWarehouseLocationMap(
+    principal: ModulePrincipal,
+    warehouseId: string,
+  ): Promise<InventoryWarehouseMapCellV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await this.requireWarehouseAccess(client, principal, warehouseId, 'read');
+      const res = await client.query(
+        `SELECT loc.id AS location_id, loc.code, loc.name, loc.aisle, loc.rack, loc.shelf, loc.bin,
+                coalesce(sum(sb.on_hand_quantity), 0) AS on_hand_quantity,
+                coalesce(sum(sb.reserved_quantity), 0) AS reserved_quantity,
+                coalesce(sum(CASE WHEN lot.status <> 'AVAILABLE' OR lot.expiry_date < NOW() THEN 0 ELSE sb.available_quantity END), 0) AS available_quantity,
+                min(lot.expiry_date) FILTER (WHERE lot.status = 'AVAILABLE' AND lot.expiry_date IS NOT NULL AND lot.expiry_date >= NOW()) AS nearest_lot_expiry
+           FROM ${SCHEMA}.locations loc
+           LEFT JOIN ${SCHEMA}.stock_balances sb
+             ON sb.tenant_id = loc.tenant_id AND sb.location_id = loc.id AND sb.stock_status = 'AVAILABLE'
+           LEFT JOIN ${SCHEMA}.inventory_lots lot
+             ON lot.tenant_id = sb.tenant_id AND lot.id = sb.lot_id
+          WHERE loc.tenant_id = $1 AND loc.warehouse_id = $2 AND loc.active = true
+          GROUP BY loc.id, loc.code, loc.name, loc.aisle, loc.rack, loc.shelf, loc.bin
+          ORDER BY loc.aisle NULLS LAST, loc.rack NULLS LAST, loc.shelf NULLS LAST, loc.bin NULLS LAST, loc.code`,
+        [principal.tenantId, warehouseId],
+      );
+      return res.rows.map((row) => ({
+        locationId: row.location_id,
+        code: row.code,
+        name: row.name,
+        aisle: row.aisle,
+        rack: row.rack,
+        shelf: row.shelf,
+        bin: row.bin,
+        onHandQuantity: String(row.on_hand_quantity),
+        reservedQuantity: String(row.reserved_quantity),
+        availableQuantity: String(row.available_quantity),
+        nearestLotExpiry: row.nearest_lot_expiry
+          ? row.nearest_lot_expiry.toISOString?.() ?? String(row.nearest_lot_expiry)
+          : null,
+      }));
     });
   }
 
@@ -744,6 +1025,114 @@ export class InventoryService {
     });
   }
 
+  /** Retries only Finance rejections known to occur before any cost layer is posted. */
+  async retryReceiptFinancePosting(
+    principal: ModulePrincipal,
+    receiptId: string,
+    requestKey: string,
+  ): Promise<InventoryReceiptV1> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const current = await client.query(
+        `SELECT * FROM ${SCHEMA}.receipts WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
+        [principal.tenantId, receiptId],
+      );
+      const receipt = current.rows[0];
+      if (!receipt) throw new NotFoundException('Receipt not found.');
+      await this.requireWarehouseAccess(client, principal, receipt.warehouse_id, 'write');
+      const prior = await client.query<{ action: string; resource_id: string; response_payload: InventoryReceiptV1 }>(
+        `SELECT action, resource_id, response_payload FROM ${SCHEMA}.idempotency_records
+          WHERE tenant_id = $1 AND idempotency_key = $2`,
+        [principal.tenantId, requestKey],
+      );
+      if (prior.rows[0]) {
+        if (prior.rows[0].action !== 'RETRY_RECEIPT_FINANCE_POSTING' || prior.rows[0].resource_id !== receiptId) {
+          throw new ConflictException('Request key was already used for a different action.');
+        }
+        return prior.rows[0].response_payload;
+      }
+      const safeRejections = new Set([
+        'FINANCE_PERIOD_LOCKED', 'FINANCE_COST_PROFILE_MISSING',
+        'FINANCE_ORG_COST_PROFILE_MISSING', 'FINANCE_COST_METHOD_MISMATCH',
+      ]);
+      if (receipt.status !== 'COMPLETED' || receipt.finance_posting_status !== 'POSTING_REJECTED' ||
+          !safeRejections.has(String(receipt.finance_posting_rejection_code))) {
+        throw new ConflictException('This Finance rejection needs reconciliation before retry.');
+      }
+      const valuation = await client.query<{
+        org_unit_id: string | null; finance_cost_profile_id: string | null;
+        valuation_method: 'STANDARD' | 'MOVING_AVERAGE' | 'FIFO' | null;
+      }>(
+        `SELECT w.org_unit_id, s.finance_cost_profile_id, s.valuation_method
+           FROM ${SCHEMA}.warehouses w
+           LEFT JOIN ${SCHEMA}.inventory_org_valuation_settings s
+             ON s.tenant_id = w.tenant_id AND s.org_unit_id = w.org_unit_id
+          WHERE w.tenant_id = $1 AND w.id = $2`,
+        [principal.tenantId, receipt.warehouse_id],
+      );
+      const profile = valuation.rows[0];
+      if (!profile?.org_unit_id || !profile.finance_cost_profile_id || !profile.valuation_method) {
+        throw new ConflictException('Receipt warehouse needs an owning organization and a Finance cost profile.');
+      }
+      const linesResult = await client.query(
+        `SELECT * FROM ${SCHEMA}.receipt_lines WHERE tenant_id = $1 AND receipt_id = $2 ORDER BY line_number`,
+        [principal.tenantId, receiptId],
+      );
+      if (!linesResult.rows.length || linesResult.rows.some((line) => !line.target_location_id)) {
+        throw new ConflictException('Receipt lines need reconciliation before Finance retry.');
+      }
+      const receivedAt = receipt.completed_at?.toISOString?.() ?? receipt.completed_at;
+      if (!receivedAt) throw new ConflictException('Receipt completion timestamp is missing.');
+      await assertInventoryReceiptFinancePeriodOpenFromReplica(client, principal.tenantId, receivedAt);
+      const eventPayload = {
+        receiptId,
+        receiptNumber: receipt.receipt_number,
+        warehouseId: receipt.warehouse_id,
+        orgUnitId: profile.org_unit_id,
+        financeCostProfileId: profile.finance_cost_profile_id,
+        valuationMethod: profile.valuation_method === 'MOVING_AVERAGE' ? 'AVERAGE' : profile.valuation_method,
+        receivedAt,
+        lines: linesResult.rows.map((line) => ({
+          receiptLineId: line.id, productId: line.product_id,
+          receivedQuantity: ExactDecimal.fromScaledBigInt(ExactDecimal.toScaledBigInt(String(line.received_quantity))),
+          uomId: line.uom_id,
+          purchaseOrderId: line.purchase_order_id ?? null,
+          purchaseOrderLineId: line.purchase_order_line_id ?? null,
+        })),
+      };
+      const updated = await client.query(
+        `UPDATE ${SCHEMA}.receipts
+            SET finance_posting_status = 'AWAITING_POSTING', finance_posting_rejection_code = NULL,
+                version = version + 1, updated_at = clock_timestamp()
+          WHERE tenant_id = $1 AND id = $2 RETURNING *`,
+        [principal.tenantId, receiptId],
+      );
+      const next = mapReceipt(updated.rows[0], linesResult.rows);
+      await client.query(
+        `INSERT INTO ${SCHEMA}.outbox_events
+           (id, tenant_id, topic, event_type, aggregate_type, aggregate_id,
+            aggregate_version, correlation_id, schema_version, payload, status, created_at)
+         VALUES ($1, $2, $3, 'inventory.receipt.completed.v1', 'receipt', $4,
+                 $5, $6, 1, $7::jsonb, 'PENDING', clock_timestamp())`,
+        [randomUUID(), principal.tenantId, TOPIC, receiptId, next.version, requestKey, JSON.stringify(eventPayload)],
+      );
+      await client.query(
+        `INSERT INTO ${SCHEMA}.audit_events
+           (id, tenant_id, entity_type, entity_id, action, actor_id, payload)
+         VALUES ($1, $2, 'receipt', $3, 'RETRY_FINANCE_POSTING', $4, $5::jsonb)`,
+        [randomUUID(), principal.tenantId, receiptId, principal.subject,
+          JSON.stringify({ requestKey, priorRejectionCode: receipt.finance_posting_rejection_code,
+            financeCostProfileId: profile.finance_cost_profile_id })],
+      );
+      await client.query(
+        `INSERT INTO ${SCHEMA}.idempotency_records
+           (tenant_id, idempotency_key, resource_id, action, response_payload)
+         VALUES ($1, $2, $3, 'RETRY_RECEIPT_FINANCE_POSTING', $4::jsonb)`,
+        [principal.tenantId, requestKey, receiptId, JSON.stringify(next)],
+      );
+      return next;
+    });
+  }
+
   /** Stock movements, Finance posting status, and outbox — same transaction as lifecycle `complete`. */
   private async persistReceiptComplete(
     client: pg.PoolClient,
@@ -753,6 +1142,21 @@ export class InventoryService {
   ): Promise<InventoryReceiptV1> {
     const receiptId = receipt.id;
     const now = new Date().toISOString();
+    const valuation = await client.query<{
+      org_unit_id: string | null; finance_cost_profile_id: string | null;
+      valuation_method: 'STANDARD' | 'MOVING_AVERAGE' | 'FIFO' | null;
+    }>(
+      `SELECT w.org_unit_id, s.finance_cost_profile_id, s.valuation_method
+         FROM ${SCHEMA}.warehouses w
+         LEFT JOIN ${SCHEMA}.inventory_org_valuation_settings s
+           ON s.tenant_id = w.tenant_id AND s.org_unit_id = w.org_unit_id
+        WHERE w.tenant_id = $1 AND w.id = $2`,
+      [principal.tenantId, receipt.warehouse_id],
+    );
+    const profile = valuation.rows[0];
+    if (!profile?.org_unit_id || !profile.finance_cost_profile_id || !profile.valuation_method) {
+      throw new ConflictException('Receipt warehouse needs an owning organization and a Finance cost profile.');
+    }
 
     for (const line of lines) {
       if (!line.target_location_id) {
@@ -875,6 +1279,9 @@ export class InventoryService {
         receiptId,
         receiptNumber: receipt.receipt_number,
         warehouseId: receipt.warehouse_id,
+        orgUnitId: profile.org_unit_id,
+        financeCostProfileId: profile.finance_cost_profile_id,
+        valuationMethod: profile.valuation_method === 'MOVING_AVERAGE' ? 'AVERAGE' : profile.valuation_method,
         receivedAt: now,
         lines: completedLinesRes.rows.map((l) => ({
           receiptLineId: l.id,
@@ -909,6 +1316,96 @@ export class InventoryService {
     return this.fetchReceipt(client, principal.tenantId, receiptId);
   }
 
+  // ─── Org valuation settings ─────────────────────────────────────────────────
+
+  async getOrgValuationSetting(
+    principal: ModulePrincipal,
+    orgUnitId: string,
+  ): Promise<OrgValuationSettingV1> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      await assertOwningUnit(this.orgReplica, client, principal.tenantId, access, 'UNIT', orgUnitId);
+      if (access.denied || (access.readUnits !== null && !access.readUnits.includes(orgUnitId))) {
+        throw new ForbiddenException('Organization is outside your read access.');
+      }
+      const res = await client.query(
+        `SELECT tenant_id, org_unit_id, valuation_method, finance_cost_profile_id, updated_at, updated_by
+         FROM ${SCHEMA}.inventory_org_valuation_settings
+         WHERE tenant_id = $1 AND org_unit_id = $2`,
+        [principal.tenantId, orgUnitId],
+      );
+      if (res.rowCount && res.rowCount > 0) {
+        const row = res.rows[0];
+        return {
+          tenantId: row.tenant_id,
+          orgUnitId: row.org_unit_id,
+          valuationMethod: row.valuation_method,
+          financeCostProfileId: row.finance_cost_profile_id,
+          updatedAt: row.updated_at.toISOString?.() ?? row.updated_at,
+          updatedBy: row.updated_by,
+        };
+      }
+      throw new NotFoundException('Organization valuation method is not configured.');
+    });
+  }
+
+  async upsertOrgValuationSetting(
+    principal: ModulePrincipal,
+    orgUnitId: string,
+    input: UpsertOrgValuationSettingInputV1,
+  ): Promise<OrgValuationSettingV1> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      await assertOwningUnit(this.orgReplica, client, principal.tenantId, access, 'UNIT', orgUnitId);
+      assertOrganizationWrite(access, orgUnitId);
+      const now = new Date().toISOString();
+      const res = await client.query(
+        `INSERT INTO ${SCHEMA}.inventory_org_valuation_settings (
+          tenant_id, org_unit_id, valuation_method, finance_cost_profile_id, updated_at, updated_by
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (tenant_id, org_unit_id) DO UPDATE
+          SET valuation_method = EXCLUDED.valuation_method,
+              finance_cost_profile_id = EXCLUDED.finance_cost_profile_id,
+              updated_at = EXCLUDED.updated_at,
+              updated_by = EXCLUDED.updated_by
+        RETURNING tenant_id, org_unit_id, valuation_method, finance_cost_profile_id, updated_at, updated_by`,
+        [principal.tenantId, orgUnitId, input.valuationMethod, input.financeCostProfileId, now, principal.subject],
+      );
+      const row = res.rows[0];
+      const setting = {
+        tenantId: row.tenant_id,
+        orgUnitId: row.org_unit_id,
+        valuationMethod: row.valuation_method,
+        financeCostProfileId: row.finance_cost_profile_id,
+        updatedAt: row.updated_at.toISOString?.() ?? row.updated_at,
+        updatedBy: row.updated_by,
+      };
+      await client.query(
+        `INSERT INTO ${SCHEMA}.audit_events (id, tenant_id, entity_type, entity_id, action, actor_id, payload)
+         VALUES ($1, $2, 'org_valuation_setting', $3, 'UPSERT', $4, $5::jsonb)`,
+        [
+          randomUUID(),
+          principal.tenantId,
+          randomUUID(),
+          principal.subject,
+          JSON.stringify({ orgUnitId, valuationMethod: input.valuationMethod, financeCostProfileId: input.financeCostProfileId }),
+        ],
+      );
+      await client.query(
+        `INSERT INTO ${SCHEMA}.outbox_events (id, tenant_id, event_type, payload, status, created_at)
+         VALUES ($1, $2, 'inventory.valuation.setting.updated.v1', $3::jsonb, 'PENDING', $4)`,
+        [
+          randomUUID(),
+          principal.tenantId,
+          JSON.stringify({ orgUnitId, valuationMethod: input.valuationMethod,
+            financeCostProfileId: input.financeCostProfileId, updatedBy: principal.subject }),
+          now,
+        ],
+      );
+      return setting;
+    });
+  }
+
   // ─── ATP (Material Ledger gateway) ─────────────────────────────────────────
 
   async checkAtp(
@@ -916,6 +1413,7 @@ export class InventoryService {
     input: InventoryAtpCheckRequestV1,
   ): Promise<InventoryAtpCheckResponseV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await this.requireWarehouseAccess(client, principal, input.warehouseId, 'read');
       const params: unknown[] = [
         principal.tenantId,
         input.warehouseId,
@@ -925,13 +1423,21 @@ export class InventoryService {
       let locationFilter = '';
       if (input.locationId) {
         params.push(input.locationId);
-        locationFilter = ` AND location_id = $${params.length}`;
+        locationFilter = ` AND sb.location_id = $${params.length}`;
       }
       const balRes = await client.query(
-        `SELECT on_hand_quantity, reserved_quantity
-         FROM ${SCHEMA}.stock_balances
-         WHERE tenant_id = $1 AND warehouse_id = $2 AND product_id = $3 AND uom_id = $4
-           AND stock_status = 'AVAILABLE'${locationFilter}`,
+        `SELECT sb.on_hand_quantity, sb.reserved_quantity
+         FROM ${SCHEMA}.stock_balances sb
+         WHERE sb.tenant_id = $1 AND sb.warehouse_id = $2 AND sb.product_id = $3 AND sb.uom_id = $4
+           AND sb.stock_status = 'AVAILABLE'
+           AND (
+             sb.lot_id IS NULL
+             OR NOT EXISTS (
+               SELECT 1 FROM ${SCHEMA}.inventory_lots lot
+               WHERE lot.tenant_id = sb.tenant_id AND lot.id = sb.lot_id
+                 AND (lot.status <> 'AVAILABLE' OR (lot.expiry_date IS NOT NULL AND lot.expiry_date < NOW()))
+             )
+           )${locationFilter}`,
         params,
       );
 
@@ -1009,6 +1515,7 @@ export class InventoryService {
     input: CreateReservationInputV1,
   ): Promise<InventoryReservationV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await this.requireWarehouseAccess(client, principal, input.warehouseId, 'write');
       // 1. Check idempotency if key provided
       if (input.idempotencyKey) {
         const existingRec = await client.query(
@@ -1034,12 +1541,22 @@ export class InventoryService {
 
       // 2. Lock ALL candidate balance rows deterministically in ascending ID order FOR UPDATE
       const balRes = await client.query(
-        `SELECT id, on_hand_quantity, reserved_quantity, available_quantity
-         FROM ${SCHEMA}.stock_balances
-         WHERE tenant_id = $1 AND warehouse_id = $2 AND product_id = $3 AND uom_id = $4 AND stock_status = 'AVAILABLE'
-         ORDER BY id ASC
+        `SELECT sb.id, sb.on_hand_quantity, sb.reserved_quantity, sb.available_quantity
+         FROM ${SCHEMA}.stock_balances sb
+         WHERE sb.tenant_id = $1 AND sb.warehouse_id = $2 AND sb.product_id = $3 AND sb.uom_id = $4
+           AND sb.stock_status = 'AVAILABLE'
+           AND ($5::uuid IS NULL OR sb.location_id = $5)
+           AND (
+             sb.lot_id IS NULL
+             OR NOT EXISTS (
+               SELECT 1 FROM ${SCHEMA}.inventory_lots lot
+               WHERE lot.tenant_id = sb.tenant_id AND lot.id = sb.lot_id
+                 AND (lot.status <> 'AVAILABLE' OR (lot.expiry_date IS NOT NULL AND lot.expiry_date < NOW()))
+             )
+           )
+         ORDER BY sb.id ASC
          FOR UPDATE`,
-        [principal.tenantId, input.warehouseId, input.productId, input.uomId],
+        [principal.tenantId, input.warehouseId, input.productId, input.uomId, input.locationId ?? null],
       );
 
       let totalAvail = '0.000000';
@@ -1056,6 +1573,7 @@ export class InventoryService {
       // 3. Allocate reserved quantity across the locked balance rows
       let remainingToReserve = input.quantity;
       const now = new Date().toISOString();
+      const allocations: Array<{ balanceId: string; quantity: string }> = [];
 
       for (const row of balRes.rows) {
         if (ExactDecimal.isLessThanOrEqual(remainingToReserve, '0.000000')) break;
@@ -1075,6 +1593,8 @@ export class InventoryService {
            WHERE id = $4`,
           [updatedReserved, updatedAvail, now, row.id],
         );
+
+        allocations.push({ balanceId: row.id, quantity: allocQty });
 
         remainingToReserve = ExactDecimal.subtract(remainingToReserve, allocQty);
       }
@@ -1107,6 +1627,17 @@ export class InventoryService {
 
       const reservation = mapReservation(res.rows[0]);
 
+      for (const allocation of allocations) {
+        await client.query(
+          `INSERT INTO ${SCHEMA}.inventory_reservation_allocations
+             (tenant_id, reservation_id, balance_id, allocated_quantity)
+           VALUES ($1, $2, $3, $4)`,
+          [principal.tenantId, id, allocation.balanceId, allocation.quantity],
+        );
+      }
+
+      await this.recordReservationChange(client, principal, reservation, 'CREATE');
+
       if (input.idempotencyKey) {
         await client.query(
           `INSERT INTO ${SCHEMA}.idempotency_records (tenant_id, idempotency_key, resource_id, action, response_payload, created_at)
@@ -1129,32 +1660,43 @@ export class InventoryService {
       if (resRes.rowCount === 0) throw new NotFoundException('Reservation not found.');
       const res = resRes.rows[0];
 
+      await this.requireWarehouseAccess(client, principal, res.warehouse_id, 'write');
+
       if (res.status === 'RELEASED' || res.status === 'CANCELLED') return mapReservation(res);
 
       const unfulfilledQty = ExactDecimal.subtract(String(res.quantity), String(res.fulfilled_quantity));
       const now = new Date().toISOString();
 
       if (ExactDecimal.isPositive(unfulfilledQty)) {
-        // Lock balance rows deterministically in ascending ID order
+        // Only release balances allocated to this demand. Legacy reservations
+        // without allocation rows need explicit reconciliation before release.
         const balRes = await client.query(
-          `SELECT id, on_hand_quantity, reserved_quantity, available_quantity
-           FROM ${SCHEMA}.stock_balances
-           WHERE tenant_id = $1 AND warehouse_id = $2 AND product_id = $3 AND uom_id = $4
-           ORDER BY id ASC
-           FOR UPDATE`,
-          [principal.tenantId, res.warehouse_id, res.product_id, res.uom_id],
+          `SELECT a.balance_id, a.allocated_quantity, a.fulfilled_quantity, a.released_quantity,
+                  sb.on_hand_quantity, sb.reserved_quantity
+           FROM ${SCHEMA}.inventory_reservation_allocations a
+           JOIN ${SCHEMA}.stock_balances sb
+             ON sb.tenant_id = a.tenant_id AND sb.id = a.balance_id
+           WHERE a.tenant_id = $1 AND a.reservation_id = $2
+           ORDER BY a.balance_id ASC
+           FOR UPDATE OF a, sb`,
+          [principal.tenantId, reservationId],
         );
 
         let remainingToRelease = unfulfilledQty;
         for (const row of balRes.rows) {
           if (ExactDecimal.isLessThanOrEqual(remainingToRelease, '0.000000')) break;
-          const currentReserved = String(row.reserved_quantity);
-          if (ExactDecimal.isLessThanOrEqual(currentReserved, '0.000000')) continue;
-
-          const releaseFromRow = ExactDecimal.isLessThanOrEqual(remainingToRelease, currentReserved)
+          const allocatedRemaining = ExactDecimal.subtract(
+            ExactDecimal.subtract(String(row.allocated_quantity), String(row.fulfilled_quantity)),
+            String(row.released_quantity),
+          );
+          if (ExactDecimal.isLessThanOrEqual(allocatedRemaining, '0.000000')) continue;
+          const releaseFromRow = ExactDecimal.isLessThanOrEqual(remainingToRelease, allocatedRemaining)
             ? remainingToRelease
-            : currentReserved;
-
+            : allocatedRemaining;
+          const currentReserved = String(row.reserved_quantity);
+          if (ExactDecimal.isLessThan(currentReserved, releaseFromRow)) {
+            throw new ConflictException('Reserved balance is smaller than its allocation; reconcile inventory.');
+          }
           const newReserved = ExactDecimal.subtract(currentReserved, releaseFromRow);
           const newAvail = ExactDecimal.subtract(String(row.on_hand_quantity), newReserved);
 
@@ -1162,10 +1704,19 @@ export class InventoryService {
             `UPDATE ${SCHEMA}.stock_balances
              SET reserved_quantity = $1, available_quantity = $2, updated_at = $3, version = version + 1
              WHERE id = $4`,
-            [newReserved, newAvail, now, row.id],
+            [newReserved, newAvail, now, row.balance_id],
+          );
+          await client.query(
+            `UPDATE ${SCHEMA}.inventory_reservation_allocations
+             SET released_quantity = released_quantity + $1
+             WHERE tenant_id = $2 AND reservation_id = $3 AND balance_id = $4`,
+            [releaseFromRow, principal.tenantId, reservationId, row.balance_id],
           );
 
           remainingToRelease = ExactDecimal.subtract(remainingToRelease, releaseFromRow);
+        }
+        if (ExactDecimal.isPositive(remainingToRelease)) {
+          throw new ConflictException('Reservation allocations are incomplete; reconcile inventory before release.');
         }
       }
 
@@ -1173,7 +1724,9 @@ export class InventoryService {
         `UPDATE ${SCHEMA}.inventory_reservations SET status = 'RELEASED', updated_at = $1, version = version + 1 WHERE id = $2 RETURNING *`,
         [now, reservationId],
       );
-      return mapReservation(updatedRes.rows[0]);
+      const released = mapReservation(updatedRes.rows[0]);
+      await this.recordReservationChange(client, principal, released, 'RELEASE');
+      return released;
     });
   }
 
@@ -1205,6 +1758,31 @@ export class InventoryService {
       if (resRes.rowCount === 0) throw new NotFoundException('Reservation not found.');
       const res = resRes.rows[0];
 
+      await this.requireWarehouseAccess(client, principal, res.warehouse_id, 'write');
+
+      if (res.demand_type !== 'SALES_ORDER' || res.demand_reference_id !== input.orderId || !res.demand_line_id) {
+        throw new BadRequestException('Reservation is not bound to this sales order and line.');
+      }
+      const priorIssue = await client.query<{
+        issue_id: string; reservation_id: string; order_id: string; issued_quantity: string;
+      }>(
+        `SELECT issue_id, reservation_id, order_id, issued_quantity
+           FROM ${SCHEMA}.inventory_reservation_issues
+          WHERE tenant_id = $1 AND fulfillment_id = $2`,
+        [principal.tenantId, input.fulfillmentId],
+      );
+      if (priorIssue.rows[0]) {
+        const prior = priorIssue.rows[0];
+        if (prior.reservation_id !== input.reservationId || prior.order_id !== input.orderId ||
+            (input.quantity && ExactDecimal.toScaledBigInt(input.quantity) !== ExactDecimal.toScaledBigInt(String(prior.issued_quantity)))) {
+          throw new ConflictException('Fulfillment key was already used for a different stock issue.');
+        }
+        return {
+          issueId: prior.issue_id, reservationId: prior.reservation_id, orderId: prior.order_id,
+          fulfillmentId: input.fulfillmentId, issuedQuantity: String(prior.issued_quantity), status: 'ISSUED',
+        };
+      }
+
       if (res.status !== 'ACTIVE') {
         throw new BadRequestException(`Cannot issue stock: reservation status is ${res.status}.`);
       }
@@ -1221,14 +1799,17 @@ export class InventoryService {
         );
       }
 
-      // 2. Lock balance rows deterministically in ascending ID order
+      // 2. Issue only from this reservation's exact balance allocations.
       const balRes = await client.query(
-        `SELECT id, on_hand_quantity, reserved_quantity, available_quantity, location_id
-         FROM ${SCHEMA}.stock_balances
-         WHERE tenant_id = $1 AND warehouse_id = $2 AND product_id = $3 AND uom_id = $4
-         ORDER BY id ASC
-         FOR UPDATE`,
-        [principal.tenantId, res.warehouse_id, res.product_id, res.uom_id],
+        `SELECT a.balance_id, a.allocated_quantity, a.fulfilled_quantity, a.released_quantity,
+                sb.on_hand_quantity, sb.reserved_quantity, sb.location_id, sb.lot_id, sb.serial_id, sb.stock_status
+         FROM ${SCHEMA}.inventory_reservation_allocations a
+         JOIN ${SCHEMA}.stock_balances sb
+           ON sb.tenant_id = a.tenant_id AND sb.id = a.balance_id
+         WHERE a.tenant_id = $1 AND a.reservation_id = $2
+         ORDER BY a.balance_id ASC
+         FOR UPDATE OF a, sb`,
+        [principal.tenantId, input.reservationId],
       );
 
       let remainingToDeduct = issueQty;
@@ -1257,12 +1838,21 @@ export class InventoryService {
 
       for (const row of balRes.rows) {
         if (ExactDecimal.isLessThanOrEqual(remainingToDeduct, '0.000000')) break;
-        const rowReserved = String(row.reserved_quantity);
-        if (ExactDecimal.isLessThanOrEqual(rowReserved, '0.000000')) continue;
+        const allocatedRemaining = ExactDecimal.subtract(
+          ExactDecimal.subtract(String(row.allocated_quantity), String(row.fulfilled_quantity)),
+          String(row.released_quantity),
+        );
+        if (ExactDecimal.isLessThanOrEqual(allocatedRemaining, '0.000000')) continue;
 
-        const deductFromRow = ExactDecimal.isLessThanOrEqual(remainingToDeduct, rowReserved)
+        const deductFromRow = ExactDecimal.isLessThanOrEqual(remainingToDeduct, allocatedRemaining)
           ? remainingToDeduct
-          : rowReserved;
+          : allocatedRemaining;
+
+        const rowReserved = String(row.reserved_quantity);
+        if (ExactDecimal.isLessThan(rowReserved, deductFromRow) ||
+            ExactDecimal.isLessThan(String(row.on_hand_quantity), deductFromRow)) {
+          throw new ConflictException('Reserved stock is smaller than its allocation; reconcile inventory.');
+        }
 
         const newReserved = ExactDecimal.subtract(rowReserved, deductFromRow);
         const newOnHand = ExactDecimal.subtract(String(row.on_hand_quantity), deductFromRow);
@@ -1273,15 +1863,21 @@ export class InventoryService {
            SET on_hand_quantity = $1, reserved_quantity = $2, available_quantity = $3,
                last_movement_at = $4, updated_at = $4, version = version + 1
            WHERE id = $5`,
-          [newOnHand, newReserved, newAvail, now, row.id],
+          [newOnHand, newReserved, newAvail, now, row.balance_id],
+        );
+        await client.query(
+          `UPDATE ${SCHEMA}.inventory_reservation_allocations
+           SET fulfilled_quantity = fulfilled_quantity + $1
+           WHERE tenant_id = $2 AND reservation_id = $3 AND balance_id = $4`,
+          [deductFromRow, principal.tenantId, input.reservationId, row.balance_id],
         );
 
         // Credit stock ledger entry for physical removal
         await client.query(
           `INSERT INTO ${SCHEMA}.stock_ledger_entries (
             id, tenant_id, transaction_id, direction, warehouse_id, location_id, product_id,
-            uom_id, quantity, base_quantity, stock_status, created_at
-          ) VALUES ($1, $2, $3, 'CREDIT', $4, $5, $6, $7, $8, $8, 'AVAILABLE', $9)`,
+            uom_id, quantity, base_quantity, lot_id, serial_id, stock_status, created_at
+          ) VALUES ($1, $2, $3, 'CREDIT', $4, $5, $6, $7, $8, $8, $9, $10, $11, $12)`,
           [
             randomUUID(),
             principal.tenantId,
@@ -1291,11 +1887,18 @@ export class InventoryService {
             res.product_id,
             res.uom_id,
             deductFromRow,
+            row.lot_id,
+            row.serial_id,
+            row.stock_status,
             now,
           ],
         );
 
         remainingToDeduct = ExactDecimal.subtract(remainingToDeduct, deductFromRow);
+      }
+
+      if (ExactDecimal.isPositive(remainingToDeduct)) {
+        throw new ConflictException('Reservation allocations are incomplete; reconcile inventory before issue.');
       }
 
       // 3. Update reservation fulfilled quantity and status
@@ -1309,13 +1912,16 @@ export class InventoryService {
          WHERE id = $4`,
         [newFulfilled, resStatus, now, res.id],
       );
+      await this.recordReservationChange(client, principal, {
+        ...mapReservation(res), fulfilledQuantity: newFulfilled, status: resStatus, version: Number(res.version) + 1,
+      }, 'ISSUE');
 
       // 4. Emit inventory.stock.issued.v1 outbox event
       const stockIssuedPayload = {
         issueId,
         reservationId: res.id,
         orderId: input.orderId,
-        orderLineId: res.demand_line_id ?? randomUUID(),
+        orderLineId: res.demand_line_id,
         productId: res.product_id,
         warehouseId: res.warehouse_id,
         issuedQuantity: issueQty,
@@ -1337,6 +1943,21 @@ export class InventoryService {
           JSON.stringify(stockIssuedPayload),
           now,
         ],
+      );
+
+      await client.query(
+        `INSERT INTO ${SCHEMA}.inventory_reservation_issues
+           (tenant_id, fulfillment_id, reservation_id, order_id, issue_id, issued_quantity)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [principal.tenantId, input.fulfillmentId, res.id, input.orderId, issueId, issueQty],
+      );
+
+      await client.query(
+        `INSERT INTO ${SCHEMA}.audit_events
+           (id, tenant_id, entity_type, entity_id, action, actor_id, payload)
+         VALUES ($1, $2, 'inventory_reservation', $3, 'ISSUE', $4, $5::jsonb)`,
+        [randomUUID(), principal.tenantId, res.id, principal.subject,
+          JSON.stringify({ issueId, fulfillmentId: input.fulfillmentId, orderId: input.orderId, quantity: issueQty })],
       );
 
       return {
@@ -1545,6 +2166,7 @@ export class InventoryService {
 
   async createCountPlan(principal: ModulePrincipal, input: CreateCountPlanInputV1): Promise<CountPlanV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      await this.requireWarehouseAccess(client, principal, input.warehouseId, 'write');
       const id = randomUUID();
       const planNumber = `CNT-${Date.now()}-${documentSuffix()}`;
       const now = new Date().toISOString();
@@ -1577,21 +2199,38 @@ export class InventoryService {
     input: SubmitCountEntryInputV1,
   ): Promise<CountEntryV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
-      // Find current snapshot quantity
-      const balRes = input.lotId
-        ? await client.query(
-            `SELECT COALESCE(SUM(on_hand_quantity), 0) as on_hand_quantity FROM ${SCHEMA}.stock_balances
-             WHERE tenant_id = $1 AND location_id = $2 AND product_id = $3 AND lot_id = $4`,
-            [principal.tenantId, input.locationId, input.productId, input.lotId],
-          )
-        : await client.query(
-            `SELECT COALESCE(SUM(on_hand_quantity), 0) as on_hand_quantity FROM ${SCHEMA}.stock_balances
-             WHERE tenant_id = $1 AND location_id = $2 AND product_id = $3`,
-            [principal.tenantId, input.locationId, input.productId],
-          );
-      const snapshotQty = balRes.rowCount && balRes.rowCount > 0
-        ? ExactDecimal.fromScaledBigInt(ExactDecimal.toScaledBigInt(String(balRes.rows[0].on_hand_quantity)))
-        : '0.000000';
+      const plan = await client.query<{ warehouse_id: string }>(
+        `SELECT warehouse_id FROM ${SCHEMA}.count_plans WHERE tenant_id = $1 AND id = $2`,
+        [principal.tenantId, countPlanId],
+      );
+      if (!plan.rows[0]) throw new NotFoundException('Count plan not found.');
+      await this.requireWarehouseAccess(client, principal, plan.rows[0].warehouse_id, 'write');
+      const location = await client.query<{ warehouse_id: string }>(
+        `SELECT warehouse_id FROM ${SCHEMA}.locations WHERE tenant_id = $1 AND id = $2`,
+        [principal.tenantId, input.locationId],
+      );
+      if (location.rows[0]?.warehouse_id !== plan.rows[0].warehouse_id) {
+        throw new BadRequestException('Count location does not belong to the plan warehouse.');
+      }
+      // A count is for one exact stock dimension. Aggregating sibling lots or serials
+      // would make its variance unsafe to post against a single balance.
+      const balRes = await client.query<{ on_hand_quantity: string; uom_count: string }>(
+        `SELECT COALESCE(SUM(on_hand_quantity), 0) AS on_hand_quantity,
+                COUNT(DISTINCT uom_id)::text AS uom_count
+           FROM ${SCHEMA}.stock_balances
+          WHERE tenant_id = $1 AND warehouse_id = $2 AND location_id = $3 AND product_id = $4
+            AND COALESCE(lot_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($5, '00000000-0000-0000-0000-000000000000'::uuid)
+            AND COALESCE(serial_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($6, '00000000-0000-0000-0000-000000000000'::uuid)
+            AND stock_status = 'AVAILABLE'`,
+        [principal.tenantId, plan.rows[0].warehouse_id, input.locationId,
+          input.productId, input.lotId ?? null, input.serialId ?? null],
+      );
+      if (Number(balRes.rows[0]?.uom_count) > 1) {
+        throw new ConflictException('Count dimension has multiple units; reconcile before counting.');
+      }
+      const snapshotQty = ExactDecimal.fromScaledBigInt(
+        ExactDecimal.toScaledBigInt(String(balRes.rows[0]?.on_hand_quantity ?? '0')),
+      );
       const countedQty = input.countedQuantity;
       const varianceQty = ExactDecimal.subtract(countedQty, snapshotQty);
 
@@ -1683,6 +2322,29 @@ export class InventoryService {
         throw new ConflictException(`Adjustment is already in status ${adj.status}.`);
       }
 
+      await this.requireWarehouseAccess(client, approverPrincipal, adj.warehouse_id, 'write');
+      const balRes = await client.query(
+        `SELECT id, uom_id, on_hand_quantity, reserved_quantity FROM ${SCHEMA}.stock_balances
+         WHERE tenant_id = $1 AND warehouse_id = $2 AND location_id = $3 AND product_id = $4
+           AND COALESCE(lot_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($5, '00000000-0000-0000-0000-000000000000'::uuid)
+           AND COALESCE(serial_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($6, '00000000-0000-0000-0000-000000000000'::uuid)
+           AND stock_status = 'AVAILABLE' FOR UPDATE`,
+        [approverPrincipal.tenantId, adj.warehouse_id, adj.location_id,
+          adj.product_id, adj.lot_id, adj.serial_id],
+      );
+      if (balRes.rows.length !== 1) {
+        throw new ConflictException('Count adjustment needs one exact available balance and UOM to post.');
+      }
+      const balance = balRes.rows[0];
+      const direction = adj.reason === 'COUNT_GAIN' ? 'DEBIT' : 'CREDIT';
+      const newOnHand = direction === 'DEBIT'
+        ? ExactDecimal.add(String(balance.on_hand_quantity), String(adj.quantity))
+        : ExactDecimal.subtract(String(balance.on_hand_quantity), String(adj.quantity));
+      const newAvail = ExactDecimal.subtract(newOnHand, String(balance.reserved_quantity));
+      if (ExactDecimal.isLessThan(newAvail, '0.000000')) {
+        throw new ConflictException('Count loss exceeds unreserved stock.');
+      }
+
       const now = new Date().toISOString();
       const txId = randomUUID();
       const txNumber = `ADJ-MOV-${Date.now()}-${documentSuffix()}`;
@@ -1705,16 +2367,6 @@ export class InventoryService {
         ],
       );
 
-      const direction = adj.reason === 'COUNT_GAIN' ? 'DEBIT' : 'CREDIT';
-
-      // Find UOM of product
-      const uomRes = await client.query(
-        `SELECT uom_id FROM ${SCHEMA}.stock_balances
-         WHERE tenant_id = $1 AND location_id = $2 AND product_id = $3 LIMIT 1`,
-        [approverPrincipal.tenantId, adj.location_id, adj.product_id],
-      );
-      const uomId = uomRes.rowCount && uomRes.rowCount > 0 ? uomRes.rows[0].uom_id : randomUUID();
-
       await client.query(
         `INSERT INTO ${SCHEMA}.stock_ledger_entries (
           id, tenant_id, transaction_id, direction, warehouse_id, location_id, product_id,
@@ -1728,7 +2380,7 @@ export class InventoryService {
           adj.warehouse_id,
           adj.location_id,
           adj.product_id,
-          uomId,
+          balance.uom_id,
           adj.quantity,
           adj.lot_id,
           adj.serial_id,
@@ -1736,30 +2388,12 @@ export class InventoryService {
         ],
       );
 
-      // Adjust balance using ExactDecimal
-      const balRes = await client.query(
-        `SELECT id, on_hand_quantity, reserved_quantity
-         FROM ${SCHEMA}.stock_balances
-         WHERE tenant_id = $1 AND location_id = $2 AND product_id = $3
-         FOR UPDATE`,
-        [approverPrincipal.tenantId, adj.location_id, adj.product_id],
+      await client.query(
+        `UPDATE ${SCHEMA}.stock_balances
+         SET on_hand_quantity = $1, available_quantity = $2, last_movement_at = $3, updated_at = $3, version = version + 1
+         WHERE id = $4`,
+        [newOnHand, newAvail, now, balance.id],
       );
-
-      if (balRes.rowCount && balRes.rowCount > 0) {
-        const curOnHand = String(balRes.rows[0].on_hand_quantity);
-        const curReserved = String(balRes.rows[0].reserved_quantity);
-        const newOnHand = direction === 'DEBIT'
-          ? ExactDecimal.add(curOnHand, adj.quantity)
-          : ExactDecimal.subtract(curOnHand, adj.quantity);
-        const newAvail = ExactDecimal.subtract(newOnHand, curReserved);
-
-        await client.query(
-          `UPDATE ${SCHEMA}.stock_balances
-           SET on_hand_quantity = $1, available_quantity = $2, last_movement_at = $3, updated_at = $3, version = version + 1
-           WHERE id = $4`,
-          [newOnHand, newAvail, now, balRes.rows[0].id],
-        );
-      }
 
       const updatedAdj = await client.query(
         `UPDATE ${SCHEMA}.inventory_adjustments
@@ -1777,10 +2411,20 @@ export class InventoryService {
 
   async resolveBarcode(principal: ModulePrincipal, rawCode: string): Promise<BarcodeResolutionResultV1> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const unknown: BarcodeResolutionResultV1 = {
+        rawCode, entityType: 'UNKNOWN', matchedEntityId: null, matchedCode: null,
+      };
+      const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+      if (access.denied) return unknown;
+      const scope = access.readUnits;
       // 1. Check locations by barcode or code
       const locRes = await client.query(
-        `SELECT id, code, name FROM ${SCHEMA}.locations WHERE tenant_id = $1 AND (barcode = $2 OR code = $2) LIMIT 1`,
-        [principal.tenantId, rawCode],
+        `SELECT l.id, l.code, l.name, l.warehouse_id FROM ${SCHEMA}.locations l
+         JOIN ${SCHEMA}.warehouses w ON w.tenant_id = l.tenant_id AND w.id = l.warehouse_id
+         WHERE l.tenant_id = $1 AND (l.barcode = $2 OR l.code = $2)
+           AND ($3::varchar[] IS NULL OR w.org_unit_id IS NULL OR w.org_unit_id = ANY($3::varchar[]))
+         LIMIT 1`,
+        [principal.tenantId, rawCode, scope],
       );
       if (locRes.rowCount && locRes.rowCount > 0) {
         return {
@@ -1788,14 +2432,19 @@ export class InventoryService {
           entityType: 'LOCATION',
           matchedEntityId: locRes.rows[0].id,
           matchedCode: locRes.rows[0].code,
-          metadata: { name: locRes.rows[0].name },
+          metadata: { name: locRes.rows[0].name, warehouseId: locRes.rows[0].warehouse_id },
         };
       }
 
       // 2. Check lots
       const lotRes = await client.query(
-        `SELECT id, lot_number, product_id FROM ${SCHEMA}.inventory_lots WHERE tenant_id = $1 AND lot_number = $2 LIMIT 1`,
-        [principal.tenantId, rawCode],
+        `SELECT lot.id, lot.lot_number, lot.product_id FROM ${SCHEMA}.inventory_lots lot
+         JOIN ${SCHEMA}.stock_balances b ON b.tenant_id = lot.tenant_id AND b.lot_id = lot.id
+         JOIN ${SCHEMA}.warehouses w ON w.tenant_id = b.tenant_id AND w.id = b.warehouse_id
+         WHERE lot.tenant_id = $1 AND lot.lot_number = $2
+           AND ($3::varchar[] IS NULL OR w.org_unit_id IS NULL OR w.org_unit_id = ANY($3::varchar[]))
+         LIMIT 1`,
+        [principal.tenantId, rawCode, scope],
       );
       if (lotRes.rowCount && lotRes.rowCount > 0) {
         return {
@@ -1809,8 +2458,13 @@ export class InventoryService {
 
       // 3. Check serials
       const serRes = await client.query(
-        `SELECT id, serial_number, product_id FROM ${SCHEMA}.inventory_serials WHERE tenant_id = $1 AND serial_number = $2 LIMIT 1`,
-        [principal.tenantId, rawCode],
+        `SELECT ser.id, ser.serial_number, ser.product_id FROM ${SCHEMA}.inventory_serials ser
+         JOIN ${SCHEMA}.stock_balances b ON b.tenant_id = ser.tenant_id AND b.serial_id = ser.id
+         JOIN ${SCHEMA}.warehouses w ON w.tenant_id = b.tenant_id AND w.id = b.warehouse_id
+         WHERE ser.tenant_id = $1 AND ser.serial_number = $2
+           AND ($3::varchar[] IS NULL OR w.org_unit_id IS NULL OR w.org_unit_id = ANY($3::varchar[]))
+         LIMIT 1`,
+        [principal.tenantId, rawCode, scope],
       );
       if (serRes.rowCount && serRes.rowCount > 0) {
         return {
@@ -1824,8 +2478,12 @@ export class InventoryService {
 
       // 4. Check kits
       const kitRes = await client.query(
-        `SELECT id, kit_number FROM ${SCHEMA}.kits WHERE tenant_id = $1 AND kit_number = $2 LIMIT 1`,
-        [principal.tenantId, rawCode],
+        `SELECT k.id, k.kit_number FROM ${SCHEMA}.kits k
+         JOIN ${SCHEMA}.warehouses w ON w.tenant_id = k.tenant_id AND w.id = k.warehouse_id
+         WHERE k.tenant_id = $1 AND k.kit_number = $2
+           AND ($3::varchar[] IS NULL OR w.org_unit_id IS NULL OR w.org_unit_id = ANY($3::varchar[]))
+         LIMIT 1`,
+        [principal.tenantId, rawCode, scope],
       );
       if (kitRes.rowCount && kitRes.rowCount > 0) {
         return {
@@ -1836,12 +2494,7 @@ export class InventoryService {
         };
       }
 
-      return {
-        rawCode,
-        entityType: 'UNKNOWN',
-        matchedEntityId: null,
-        matchedCode: null,
-      };
+      return unknown;
     });
   }
 
@@ -2003,6 +2656,45 @@ export function mapLedgerEntry(row: any): StockLedgerEntryV1 {
   };
 }
 
+export function mapCostLayer(row: any): MaterialLedgerCostLayerV1 {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    ledgerEntryId: row.ledger_entry_id,
+    transactionId: row.transaction_id,
+    warehouseId: row.warehouse_id,
+    locationId: row.location_id,
+    productId: row.product_id,
+    uomId: row.uom_id,
+    lotId: row.lot_id,
+    valuationMethod: row.valuation_method,
+    quantity: String(row.quantity),
+    unitCostMinor: String(row.unit_cost_minor),
+    totalCostMinor: String(row.total_cost_minor),
+    orgUnitId: row.org_unit_id,
+    createdAt: row.created_at.toISOString ? row.created_at.toISOString() : row.created_at,
+  };
+}
+
+export function mapPostedReceiptCost(row: any): InventoryReceiptCostRecordV1 {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    receiptId: row.receipt_id,
+    receiptLineId: row.receipt_line_id,
+    financeCostLayerId: row.finance_cost_layer_id,
+    warehouseId: row.warehouse_id,
+    locationId: row.location_id,
+    productId: row.product_id,
+    orgUnitId: row.org_unit_id,
+    valuationMethod: row.valuation_method,
+    quantity: String(row.quantity),
+    unitCostScaled: String(row.unit_cost_scaled),
+    totalCostMinor: String(row.total_cost_minor),
+    createdAt: row.created_at.toISOString?.() ?? String(row.created_at),
+  };
+}
+
 export function mapBalance(row: any): StockBalanceV1 {
   return {
     id: row.id,
@@ -2023,7 +2715,7 @@ export function mapBalance(row: any): StockBalanceV1 {
   };
 }
 
-function mapReservation(row: any): InventoryReservationV1 {
+export function mapReservation(row: any): InventoryReservationV1 {
   return {
     id: row.id,
     tenantId: row.tenant_id,

@@ -543,6 +543,21 @@
             "operator": "EQ",
             "value": "DRAFT"
           }
+        },
+        {
+          "actionKey": "retry-posting",
+          "label": "Retry Finance posting",
+          "type": "COMMAND",
+          "handlerKey": "inventory.receipts.retry-posting",
+          "requiredPermissions": [
+            "inventory:receive"
+          ],
+          "confirmationPrompt": "Retry Finance posting? Only rejections known to have posted no cost are eligible; other cases require reconciliation.",
+          "visibilityCondition": {
+            "field": "finance-posting-status",
+            "operator": "EQ",
+            "value": "POSTING_REJECTED"
+          }
         }
       ],
       "messages": []
