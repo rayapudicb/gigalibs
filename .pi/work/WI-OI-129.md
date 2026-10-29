@@ -1,6 +1,6 @@
 # WI-OI-129 Project Operations — evidence
 
-**Status:** Built (Module 7 slices S1–S7); **`dfba1acb`** S5, S6–S7 in working tree pending commit (2026-10-29).
+**Status:** Built (Module 7 slices S1–S7); through **`d6058703`** (2026-10-29).
 
 ## S1 (WBS schema) — `1c191256`
 
@@ -22,12 +22,12 @@
 
 - Insights API + `@gigalibs/project-operations-web`.
 
-## S6 (timesheet approval)
+## S6 (timesheet approval) — `d6058703`
 
 - API: approval queue, submit, approve, reject (`project-operations.timesheets.*`).
 - UI: FocusModal approval drawer on `ProjectOperationsWorkspace`.
 
-## S7 (E2E / PG proof)
+## S7 (E2E / PG proof) — `d6058703`
 
 - `PROJECT_OPERATIONS_PG_PROOF=1` → `project-operations-journey.integration.test.ts` **3/3** (approve → T&M outbox; phase-1 milestone → AR draft; tenant RLS).
 - Harness: `apps/api/scripts/throwaway-postgres.ts`.

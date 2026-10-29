@@ -8,7 +8,7 @@
 
 **WI-OI-128 Returns / RMA (Module 6) — Built (2026-10-29).** Commits through **`442fd2f8`**; PG 3/3; conformance 15/15. Verify hygiene (returns-web Docker workspace, compose relay codegen, platform-context worst-case) in working tree uncommitted. [evidence](work/WI-OI-128.md).
 
-**WI-OI-129 Project Operations (Module 7) — Built (slices S1–S7).** Commits through **`dfba1acb`**; S6–S7 in working tree (commit pending). PG proof 3/3 with `PROJECT_OPERATIONS_PG_PROOF=1`. Owner: batch deploy #7 + journey on UAT. [evidence](work/WI-OI-129.md).
+**WI-OI-129 Project Operations (Module 7) — Built.** S1–S7 through **`d6058703`**; PG 3/3 (`PROJECT_OPERATIONS_PG_PROOF=1`). Owner: batch deploy #7 + UAT journey. [evidence](work/WI-OI-129.md).
 
 **WI-OI-130 IoT MaaS — Built; certification automation added (2026-10-29).** Playwright + ingest helper + scenario YAML + [runbook](../docs/runbooks/iot-maas-certification.md). **Done** still needs owner UAT on redeployed **5180** + `iot-api`. [handoff](handoff/WI-OI-130-UAT-JOURNEY.md).
 
