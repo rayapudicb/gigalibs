@@ -2402,6 +2402,49 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/transfers/{id}",
+        "pattern": "^v1/transfers/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "inventory.read"
+        }
+      },
+      {
+        "template": "v1/transfers/{id}/dispatch",
+        "pattern": "^v1/transfers/[0-9a-fA-F-]{36}/dispatch$",
+        "methods": {
+          "POST": "inventory.transfer"
+        }
+      },
+      {
+        "template": "v1/transfers/{id}/receive",
+        "pattern": "^v1/transfers/[0-9a-fA-F-]{36}/receive$",
+        "methods": {
+          "POST": "inventory.receive"
+        }
+      },
+      {
+        "template": "v1/replenish-rules",
+        "pattern": "^v1/replenish-rules$",
+        "methods": {
+          "GET": "inventory.read",
+          "POST": "inventory.items.manage"
+        }
+      },
+      {
+        "template": "v1/replenish-radar",
+        "pattern": "^v1/replenish-radar$",
+        "methods": {
+          "GET": "inventory.read"
+        }
+      },
+      {
+        "template": "v1/replenish-pos",
+        "pattern": "^v1/replenish-pos$",
+        "methods": {
+          "POST": "inventory.items.manage"
+        }
+      },
+      {
         "template": "v1/reservations",
         "pattern": "^v1/reservations$",
         "methods": {

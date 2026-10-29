@@ -26,6 +26,8 @@ import {
 } from './inventory/reserve-release-command.guard.js';
 import { InventoryPostingCutoffService } from './inventory/inventory-posting-cutoff.service.js';
 import { InventoryService } from './inventory/inventory.service.js';
+import { ReplenishmentService } from './inventory/replenishment.service.js';
+import { TransferService } from './inventory/transfer.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { createRelayHealthController } from '@gigalibs/module-sdk';
 import { FinanceInventoryInboxController } from './relay/finance-inbox.controller.js';
@@ -67,6 +69,8 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     AuthorizationGuard,
     InventoryPostingCutoffService,
     InventoryService,
+    TransferService,
+    ReplenishmentService,
     { provide: ATP_CHECK_COMMAND_CONFIG, useFactory: () => loadAtpCheckCommandConfig() },
     AtpCheckCommandGuard,
     { provide: RESERVE_RELEASE_COMMAND_CONFIG, useFactory: () => loadReserveReleaseCommandConfig() },

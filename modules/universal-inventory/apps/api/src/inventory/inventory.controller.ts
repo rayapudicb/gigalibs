@@ -64,11 +64,24 @@ import {
 } from '@nestjs/common';
 import { AuthorizationGuard } from '../authorization.js';
 import { InventoryService } from './inventory.service.js';
+import { CreateTransferInputV1Schema, TransferService, type TransferV1 } from './transfer.service.js';
+import {
+  GeneratePurchaseDraftsInputV1Schema,
+  type PurchaseDraftV1,
+  type ReplenishRuleV1,
+  type ReplenishmentSuggestionV1,
+  ReplenishmentService,
+  UpsertReplenishRuleInputV1Schema,
+} from './replenishment.service.js';
 
 @Controller('v1')
 @UseGuards(AuthorizationGuard)
 export class InventoryController {
-  constructor(private readonly service: InventoryService) {}
+  constructor(
+    private readonly service: InventoryService,
+    private readonly transfers: TransferService,
+    private readonly replenishment: ReplenishmentService,
+  ) {}
 
   // ─── Warehouses ─────────────────────────────────────────────────────────────
 
@@ -211,6 +224,73 @@ export class InventoryController {
     @Param('id') id: string,
   ): Promise<{ transaction: StockLedgerTransactionV1; entries: StockLedgerEntryV1[] }> {
     return this.service.reverseMovement(principal, id);
+  }
+
+  // ─── Transfers (Advanced SCM, WI-OI-125) ────────────────────────────────────
+
+  @Post('transfers')
+  @RequirePermissions('inventory.transfer')
+  async createTransfer(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown): Promise<TransferV1> {
+    return this.transfers.createTransfer(principal, parse(CreateTransferInputV1Schema, body));
+  }
+
+  @Get('transfers')
+  @RequirePermissions('inventory.read')
+  async listTransfers(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Query('status') status?: string,
+  ): Promise<TransferV1[]> {
+    return this.transfers.listTransfers(principal, status);
+  }
+
+  @Get('transfers/:id')
+  @RequirePermissions('inventory.read')
+  async getTransfer(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string): Promise<TransferV1> {
+    return this.transfers.getTransfer(principal, id);
+  }
+
+  @Post('transfers/:id/dispatch')
+  @RequirePermissions('inventory.transfer')
+  async dispatchTransfer(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string): Promise<TransferV1> {
+    return this.transfers.dispatchTransfer(principal, id);
+  }
+
+  @Post('transfers/:id/receive')
+  @RequirePermissions('inventory.receive')
+  async receiveTransfer(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string): Promise<TransferV1> {
+    return this.transfers.receiveTransfer(principal, id);
+  }
+
+  // ─── Replenishment (Advanced SCM, WI-OI-125 S3/S5) ──────────────────────────
+
+  @Post('replenish-rules')
+  @RequirePermissions('inventory.items.manage')
+  async upsertReplenishRule(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown): Promise<ReplenishRuleV1> {
+    return this.replenishment.upsertRule(principal, parse(UpsertReplenishRuleInputV1Schema, body));
+  }
+
+  @Get('replenish-rules')
+  @RequirePermissions('inventory.read')
+  async listReplenishRules(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Query('warehouseId') warehouseId: string,
+  ): Promise<ReplenishRuleV1[]> {
+    return this.replenishment.listRules(principal, warehouseId);
+  }
+
+  @Get('replenish-radar')
+  @RequirePermissions('inventory.read')
+  async replenishRadar(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Query('warehouseId') warehouseId: string,
+  ): Promise<ReplenishmentSuggestionV1[]> {
+    return this.replenishment.computeRadar(principal, warehouseId);
+  }
+
+  @Post('replenish-pos')
+  @RequirePermissions('inventory.items.manage')
+  async generateReplenishmentDrafts(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown): Promise<PurchaseDraftV1[]> {
+    return this.replenishment.generatePurchaseDrafts(principal, parse(GeneratePurchaseDraftsInputV1Schema, body));
   }
 
   // ─── Receipts ───────────────────────────────────────────────────────────────

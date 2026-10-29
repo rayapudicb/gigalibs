@@ -155,6 +155,12 @@ spec:
       - { path: 'v1/receipts/{id}/complete', POST: inventory.receive }
       - { path: 'v1/receipts/{id}/retry-posting', POST: inventory.receive }
       - { path: 'v1/transfers', GET: inventory.read, POST: inventory.transfer }
+      - { path: 'v1/transfers/{id}', GET: inventory.read }
+      - { path: 'v1/transfers/{id}/dispatch', POST: inventory.transfer }
+      - { path: 'v1/transfers/{id}/receive', POST: inventory.receive }
+      - { path: 'v1/replenish-rules', GET: inventory.read, POST: 'inventory.items.manage' }
+      - { path: 'v1/replenish-radar', GET: inventory.read }
+      - { path: 'v1/replenish-pos', POST: 'inventory.items.manage' }
       - { path: 'v1/reservations', GET: inventory.read, POST: inventory.reserve }
       - { path: 'v1/reservations/{id}/release', POST: inventory.reserve }
       - { path: 'v1/reservations/{id}/issue', POST: inventory.issue }

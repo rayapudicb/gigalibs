@@ -9,3 +9,4 @@
 000008_inventory_posting_cutoff_relay.up.sql
 000009_inventory_finance_replica_hardening.up.sql
 000010_material_ledger_cost_layers.up.sql
+000011_replenishment_rules.up.sql
