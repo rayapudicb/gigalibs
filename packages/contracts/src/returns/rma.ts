@@ -94,10 +94,22 @@ export const RecordRmaDispositionInputV1Schema = z
     rmaLineId: z.string().uuid(),
     dispositionCode: RmaDispositionCodeSchema,
     quantity: DecimalQuantitySchema,
+    warehouseId: z.string().uuid().optional(),
+    orgUnitId: z.string().min(1).max(64).optional(),
     notes: z.string().max(2000).optional().nullable(),
     requestCreditMemo: z.boolean().default(false),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.dispositionCode === 'RESTOCK' || value.dispositionCode === 'QUARANTINE') {
+      if (!value.warehouseId) {
+        ctx.addIssue({ code: 'custom', path: ['warehouseId'], message: 'warehouseId is required for RESTOCK and QUARANTINE.' });
+      }
+      if (!value.orgUnitId) {
+        ctx.addIssue({ code: 'custom', path: ['orgUnitId'], message: 'orgUnitId is required for RESTOCK and QUARANTINE.' });
+      }
+    }
+  });
 export type RecordRmaDispositionInputV1 = z.infer<typeof RecordRmaDispositionInputV1Schema>;
 
 export const RequestRmaCreditMemoLineV1Schema = z

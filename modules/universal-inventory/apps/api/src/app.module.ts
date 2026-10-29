@@ -48,6 +48,12 @@ import {
   ProductionReceiptCommandGuard,
   loadProductionReceiptCommandConfig,
 } from './inventory/production-receipt-command.guard.js';
+import { RmaReturnReceiptCommandController } from './inventory/rma-return-receipt-command.controller.js';
+import {
+  RMA_RETURN_RECEIPT_COMMAND_CONFIG,
+  RmaReturnReceiptCommandGuard,
+  loadRmaReturnReceiptCommandConfig,
+} from './inventory/rma-return-receipt-command.guard.js';
 import { InventoryPostingCutoffService } from './inventory/inventory-posting-cutoff.service.js';
 import { InventoryService } from './inventory/inventory.service.js';
 import { ReplenishmentService } from './inventory/replenishment.service.js';
@@ -85,6 +91,7 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     ManufacturingReserveCommandController,
     IssueDemandCommandController,
     ProductionReceiptCommandController,
+    RmaReturnReceiptCommandController,
     OrganizationController,
     FinanceInventoryInboxController,
     InventoryRecordController,
@@ -116,6 +123,8 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     IssueDemandCommandGuard,
     { provide: PRODUCTION_RECEIPT_COMMAND_CONFIG, useFactory: () => loadProductionReceiptCommandConfig() },
     ProductionReceiptCommandGuard,
+    { provide: RMA_RETURN_RECEIPT_COMMAND_CONFIG, useFactory: () => loadRmaReturnReceiptCommandConfig() },
+    RmaReturnReceiptCommandGuard,
     InventoryRecordsService,
     {
       provide: RECORD_DISPATCHER,

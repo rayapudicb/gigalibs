@@ -49,7 +49,7 @@ import {
   moduleErrors,
 } from '@gigalibs/module-sdk';
 import { validateDictionaryRules } from '@gigalibs/configuration-core';
-import type { DictionaryValidationRuleV1 } from '@gigalibs/contracts';
+import type { DictionaryValidationRuleV1, RmaReturnReceiptCommandV1 } from '@gigalibs/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -1139,7 +1139,10 @@ export class InventoryService {
     principal: ModulePrincipal,
     receipt: { id: string; warehouse_id: string; receipt_number: string; version: number },
     lines: readonly any[],
+    options: { stockStatus?: 'AVAILABLE' | 'QUARANTINED'; movementReason?: 'RECEIPT' | 'RETURN' } = {},
   ): Promise<InventoryReceiptV1> {
+    const stockStatus = options.stockStatus ?? 'AVAILABLE';
+    const movementReason = options.movementReason ?? 'RECEIPT';
     const receiptId = receipt.id;
     const now = new Date().toISOString();
     const valuation = await client.query<{
@@ -1196,12 +1199,13 @@ export class InventoryService {
           `INSERT INTO ${SCHEMA}.stock_ledger_transactions (
             id, tenant_id, transaction_number, document_type, document_reference_id,
             reason, correlation_id, idempotency_key, posted_by, posted_at, created_at
-          ) VALUES ($1, $2, $3, 'RECEIPT', $4, 'RECEIPT', $5, $6, $7, $8, $8)`,
+          ) VALUES ($1, $2, $3, 'RECEIPT', $4, $5, $6, $7, $8, $9, $9)`,
           [
             txId,
             principal.tenantId,
             txNumber,
             receiptId,
+            movementReason,
             receiptId,
             randomUUID(),
             principal.subject,
@@ -1213,7 +1217,7 @@ export class InventoryService {
           `INSERT INTO ${SCHEMA}.stock_ledger_entries (
             id, tenant_id, transaction_id, direction, warehouse_id, location_id, product_id,
             uom_id, quantity, base_quantity, lot_id, serial_id, stock_status, created_at
-          ) VALUES ($1, $2, $3, 'DEBIT', $4, $5, $6, $7, $8, $8, $9, NULL, 'AVAILABLE', $10)`,
+          ) VALUES ($1, $2, $3, 'DEBIT', $4, $5, $6, $7, $8, $8, $9, NULL, $10, $11)`,
           [
             randomUUID(),
             principal.tenantId,
@@ -1224,6 +1228,7 @@ export class InventoryService {
             line.uom_id,
             qtyToReceive,
             lotId,
+            stockStatus,
             now,
           ],
         );
@@ -1233,7 +1238,7 @@ export class InventoryService {
           `INSERT INTO ${SCHEMA}.stock_balances (
             id, tenant_id, warehouse_id, location_id, product_id, uom_id, lot_id, serial_id,
             stock_status, on_hand_quantity, reserved_quantity, available_quantity, last_movement_at, version, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, 'AVAILABLE', $8, 0, $8, $9, 1, $9)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, $8, $9, 0, $9, $10, 1, $10)
           ON CONFLICT (
             tenant_id, warehouse_id, location_id, product_id, uom_id,
             (COALESCE(lot_id, '00000000-0000-0000-0000-000000000000'::uuid)),
@@ -1253,6 +1258,7 @@ export class InventoryService {
             line.product_id,
             line.uom_id,
             lotId,
+            stockStatus,
             qtyToReceive,
             now,
           ],
@@ -2146,6 +2152,102 @@ export class InventoryService {
       await client.query(
         `INSERT INTO ${SCHEMA}.idempotency_records (tenant_id, idempotency_key, resource_id, action, response_payload)
          VALUES ($1, $2, $3, 'MANUFACTURING_FINISHED_RECEIPT', $4::jsonb)`,
+        [principal.tenantId, input.commandKey, receiptId, JSON.stringify(result)],
+      );
+      return result;
+    });
+  }
+
+  /** WI-OI-128: idempotent customer-return receipt from an RMA disposition (RESTOCK or QUARANTINE). */
+  async receiveRmaReturnGoods(
+    principal: ModulePrincipal,
+    input: RmaReturnReceiptCommandV1,
+  ): Promise<{ receiptId: string; receiptNumber: string; financeCostProfileId: string }> {
+    const stockStatus = input.dispositionCode === 'QUARANTINE' ? 'QUARANTINED' : 'AVAILABLE';
+    const locationType = input.dispositionCode === 'QUARANTINE' ? 'QUARANTINE' : 'RECEIVING';
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const externalRef = `returns:disposition:${input.dispositionId}`;
+      await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+        [`${principal.tenantId}:${externalRef}`]);
+      await this.requireWarehouseAccess(client, principal, input.warehouseId, 'write');
+      const valuation = await client.query<{ org_unit_id: string | null; finance_cost_profile_id: string | null }>(
+        `SELECT w.org_unit_id, s.finance_cost_profile_id FROM ${SCHEMA}.warehouses w
+           LEFT JOIN ${SCHEMA}.inventory_org_valuation_settings s
+             ON s.tenant_id = w.tenant_id AND s.org_unit_id = w.org_unit_id
+          WHERE w.tenant_id = $1 AND w.id = $2`, [principal.tenantId, input.warehouseId],
+      );
+      const profile = valuation.rows[0];
+      if (!profile?.org_unit_id || profile.org_unit_id !== input.orgUnitId) {
+        throw new ConflictException('Return warehouse must belong to the supplied owning unit.');
+      }
+      if (!profile.finance_cost_profile_id) {
+        throw new ConflictException('Return warehouse needs a Finance cost profile.');
+      }
+      const prior = await client.query<{ id: string; receipt_number: string; status: string }>(
+        `SELECT id, receipt_number, status FROM ${SCHEMA}.receipts
+          WHERE tenant_id = $1 AND external_document_reference = $2`,
+        [principal.tenantId, externalRef],
+      );
+      if (prior.rows[0]?.status === 'COMPLETED') {
+        return {
+          receiptId: prior.rows[0].id,
+          receiptNumber: prior.rows[0].receipt_number,
+          financeCostProfileId: profile.finance_cost_profile_id,
+        };
+      }
+      if (prior.rows[0]) {
+        throw new ConflictException('RMA return receipt reference is incomplete; reconcile Inventory.');
+      }
+      const locationRes = await client.query<{ id: string }>(
+        `SELECT id FROM ${SCHEMA}.locations
+          WHERE tenant_id = $1 AND warehouse_id = $2 AND location_type = $3 AND active = true
+          ORDER BY code ASC LIMIT 1`,
+        [principal.tenantId, input.warehouseId, locationType],
+      );
+      const targetLocationId = locationRes.rows[0]?.id;
+      if (!targetLocationId) {
+        throw new BadRequestException(`Warehouse has no active ${locationType} location for RMA returns.`);
+      }
+      const receiptId = randomUUID();
+      const receiptNumber = `REC-RMA-${Date.now()}-${documentSuffix()}`;
+      const now = new Date().toISOString();
+      await client.query(
+        `INSERT INTO ${SCHEMA}.receipts (
+          id, tenant_id, receipt_number, warehouse_id, external_document_reference, status, notes, version, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, 'DRAFT', $6, 1, $7, $7)`,
+        [
+          receiptId,
+          principal.tenantId,
+          receiptNumber,
+          input.warehouseId,
+          externalRef,
+          `RMA ${input.rmaId} disposition ${input.dispositionId}`,
+          now,
+        ],
+      );
+      await client.query(
+        `INSERT INTO ${SCHEMA}.receipt_lines (
+          id, tenant_id, receipt_id, line_number, product_id, uom_id,
+          expected_quantity, received_quantity, target_location_id, inspection_status, custom_extensions, created_at, updated_at
+        ) VALUES ($1, $2, $3, 1, $4, $5, $6, $6, $7, 'PENDING', '{}'::jsonb, $8, $8)`,
+        [randomUUID(), principal.tenantId, receiptId, input.productId, input.uomId, input.quantity, targetLocationId, now],
+      );
+      const receiptRes = await client.query(`SELECT * FROM ${SCHEMA}.receipts WHERE tenant_id = $1 AND id = $2 FOR UPDATE`, [
+        principal.tenantId,
+        receiptId,
+      ]);
+      const linesRes = await client.query(`SELECT * FROM ${SCHEMA}.receipt_lines WHERE tenant_id = $1 AND receipt_id = $2`, [
+        principal.tenantId,
+        receiptId,
+      ]);
+      await this.persistReceiptComplete(client, principal, receiptRes.rows[0], linesRes.rows, {
+        stockStatus,
+        movementReason: 'RETURN',
+      });
+      const result = { receiptId, receiptNumber, financeCostProfileId: profile.finance_cost_profile_id };
+      await client.query(
+        `INSERT INTO ${SCHEMA}.idempotency_records (tenant_id, idempotency_key, resource_id, action, response_payload)
+         VALUES ($1, $2, $3, 'RMA_RETURN_RECEIPT', $4::jsonb)`,
         [principal.tenantId, input.commandKey, receiptId, JSON.stringify(result)],
       );
       return result;

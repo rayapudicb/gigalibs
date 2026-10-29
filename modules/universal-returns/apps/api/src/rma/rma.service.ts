@@ -8,6 +8,8 @@ import {
   type RecordRmaDispositionInputV1,
   type RequestRmaCreditMemoInputV1,
   RMA_CREDIT_MEMO_REQUESTED_V1,
+  RMA_SCRAP_GL_REQUESTED_V1,
+  RmaScrapGlRequestedPayloadV1Schema,
 } from '@gigalibs/contracts';
 import {
   DocumentIdempotencyConflictError,
@@ -22,10 +24,15 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import type { PoolClient } from 'pg';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
+import {
+  InventoryHandshakeClient,
+  isReturnsInventoryHandshakeConfigured,
+} from '../inventory/inventory-handshake.client.js';
 
 interface RmaRow {
   id: string;
@@ -156,7 +163,10 @@ async function ensureDefaultRmaType(client: PoolClient, tenantId: string): Promi
 
 @Injectable()
 export class RmaService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    private readonly database: DatabaseService,
+    private readonly inventoryHandshake: InventoryHandshakeClient,
+  ) {}
 
   async list(context: ModuleCommandContext, limit = 50): Promise<{ items: RmaV1[] }> {
     const tenantId = context.principal.tenantId;
@@ -377,7 +387,38 @@ export class RmaService {
     input: RecordRmaDispositionInputV1,
   ): Promise<RmaV1> {
     const tenantId = context.principal.tenantId;
-    return this.database.withTenantTransaction(tenantId, async (client) => {
+    if (
+      (input.dispositionCode === 'RESTOCK' || input.dispositionCode === 'QUARANTINE') &&
+      !isReturnsInventoryHandshakeConfigured()
+    ) {
+      throw new ServiceUnavailableException({ code: 'UNIVERSAL_RETURNS_INVENTORY_HANDSHAKE_NOT_CONFIGURED' });
+    }
+
+    const recorded = await this.database.withTenantTransaction(tenantId, async (client) => {
+      const prior = await client.query<{
+        id: string;
+        inventory_receipt_id: string | null;
+        disposition_code: string;
+        product_id: string;
+        uom_id: string;
+      }>(
+        `SELECT d.id, d.inventory_receipt_id, d.disposition_code, l.product_id, l.uom_id
+           FROM ${SCHEMA}.dispositions d
+           JOIN ${SCHEMA}.rma_lines l ON l.tenant_id = d.tenant_id AND l.id = d.rma_line_id
+          WHERE d.tenant_id = $1 AND d.request_key = $2`,
+        [tenantId, input.requestKey],
+      );
+      if (prior.rows[0]) {
+        return {
+          replayed: true,
+          dispositionId: prior.rows[0].id,
+          dispositionCode: prior.rows[0].disposition_code,
+          inventoryReceiptId: prior.rows[0].inventory_receipt_id,
+          productId: prior.rows[0].product_id,
+          uomId: prior.rows[0].uom_id,
+        };
+      }
+
       const header = await client.query<RmaRow>(
         `SELECT * FROM ${SCHEMA}.rma WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [tenantId, rmaId],
@@ -395,13 +436,16 @@ export class RmaService {
       );
       if (!line.rows[0]) throw new NotFoundException({ code: 'RMA_LINE_NOT_FOUND' });
 
+      const dispositionId = randomUUID();
       await client.query(
         `INSERT INTO ${SCHEMA}.dispositions (
-           tenant_id, rma_line_id, disposition_code, quantity, inspected_by, notes, credit_memo_requested
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+           id, tenant_id, rma_line_id, request_key, disposition_code, quantity, inspected_by, notes, credit_memo_requested
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
+          dispositionId,
           tenantId,
           input.rmaLineId,
+          input.requestKey,
           input.dispositionCode,
           input.quantity,
           context.principal.subject,
@@ -426,13 +470,83 @@ export class RmaService {
         aggregateId: rma.id,
         aggregateVersion: rma.version,
         payload: {
+          dispositionId,
           rmaLineId: input.rmaLineId,
           dispositionCode: input.dispositionCode,
           quantity: input.quantity,
         },
       });
-      return rma;
+
+      if (input.dispositionCode === 'SCRAP') {
+        const scrapPayload = RmaScrapGlRequestedPayloadV1Schema.parse({
+          dispositionId,
+          rmaId,
+          rmaLineId: input.rmaLineId,
+          productId: line.rows[0].product_id,
+          uomId: line.rows[0].uom_id,
+          quantity: input.quantity,
+          customerPartyId: header.rows[0].customer_party_id,
+          salesOrderId: header.rows[0].sales_order_id,
+          customerInvoiceId: header.rows[0].customer_invoice_id,
+        });
+        await client.query(
+          `INSERT INTO ${SCHEMA}.outbox_events
+             (id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version,
+              correlation_id, schema_version, payload)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1, $9::jsonb)`,
+          [
+            randomUUID(),
+            tenantId,
+            TOPIC,
+            RMA_SCRAP_GL_REQUESTED_V1,
+            'rma_disposition',
+            dispositionId,
+            rma.version,
+            context.correlationId,
+            JSON.stringify(scrapPayload),
+          ],
+        );
+      }
+
+      return {
+        replayed: false,
+        dispositionId,
+        dispositionCode: input.dispositionCode,
+        inventoryReceiptId: null as string | null,
+        productId: line.rows[0].product_id,
+        uomId: line.rows[0].uom_id,
+      };
     });
+
+    if (
+      !recorded.inventoryReceiptId &&
+      (recorded.dispositionCode === 'RESTOCK' || recorded.dispositionCode === 'QUARANTINE') &&
+      recorded.productId &&
+      recorded.uomId
+    ) {
+      const receipt = await this.inventoryHandshake.receiveReturnStock(context.principal, {
+        commandKey: input.requestKey,
+        dispositionId: recorded.dispositionId,
+        rmaId,
+        rmaLineId: input.rmaLineId,
+        dispositionCode: recorded.dispositionCode as 'RESTOCK' | 'QUARANTINE',
+        warehouseId: input.warehouseId!,
+        orgUnitId: input.orgUnitId!,
+        productId: recorded.productId,
+        uomId: recorded.uomId,
+        quantity: input.quantity,
+      });
+      await this.database.withTenantTransaction(tenantId, async (client) => {
+        await client.query(
+          `UPDATE ${SCHEMA}.dispositions
+              SET inventory_receipt_id = $3
+            WHERE tenant_id = $1 AND id = $2 AND inventory_receipt_id IS NULL`,
+          [tenantId, recorded.dispositionId, receipt.receiptId],
+        );
+      });
+    }
+
+    return this.database.withTenantTransaction(tenantId, (client) => loadRma(client, tenantId, rmaId));
   }
 
   async requestCreditMemo(

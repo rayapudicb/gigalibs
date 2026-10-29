@@ -3,3 +3,4 @@
 000001_universal_returns_foundation.up.sql
 000002_rma_domain.up.sql
 000003_rma_document_actions.up.sql
+000004_disposition_request_key.up.sql
