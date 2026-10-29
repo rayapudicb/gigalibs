@@ -79,7 +79,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_project_operations",
-    "migrationVersion": 1,
+    "migrationVersion": 2,
     "audience": "gigalibs-project-operations-api",
     "appendOnlyTables": [
       "audit_events"

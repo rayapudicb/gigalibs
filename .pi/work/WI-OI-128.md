@@ -1,6 +1,6 @@
 # WI-OI-128 Returns / RMA — evidence
 
-**Status:** In progress (Module 6 build); S6 PG proof added 2026-10-29.
+**Status:** Built (2026-10-29); commits through **`442fd2f8`**.
 
 ## Slices
 
@@ -19,8 +19,7 @@
 - workflow-platform typecheck: pass
 - PG proof: **3/3** on throwaway PostgreSQL 16 (`UNIVERSAL_RETURNS_PG_PROOF=1`, 2026-10-29)
 
-## Open
+## Open (non-blocking)
 
-- Full `pnpm verify` clean (pre-existing repo failures)
-- Module-completion commit after owner review
+- Full `pnpm verify` may still fail on pre-existing **product-catalogue** lock test; returns-specific gates fixed in working tree (Docker workspace, compose relay codegen, platform-context worst-case slack).
 - `--live` conformance on owner batch deploy with relay credentials

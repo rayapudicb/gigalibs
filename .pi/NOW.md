@@ -6,9 +6,9 @@
 
 **WI-OI-127 Landed Cost (Module 5) — Built (2026-10-29).** Committed **`dcd2cc5c`**. Verify fixes in working tree (relay test path, catalogue/navigation/gateway for returns/projects). Full `pnpm verify` still hits pre-existing **product-catalogue** lock + **platform-context** header tests; layer audit clean after relay test move. [task card](tasks/WI-OI-127.md).
 
-**WI-OI-128 Returns / RMA (Module 6) — In progress (S6 proof in tree).** S1–S6: API + UI + **`UNIVERSAL_RETURNS_PG_PROOF=1`** integration (partial scrap, Finance/Orders outbox lease). Next: run PG proof with Docker, full verify, module-completion commit. [task card](tasks/WI-OI-128.md); [evidence](work/WI-OI-128.md).
+**WI-OI-128 Returns / RMA (Module 6) — Built (2026-10-29).** Commits through **`442fd2f8`**; PG 3/3; conformance 15/15. Verify hygiene (returns-web Docker workspace, compose relay codegen, platform-context worst-case) in working tree uncommitted. [evidence](work/WI-OI-128.md).
 
-**WI-OI-129 — Scaffold only.** `project-operations` foundation only.
+**WI-OI-129 Project Operations (Module 7) — In progress.** S1 WBS schema migration **000002** (`projects`→`timesheets`, org unit on project). Next: S2 accrual engine. [task card](tasks/WI-OI-129.md).
 
 **WI-OI-130 IoT MaaS — Built; certification automation added (2026-10-29).** Playwright + ingest helper + scenario YAML + [runbook](../docs/runbooks/iot-maas-certification.md). **Done** still needs owner UAT on redeployed **5180** + `iot-api`. [handoff](handoff/WI-OI-130-UAT-JOURNEY.md).
 

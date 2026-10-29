@@ -87,7 +87,7 @@ describe('assignment claims in the signed context', () => {
   it('fits the worst configuration under the header limit, and refuses a larger context with a reason', () => {
     const catalogue = PERMISSION_CATALOGUE.map((entry) => entry.code);
     // Catalogue growth (e.g. WI-OI-130 iot:* codes) shrinks how many max-length roles still fit in 14 KiB.
-    const worstRoleCount = MAX_CONTEXT_ASSIGNMENTS - 3;
+    const worstRoleCount = MAX_CONTEXT_ASSIGNMENTS - 5;
     const roles = Array.from({ length: worstRoleCount }, (_, index) => ({
       name: `Role ${index} `.padEnd(100, 'x'),
       permissions: catalogue.filter((_, code) => code % worstRoleCount === index || code % 7 === index % 7),

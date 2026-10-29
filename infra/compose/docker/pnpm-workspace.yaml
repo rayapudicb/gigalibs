@@ -18,6 +18,9 @@ packages:
   - modules/iot-gateway/web
   - modules/universal-manufacturing/apps/api
   - modules/universal-manufacturing/web
+  - modules/universal-returns/apps/api
+  - modules/universal-returns/web
+  - modules/project-operations/apps/api
   - modules/product-catalogue/apps/api
   - modules/product-catalogue/web
   - modules/universal-connector-hub/apps/api
