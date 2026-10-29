@@ -10,6 +10,8 @@ import {
   type IngestReceiptCostLayerInputV1,
   type RecordShipmentCostInputV1,
   type CreateLandedCostInputV1,
+  type PreviewLandedCostInputV1,
+  type PreviewLandedCostResultV1,
   type ExecuteRevaluationInputV1,
   type InventoryValuationSummaryV1,
   type CostProfileCreatedEventV1,
@@ -30,6 +32,7 @@ import {
 import type { PoolClient } from 'pg';
 import { SCHEMA } from '../config.js';
 import { appendOutboxEvent } from '../outbox.js';
+import { appendInventoryLandedCostAdjusted } from '../subledger/finance-inventory-outbox.js';
 import { DatabaseService } from '../database.service.js';
 import { FinanceService } from '../finance/finance.service.js';
 import {
@@ -569,6 +572,32 @@ export class CostingService {
 
   // ─── 4. Landed Cost Vouchers & Apportionment ─────────────────────────────────
 
+  previewLandedCost(input: PreviewLandedCostInputV1): PreviewLandedCostResultV1 {
+    const targets: LandedCostTarget[] = input.receiptLayerAllocations.map((line) => ({
+      costLayerId: line.costLayerId,
+      productId: line.productId,
+      basisMetric: line.basisMetric,
+      layerRemainingQuantity: line.layerRemainingQuantity,
+      currentUnitCostScaled: line.currentUnitCostScaled,
+    }));
+    const allocations = apportionLandedCost(input.totalLandedCostMinor, targets);
+    return {
+      totalLandedCostMinor: input.totalLandedCostMinor,
+      lines: allocations.map((a) => {
+        const prior = targets.find((t) => t.costLayerId === a.costLayerId)!.currentUnitCostScaled;
+        const increase = (BigInt(a.adjustedUnitCostScaled) - BigInt(prior)).toString();
+        return {
+          costLayerId: a.costLayerId,
+          productId: a.productId,
+          apportionedAmountMinor: a.apportionedAmountMinor,
+          priorUnitCostScaled: prior,
+          adjustedUnitCostScaled: a.adjustedUnitCostScaled,
+          unitCostIncreaseScaled: increase,
+        };
+      }),
+    };
+  }
+
   async createLandedCostVoucher(
     tenantId: string,
     actor: string,
@@ -602,15 +631,11 @@ export class CostingService {
           productId: r.product_id,
           basisMetric: alloc.basisMetric,
           layerRemainingQuantity: r.remaining_quantity.toString(),
+          currentUnitCostScaled: r.unit_cost_scaled.toString(),
         };
       });
 
-      // Apportion landed costs
-      const allocations = apportionLandedCost(
-        input.totalLandedCostMinor,
-        layersRes.rows[0].unit_cost_scaled.toString(),
-        targets,
-      );
+      const allocations = apportionLandedCost(input.totalLandedCostMinor, targets);
 
       const voucherId = randomUUID();
       const now = new Date().toISOString();
@@ -717,6 +742,65 @@ export class CostingService {
           [a.apportionedAmountMinor, a.adjustedUnitCostScaled, now, tenantId, a.costLayerId],
         );
       }
+
+      if (input.postGlJournal && input.bookId && input.periodId) {
+        const profileRes = await client.query(
+          `SELECT * FROM ${SCHEMA}.cost_profiles WHERE tenant_id = $1 AND id = $2`,
+          [tenantId, layersRes.rows[0].cost_profile_id],
+        );
+        const profile = this.mapCostProfile(profileRes.rows[0]);
+        const bookCurrency = await this.resolveBookCurrencyCode(client, tenantId, input.bookId);
+        for (const a of allocations) {
+          const allocInput = input.receiptLayerAllocations.find((x) => x.costLayerId === a.costLayerId);
+          const soldQty = allocInput?.soldQuantityBeforeAdjustment;
+          if (!soldQty || toScaledBigInt(soldQty) <= 0n) continue;
+          const layerRow = layersRes.rows.find((r) => r.id === a.costLayerId)!;
+          const remainingScaled = toScaledBigInt(layerRow.remaining_quantity.toString());
+          const soldScaled = toScaledBigInt(soldQty);
+          const soldLandedMinor =
+            (BigInt(a.apportionedAmountMinor) * soldScaled) / (soldScaled + remainingScaled);
+          if (soldLandedMinor <= 0n) continue;
+          const cogsJournal: PostJournalInputV1 = {
+            accountingBookId: input.bookId,
+            fiscalPeriodId: input.periodId,
+            postingDate: now,
+            entryType: 'SUBLEDGER_INVENTORY',
+            description: `Landed cost COGS catch-up: ${input.voucherNumber}`,
+            sourceDocumentType: 'LANDED_COST_VOUCHER',
+            sourceDocumentId: voucherId,
+            lines: [
+              {
+                accountId: profile.cogsGlAccountId,
+                debitAmountMinor: soldLandedMinor.toString(),
+                creditAmountMinor: '0',
+                currencyCode: bookCurrency,
+                exchangeRate: FUNCTIONAL_CURRENCY_EXCHANGE_RATE,
+                memo: `Sold-goods landed cost: ${input.voucherNumber}`,
+              },
+              {
+                accountId: profile.inventoryGlAccountId,
+                debitAmountMinor: '0',
+                creditAmountMinor: soldLandedMinor.toString(),
+                currencyCode: bookCurrency,
+                exchangeRate: FUNCTIONAL_CURRENCY_EXCHANGE_RATE,
+                memo: `Inventory relief (landed cost sold): ${input.voucherNumber}`,
+              },
+            ],
+          };
+          await this.financeService.postJournal(tenantId, actor, cogsJournal, client);
+        }
+      }
+
+      await appendInventoryLandedCostAdjusted(client, tenantId, voucherId, input.voucherNumber, input.totalLandedCostMinor, allocations.map((a) => {
+        const prior = layersRes.rows.find((r) => r.id === a.costLayerId)!.unit_cost_scaled.toString();
+        return {
+          financeCostLayerId: a.costLayerId,
+          productId: a.productId,
+          apportionedAmountMinor: a.apportionedAmountMinor,
+          priorUnitCostScaled: prior,
+          adjustedUnitCostScaled: a.adjustedUnitCostScaled,
+        };
+      }));
 
       // 5. Outbox event
       const event: LandedCostPostedEventV1 = {
@@ -1046,6 +1130,28 @@ export class CostingService {
       createdAt: new Date(String(row.created_at)).toISOString(),
       updatedAt: new Date(String(row.updated_at)).toISOString(),
     };
+  }
+
+  async listCostLayers(tenantId: string, layerIds?: readonly string[]): Promise<InventoryCostLayerV1[]> {
+    if (layerIds?.length) {
+      const res = await this.query(
+        tenantId,
+        `SELECT * FROM ${SCHEMA}.inventory_cost_layers
+         WHERE tenant_id = $1 AND id = ANY($2::uuid[])
+         ORDER BY receipt_date ASC, created_at ASC`,
+        [tenantId, layerIds],
+      );
+      return res.rows.map((row) => this.mapCostLayer(row));
+    }
+    const res = await this.query(
+      tenantId,
+      `SELECT * FROM ${SCHEMA}.inventory_cost_layers
+       WHERE tenant_id = $1 AND status IN ('ACTIVE', 'PARTIALLY_CONSUMED', 'REVALUED')
+       ORDER BY receipt_date DESC, created_at DESC
+       LIMIT 200`,
+      [tenantId],
+    );
+    return res.rows.map((row) => this.mapCostLayer(row));
   }
 
   // ─── 6. Valuation Reporting ─────────────────────────────────────────────────

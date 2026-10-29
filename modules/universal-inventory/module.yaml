@@ -78,6 +78,7 @@ spec:
       - finance.inventory-receipt.posting-outcome.v1
       - finance.fiscal-period.state-changed.v1
       - finance.fiscal-period.snapshot-completed.v1
+      - finance.inventory.landed-cost-adjusted.v1
       - platform.authorization.revoked.v1
       - platform.organization.version.v1
       - product.created.v1

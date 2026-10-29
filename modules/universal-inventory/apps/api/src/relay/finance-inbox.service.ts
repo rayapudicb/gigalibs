@@ -2,9 +2,11 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
   FINANCE_FISCAL_PERIOD_SNAPSHOT_COMPLETED_V1,
   FINANCE_FISCAL_PERIOD_STATE_CHANGED_V1,
+  FINANCE_INVENTORY_LANDED_COST_ADJUSTED_V1,
   FINANCE_INVENTORY_RECEIPT_POSTING_OUTCOME_V1,
   FinanceFiscalPeriodSnapshotCompletedPayloadSchema,
   FinanceFiscalPeriodStateChangedPayloadSchema,
+  FinanceInventoryLandedCostAdjustedPayloadSchema,
   FinanceInventoryReceiptPostingOutcomePayloadSchema,
   ExactDecimal,
   RelayEnvelopeV1Schema,
@@ -51,6 +53,8 @@ export class FinanceInventoryInboxService {
         return this.applyFiscalPeriodState(client, envelope);
       case FINANCE_FISCAL_PERIOD_SNAPSHOT_COMPLETED_V1:
         return this.applyFiscalPeriodSnapshotCompleted(client, envelope);
+      case FINANCE_INVENTORY_LANDED_COST_ADJUSTED_V1:
+        return this.applyLandedCostAdjusted(client, envelope);
       default:
         throw new BadRequestException({ code: 'INVENTORY_INBOX_EVENT_UNKNOWN', message: `No consumer for ${envelope.eventType}.` });
     }
@@ -163,6 +167,60 @@ export class FinanceInventoryInboxService {
         [tenantId, receiptId, line.receiptLineId, line.financeCostLayerId, source.warehouse_id,
           source.target_location_id, line.productId, source.org_unit_id, line.valuationMethod,
           line.quantity, line.unitCostScaled, line.totalCostMinor],
+      );
+    }
+    return { status: 'PROCESSED' };
+  }
+
+  private async applyLandedCostAdjusted(client: PoolClient, envelope: RelayEnvelopeV1): Promise<FinanceInventoryInboxOutcome> {
+    const payload = FinanceInventoryLandedCostAdjustedPayloadSchema.safeParse(envelope.payload);
+    if (!payload.success) return { status: 'REJECTED', code: 'INVENTORY_INBOX_PAYLOAD_INVALID' };
+
+    for (const line of payload.data.adjustments) {
+      const prior = await client.query<{ prior_unit_cost_scaled: string; adjusted_unit_cost_scaled: string }>(
+        `SELECT prior_unit_cost_scaled, adjusted_unit_cost_scaled
+           FROM ${SCHEMA}.inventory_landed_cost_adjustments
+          WHERE tenant_id = $1 AND finance_landed_cost_id = $2 AND finance_cost_layer_id = $3`,
+        [envelope.tenantId, payload.data.landedCostId, line.financeCostLayerId],
+      );
+      if (prior.rowCount) {
+        const old = prior.rows[0]!;
+        if (
+          String(old.prior_unit_cost_scaled) !== line.priorUnitCostScaled ||
+          String(old.adjusted_unit_cost_scaled) !== line.adjustedUnitCostScaled
+        ) {
+          return { status: 'REJECTED', code: 'INVENTORY_LANDED_COST_REPLAY_CONFLICT' };
+        }
+        continue;
+      }
+
+      const costRecord = await client.query<{ finance_cost_layer_id: string }>(
+        `SELECT finance_cost_layer_id FROM ${SCHEMA}.inventory_receipt_cost_records
+          WHERE tenant_id = $1 AND finance_cost_layer_id = $2`,
+        [envelope.tenantId, line.financeCostLayerId],
+      );
+      if (!costRecord.rowCount) {
+        this.logger.warn(
+          `Landed cost adjustment for unknown finance layer ${line.financeCostLayerId} (tenant ${envelope.tenantId}).`,
+        );
+        continue;
+      }
+
+      await client.query(
+        `INSERT INTO ${SCHEMA}.inventory_landed_cost_adjustments (
+           tenant_id, finance_landed_cost_id, finance_cost_layer_id, product_id,
+           apportioned_amount_minor, prior_unit_cost_scaled, adjusted_unit_cost_scaled, voucher_number
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          envelope.tenantId,
+          payload.data.landedCostId,
+          line.financeCostLayerId,
+          line.productId,
+          line.apportionedAmountMinor,
+          line.priorUnitCostScaled,
+          line.adjustedUnitCostScaled,
+          payload.data.voucherNumber,
+        ],
       );
     }
     return { status: 'PROCESSED' };

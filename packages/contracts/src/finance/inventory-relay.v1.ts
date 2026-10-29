@@ -10,6 +10,9 @@ export const FINANCE_FISCAL_PERIOD_STATE_CHANGED_V1 =
 export const FINANCE_FISCAL_PERIOD_SNAPSHOT_COMPLETED_V1 =
   'finance.fiscal-period.snapshot-completed.v1' as const;
 
+export const FINANCE_INVENTORY_LANDED_COST_ADJUSTED_V1 =
+  'finance.inventory.landed-cost-adjusted.v1' as const;
+
 export type FinanceInventoryReceiptPostingOutcomeStatus = 'POSTED' | 'POSTING_REJECTED';
 
 export const financeInventoryReceiptPostingOutcomeV1 = {
@@ -25,6 +28,11 @@ export const financeFiscalPeriodStateChangedV1 = {
 export const financeFiscalPeriodSnapshotCompletedV1 = {
   eventType: FINANCE_FISCAL_PERIOD_SNAPSHOT_COMPLETED_V1,
   aggregateType: 'fiscal_period_snapshot' as const,
+} as const;
+
+export const financeInventoryLandedCostAdjustedV1 = {
+  eventType: FINANCE_INVENTORY_LANDED_COST_ADJUSTED_V1,
+  aggregateType: 'landed_cost' as const,
 } as const;
 
 /** Authoritative Finance valuation for one Inventory receipt line. */
@@ -68,3 +76,28 @@ export const FinanceFiscalPeriodSnapshotCompletedPayloadSchema = z
     periodCount: z.number().int().nonnegative(),
   })
   .strict();
+
+export const FinanceInventoryLandedCostAdjustmentLineV1Schema = z
+  .object({
+    financeCostLayerId: z.string().uuid(),
+    productId: z.string().uuid(),
+    apportionedAmountMinor: z.string().regex(/^\d+$/),
+    priorUnitCostScaled: z.string().regex(/^\d+$/),
+    adjustedUnitCostScaled: z.string().regex(/^\d+$/),
+  })
+  .strict();
+export type FinanceInventoryLandedCostAdjustmentLineV1 = z.infer<
+  typeof FinanceInventoryLandedCostAdjustmentLineV1Schema
+>;
+
+export const FinanceInventoryLandedCostAdjustedPayloadSchema = z
+  .object({
+    landedCostId: z.string().uuid(),
+    voucherNumber: z.string().min(1).max(50),
+    totalLandedCostMinor: z.string().regex(/^\d+$/),
+    adjustments: z.array(FinanceInventoryLandedCostAdjustmentLineV1Schema).min(1),
+  })
+  .strict();
+export type FinanceInventoryLandedCostAdjustedPayloadV1 = z.infer<
+  typeof FinanceInventoryLandedCostAdjustedPayloadSchema
+>;

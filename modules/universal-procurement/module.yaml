@@ -135,3 +135,4 @@ spec:
       - { path: 'v1/bills/{id}/approve', POST: 'procurement:bills:manage' }
       - { path: 'v1/debit-memos', GET: procurement:read, POST: 'procurement:debit-memos:manage' }
       - { path: 'v1/approval-policies', GET: procurement:read, POST: 'procurement:orders:approve' }
+      - { path: 'v1/landed-cost/receipt-lines', GET: procurement:read }

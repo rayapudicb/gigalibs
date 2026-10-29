@@ -21,6 +21,7 @@ import {
   type PurchaseOrderV1,
   type VendorBillLineV1,
   type VendorBillV1,
+  type LandedCostReceiptLineCandidateV1,
   ExactDecimal,
   SCALE_FACTOR,
 } from '@gigalibs/contracts';
@@ -2015,5 +2016,44 @@ export class ProcurementService {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
+  }
+
+  /** WI-OI-127: receipt lines received through Procurement for landed-cost layer selection. */
+  async listLandedCostReceiptLines(principal: ModulePrincipal): Promise<LandedCostReceiptLineCandidateV1[]> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const rows = await client.query<{
+        receipt_id: string;
+        receipt_line_id: string;
+        receipt_number: string;
+        product_id: string;
+        received_quantity: string;
+        matched_quantity: string;
+        purchase_order_id: string | null;
+        purchase_order_line_id: string | null;
+        warehouse_id: string;
+        received_at: Date;
+      }>(
+        `SELECT receipt_id, receipt_line_id, receipt_number, product_id,
+                received_quantity, matched_quantity, purchase_order_id, purchase_order_line_id,
+                warehouse_id, received_at
+           FROM ${SCHEMA}.procurement_receipt_projections
+          WHERE tenant_id = $1 AND received_quantity > 0
+          ORDER BY received_at DESC
+          LIMIT 200`,
+        [principal.tenantId],
+      );
+      return rows.rows.map((row) => ({
+        receiptId: row.receipt_id,
+        receiptLineId: row.receipt_line_id,
+        receiptNumber: row.receipt_number,
+        productId: row.product_id,
+        receivedQuantity: row.received_quantity,
+        matchedQuantity: row.matched_quantity,
+        purchaseOrderId: row.purchase_order_id,
+        purchaseOrderLineId: row.purchase_order_line_id,
+        warehouseId: row.warehouse_id,
+        receivedAt: new Date(row.received_at).toISOString(),
+      }));
+    });
   }
 }

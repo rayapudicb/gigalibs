@@ -7,6 +7,7 @@ import { signRelayToken } from '@gigalibs/auth-core';
 import {
   FINANCE_FISCAL_PERIOD_SNAPSHOT_COMPLETED_V1,
   FINANCE_FISCAL_PERIOD_STATE_CHANGED_V1,
+  FINANCE_INVENTORY_LANDED_COST_ADJUSTED_V1,
   FINANCE_INVENTORY_RECEIPT_POSTING_OUTCOME_V1,
 } from '@gigalibs/contracts';
 import { describe, expect, it, vi } from 'vitest';
@@ -258,6 +259,56 @@ describe('FinanceInventoryInboxService', () => {
     );
     await inbox.receive(body, JSON.stringify(body));
     expect(inserts.some((sql) => sql.includes('initial_sync_completed_at'))).toBe(true);
+  });
+
+  it('projects landed cost adjustments onto receipt cost layers', async () => {
+    const layerId = randomUUID();
+    const productId = randomUUID();
+    const landedCostId = randomUUID();
+    const inserts: unknown[][] = [];
+    const client = {
+      query: vi.fn(async (sql: string, params?: unknown[]) => {
+        if (sql.includes('INSERT INTO gigalibs_inventory.inbox_receipts')) {
+          return { rows: [{ id: 'inbox-1' }], rowCount: 1 };
+        }
+        if (sql.includes('UPDATE gigalibs_inventory.inbox_receipts')) {
+          return { rowCount: 1 };
+        }
+        if (sql.includes('inventory_landed_cost_adjustments') && sql.includes('SELECT')) {
+          return { rows: [], rowCount: 0 };
+        }
+        if (sql.includes('inventory_receipt_cost_records')) {
+          return { rows: [{ finance_cost_layer_id: layerId }], rowCount: 1 };
+        }
+        if (sql.includes('INSERT INTO gigalibs_inventory.inventory_landed_cost_adjustments')) {
+          inserts.push(params ?? []);
+          return { rowCount: 1 };
+        }
+        return { rows: [], rowCount: 0 };
+      }),
+    };
+    const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
+    const inbox = new FinanceInventoryInboxService(database as never, noopPostingCutoff as never);
+    const body = envelope(
+      FINANCE_INVENTORY_LANDED_COST_ADJUSTED_V1,
+      {
+        landedCostId,
+        voucherNumber: 'LC-1',
+        totalLandedCostMinor: '300000',
+        adjustments: [
+          {
+            financeCostLayerId: layerId,
+            productId,
+            apportionedAmountMinor: '300000',
+            priorUnitCostScaled: '1000000000',
+            adjustedUnitCostScaled: '1006000000',
+          },
+        ],
+      },
+      { aggregateId: landedCostId, aggregateType: 'landed_cost' },
+    );
+    await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'PROCESSED' });
+    expect(inserts.length).toBe(1);
   });
 
   it('logs and acknowledges posting outcomes for unknown receipts', async () => {

@@ -214,7 +214,9 @@ spec:
       - { path: 'v1/costing/profiles/{id}', GET: finance:read }
       - { path: 'v1/costing/receipt-layers', POST: 'finance:journals:manage' }
       - { path: 'v1/costing/shipments', POST: 'finance:journals:manage' }
+      - { path: 'v1/costing/landed-costs/preview', POST: finance:read }
       - { path: 'v1/costing/landed-costs', POST: 'finance:journals:manage' }
+      - { path: 'v1/costing/cost-layers', GET: 'finance:reports:view' }
       - { path: 'v1/costing/revaluations', POST: 'finance:journals:manage' }
       - { path: 'v1/costing/valuation-summary', GET: 'finance:reports:view' }
       - { path: 'v1/budgeting/structures', GET: finance:read, POST: 'finance:books:manage' }

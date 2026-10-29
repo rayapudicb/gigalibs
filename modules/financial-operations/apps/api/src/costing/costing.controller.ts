@@ -3,6 +3,7 @@ import {
   IngestReceiptCostLayerInputV1Schema,
   RecordShipmentCostInputV1Schema,
   CreateLandedCostInputV1Schema,
+  PreviewLandedCostInputV1Schema,
   ExecuteRevaluationInputV1Schema,
 } from '@gigalibs/contracts';
 import { z } from 'zod';
@@ -147,6 +148,13 @@ export class CostingController {
 
   // ─── 4. Landed Cost Vouchers ────────────────────────────────────────────────
 
+  @Post('landed-costs/preview')
+  @RequirePermissions('finance:read')
+  async previewLandedCost(@Body() body: unknown) {
+    const input = parse(PreviewLandedCostInputV1Schema, body);
+    return this.costingService.previewLandedCost(input);
+  }
+
   @Post('landed-costs')
   @RequirePermissions('finance:journals:create')
   async createLandedCost(
@@ -175,6 +183,19 @@ export class CostingController {
       principal.subject,
       input,
     );
+  }
+
+  @Get('cost-layers')
+  @RequirePermissions('finance:reports:read')
+  async listCostLayers(
+    @CurrentPrincipal() principal: ModulePrincipal,
+    @Query('ids') ids?: string,
+  ) {
+    const layerIds = ids
+      ?.split(',')
+      .map((id) => id.trim())
+      .filter((id) => id.length > 0);
+    return this.costingService.listCostLayers(principal.tenantId, layerIds);
   }
 
   // ─── 6. Valuation Reporting ─────────────────────────────────────────────────

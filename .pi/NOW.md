@@ -4,7 +4,7 @@
 
 **WI-OI-126 Manufacturing & MRP (Module 4) — Built (2026-10-29).** Recovery PG 3/3 (RESERVING/ISSUING/RECEIVING replay); conformance 15/15 static; DB proofs 28/28 with module host boot. Plan S5/S6 graph-BOM differentiators deferred; `--live` at owner batch deploy. [WI-OI-126](work/WI-OI-126.md).
 
-**WI-OI-127 Landed Cost (Module 5) — In progress.** Finance costing vouchers exist; added `landed-cost-basis.ts` + $3k/500-unit arithmetic test. Next: receipt/bill handshakes, COGS variance, procurement wizard UI, PG proof. [task card](tasks/WI-OI-127.md).
+**WI-OI-127 Landed Cost (Module 5) — In progress (near Built).** Receipt-driven wizard loads Procurement `GET v1/landed-cost/receipt-lines` + Inventory posted costs + Finance `GET v1/costing/cost-layers`; schema pins finance **17** / inventory **13**. PG: `INVENTORY_LANDED_COST_PG_PROOF=1` posting outcome → landed adjustment (**1/1**). Open: vendor-bill tie-in, live relay worker E2E, `pnpm verify`, module-completion commit. [task card](tasks/WI-OI-127.md).
 
 **WI-OI-128 / WI-OI-129 — Scaffolds only (2026-10-29).** `universal-returns` and `project-operations` generated via `pnpm module:new`; business slices not started.
 

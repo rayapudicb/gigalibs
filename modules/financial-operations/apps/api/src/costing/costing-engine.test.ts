@@ -58,14 +58,26 @@ describe('Costing Engine Arithmetic Tests', () => {
 
   it('apportions landed costs with exact penny conservation', () => {
     const targets = [
-      { costLayerId: 'layer-a', productId: 'p-1', basisMetric: '100.000000', layerRemainingQuantity: '10.000000' },
-      { costLayerId: 'layer-b', productId: 'p-2', basisMetric: '200.000000', layerRemainingQuantity: '20.000000' },
+      {
+        costLayerId: 'layer-a',
+        productId: 'p-1',
+        basisMetric: '100.000000',
+        layerRemainingQuantity: '10.000000',
+        currentUnitCostScaled: '20000000',
+      },
+      {
+        costLayerId: 'layer-b',
+        productId: 'p-2',
+        basisMetric: '200.000000',
+        layerRemainingQuantity: '20.000000',
+        currentUnitCostScaled: '20000000',
+      },
     ];
 
     // Total landed cost: $100.00 (10000 cents)
     // Line A (1/3): 3333 cents
     // Line B (2/3): 6667 cents (including 1 cent remainder allocation to largest line)
-    const allocations = apportionLandedCost('10000', '20000000', targets);
+    const allocations = apportionLandedCost('10000', targets);
     expect(allocations).toHaveLength(2);
 
     const sumMinor = BigInt(allocations[0]!.apportionedAmountMinor) + BigInt(allocations[1]!.apportionedAmountMinor);
@@ -98,9 +110,10 @@ describe('Costing Engine Arithmetic Tests', () => {
           volumeM3: '0',
         }),
         layerRemainingQuantity: '500.000000',
+        currentUnitCostScaled: '1000000000',
       },
     ];
-    const allocations = apportionLandedCost(freightMinor, '1000000000', targets);
+    const allocations = apportionLandedCost(freightMinor, targets);
     expect(allocations).toHaveLength(1);
     expect(allocations[0]!.apportionedAmountMinor).toBe('300000');
     const addedScaled = BigInt(allocations[0]!.adjustedUnitCostScaled) - 1_000_000_000n;

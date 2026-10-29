@@ -24,6 +24,7 @@ import {
   type ProcurementRequisitionV1,
   type PurchaseOrderV1,
   type VendorBillV1,
+  type LandedCostReceiptLineCandidateV1,
 } from '@gigalibs/contracts';
 import { CurrentPrincipal, type ModulePrincipal, RequirePermissions } from '@gigalibs/module-sdk';
 import {
@@ -278,6 +279,14 @@ export class ProcurementController {
   @RequirePermissions('procurement:read')
   async listApprovalPolicies(@CurrentPrincipal() principal: ModulePrincipal): Promise<ApprovalPolicyV1[]> {
     return this.service.listApprovalPolicies(principal);
+  }
+
+  @Get('landed-cost/receipt-lines')
+  @RequirePermissions('procurement:read')
+  async listLandedCostReceiptLines(
+    @CurrentPrincipal() principal: ModulePrincipal,
+  ): Promise<LandedCostReceiptLineCandidateV1[]> {
+    return this.service.listLandedCostReceiptLines(principal);
   }
 
   @Post('approval-policies')

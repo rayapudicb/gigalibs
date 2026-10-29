@@ -40,7 +40,7 @@ describe.skipIf(!enabled)('Material Ledger reservation concurrency on isolated P
     db = new DatabaseService({
       databaseUrl: postgres.runtimeUrl,
       databasePoolSize: 5,
-      expectedMigrationVersion: 12,
+      expectedMigrationVersion: 13,
       platformContextAudience: 'proof',
       platformContextPublicKey: 'proof',
       corsOrigins: [],

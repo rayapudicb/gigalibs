@@ -406,7 +406,10 @@ try {
     },
   ];
 
-  const apportionment = apportionLandedCost('20000', '25000000', landedTargets);
+  const apportionment = apportionLandedCost(
+    '20000',
+    landedTargets.map((t) => ({ ...t, currentUnitCostScaled: '25000000' })),
+  );
   assert.strictEqual(apportionment.length, 1, '1 line allocated');
   assert.strictEqual(apportionment[0].apportionedAmountMinor, '20000', 'Full $200.00 allocated with exact conservation');
   // $200.00 / 80 units = $2.50/unit => adjusted unit cost = $25.00 + $2.50 = $27.50 (27500000 scaled)

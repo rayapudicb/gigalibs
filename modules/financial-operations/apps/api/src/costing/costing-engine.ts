@@ -158,6 +158,7 @@ export interface LandedCostTarget {
   productId: string;
   basisMetric: string; // e.g. receipt line value minor, or weight in kg
   layerRemainingQuantity: string;
+  currentUnitCostScaled: string;
 }
 
 export interface LandedCostApportionmentResult {
@@ -173,7 +174,6 @@ export interface LandedCostApportionmentResult {
  */
 export function apportionLandedCost(
   totalLandedCostMinorStr: string,
-  currentUnitCostScaledStr: string,
   targets: LandedCostTarget[],
 ): LandedCostApportionmentResult[] {
   const totalLandedCost = BigInt(totalLandedCostMinorStr);
@@ -203,7 +203,7 @@ export function apportionLandedCost(
     const layerRemainingScaled = toScaledBigInt(targets[i]!.layerRemainingQuantity);
     const addedUnitCostScaled =
       layerRemainingScaled > 0n ? (apportioned * 10_000_000_000n) / layerRemainingScaled : 0n;
-    const currentCostScaled = BigInt(currentUnitCostScaledStr);
+    const currentCostScaled = BigInt(targets[i]!.currentUnitCostScaled);
 
     results.push({
       costLayerId: targets[i]!.costLayerId,
@@ -221,7 +221,7 @@ export function apportionLandedCost(
     const layerRemainingScaled = toScaledBigInt(targets[largestIdx]!.layerRemainingQuantity);
     const addedUnitCostScaled =
       layerRemainingScaled > 0n ? (adjustedAmount * 10_000_000_000n) / layerRemainingScaled : 0n;
-    const currentCostScaled = BigInt(currentUnitCostScaledStr);
+    const currentCostScaled = BigInt(targets[largestIdx]!.currentUnitCostScaled);
     results[largestIdx]!.adjustedUnitCostScaled = (currentCostScaled + addedUnitCostScaled).toString();
   }
 

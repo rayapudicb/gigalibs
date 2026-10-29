@@ -1,8 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import type { FinanceInventoryReceiptCostLineV1 } from '@gigalibs/contracts';
+import type {
+  FinanceInventoryLandedCostAdjustmentLineV1,
+  FinanceInventoryReceiptCostLineV1,
+} from '@gigalibs/contracts';
 import {
   financeFiscalPeriodSnapshotCompletedV1,
   financeFiscalPeriodStateChangedV1,
+  financeInventoryLandedCostAdjustedV1,
   financeInventoryReceiptPostingOutcomeV1,
   type FinanceInventoryReceiptPostingOutcomeStatus,
 } from '@gigalibs/posting-rules';
@@ -127,6 +131,30 @@ export async function appendFiscalPeriodSnapshotCompleted(
     data: {
       primaryBookId,
       periodCount,
+    },
+  });
+}
+
+export async function appendInventoryLandedCostAdjusted(
+  client: PoolClient,
+  tenantId: string,
+  landedCostId: string,
+  voucherNumber: string,
+  totalLandedCostMinor: string,
+  adjustments: readonly FinanceInventoryLandedCostAdjustmentLineV1[],
+): Promise<void> {
+  const eventId = randomUUID();
+  await appendOutboxEvent(client, tenantId, {
+    id: eventId,
+    type: financeInventoryLandedCostAdjustedV1.eventType,
+    aggregateType: financeInventoryLandedCostAdjustedV1.aggregateType,
+    aggregateId: landedCostId,
+    correlationId: eventId,
+    data: {
+      landedCostId,
+      voucherNumber,
+      totalLandedCostMinor,
+      adjustments: [...adjustments],
     },
   });
 }

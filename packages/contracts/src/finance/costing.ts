@@ -239,6 +239,8 @@ export const CreateLandedCostInputV1Schema = z
         z.object({
           costLayerId: z.string().uuid(),
           basisMetric: DecimalQuantitySchema,
+          /** Units already sold at the pre-landed unit cost; triggers COGS catch-up when GL posting is enabled. */
+          soldQuantityBeforeAdjustment: DecimalQuantitySchema.optional(),
         }),
       )
       .min(1),
@@ -248,6 +250,44 @@ export const CreateLandedCostInputV1Schema = z
   })
   .strict();
 export type CreateLandedCostInputV1 = z.infer<typeof CreateLandedCostInputV1Schema>;
+
+export const PreviewLandedCostInputV1Schema = z
+  .object({
+    totalLandedCostMinor: MoneyMinorSchema,
+    receiptLayerAllocations: z
+      .array(
+        z.object({
+          costLayerId: z.string().uuid(),
+          productId: z.string().uuid(),
+          basisMetric: DecimalQuantitySchema,
+          layerRemainingQuantity: DecimalQuantitySchema,
+          currentUnitCostScaled: ScaledRateSchema,
+        }),
+      )
+      .min(1),
+  })
+  .strict();
+export type PreviewLandedCostInputV1 = z.infer<typeof PreviewLandedCostInputV1Schema>;
+
+export const LandedCostAllocationPreviewLineV1Schema = z
+  .object({
+    costLayerId: z.string().uuid(),
+    productId: z.string().uuid(),
+    apportionedAmountMinor: MoneyMinorSchema,
+    priorUnitCostScaled: ScaledRateSchema,
+    adjustedUnitCostScaled: ScaledRateSchema,
+    unitCostIncreaseScaled: ScaledRateSchema,
+  })
+  .strict();
+export type LandedCostAllocationPreviewLineV1 = z.infer<typeof LandedCostAllocationPreviewLineV1Schema>;
+
+export const PreviewLandedCostResultV1Schema = z
+  .object({
+    totalLandedCostMinor: MoneyMinorSchema,
+    lines: z.array(LandedCostAllocationPreviewLineV1Schema).min(1),
+  })
+  .strict();
+export type PreviewLandedCostResultV1 = z.infer<typeof PreviewLandedCostResultV1Schema>;
 
 export const ExecuteRevaluationInputV1Schema = z
   .object({

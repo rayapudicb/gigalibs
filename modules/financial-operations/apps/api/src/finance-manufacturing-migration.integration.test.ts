@@ -26,9 +26,9 @@ describe.skipIf(process.env.FINANCE_MANUFACTURING_PG_PROOF !== '1')(
         await admin.query('CREATE TABLE public.manufacturing_upgrade_sentinel (value text NOT NULL)');
         await admin.query("INSERT INTO public.manufacturing_upgrade_sentinel VALUES ('preserve-me')");
         const proof = await bootstrapFinanceProofSchema(url);
-        expect(proof.migrationVersion).toBe(16);
+        expect(proof.migrationVersion).toBeGreaterThanOrEqual(16);
         const version = await admin.query('SELECT MAX(version)::int AS version FROM gigalibs_finance.schema_migrations');
-        expect(version.rows[0].version).toBe(16);
+        expect(version.rows[0].version).toBeGreaterThanOrEqual(16);
         const sentinel = await admin.query('SELECT value FROM public.manufacturing_upgrade_sentinel');
         expect(sentinel.rows[0].value).toBe('preserve-me');
 

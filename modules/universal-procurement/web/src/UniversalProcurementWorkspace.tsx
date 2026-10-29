@@ -3,6 +3,7 @@
 import { PLATFORM_LOOKUP_BASE_PATHS } from '@gigalibs/contracts';
 import { createRecordClient, MetadataWindow, usePublishedManifest } from '@gigalibs/configuration-react';
 import { useMemo, useState } from 'react';
+import { LandedCostWizardPanel } from './components/LandedCostWizardPanel.js';
 
 // WI-OI-120gh/gn: Procurement metadata windows (purchase orders and vendor bills).
 
@@ -21,7 +22,8 @@ type ProcurementSurface =
   | 'procurement-requisitions'
   | 'procurement-purchase-orders'
   | 'procurement-vendor-bills'
-  | 'procurement-debit-memos';
+  | 'procurement-debit-memos'
+  | 'procurement-landed-cost';
 
 export interface UniversalProcurementWorkspaceProps {
   readonly permissions?: readonly string[];
@@ -105,9 +107,20 @@ export function UniversalProcurementWorkspace({ permissions = [] }: UniversalPro
           >
             Debit memos
           </button>
+          <button
+            type="button"
+            className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'procurement-landed-cost' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}
+            onClick={() => setSurface('procurement-landed-cost')}
+          >
+            Landed cost
+          </button>
         </div>
       </header>
-      <ProcurementMetadataPanel surfaceKey={surface} permissions={permissions} client={client} clients={clients} />
+      {surface === 'procurement-landed-cost' ? (
+        <LandedCostWizardPanel />
+      ) : (
+        <ProcurementMetadataPanel surfaceKey={surface} permissions={permissions} client={client} clients={clients} />
+      )}
     </div>
   );
 }

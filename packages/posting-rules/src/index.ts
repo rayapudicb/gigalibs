@@ -23,6 +23,9 @@ export {
   financeFiscalPeriodSnapshotCompletedV1,
   financeFiscalPeriodStateChangedV1,
   financeInventoryReceiptPostingOutcomeV1,
+  financeInventoryLandedCostAdjustedV1,
+  FINANCE_INVENTORY_LANDED_COST_ADJUSTED_V1,
+  FinanceInventoryLandedCostAdjustedPayloadSchema,
   type FinanceInventoryReceiptPostingOutcomeStatus,
 } from './finance-inventory-relay.v1.js';
 export {

@@ -35,7 +35,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_finance",
-    "migrationVersion": 16,
+    "migrationVersion": 17,
     "audience": "gigalibs-financial-operations-api",
     "appendOnlyTables": [
       "audit_events"
@@ -101,7 +101,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_inventory",
-    "migrationVersion": 12,
+    "migrationVersion": 13,
     "audience": "gigalibs-universal-inventory-api",
     "appendOnlyTables": [
       "audit_events"

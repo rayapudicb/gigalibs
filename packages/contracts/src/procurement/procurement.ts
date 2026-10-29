@@ -608,6 +608,23 @@ export const InvoiceMatchedEventV1Schema = BaseProcurementEventSchema.extend({
 }).strict();
 export type InvoiceMatchedEventV1 = z.infer<typeof InvoiceMatchedEventV1Schema>;
 
+/** Receipt line known to Procurement (from Inventory relay) for landed-cost allocation. */
+export const LandedCostReceiptLineCandidateV1Schema = z
+  .object({
+    receiptId: z.string().uuid(),
+    receiptLineId: z.string().uuid(),
+    receiptNumber: z.string().min(1).max(64),
+    productId: z.string().uuid(),
+    receivedQuantity: DecimalQuantitySchema,
+    matchedQuantity: DecimalQuantitySchema,
+    purchaseOrderId: z.string().uuid().nullable(),
+    purchaseOrderLineId: z.string().uuid().nullable(),
+    warehouseId: z.string().uuid(),
+    receivedAt: z.string().datetime(),
+  })
+  .strict();
+export type LandedCostReceiptLineCandidateV1 = z.infer<typeof LandedCostReceiptLineCandidateV1Schema>;
+
 export const ProcurementEventV1Schema = z.discriminatedUnion('type', [
   RequisitionCreatedEventV1Schema,
   RequisitionApprovedEventV1Schema,
