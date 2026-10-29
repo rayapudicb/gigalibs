@@ -1,45 +1,41 @@
 # WI-OI-129 Project Operations — evidence
 
-**Status:** In progress (Module 7); S1–S4 committed through **`517fa98f`**; **S5 in working tree** (2026-10-29).
+**Status:** Built (Module 7 slices S1–S7); **`dfba1acb`** S5, S6–S7 in working tree pending commit (2026-10-29).
 
 ## S1 (WBS schema) — `1c191256`
 
-- Migration `000002_wbs_domain`: `projects`, `project_phases`, `project_tasks`, `project_lines`, `project_issues`, `labor_rates`, `timesheets` with forced tenant RLS; `org_unit_id` on projects.
-- Contracts stub: `packages/contracts/src/projects/wbs.ts` (`ProjectV1Schema`).
-- Runtime manifest + expected migration **2**.
+- Migration `000002_wbs_domain`: projects, phases, tasks, lines, issues, labor rates, timesheets; tenant RLS; `org_unit_id`.
 
 ## S2 (cost accrual) — `4dcf6eca`
 
-- Pure engine: `packages/contracts/src/projects/cost-accrual.ts` (`accrueProjectCosts`, `computeProjectBudgetBurn`, `projectLineExtensionMinor`).
-- Unit tests: `cost-accrual.test.ts`.
+- Pure engine: `cost-accrual.ts` + unit tests.
 
 ## S3 (WIP GL posting) — `4d942a9b`
 
-- Contract: `packages/contracts/src/projects/wip-relay.v1.ts` (`PROJECT_WIP_ACCRUAL_REQUESTED_V1`, Finance projects inbox audience).
-- Project Operations migration `000003_project_wip_posting`: `project_cost_postings`, finance outbox + relay lease/settle.
-- API: `POST v1/projects/:id/wip-accrual` (`project-operations.cost.post`); `CostPostingService` + finance relay worker.
-- Finance migration `000018_finance_project_wip_accounts`: WIP + labor expense GL on `cost_profiles`; projects inbox Dr WIP / Cr inventory or labor expense.
-- Compose codegen: `PROJECT_OPERATIONS_FINANCE_RELAY_*` in `scripts/module-manifests.mjs`.
-- Static migration tests: `000003_project_wip_posting.test.ts`, `000018_finance_project_wip_accounts.test.ts` (2/2).
-- Typecheck: `@gigalibs/project-operations-api`, `@gigalibs/financial-operations-api`.
+- WIP relay → Finance projects inbox; migrations `000003` / Finance `000018`.
 
 ## S4 (T&M + milestone → AR) — `517fa98f`
 
-- Pure billing: `packages/contracts/src/projects/tm-billing.ts`; relay payload `ar-relay.v1.ts` (`PROJECT_INVOICE_DRAFT_REQUESTED_V1`, `AR_PROJECTS_INBOX_AUDIENCE`).
-- Migration `000004_project_billing_ar`: `project_billing_requests`, timesheet linkage, `relay_lease_project_ar_events`.
-- API: `POST …/bill-time-materials`, `POST …/bill-milestone` (`project-operations.billing.post`); `ProjectArOutboxRelay`.
-- AR migration `000019_ar_project_billing_source`: `source_project_billing_id`; `ProjectsBillingInboxController` + `issueInvoiceFromProjectBilling`.
-- Compose: `PROJECT_OPERATIONS_AR_RELAY_*`, `AR_PROJECTS_INBOX_RELAY_PUBLIC_KEY_BASE64`.
-- Tests: `tm-billing.test.ts`, migration static tests, `projects-billing-inbox.test.ts`.
+- Billing requests, AR inbox `000019`, `ProjectArOutboxRelay`.
 
-## S5 (Gantt + burn panel) — working tree
+## S5 (Gantt + burn) — `dfba1acb`
 
-- Contracts: `packages/contracts/src/projects/insights.v1.ts` (gantt + burn matrix DTOs).
-- API: `GET v1/projects`, `GET v1/projects/:id/gantt`, `GET v1/projects/:id/burn-matrix` (`project-operations.insights.read`); `InsightsService` uses `accrueProjectCosts` + `computeProjectBudgetBurn`.
-- Web: `@gigalibs/project-operations-web` (`ProjectOperationsWorkspace` — project picker, burn summary/table, read-only Gantt bars).
-- Workflow platform page wired via `module.yaml` + `pnpm modules:catalog`.
-- Test: `gantt-layout.test.ts`.
+- Insights API + `@gigalibs/project-operations-web`.
 
-## Next
+## S6 (timesheet approval)
 
-- S6 timesheet approval queue; S7 E2E
+- API: approval queue, submit, approve, reject (`project-operations.timesheets.*`).
+- UI: FocusModal approval drawer on `ProjectOperationsWorkspace`.
+
+## S7 (E2E / PG proof)
+
+- `PROJECT_OPERATIONS_PG_PROOF=1` → `project-operations-journey.integration.test.ts` **3/3** (approve → T&M outbox; phase-1 milestone → AR draft; tenant RLS).
+- Harness: `apps/api/scripts/throwaway-postgres.ts`.
+
+## Verify note
+
+Full `pnpm verify` not re-run this session; slice evidence: typecheck (project-operations-api, workflow-platform), PG 3/3, gantt-layout test.
+
+## Deploy
+
+Module 7 in owner batch deploy sequence (#7); relay credentials for Finance + AR as in compose codegen.

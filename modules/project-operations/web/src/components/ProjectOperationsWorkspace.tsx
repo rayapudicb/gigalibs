@@ -1,7 +1,12 @@
 'use client';
 
-import type { ProjectBurnMatrixV1, ProjectGanttV1, ProjectSummaryV1 } from '@gigalibs/contracts';
-import { Container, Heading, StatusBadge, Table, Text } from '@medusajs/ui';
+import type {
+  ProjectBurnMatrixV1,
+  ProjectGanttV1,
+  ProjectSummaryV1,
+  TimesheetApprovalQueueItemV1,
+} from '@gigalibs/contracts';
+import { Button, Container, FocusModal, Heading, Input, StatusBadge, Table, Text } from '@medusajs/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { projectOperationsApi } from '../api.js';
 import { ganttBarStyle, projectTimelineRange } from '../gantt-layout.js';
@@ -25,6 +30,9 @@ export function ProjectOperationsWorkspace() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [gantt, setGantt] = useState<ProjectGanttV1 | null>(null);
   const [burn, setBurn] = useState<ProjectBurnMatrixV1 | null>(null);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [approvalQueue, setApprovalQueue] = useState<TimesheetApprovalQueueItemV1[]>([]);
+  const [rejectReason, setRejectReason] = useState<Record<string, string>>({});
 
   const loadProjects = useCallback(async () => {
     setBusy(true);
@@ -74,6 +82,64 @@ export function ProjectOperationsWorkspace() {
     return projectTimelineRange(gantt.plannedStart, gantt.plannedEnd, taskStarts, taskEnds);
   }, [gantt]);
 
+  const loadApprovalQueue = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await projectOperationsApi.approvalQueue();
+      setApprovalQueue(response.items);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Failed to load timesheet approvals.');
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  const approveTimesheet = useCallback(
+    async (item: TimesheetApprovalQueueItemV1) => {
+      setBusy(true);
+      setError(null);
+      try {
+        await projectOperationsApi.approveTimesheet(item.id, {
+          requestKey: crypto.randomUUID(),
+          expectedVersion: item.version,
+        });
+        await loadApprovalQueue();
+        if (selectedId) await loadInsights(selectedId);
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : 'Approval failed.');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [loadApprovalQueue, loadInsights, selectedId],
+  );
+
+  const rejectTimesheet = useCallback(
+    async (item: TimesheetApprovalQueueItemV1) => {
+      const rejectionReason = rejectReason[item.id]?.trim();
+      if (!rejectionReason) {
+        setError('Enter a rejection reason.');
+        return;
+      }
+      setBusy(true);
+      setError(null);
+      try {
+        await projectOperationsApi.rejectTimesheet(item.id, {
+          requestKey: crypto.randomUUID(),
+          expectedVersion: item.version,
+          rejectionReason,
+        });
+        await loadApprovalQueue();
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : 'Rejection failed.');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [loadApprovalQueue, rejectReason],
+  );
+
   const selected = projects.find((project) => project.id === selectedId) ?? null;
 
   return (
@@ -81,9 +147,88 @@ export function ProjectOperationsWorkspace() {
       <div className="flex flex-col gap-2">
         <Heading level="h1">Project Operations</Heading>
         <Text size="small" className="text-ui-fg-subtle">
-          Gantt timeline and budget burn matrix (Module 7 / WI-OI-129 S5).
+          Gantt, budget burn, and timesheet approval queue (Module 7 / WI-OI-129 S5–S6).
         </Text>
       </div>
+
+      <div>
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() => {
+            setApprovalOpen(true);
+            void loadApprovalQueue();
+          }}
+        >
+          Timesheet approvals
+        </Button>
+      </div>
+
+      <FocusModal open={approvalOpen} onOpenChange={setApprovalOpen}>
+        <FocusModal.Content>
+          <FocusModal.Header>
+            <Heading level="h2">Timesheet approval queue</Heading>
+          </FocusModal.Header>
+          <FocusModal.Body className="flex flex-col gap-4">
+            {approvalQueue.length === 0 ? (
+              <Text size="small" className="text-ui-fg-subtle">
+                No submitted timesheets awaiting approval.
+              </Text>
+            ) : (
+              <Table>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.HeaderCell>Project</Table.HeaderCell>
+                    <Table.HeaderCell>Task</Table.HeaderCell>
+                    <Table.HeaderCell>Worker</Table.HeaderCell>
+                    <Table.HeaderCell>Date</Table.HeaderCell>
+                    <Table.HeaderCell>Hours</Table.HeaderCell>
+                    <Table.HeaderCell>Actions</Table.HeaderCell>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {approvalQueue.map((item) => (
+                    <Table.Row key={item.id}>
+                      <Table.Cell>
+                        {item.projectCode}
+                        <Text size="xsmall" className="text-ui-fg-subtle">
+                          {item.projectName}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>{item.taskName}</Table.Cell>
+                      <Table.Cell>{item.workerSubject}</Table.Cell>
+                      <Table.Cell>{item.workDate}</Table.Cell>
+                      <Table.Cell>{item.hours}</Table.Cell>
+                      <Table.Cell>
+                        <div className="flex flex-col gap-2">
+                          <Button size="small" disabled={busy} onClick={() => void approveTimesheet(item)}>
+                            Approve
+                          </Button>
+                          <Input
+                            placeholder="Rejection reason"
+                            value={rejectReason[item.id] ?? ''}
+                            onChange={(event) =>
+                              setRejectReason((current) => ({ ...current, [item.id]: event.target.value }))
+                            }
+                          />
+                          <Button
+                            size="small"
+                            variant="danger"
+                            disabled={busy}
+                            onClick={() => void rejectTimesheet(item)}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table>
+            )}
+          </FocusModal.Body>
+        </FocusModal.Content>
+      </FocusModal>
 
       {error ? (
         <Text size="small" className="text-ui-fg-error">

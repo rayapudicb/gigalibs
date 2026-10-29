@@ -5,6 +5,8 @@ import { runtimeConfigProvider } from './config.js';
 import { BillingController } from './billing/billing.controller.js';
 import { InsightsController } from './insights/insights.controller.js';
 import { InsightsService } from './insights/insights.service.js';
+import { TimesheetsController } from './timesheets/timesheets.controller.js';
+import { TimesheetsService } from './timesheets/timesheets.service.js';
 import { BillingService } from './billing/billing.service.js';
 import { CostPostingController } from './cost/cost-posting.controller.js';
 import { CostPostingService } from './cost/cost-posting.service.js';
@@ -30,6 +32,7 @@ const ProjectRelayHealthController = createRelayHealthController('v1/health');
     ProjectRelayHealthController,
     RecordsController,
     InsightsController,
+    TimesheetsController,
     CostPostingController,
     BillingController,
   ],
@@ -45,6 +48,7 @@ const ProjectRelayHealthController = createRelayHealthController('v1/health');
     CostPostingService,
     BillingService,
     InsightsService,
+    TimesheetsService,
   ],
 })
 export class AppModule {}

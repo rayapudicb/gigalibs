@@ -1389,6 +1389,24 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "project-operations.timesheets.approve",
+    "entries": [
+      "project-operations"
+    ]
+  },
+  {
+    "code": "project-operations.timesheets.manage",
+    "entries": [
+      "project-operations"
+    ]
+  },
+  {
+    "code": "project-operations.timesheets.read",
+    "entries": [
+      "project-operations"
+    ]
+  },
+  {
     "code": "recovery:action",
     "entries": [
       "autonomous-recovery-studio",

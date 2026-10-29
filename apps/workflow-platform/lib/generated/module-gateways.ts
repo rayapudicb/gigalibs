@@ -2447,6 +2447,34 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "project-operations.insights.read"
         }
+      },
+      {
+        "template": "v1/timesheets/approval-queue",
+        "pattern": "^v1/timesheets/approval-queue$",
+        "methods": {
+          "GET": "project-operations.timesheets.read"
+        }
+      },
+      {
+        "template": "v1/timesheets/{id}/submit",
+        "pattern": "^v1/timesheets/[0-9a-fA-F-]{36}/submit$",
+        "methods": {
+          "POST": "project-operations.timesheets.manage"
+        }
+      },
+      {
+        "template": "v1/timesheets/{id}/approve",
+        "pattern": "^v1/timesheets/[0-9a-fA-F-]{36}/approve$",
+        "methods": {
+          "POST": "project-operations.timesheets.approve"
+        }
+      },
+      {
+        "template": "v1/timesheets/{id}/reject",
+        "pattern": "^v1/timesheets/[0-9a-fA-F-]{36}/reject$",
+        "methods": {
+          "POST": "project-operations.timesheets.approve"
+        }
       }
     ],
     "transformBody": null,

@@ -15,6 +15,7 @@ spec:
   capabilities:
     - project-operations-records
     - project-gantt-burn
+    - timesheet-approval-queue
   ui:
     application: apps/workflow-platform
     basePath: /project-operations
@@ -81,3 +82,7 @@ spec:
       - { path: 'v1/projects', GET: project-operations.insights.read }
       - { path: 'v1/projects/{id}/gantt', GET: project-operations.insights.read }
       - { path: 'v1/projects/{id}/burn-matrix', GET: project-operations.insights.read }
+      - { path: 'v1/timesheets/approval-queue', GET: project-operations.timesheets.read }
+      - { path: 'v1/timesheets/{id}/submit', POST: project-operations.timesheets.manage }
+      - { path: 'v1/timesheets/{id}/approve', POST: project-operations.timesheets.approve }
+      - { path: 'v1/timesheets/{id}/reject', POST: project-operations.timesheets.approve }

@@ -1,4 +1,9 @@
-import type { ProjectBurnMatrixV1, ProjectGanttV1, ProjectSummaryV1 } from '@gigalibs/contracts';
+import type {
+  ProjectBurnMatrixV1,
+  ProjectGanttV1,
+  ProjectSummaryV1,
+  TimesheetApprovalQueueItemV1,
+} from '@gigalibs/contracts';
 
 async function requestProjects<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `/api/project-operations/v1${path.startsWith('/') ? path : `/${path}`}`;
@@ -22,4 +27,17 @@ export const projectOperationsApi = {
   listProjects: () => requestProjects<{ items: ProjectSummaryV1[] }>('/projects'),
   gantt: (projectId: string) => requestProjects<ProjectGanttV1>(`/projects/${projectId}/gantt`),
   burnMatrix: (projectId: string) => requestProjects<ProjectBurnMatrixV1>(`/projects/${projectId}/burn-matrix`),
+  approvalQueue: () => requestProjects<{ items: TimesheetApprovalQueueItemV1[] }>('/timesheets/approval-queue'),
+  approveTimesheet: (id: string, body: { requestKey: string; expectedVersion: number }) =>
+    requestProjects(`/timesheets/${id}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  rejectTimesheet: (id: string, body: { requestKey: string; expectedVersion: number; rejectionReason: string }) =>
+    requestProjects(`/timesheets/${id}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
 };
