@@ -112,6 +112,8 @@ export interface LookupOption {
 export interface LookupResolver {
   readonly key: string;
   readonly permission: string;
+  /** The format of the `ids` this resolver accepts: UUIDs when absent. For values that are stable keys, not row ids. */
+  readonly idPattern?: RegExp;
   resolve(principal: ModulePrincipal, request: { readonly search?: string; readonly ids?: readonly string[]; readonly limit: number }): Promise<readonly LookupOption[]>;
 }
 
@@ -354,8 +356,12 @@ export class RecordDispatcher {
     this.require(principal, resolver.permission);
     const search = this.text(raw.search, 'search');
     const ids = typeof raw.ids === 'string' && raw.ids.length > 0 ? raw.ids.split(',') : undefined;
-    if (ids && (ids.length > MAX_PAGE_SIZE || ids.some((id) => !UUID.test(id)))) {
-      throw new BadRequestException({ code: 'RECORD_QUERY_INVALID', message: 'ids must be up to 100 comma-separated UUIDs.' });
+    const idPattern = resolver.idPattern ?? UUID;
+    if (ids && (ids.length > MAX_PAGE_SIZE || ids.some((id) => !idPattern.test(id)))) {
+      throw new BadRequestException({
+        code: 'RECORD_QUERY_INVALID',
+        message: resolver.idPattern ? 'ids must be up to 100 comma-separated keys of this lookup.' : 'ids must be up to 100 comma-separated UUIDs.',
+      });
     }
     return resolver.resolve(principal, { ...(search ? { search } : {}), ...(ids ? { ids } : {}), limit: 50 });
   }

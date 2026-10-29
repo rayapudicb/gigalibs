@@ -400,6 +400,12 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
         port: '4790',
         serviceHostname: 'module-host',
       },
+      // WI-OI-120bw (SPEED S3): hosted in the module host.
+      'process-safety-screening': {
+        environmentKey: 'SPEED_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
       workforce: {
         environmentKey: 'WORKFORCE_API_URL',
         port: '4700',

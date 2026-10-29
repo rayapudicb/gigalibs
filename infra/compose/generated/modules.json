@@ -20,7 +20,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "financial-operations": {
     "hosting": "host",
@@ -42,6 +43,40 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
+    ],
+    "optionalEnvironment": []
+  },
+  "process-safety-screening": {
+    "hosting": "host",
+    "basePath": "/process-safety-screening",
+    "package": "@gigalibs/process-safety-screening-api",
+    "directory": "modules/process-safety-screening",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "SPEED Process Safety Screening",
+    "workItem": "WI-OI-120",
+    "prefix": "SPEED",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_speed",
+    "migrationVersion": 5,
+    "audience": "gigalibs-process-safety-screening-api",
+    "appendOnlyTables": [
+      "audit_events",
+      "results"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ],
+    "optionalEnvironment": [
+      "SPEED_STORAGE_ENDPOINT",
+      "SPEED_STORAGE_REGION",
+      "SPEED_STORAGE_BUCKET",
+      "SPEED_STORAGE_ACCESS_KEY",
+      "SPEED_STORAGE_SECRET_KEY",
+      "SPEED_STORAGE_FORCE_PATH_STYLE",
+      "SPEED_DOSSIER_WORKER_DISABLED",
+      "SPEED_DOSSIER_WORKER_INTERVAL_MS"
     ]
   },
   "product-catalogue": {
@@ -64,7 +99,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "project-operations": {
     "hosting": "host",
@@ -86,7 +122,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "universal-inventory": {
     "hosting": "host",
@@ -108,7 +145,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "universal-manufacturing": {
     "hosting": "host",
@@ -130,7 +168,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "universal-orders": {
     "hosting": "host",
@@ -152,7 +191,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "universal-procurement": {
     "hosting": "host",
@@ -174,7 +214,8 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   },
   "universal-returns": {
     "hosting": "host",
@@ -196,6 +237,7 @@
     ],
     "readOnlyTables": [
       "auth_revocation_events"
-    ]
+    ],
+    "optionalEnvironment": []
   }
 }

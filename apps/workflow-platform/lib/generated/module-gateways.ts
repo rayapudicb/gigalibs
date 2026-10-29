@@ -2111,6 +2111,329 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
       }
     ]
   },
+  "process-safety-screening": {
+    "module": "process-safety-screening",
+    "basePaths": [
+      "/api/speed"
+    ],
+    "catalogKey": "process-safety-screening",
+    "audience": "gigalibs-process-safety-screening-api",
+    "upstream": "process-safety-screening",
+    "signingKeyEnvironment": "SPEED_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "SPEED",
+    "routeNoun": "SPEED",
+    "serviceName": "SPEED Process Safety Screening",
+    "entitlementName": "SPEED Process Safety Screening",
+    "routes": [
+      {
+        "template": "v1/projects",
+        "pattern": "^v1/projects$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/projects/{id}",
+        "pattern": "^v1/projects/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "PATCH": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/projects/{id}/archive",
+        "pattern": "^v1/projects/[0-9a-fA-F-]{36}/archive$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/criteria-sets",
+        "pattern": "^v1/criteria-sets$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.settings.manage"
+        }
+      },
+      {
+        "template": "v1/criteria-sets/{id}",
+        "pattern": "^v1/criteria-sets/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/criteria-sets/{id}/put-in-force",
+        "pattern": "^v1/criteria-sets/[0-9a-fA-F-]{36}/put-in-force$",
+        "methods": {
+          "POST": "speed.settings.manage"
+        }
+      },
+      {
+        "template": "v1/library-sets",
+        "pattern": "^v1/library-sets$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.settings.manage"
+        }
+      },
+      {
+        "template": "v1/library-sets/{id}",
+        "pattern": "^v1/library-sets/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/library-sets/{id}/put-in-force",
+        "pattern": "^v1/library-sets/[0-9a-fA-F-]{36}/put-in-force$",
+        "methods": {
+          "POST": "speed.settings.manage"
+        }
+      },
+      {
+        "template": "v1/substances",
+        "pattern": "^v1/substances$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.substances.write"
+        }
+      },
+      {
+        "template": "v1/substances/{id}",
+        "pattern": "^v1/substances/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "PATCH": "speed.substances.write"
+        }
+      },
+      {
+        "template": "v1/substances/{id}/archive",
+        "pattern": "^v1/substances/[0-9a-fA-F-]{36}/archive$",
+        "methods": {
+          "POST": "speed.substances.write"
+        }
+      },
+      {
+        "template": "v1/routes",
+        "pattern": "^v1/routes$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/routes/{id}",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "PATCH": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/archive",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/archive$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/recompute",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/recompute$",
+        "methods": {
+          "POST": "speed.engines.run"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/results",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/results$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/steps",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/steps$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/dossiers",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/dossiers$",
+        "methods": {
+          "GET": "speed.routes.read",
+          "POST": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/export/json|csv",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/export/(?:json|csv)$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/dossiers/{id}",
+        "pattern": "^v1/dossiers/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/dossiers/{id}/files/docx|pdf",
+        "pattern": "^v1/dossiers/[0-9a-fA-F-]{36}/files/(?:docx|pdf)$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/outcomes",
+        "pattern": "^v1/outcomes$",
+        "methods": {
+          "GET": "speed.routes.read"
+        }
+      },
+      {
+        "template": "v1/audit-events",
+        "pattern": "^v1/audit-events$",
+        "methods": {
+          "GET": "speed:read"
+        }
+      },
+      {
+        "template": "v1/audit-events/export/csv",
+        "pattern": "^v1/audit-events/export/csv$",
+        "methods": {
+          "GET": "speed.audit.read"
+        }
+      },
+      {
+        "template": "v1/steps/{id}",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/move",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/move$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/remove",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/remove$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/materials",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/materials$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/conditions",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/conditions$",
+        "methods": {
+          "PUT": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/thermal-data",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/thermal-data$",
+        "methods": {
+          "POST": "speed.thermal-data.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/mitigation",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/mitigation$",
+        "methods": {
+          "PUT": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/steps/{id}/controls",
+        "pattern": "^v1/steps/[0-9a-fA-F-]{36}/controls$",
+        "methods": {
+          "PUT": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/materials/{id}",
+        "pattern": "^v1/materials/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/materials/{id}/remove",
+        "pattern": "^v1/materials/[0-9a-fA-F-]{36}/remove$",
+        "methods": {
+          "POST": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/materials/{id}/energetic-groups",
+        "pattern": "^v1/materials/[0-9a-fA-F-]{36}/energetic-groups$",
+        "methods": {
+          "PUT": "speed.routes.write"
+        }
+      },
+      {
+        "template": "v1/organization/versions/{id}/units",
+        "pattern": "^v1/organization/versions/[0-9a-fA-F-]{36}/units$",
+        "methods": {
+          "POST": "organization:activate"
+        }
+      },
+      {
+        "template": "v1/organization/versions/{id}/complete",
+        "pattern": "^v1/organization/versions/[0-9a-fA-F-]{36}/complete$",
+        "methods": {
+          "POST": "organization:activate"
+        }
+      },
+      {
+        "template": "v1/records/{entity}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*$",
+        "methods": {
+          "GET": "speed:read",
+          "POST": "speed:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "speed:read",
+          "PATCH": "speed:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions/{key}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
+        "methods": {
+          "POST": "speed:read"
+        }
+      },
+      {
+        "template": "v1/lookups/{key}",
+        "pattern": "^v1/lookups/[a-z][a-z0-9-]*$",
+        "methods": {
+          "GET": "speed:read"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "product-catalogue": {
     "module": "product-catalogue",
     "basePaths": [

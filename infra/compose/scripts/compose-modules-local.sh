@@ -32,6 +32,7 @@ compose_modules_local_env_paths() {
     "${COMPOSE_DIR}/.env${suffix}.module.universal-orders"
     "${COMPOSE_DIR}/.env${suffix}.module.universal-inventory"
     "${COMPOSE_DIR}/.env${suffix}.module.universal-manufacturing"
+    "${COMPOSE_DIR}/.env${suffix}.module.process-safety-screening"
   )
 }
 

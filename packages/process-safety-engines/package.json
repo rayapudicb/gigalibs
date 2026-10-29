@@ -1,0 +1,28 @@
+{
+  "name": "@gigalibs/process-safety-engines",
+  "version": "0.2.0",
+  "description": "SPEED Stage 1 desk-screening engines: pure, deterministic process-safety and green-chemistry calculations (WI-OI-120br)",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "vitest run --root ../.. --config vitest.config.ts packages/process-safety-engines",
+    "test:coverage": "vitest run --config vitest.coverage.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "3.2.7",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
+  }
+}

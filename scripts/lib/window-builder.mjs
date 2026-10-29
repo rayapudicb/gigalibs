@@ -72,7 +72,9 @@ export function windowBuilder({ moduleKey, route, createWith = {} }) {
    * A tab; each placement is `[fieldKey, span, sectionKey?, { lockedWhen? }]`, its component chosen from the field's type.
    * `lockedWhen` (a dictionary condition) shows the field read-only while it holds, for example once a record exists.
    */
-  const tab = (key, label, level, entityKey, placements, allFields, { sections, parent } = {}) => {
+  // WI-OI-120bs: `panels` (from panel()) and an explicit `position`, for further level-0 tabs on the same record that
+  // hold panels only. Both are left out unless given, so existing windows are generated unchanged.
+  const tab = (key, label, level, entityKey, placements, allFields, { sections, parent, panels, position } = {}) => {
     const fields = placements.map(([fieldKey, span, sectionKey, { lockedWhen } = {}], position) => {
       const declared = allFields.find((candidate) => candidate.fieldKey === fieldKey && candidate.entityKey === entityKey);
       if (!declared) throw new Error(`${moduleKey}: tab ${key} places ${fieldKey}, which ${entityKey} does not declare`);
@@ -81,8 +83,19 @@ export function windowBuilder({ moduleKey, route, createWith = {} }) {
       if (lockedWhen) placement.readOnlyCondition = lockedWhen;
       return placement;
     });
-    const value = { tabKey: key, label, position: level, level, targetEntityKey: entityKey, sections: sections ?? [], fields };
+    const value = { tabKey: key, label, position: position ?? level, level, targetEntityKey: entityKey, sections: sections ?? [], fields };
     if (parent) value.parentRelationshipKey = parent;
+    if (panels) value.panels = panels;
+    return value;
+  };
+
+  // WI-OI-120bs: a registered panel (the module manifest's spec.ui.panels) placed on a tab. The compiler checks the
+  // component and its props against the generated catalogue at publish.
+  const panel = (key, componentKey, position, { section, span = 12, props = {}, permission, visibleWhen } = {}) => {
+    const value = { panelKey: key, componentKey, position, span, props };
+    if (section) value.sectionKey = section;
+    if (permission) value.readPermission = permission;
+    if (visibleWhen) value.visibilityCondition = visibleWhen;
     return value;
   };
 
@@ -157,7 +170,7 @@ export function windowBuilder({ moduleKey, route, createWith = {} }) {
   const REASON_REQUIRED = [{ key: 'reason', label: 'Reason', type: 'TEXTAREA', required: true }];
   const REASON_OPTIONAL = [{ key: 'reason', label: 'Reason', type: 'TEXTAREA', required: false }];
 
-  return { entity, field, values, lookup, tab, section, relationship, action, view, dictionary, window, REASON_REQUIRED, REASON_OPTIONAL };
+  return { entity, field, values, lookup, tab, panel, section, relationship, action, view, dictionary, window, REASON_REQUIRED, REASON_OPTIONAL };
 }
 
 /** A window file's text: two-space JSON with non-ASCII characters escaped, and a final newline. */

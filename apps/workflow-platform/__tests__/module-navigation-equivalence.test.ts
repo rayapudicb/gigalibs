@@ -74,6 +74,12 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       icon: moduleIcons.boxes,
       personas: ['OPERATIONS_SUPERVISOR'],
     },
+    // WI-OI-120bw (SPEED S3, WI-OI-120bn): SPEED process safety screening for lab leads and chemists.
+    'process-safety-screening': {
+      group: 'Intelligence',
+      icon: moduleIcons['shield-alert'],
+      personas: ['OPERATIONS_SUPERVISOR', 'WORKFORCE_MEMBER'],
+    },
   } as const;
 
   it('covers exactly the catalogue entries the frozen tables covered, less the intended removals', () => {
@@ -143,6 +149,16 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       { key: 'boms', label: 'BOMs', href: '/universal-manufacturing/boms', icon: moduleIcons.layers },
       { key: 'production', label: 'Production', href: '/universal-manufacturing/production', icon: moduleIcons.factory },
       { key: 'mrp', label: 'MRP preview', href: '/universal-manufacturing/mrp', icon: moduleIcons['bar-chart'] },
+    ],
+    // WI-OI-120cb (owner, 2026-10-21): SPEED expands into its screens like EAM, each on its own page.
+    'process-safety-screening': [
+      { key: 'projects', label: 'Projects', href: '/speed/projects', icon: moduleIcons.layers },
+      { key: 'routes', label: 'Routes', href: '/speed/routes', icon: moduleIcons.workflow },
+      { key: 'substances', label: 'Substances', href: '/speed/substances', icon: moduleIcons.database },
+      { key: 'library', label: 'Screening library', href: '/speed/library', icon: moduleIcons['shield-alert'] },
+      { key: 'criteria', label: 'Screening criteria', href: '/speed/criteria', icon: moduleIcons.scale },
+      { key: 'outcomes', label: 'Outcomes', href: '/speed/outcomes', icon: moduleIcons['bar-chart'] },
+      { key: 'audit', label: 'Audit trail', href: '/speed/audit', icon: moduleIcons['file-check'] },
     ],
   };
 

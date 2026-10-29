@@ -1,0 +1,80 @@
+{
+  "versionLabel": "BRD 0.1 (starter)",
+  "source": "SPEED-BRD-FRD-001 v0.1, §15 and §15.1; OB band per BP-01 §4.A (citation to be confirmed, BRD Q3)",
+  "criteria": {
+    "elementBalanceTolerance": 0.001,
+    "oxygenBalanceAlertBandPercent": {
+      "lowerExclusive": -160,
+      "upperExclusive": 80
+    },
+    "severityByAdiabaticRiseK": {
+      "mediumFromK": 50,
+      "highAboveK": 200
+    },
+    "probabilityByTmrHours": {
+      "lowAboveHours": 24,
+      "highBelowHours": 8
+    },
+    "td24SearchRangeC": {
+      "min": -50,
+      "max": 500
+    },
+    "td24ConservativeOnsetOffsetK": 100,
+    "inputRanges": {
+      "temperatureC": {
+        "min": -100,
+        "max": 500
+      },
+      "heatCapacityJPerGK": {
+        "block": {
+          "min": 0.5,
+          "max": 5
+        },
+        "warn": {
+          "min": 1,
+          "max": 4
+        }
+      },
+      "accumulationPercent": {
+        "min": 0,
+        "max": 100
+      },
+      "reactionEnthalpyKJPerMol": {
+        "block": {
+          "min": -3000,
+          "max": 500
+        },
+        "warnBelow": -1000
+      },
+      "activationEnergyKJPerMol": {
+        "min": 20,
+        "max": 400
+      }
+    }
+  },
+  "citations": {
+    "elementBalanceTolerance": "SPEED-BRD-FRD-001 v0.1 §15 (screening criteria)",
+    "oxygenBalanceAlertBandPercent.lowerExclusive": "BP-01 default band (citation to be confirmed, BRD Q3); SPEED-BRD-FRD-001 v0.1 §15 (OB band, BP-01 §4.A)",
+    "oxygenBalanceAlertBandPercent.upperExclusive": "BP-01 default band (citation to be confirmed, BRD Q3); SPEED-BRD-FRD-001 v0.1 §15 (OB band, BP-01 §4.A)",
+    "severityByAdiabaticRiseK.mediumFromK": "SPEED-BRD-FRD-001 v0.1 §15 (screening criteria)",
+    "severityByAdiabaticRiseK.highAboveK": "SPEED-BRD-FRD-001 v0.1 §15 (screening criteria)",
+    "probabilityByTmrHours.lowAboveHours": "SPEED-BRD-FRD-001 v0.1 §15 (screening criteria)",
+    "probabilityByTmrHours.highBelowHours": "SPEED-BRD-FRD-001 v0.1 §15 (screening criteria)",
+    "td24SearchRangeC.min": "SPEED-BRD-FRD-001 v0.1 §15 (screening criteria)",
+    "td24SearchRangeC.max": "SPEED-BRD-FRD-001 v0.1 §15 (screening criteria)",
+    "td24ConservativeOnsetOffsetK": "SPEED-BRD-FRD-001 v0.1 §15 (screening criteria)",
+    "inputRanges.temperatureC.min": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.temperatureC.max": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.heatCapacityJPerGK.block.min": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.heatCapacityJPerGK.block.max": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.heatCapacityJPerGK.warn.min": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.heatCapacityJPerGK.warn.max": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.accumulationPercent.min": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.accumulationPercent.max": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.reactionEnthalpyKJPerMol.block.min": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.reactionEnthalpyKJPerMol.block.max": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.reactionEnthalpyKJPerMol.warnBelow": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.activationEnergyKJPerMol.min": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)",
+    "inputRanges.activationEnergyKJPerMol.max": "SPEED-BRD-FRD-001 v0.1 §15.1 (input ranges)"
+  }
+}

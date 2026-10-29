@@ -231,6 +231,50 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "zap"
     }
   ],
+  "process-safety-screening": [
+    {
+      "key": "projects",
+      "label": "Projects",
+      "path": "/speed/projects",
+      "icon": "layers"
+    },
+    {
+      "key": "routes",
+      "label": "Routes",
+      "path": "/speed/routes",
+      "icon": "workflow"
+    },
+    {
+      "key": "substances",
+      "label": "Substances",
+      "path": "/speed/substances",
+      "icon": "database"
+    },
+    {
+      "key": "library",
+      "label": "Screening library",
+      "path": "/speed/library",
+      "icon": "shield-alert"
+    },
+    {
+      "key": "criteria",
+      "label": "Screening criteria",
+      "path": "/speed/criteria",
+      "icon": "scale"
+    },
+    {
+      "key": "outcomes",
+      "label": "Outcomes",
+      "path": "/speed/outcomes",
+      "icon": "bar-chart"
+    },
+    {
+      "key": "audit",
+      "label": "Audit trail",
+      "path": "/speed/audit",
+      "icon": "file-check"
+    }
+  ],
   "universal-manufacturing": [
     {
       "key": "boms",
@@ -354,6 +398,10 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   ],
   "business-partners": [
     "OPERATIONS_SUPERVISOR"
+  ],
+  "process-safety-screening": [
+    "OPERATIONS_SUPERVISOR",
+    "WORKFORCE_MEMBER"
   ],
   "universal-manufacturing": [
     "OPERATIONS_SUPERVISOR"

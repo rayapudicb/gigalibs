@@ -16,6 +16,7 @@ import {
 } from '@gigalibs/configuration-core';
 import {
   holdsPermission,
+  modulePanelCatalogue,
   GOVERNED_CATALOGUE_SCOPES,
   LEGACY_GOVERNED_CATALOGUE_SCOPES,
   SOLUTION_CONFIGURATION_MODULE_KEY,
@@ -2029,6 +2030,7 @@ export class ConfigurationStudioService {
       moduleBaseline: true,
       registeredResolvers: descriptor.registeredResolvers,
       registeredActionHandlers: descriptor.registeredActionHandlers,
+      panelCatalogue: modulePanelCatalogue(),
     });
     if (!compiled.valid || !compiled.manifest) {
       throw new BadRequestException({ message: 'The module window failed compilation.', findings: compiled.findings });
@@ -3338,6 +3340,7 @@ function compileChangeSetDefinition(
       baseline: descriptor?.dictionaryContribution,
       registeredActionHandlers: descriptor?.registeredActionHandlers,
       registeredResolvers: descriptor?.registeredResolvers,
+      panelCatalogue: modulePanelCatalogue(),
     });
   }
   return compileConfiguration(definition);

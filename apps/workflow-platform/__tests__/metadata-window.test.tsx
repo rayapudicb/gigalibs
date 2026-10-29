@@ -13,14 +13,17 @@ import {
 
 const {
   actionKey,
+  createFormFields,
   describeFailure,
   gridColumns,
   holds,
   parentField,
   placedFields,
   recordActions,
+  submittedValues,
   validateValues,
   valueFromInput,
+  valueWhileTyping,
   windowModel,
   writableValues,
 } = metadataWindowModel;
@@ -185,6 +188,30 @@ describe('window model', () => {
     });
     expect(validateValues(model, lines, { 'expected-quantity': 'many' })).toEqual({ 'expected-quantity': 'expected-quantity must be a number.' });
     expect(validateValues(model, lines, { 'expected-quantity': '0.125' })).toEqual({});
+  });
+
+  // WI-OI-120ce: every keystroke went through valueFromInput's trim, so a space typed at the end vanished and
+  // "Pyrimidine methanol" could not be typed. Text is kept as typed and trimmed once when the form is saved.
+  it('keeps text as typed while editing and trims it on save', () => {
+    const lines = placedFields(model, model.childTabs[0]!, {}, clerk, 'CREATE');
+    const quantity = lines[0]!.field;
+    const text = { ...quantity, type: 'TEXT' as const };
+    expect(valueWhileTyping(text, 'Pyrimidine ')).toBe('Pyrimidine ');
+    expect(valueWhileTyping(text, 'Pyrimidine methanol')).toBe('Pyrimidine methanol');
+    expect(valueWhileTyping(text, '   ')).toBeNull();
+    expect(valueWhileTyping({ ...quantity, type: 'INTEGER' }, ' 12 ')).toBe(12);
+    const placed = [{ ...lines[0]!, field: text }];
+    expect(submittedValues(placed, { [text.fieldKey]: '  Pyrimidine methanol  ' })).toEqual({
+      [text.fieldKey]: 'Pyrimidine methanol',
+    });
+  });
+
+  it('leaves the fields the system fills out of a create form', () => {
+    const lines = placedFields(model, model.childTabs[0]!, {}, clerk, 'CREATE');
+    const system = { ...lines[0]!, field: { ...lines[0]!.field, fieldKey: 'created-by', readOnly: true } };
+    expect(createFormFields([lines[0]!, system]).map((placed) => placed.field.fieldKey)).toEqual([
+      lines[0]!.field.fieldKey,
+    ]);
   });
 
   it('sends only changed, writable values on an update', () => {

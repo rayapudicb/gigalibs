@@ -19,10 +19,12 @@ const environment = {
   AR_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
   UNIVERSAL_MANUFACTURING_API_URL: 'http://module-host:4790',
   UNIVERSAL_MANUFACTURING_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
+  SPEED_API_URL: 'http://module-host:4790',
+  SPEED_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: key,
 } as NodeJS.ProcessEnv;
 const owner = (permissions: string[]) => ({
   user: { id: 'admin-1' },
-  tenant: { id: 'tenant-1', entitlements: [{ moduleKey: 'gigaops', status: 'ENABLED', version: 'v1' }, { moduleKey: 'analytics-studio', status: 'ENABLED', version: 'v1' }, { moduleKey: 'product-catalogue', status: 'ENABLED', version: 'v1' }, { moduleKey: 'business-partners', status: 'ENABLED', version: 'v1' }, { moduleKey: 'accounts-receivable', status: 'ENABLED', version: 'v1' }, { moduleKey: 'universal-manufacturing', status: 'ENABLED', version: 'v1' }] },
+  tenant: { id: 'tenant-1', entitlements: [{ moduleKey: 'gigaops', status: 'ENABLED', version: 'v1' }, { moduleKey: 'analytics-studio', status: 'ENABLED', version: 'v1' }, { moduleKey: 'product-catalogue', status: 'ENABLED', version: 'v1' }, { moduleKey: 'business-partners', status: 'ENABLED', version: 'v1' }, { moduleKey: 'accounts-receivable', status: 'ENABLED', version: 'v1' }, { moduleKey: 'universal-manufacturing', status: 'ENABLED', version: 'v1' }, { moduleKey: 'process-safety-screening', status: 'ENABLED', version: 'v1' }] },
   roles: ['TENANT_ADMIN'],
   platformRoles: [],
   permissions,
@@ -143,12 +145,31 @@ describe('organization sync jobs', () => {
     expect(calls[3]).toBe('http://module-host:4790/universal-manufacturing/v1/organization/versions/version-0004/complete');
   });
 
+  // WI-OI-120cc (SPEED S9): SPEED keeps a copy of the organization for its projects' sites.
+  it('delivers the same held version protocol to the hosted SPEED module', async () => {
+    const calls: string[] = [];
+    const fetchImpl = vi.fn(async (url: string, init: RequestInit) => {
+      const claims = verifyPlatformContextToken(String((init.headers as Record<string, string>).Authorization).slice(7), publicKey.export({ format: 'pem', type: 'spki' }).toString(), 'gigalibs-process-safety-screening-api');
+      expect(claims).toMatchObject({ tenant_id: 'tenant-1', entitlement: { module_key: 'process-safety-screening' } });
+      calls.push(url);
+      return new Response(JSON.stringify({ version_id: 'version-0004', status: url.endsWith('/complete') ? 'READY' : 'RECEIVING', received_units: 1_001 }), { status: 200 });
+    });
+    await run(['organization:activate'], fetchImpl as never, source(), 'process-safety-screening.organization-sync');
+    expect(calls).toEqual([
+      'http://module-host:4790/process-safety-screening/v1/organization/versions/version-0004/units',
+      'http://module-host:4790/process-safety-screening/v1/organization/versions/version-0004/units',
+      'http://module-host:4790/process-safety-screening/v1/organization/versions/version-0004/units',
+      'http://module-host:4790/process-safety-screening/v1/organization/versions/version-0004/complete',
+    ]);
+  });
+
   it('accepts only organization sync payloads with a version id', () => {
     expect(parseModuleCallPayload({ operation: 'analytics.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'analytics.organization-sync', versionId: 'cmversion0001' });
     expect(parseModuleCallPayload({ operation: 'product-catalogue.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'product-catalogue.organization-sync', versionId: 'cmversion0001' });
     expect(parseModuleCallPayload({ operation: 'business-partners.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'business-partners.organization-sync', versionId: 'cmversion0001' });
     expect(parseModuleCallPayload({ operation: 'accounts-receivable.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'accounts-receivable.organization-sync', versionId: 'cmversion0001' });
     expect(parseModuleCallPayload({ operation: 'manufacturing.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'manufacturing.organization-sync', versionId: 'cmversion0001' });
+    expect(parseModuleCallPayload({ operation: 'process-safety-screening.organization-sync', versionId: 'cmversion0001' })).toEqual({ operation: 'process-safety-screening.organization-sync', versionId: 'cmversion0001' });
     expect(() => parseModuleCallPayload({ operation: 'analytics.organization-sync', versionId: '../x' })).toThrow();
   });
 });

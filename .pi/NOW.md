@@ -6,7 +6,7 @@
 
 **Seven iDempiere modules (WI-OI-122–129) — Built;** separate owner batch after Group 1 acceptance (or per your ordering).
 
-**Uncommitted on main (optional before release cut):** AR compose pins **18 → 19** for verify migration-pins.
+**SPEED Stage 1 R1 on convergence-core (2026-10-29):** **`feat/speed-s3-module` merged** (conflicts resolved); static conformance **15/15**; **`/speed`** UI + module-host wiring. **5180 UAT:** images built locally; run [SPEED-5180-R1-DEPLOY-2026-10-29.md](handoff/SPEED-5180-R1-DEPLOY-2026-10-29.md) from the **release worktree** (`up-speed-uat.sh`, entitlement, org sync, packs). Stage 2 / R2 still [WI-OI-120cg](tasks/WI-OI-120cg.md).
 
 **WI-OI-126 Manufacturing & MRP (Module 4) — Built (2026-10-29).** Recovery PG 3/3 (RESERVING/ISSUING/RECEIVING replay); conformance 15/15 static; DB proofs 28/28 with module host boot. Plan S5/S6 graph-BOM differentiators deferred; `--live` at owner batch deploy. [WI-OI-126](work/WI-OI-126.md).
 

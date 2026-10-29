@@ -1,0 +1,28 @@
+{
+  "name": "@gigalibs/process-safety-screening-domain",
+  "version": "0.1.0",
+  "description": "SPEED's shared domain: the message catalogue and the dossier model the API renders and the screens preview (WI-OI-120ca)",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@gigalibs/contracts": "workspace:*",
+    "@gigalibs/i18n": "workspace:*",
+    "@gigalibs/process-safety-engines": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

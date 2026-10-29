@@ -541,7 +541,14 @@ export {
 
 
 // WI-OI-120f (F0.4, ADR-0033 D1): one metadata window for every module.
-export { MetadataWindow, type MetadataWindowProps } from './window/MetadataWindow.js';
+export {
+  MetadataPanel,
+  MetadataPanels,
+  MetadataWindow,
+  type MetadataPanelProps,
+  type MetadataPanelRegistry,
+  type MetadataWindowProps,
+} from './window/MetadataWindow.js';
 export {
   createRecordClient,
   RecordClientError,

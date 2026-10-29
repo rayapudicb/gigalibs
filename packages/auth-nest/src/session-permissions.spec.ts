@@ -250,6 +250,24 @@ describe('subject context for scheduled work', () => {
     prismaMock.tenant.findUnique.mockResolvedValue({ ...activeSession().tenant, status: 'SUSPENDED' });
     await expect(new AuthService().getSubjectContext('user-1', tenantId, 'job:3')).rejects.toThrow('tenant is not active');
   });
+
+  // WI-OI-120cd: a trial workspace's organization deliveries run as its members, as a login session would.
+  it('accepts a tenant on an unexpired trial and refuses an expired or open-ended one', async () => {
+    prismaMock.tenantMember.findUnique.mockResolvedValue({ ...membership('TENANT_ADMIN'), permissions: [] });
+    const trial = (trialEndsAt: Date | null) => ({ ...activeSession().tenant, status: 'TRIAL', trialEndsAt });
+    prismaMock.tenant.findUnique.mockResolvedValue(trial(new Date(Date.now() + 86_400_000)));
+    await expect(new AuthService().getSubjectContext('user-1', tenantId, 'job:4')).resolves.toMatchObject({
+      session: { id: 'job:4' },
+    });
+    prismaMock.tenant.findUnique.mockResolvedValue(trial(new Date(Date.now() - 1_000)));
+    await expect(new AuthService().getSubjectContext('user-1', tenantId, 'job:5')).rejects.toThrow(
+      'tenant is not active',
+    );
+    prismaMock.tenant.findUnique.mockResolvedValue(trial(null));
+    await expect(new AuthService().getSubjectContext('user-1', tenantId, 'job:6')).rejects.toThrow(
+      'tenant is not active',
+    );
+  });
 });
 
 // WI-OI-120w (R2 slice 1): a member holds several roles at their own scope; each one's permissions reach the session.

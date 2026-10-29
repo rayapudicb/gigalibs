@@ -11767,6 +11767,1941 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
   {
     "contractVersion": "1.0",
     "window": {
+      "route": "/speed",
+      "label": "Screening criteria",
+      "description": "The cited thresholds and ranges the screening engines apply.",
+      "readPermission": "speed:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "process-safety-screening",
+      "entityKey": "speed-criteria",
+      "surfaceKey": "speed-criteria",
+      "title": "Screening criteria",
+      "dictionary": {
+        "packageKey": "speed-criteria-module-baseline",
+        "name": "Screening criteria",
+        "version": "1.0.0",
+        "moduleKey": "process-safety-screening",
+        "targetEntityKey": "speed.criteria-sets",
+        "entities": [
+          {
+            "entityKey": "speed.criteria-sets",
+            "moduleKey": "process-safety-screening",
+            "label": "Criteria sets",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "version-label",
+            "entityKey": "speed.criteria-sets",
+            "label": "Version",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "source",
+            "entityKey": "speed.criteria-sets",
+            "label": "Source",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "review-status",
+            "entityKey": "speed.criteria-sets",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "review-statuses"
+          },
+          {
+            "fieldKey": "in-force",
+            "entityKey": "speed.criteria-sets",
+            "label": "In force",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "imported-by",
+            "entityKey": "speed.criteria-sets",
+            "label": "Imported by",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "member-ref"
+          },
+          {
+            "fieldKey": "imported-at",
+            "entityKey": "speed.criteria-sets",
+            "label": "Imported",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "in-force-since",
+            "entityKey": "speed.criteria-sets",
+            "label": "In force since",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "member-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "workspace-members"
+          },
+          {
+            "referenceKey": "review-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "UNREVIEWED",
+                "label": "Unreviewed"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "criteria-sets",
+            "label": "Criteria sets",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "set",
+                "label": "Criteria set",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "speed.criteria-sets",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Criteria set",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "values",
+                    "label": "Values",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "version-label",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "review-status",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "in-force",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "checkbox",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "in-force-since",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "source",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "imported-by",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "imported-at",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "main"
+                  }
+                ],
+                "panels": [
+                  {
+                    "panelKey": "values",
+                    "componentKey": "speed.criteria-values",
+                    "position": 100,
+                    "span": 12,
+                    "props": {},
+                    "sectionKey": "values"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "version-label"
+            ],
+            "defaultSortField": "version-label"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "put-in-force",
+            "label": "Put in force",
+            "type": "COMMAND",
+            "handlerKey": "speed.criteria-sets.put-in-force",
+            "requiredPermissions": [
+              "speed.settings.manage"
+            ],
+            "confirmationPrompt": "Put this criteria set in force? Results computed from now on use it; earlier results keep the set they used.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "in-force",
+              "operator": "EQ",
+              "value": false
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/speed",
+      "label": "Library",
+      "description": "The cited reference data the screening engines read: materials, interaction rules, reaction classes and energetic groups.",
+      "readPermission": "speed:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "process-safety-screening",
+      "entityKey": "speed-library",
+      "surfaceKey": "speed-library",
+      "title": "Screening library",
+      "dictionary": {
+        "packageKey": "speed-library-module-baseline",
+        "name": "Screening library",
+        "version": "1.0.0",
+        "moduleKey": "process-safety-screening",
+        "targetEntityKey": "speed.library-sets",
+        "entities": [
+          {
+            "entityKey": "speed.library-sets",
+            "moduleKey": "process-safety-screening",
+            "label": "Library sets",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "version-label",
+            "entityKey": "speed.library-sets",
+            "label": "Version",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "source",
+            "entityKey": "speed.library-sets",
+            "label": "Source",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "review-status",
+            "entityKey": "speed.library-sets",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "review-statuses"
+          },
+          {
+            "fieldKey": "in-force",
+            "entityKey": "speed.library-sets",
+            "label": "In force",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "imported-by",
+            "entityKey": "speed.library-sets",
+            "label": "Imported by",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "member-ref"
+          },
+          {
+            "fieldKey": "imported-at",
+            "entityKey": "speed.library-sets",
+            "label": "Imported",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "in-force-since",
+            "entityKey": "speed.library-sets",
+            "label": "In force since",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "member-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "workspace-members"
+          },
+          {
+            "referenceKey": "review-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "UNREVIEWED",
+                "label": "Unreviewed"
+              },
+              {
+                "value": "APPROVED",
+                "label": "Approved"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "library-sets",
+            "label": "Library sets",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "set",
+                "label": "Library set",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Library set",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "version-label",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "review-status",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "in-force",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "checkbox",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "in-force-since",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "source",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "imported-by",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "lookup",
+                    "sectionKey": "main"
+                  },
+                  {
+                    "fieldKey": "imported-at",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "main"
+                  }
+                ]
+              },
+              {
+                "tabKey": "materials",
+                "label": "Materials",
+                "position": 1,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "materials",
+                    "componentKey": "speed.library-entries",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "kind": "MATERIALS"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "rules",
+                "label": "Interaction rules",
+                "position": 2,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "rules",
+                    "componentKey": "speed.library-entries",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "kind": "RULES"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "reaction-classes",
+                "label": "Reaction classes",
+                "position": 3,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "reaction-classes",
+                    "componentKey": "speed.library-entries",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "kind": "REACTION_CLASSES"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "energetic-groups",
+                "label": "Energetic groups",
+                "position": 4,
+                "level": 0,
+                "targetEntityKey": "speed.library-sets",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "energetic-groups",
+                    "componentKey": "speed.library-entries",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "kind": "ENERGETIC_GROUPS"
+                    }
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "version-label"
+            ],
+            "defaultSortField": "version-label"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "put-in-force",
+            "label": "Put in force",
+            "type": "COMMAND",
+            "handlerKey": "speed.library-sets.put-in-force",
+            "requiredPermissions": [
+              "speed.settings.manage"
+            ],
+            "confirmationPrompt": "Put this library set in force? Results computed from now on use it; earlier results keep the set they used.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "in-force",
+              "operator": "EQ",
+              "value": false
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/speed",
+      "label": "Projects",
+      "description": "Process development projects and the routes screened in them.",
+      "readPermission": "speed:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "process-safety-screening",
+      "entityKey": "speed-projects",
+      "surfaceKey": "speed-projects",
+      "title": "Projects",
+      "dictionary": {
+        "packageKey": "speed-projects-module-baseline",
+        "name": "Projects",
+        "version": "1.0.0",
+        "moduleKey": "process-safety-screening",
+        "targetEntityKey": "speed.projects",
+        "entities": [
+          {
+            "entityKey": "speed.projects",
+            "moduleKey": "process-safety-screening",
+            "label": "Projects",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          },
+          {
+            "entityKey": "speed.routes",
+            "moduleKey": "process-safety-screening",
+            "label": "Routes",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "code",
+            "entityKey": "speed.projects",
+            "label": "Project code",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Unique in your workspace."
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "speed.projects",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "site-unit-id",
+            "entityKey": "speed.projects",
+            "label": "Site",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "site-ref"
+          },
+          {
+            "fieldKey": "owner-subject",
+            "entityKey": "speed.projects",
+            "label": "Owner",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "member-ref",
+            "defaultValue": {
+              "$default": "CURRENT_USER"
+            }
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "speed.projects",
+            "label": "Notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "speed.projects",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "project-statuses"
+          },
+          {
+            "fieldKey": "created-by",
+            "entityKey": "speed.projects",
+            "label": "Created by",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "member-ref"
+          },
+          {
+            "fieldKey": "created-at",
+            "entityKey": "speed.projects",
+            "label": "Created",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "updated-at",
+            "entityKey": "speed.projects",
+            "label": "Last change",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "archived-at",
+            "entityKey": "speed.projects",
+            "label": "Archived",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "project-id",
+            "entityKey": "speed.routes",
+            "label": "Project",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "project-ref"
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "speed.routes",
+            "label": "Route",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "route-version",
+            "entityKey": "speed.routes",
+            "label": "Version",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "speed.routes",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "route-statuses"
+          },
+          {
+            "fieldKey": "author-subject",
+            "entityKey": "speed.routes",
+            "label": "Author",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "member-ref"
+          },
+          {
+            "fieldKey": "step-count",
+            "entityKey": "speed.routes",
+            "label": "Steps",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "steps-passing-gate",
+            "entityKey": "speed.routes",
+            "label": "Steps passing the gate",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "updated-at",
+            "entityKey": "speed.routes",
+            "label": "Last change",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [
+          {
+            "relationshipKey": "project-routes",
+            "sourceEntityKey": "speed.projects",
+            "targetEntityKey": "speed.routes",
+            "type": "ONE_TO_MANY",
+            "foreignKeyField": "project-id"
+          }
+        ],
+        "references": [
+          {
+            "referenceKey": "site-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "speed-sites"
+          },
+          {
+            "referenceKey": "member-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "workspace-members"
+          },
+          {
+            "referenceKey": "project-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "speed-projects",
+            "createWith": {
+              "moduleKey": "process-safety-screening",
+              "surfaceKey": "speed-projects",
+              "permission": "speed.routes.write"
+            }
+          },
+          {
+            "referenceKey": "project-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "ACTIVE",
+                "label": "Active"
+              },
+              {
+                "value": "ARCHIVED",
+                "label": "Archived"
+              }
+            ]
+          },
+          {
+            "referenceKey": "route-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "ARCHIVED",
+                "label": "Archived"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "projects",
+            "label": "Projects",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "project",
+                "label": "Project",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "speed.projects",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Project",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "record",
+                    "label": "Record",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "code",
+                    "position": 0,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 9,
+                    "componentKey": "text-input",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "site-unit-id",
+                    "position": 2,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "owner-subject",
+                    "position": 3,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 4,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "record"
+                  },
+                  {
+                    "fieldKey": "created-by",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "lookup",
+                    "sectionKey": "record"
+                  },
+                  {
+                    "fieldKey": "created-at",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "record"
+                  },
+                  {
+                    "fieldKey": "updated-at",
+                    "position": 8,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "record"
+                  }
+                ]
+              },
+              {
+                "tabKey": "routes",
+                "label": "Routes",
+                "position": 1,
+                "level": 1,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [
+                  {
+                    "fieldKey": "name",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "route-version",
+                    "position": 1,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "select"
+                  },
+                  {
+                    "fieldKey": "step-count",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "steps-passing-gate",
+                    "position": 4,
+                    "span": 2,
+                    "componentKey": "number-input"
+                  },
+                  {
+                    "fieldKey": "updated-at",
+                    "position": 5,
+                    "span": 3,
+                    "componentKey": "datetime-input"
+                  }
+                ],
+                "parentRelationshipKey": "project-routes"
+              }
+            ],
+            "searchFields": [
+              "code",
+              "name"
+            ],
+            "defaultSortField": "code"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "archive",
+            "label": "Archive",
+            "type": "COMMAND",
+            "handlerKey": "speed.projects.archive",
+            "requiredPermissions": [
+              "speed.routes.write"
+            ],
+            "confirmationPrompt": "Archive this project? It stays readable and can no longer change.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "ACTIVE"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/speed",
+      "label": "Routes",
+      "description": "Synthetic routes, step by step, screened before kilo-lab.",
+      "readPermission": "speed:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "process-safety-screening",
+      "entityKey": "speed-routes",
+      "surfaceKey": "speed-routes",
+      "title": "Routes",
+      "dictionary": {
+        "packageKey": "speed-routes-module-baseline",
+        "name": "Routes",
+        "version": "1.0.0",
+        "moduleKey": "process-safety-screening",
+        "targetEntityKey": "speed.routes",
+        "entities": [
+          {
+            "entityKey": "speed.routes",
+            "moduleKey": "process-safety-screening",
+            "label": "Routes",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "project-id",
+            "entityKey": "speed.routes",
+            "label": "Project",
+            "type": "REFERENCE",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "project-ref"
+          },
+          {
+            "fieldKey": "name",
+            "entityKey": "speed.routes",
+            "label": "Route",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "route-version",
+            "entityKey": "speed.routes",
+            "label": "Version",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "speed.routes",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "route-statuses"
+          },
+          {
+            "fieldKey": "author-subject",
+            "entityKey": "speed.routes",
+            "label": "Author",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "member-ref"
+          },
+          {
+            "fieldKey": "step-count",
+            "entityKey": "speed.routes",
+            "label": "Steps",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "steps-passing-gate",
+            "entityKey": "speed.routes",
+            "label": "Steps passing the gate",
+            "type": "INTEGER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "updated-at",
+            "entityKey": "speed.routes",
+            "label": "Last change",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "member-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "workspace-members"
+          },
+          {
+            "referenceKey": "project-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "speed-projects",
+            "createWith": {
+              "moduleKey": "process-safety-screening",
+              "surfaceKey": "speed-projects",
+              "permission": "speed.routes.write"
+            }
+          },
+          {
+            "referenceKey": "route-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "DRAFT",
+                "label": "Draft"
+              },
+              {
+                "value": "ARCHIVED",
+                "label": "Archived"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "routes",
+            "label": "Routes",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "route",
+                "label": "Route & gate",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [
+                  {
+                    "sectionKey": "header",
+                    "label": "Route",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "workbench",
+                    "label": "Steps and gate",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "project-id",
+                    "position": 0,
+                    "span": 4,
+                    "componentKey": "lookup",
+                    "sectionKey": "header",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "name",
+                    "position": 1,
+                    "span": 4,
+                    "componentKey": "text-input",
+                    "sectionKey": "header",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "route-version",
+                    "position": 2,
+                    "span": 2,
+                    "componentKey": "number-input",
+                    "sectionKey": "header"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 3,
+                    "span": 2,
+                    "componentKey": "select",
+                    "sectionKey": "header"
+                  },
+                  {
+                    "fieldKey": "author-subject",
+                    "position": 4,
+                    "span": 4,
+                    "componentKey": "lookup",
+                    "sectionKey": "header"
+                  },
+                  {
+                    "fieldKey": "step-count",
+                    "position": 5,
+                    "span": 2,
+                    "componentKey": "number-input",
+                    "sectionKey": "header"
+                  },
+                  {
+                    "fieldKey": "steps-passing-gate",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "header"
+                  },
+                  {
+                    "fieldKey": "updated-at",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "header"
+                  }
+                ],
+                "panels": [
+                  {
+                    "panelKey": "summary",
+                    "componentKey": "speed.route-summary",
+                    "position": 100,
+                    "span": 12,
+                    "props": {},
+                    "sectionKey": "workbench"
+                  },
+                  {
+                    "panelKey": "gate",
+                    "componentKey": "speed.gate-workbench",
+                    "position": 110,
+                    "span": 12,
+                    "props": {
+                      "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                    },
+                    "sectionKey": "workbench"
+                  }
+                ]
+              },
+              {
+                "tabKey": "oxygen-balance",
+                "label": "Oxygen balance",
+                "position": 1,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "ob",
+                    "componentKey": "speed.ob-chart",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "axisMinPercent": -350,
+                      "axisMaxPercent": 100,
+                      "tickPercent": 50,
+                      "showTable": true,
+                      "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "thermal",
+                "label": "Thermal & runaway",
+                "position": 2,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "thermal",
+                    "componentKey": "speed.thermal-panel",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "interactions",
+                "label": "Interactions",
+                "position": 3,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "interactions",
+                    "componentKey": "speed.interaction-matrix",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "green",
+                "label": "Green metrics",
+                "position": 4,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "green",
+                    "componentKey": "speed.green-scorecard",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "showStreams": true
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "writeup",
+                "label": "Write-up parser",
+                "position": 5,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "writeup",
+                    "componentKey": "speed.writeup-parser",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "applyReason": "Data entry"
+                    },
+                    "readPermission": "speed.routes.write",
+                    "visibilityCondition": {
+                      "field": "status",
+                      "operator": "EQ",
+                      "value": "DRAFT"
+                    }
+                  }
+                ]
+              },
+              {
+                "tabKey": "dossier",
+                "label": "Dossier",
+                "position": 6,
+                "level": 0,
+                "targetEntityKey": "speed.routes",
+                "sections": [],
+                "fields": [],
+                "panels": [
+                  {
+                    "panelKey": "dossier",
+                    "componentKey": "speed.dossier-preview",
+                    "position": 0,
+                    "span": 12,
+                    "props": {
+                      "pollSeconds": 3,
+                      "historyCount": 5
+                    }
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "name"
+            ],
+            "defaultSortField": "name"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "archive",
+            "label": "Archive",
+            "type": "COMMAND",
+            "handlerKey": "speed.routes.archive",
+            "requiredPermissions": [
+              "speed.routes.write"
+            ],
+            "confirmationPrompt": "Archive this route? It stays readable with its results and can no longer change.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "DRAFT"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
+      "route": "/speed",
+      "label": "Substances",
+      "description": "The substances your routes use, with formulas and molar masses.",
+      "readPermission": "speed:read"
+    },
+    "definition": {
+      "kind": "APPLICATION_DICTIONARY",
+      "contractVersion": "1.0",
+      "moduleKey": "process-safety-screening",
+      "entityKey": "speed-substances",
+      "surfaceKey": "speed-substances",
+      "title": "Substances",
+      "dictionary": {
+        "packageKey": "speed-substances-module-baseline",
+        "name": "Substances",
+        "version": "1.0.0",
+        "moduleKey": "process-safety-screening",
+        "targetEntityKey": "speed.substances",
+        "entities": [
+          {
+            "entityKey": "speed.substances",
+            "moduleKey": "process-safety-screening",
+            "label": "Substances",
+            "ownership": "MODULE_CORE",
+            "primaryKeyField": "id",
+            "isVersioned": true,
+            "isAuditLogged": true,
+            "isSoftDeletable": false
+          }
+        ],
+        "fields": [
+          {
+            "fieldKey": "name",
+            "entityKey": "speed.substances",
+            "label": "Name",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "cas-number",
+            "entityKey": "speed.substances",
+            "label": "CAS number",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "For example 7732-18-5; the check digit is verified."
+          },
+          {
+            "fieldKey": "formula",
+            "entityKey": "speed.substances",
+            "label": "Formula",
+            "type": "TEXT",
+            "required": true,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "helpText": "Brackets and hydrates are accepted: CuSO4·5H2O."
+          },
+          {
+            "fieldKey": "density-g-per-ml",
+            "entityKey": "speed.substances",
+            "label": "Density (g/mL)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 4
+          },
+          {
+            "fieldKey": "notes",
+            "entityKey": "speed.substances",
+            "label": "Notes",
+            "type": "TEXTAREA",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "library-material-id",
+            "entityKey": "speed.substances",
+            "label": "Library material",
+            "type": "REFERENCE",
+            "required": false,
+            "readOnly": false,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "library-material-ref",
+            "helpText": "Its reactivity classes drive the interaction screen; unlinked substances are listed as not classified."
+          },
+          {
+            "fieldKey": "hill-formula",
+            "entityKey": "speed.substances",
+            "label": "Hill formula",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "molar-mass-g-per-mol",
+            "entityKey": "speed.substances",
+            "label": "Molar mass (g/mol)",
+            "type": "NUMBER",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "scale": 3
+          },
+          {
+            "fieldKey": "elements-version",
+            "entityKey": "speed.substances",
+            "label": "Atomic weights",
+            "type": "TEXT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "in-use",
+            "entityKey": "speed.substances",
+            "label": "Used by a route",
+            "type": "BOOLEAN",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          },
+          {
+            "fieldKey": "status",
+            "entityKey": "speed.substances",
+            "label": "Status",
+            "type": "SELECT",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false,
+            "referenceKey": "substance-statuses"
+          },
+          {
+            "fieldKey": "updated-at",
+            "entityKey": "speed.substances",
+            "label": "Last change",
+            "type": "DATETIME",
+            "required": false,
+            "readOnly": true,
+            "isSystemLocked": false,
+            "classification": "INTERNAL",
+            "maskOnDisplay": false
+          }
+        ],
+        "relationships": [],
+        "references": [
+          {
+            "referenceKey": "library-material-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "speed-library-materials"
+          },
+          {
+            "referenceKey": "substance-statuses",
+            "referenceType": "VALUE_LIST",
+            "staticValues": [
+              {
+                "value": "ACTIVE",
+                "label": "Active"
+              },
+              {
+                "value": "ARCHIVED",
+                "label": "Archived"
+              }
+            ]
+          }
+        ],
+        "validationRules": [],
+        "views": [
+          {
+            "viewKey": "substances",
+            "label": "Substances",
+            "mode": "LIST",
+            "device": "ALL",
+            "defaultSortDirection": "ASC",
+            "tabs": [
+              {
+                "tabKey": "substance",
+                "label": "Substance",
+                "position": 0,
+                "level": 0,
+                "targetEntityKey": "speed.substances",
+                "sections": [
+                  {
+                    "sectionKey": "main",
+                    "label": "Substance",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 0
+                  },
+                  {
+                    "sectionKey": "computed",
+                    "label": "Computed on the server",
+                    "collapsible": false,
+                    "defaultCollapsed": false,
+                    "position": 1
+                  }
+                ],
+                "fields": [
+                  {
+                    "fieldKey": "name",
+                    "position": 0,
+                    "span": 6,
+                    "componentKey": "text-input",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "cas-number",
+                    "position": 1,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "formula",
+                    "position": 2,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "density-g-per-ml",
+                    "position": 3,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "library-material-id",
+                    "position": 4,
+                    "span": 6,
+                    "componentKey": "lookup",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "notes",
+                    "position": 5,
+                    "span": 12,
+                    "componentKey": "textarea",
+                    "sectionKey": "main",
+                    "readOnlyCondition": {
+                      "field": "status",
+                      "operator": "IS_NOT_NULL"
+                    }
+                  },
+                  {
+                    "fieldKey": "hill-formula",
+                    "position": 6,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "computed"
+                  },
+                  {
+                    "fieldKey": "molar-mass-g-per-mol",
+                    "position": 7,
+                    "span": 3,
+                    "componentKey": "number-input",
+                    "sectionKey": "computed"
+                  },
+                  {
+                    "fieldKey": "elements-version",
+                    "position": 8,
+                    "span": 3,
+                    "componentKey": "text-input",
+                    "sectionKey": "computed"
+                  },
+                  {
+                    "fieldKey": "in-use",
+                    "position": 9,
+                    "span": 3,
+                    "componentKey": "checkbox",
+                    "sectionKey": "computed"
+                  },
+                  {
+                    "fieldKey": "status",
+                    "position": 10,
+                    "span": 3,
+                    "componentKey": "select",
+                    "sectionKey": "computed"
+                  },
+                  {
+                    "fieldKey": "updated-at",
+                    "position": 11,
+                    "span": 3,
+                    "componentKey": "datetime-input",
+                    "sectionKey": "computed"
+                  }
+                ]
+              }
+            ],
+            "searchFields": [
+              "name",
+              "cas-number",
+              "formula"
+            ],
+            "defaultSortField": "name"
+          }
+        ],
+        "navigation": [],
+        "actions": [
+          {
+            "actionKey": "archive",
+            "label": "Archive",
+            "type": "COMMAND",
+            "handlerKey": "speed.substances.archive",
+            "requiredPermissions": [
+              "speed.substances.write"
+            ],
+            "confirmationPrompt": "Archive this substance? Routes that use it keep it; it is no longer offered for new materials.",
+            "parameters": [
+              {
+                "key": "reason",
+                "label": "Reason",
+                "type": "TEXTAREA",
+                "required": true
+              }
+            ],
+            "visibilityCondition": {
+              "field": "status",
+              "operator": "EQ",
+              "value": "ACTIVE"
+            }
+          }
+        ],
+        "messages": []
+      }
+    }
+  },
+  {
+    "contractVersion": "1.0",
+    "window": {
       "route": "/products",
       "label": "Attributes",
       "description": "The attributes products can carry.",
@@ -22026,6 +23961,7 @@ export const MODULE_WINDOW_ENTITLEMENT_KEYS: Readonly<Record<string, string>> = 
   "financial-operations": "financial-operations",
   "gigaops": "gigaops",
   "physical-operations-cmms": "asset-maintenance",
+  "process-safety-screening": "process-safety-screening",
   "product-catalogue": "product-catalogue",
   "universal-inventory": "universal-inventory",
   "universal-orders": "universal-orders",

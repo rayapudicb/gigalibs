@@ -9,7 +9,7 @@ USER root
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates=20250419~deb12u2 \
-      openssl=3.0.20-1~deb12u2 && \
+      openssl=3.0.22-1~deb12u2 && \
     rm -rf /var/lib/apt/lists/*
 
 FROM build-base AS migrations-build

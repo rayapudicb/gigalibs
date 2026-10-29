@@ -1,0 +1,444 @@
+{
+  "contractVersion": "1.0",
+  "window": {
+    "route": "/speed",
+    "label": "Routes",
+    "description": "Synthetic routes, step by step, screened before kilo-lab.",
+    "readPermission": "speed:read"
+  },
+  "definition": {
+    "kind": "APPLICATION_DICTIONARY",
+    "contractVersion": "1.0",
+    "moduleKey": "process-safety-screening",
+    "entityKey": "speed-routes",
+    "surfaceKey": "speed-routes",
+    "title": "Routes",
+    "dictionary": {
+      "packageKey": "speed-routes-module-baseline",
+      "name": "Routes",
+      "version": "1.0.0",
+      "moduleKey": "process-safety-screening",
+      "targetEntityKey": "speed.routes",
+      "entities": [
+        {
+          "entityKey": "speed.routes",
+          "moduleKey": "process-safety-screening",
+          "label": "Routes",
+          "ownership": "MODULE_CORE",
+          "primaryKeyField": "id",
+          "isVersioned": true,
+          "isAuditLogged": true,
+          "isSoftDeletable": false
+        }
+      ],
+      "fields": [
+        {
+          "fieldKey": "project-id",
+          "entityKey": "speed.routes",
+          "label": "Project",
+          "type": "REFERENCE",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "project-ref"
+        },
+        {
+          "fieldKey": "name",
+          "entityKey": "speed.routes",
+          "label": "Route",
+          "type": "TEXT",
+          "required": true,
+          "readOnly": false,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "route-version",
+          "entityKey": "speed.routes",
+          "label": "Version",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "status",
+          "entityKey": "speed.routes",
+          "label": "Status",
+          "type": "SELECT",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "route-statuses"
+        },
+        {
+          "fieldKey": "author-subject",
+          "entityKey": "speed.routes",
+          "label": "Author",
+          "type": "REFERENCE",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false,
+          "referenceKey": "member-ref"
+        },
+        {
+          "fieldKey": "step-count",
+          "entityKey": "speed.routes",
+          "label": "Steps",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "steps-passing-gate",
+          "entityKey": "speed.routes",
+          "label": "Steps passing the gate",
+          "type": "INTEGER",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        },
+        {
+          "fieldKey": "updated-at",
+          "entityKey": "speed.routes",
+          "label": "Last change",
+          "type": "DATETIME",
+          "required": false,
+          "readOnly": true,
+          "isSystemLocked": false,
+          "classification": "INTERNAL",
+          "maskOnDisplay": false
+        }
+      ],
+      "relationships": [],
+      "references": [
+        {
+          "referenceKey": "member-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "workspace-members"
+        },
+        {
+          "referenceKey": "project-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "speed-projects",
+          "createWith": {
+            "moduleKey": "process-safety-screening",
+            "surfaceKey": "speed-projects",
+            "permission": "speed.routes.write"
+          }
+        },
+        {
+          "referenceKey": "route-statuses",
+          "referenceType": "VALUE_LIST",
+          "staticValues": [
+            {
+              "value": "DRAFT",
+              "label": "Draft"
+            },
+            {
+              "value": "ARCHIVED",
+              "label": "Archived"
+            }
+          ]
+        }
+      ],
+      "validationRules": [],
+      "views": [
+        {
+          "viewKey": "routes",
+          "label": "Routes",
+          "mode": "LIST",
+          "device": "ALL",
+          "defaultSortDirection": "ASC",
+          "tabs": [
+            {
+              "tabKey": "route",
+              "label": "Route & gate",
+              "position": 0,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [
+                {
+                  "sectionKey": "header",
+                  "label": "Route",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 0
+                },
+                {
+                  "sectionKey": "workbench",
+                  "label": "Steps and gate",
+                  "collapsible": false,
+                  "defaultCollapsed": false,
+                  "position": 1
+                }
+              ],
+              "fields": [
+                {
+                  "fieldKey": "project-id",
+                  "position": 0,
+                  "span": 4,
+                  "componentKey": "lookup",
+                  "sectionKey": "header",
+                  "readOnlyCondition": {
+                    "field": "status",
+                    "operator": "IS_NOT_NULL"
+                  }
+                },
+                {
+                  "fieldKey": "name",
+                  "position": 1,
+                  "span": 4,
+                  "componentKey": "text-input",
+                  "sectionKey": "header",
+                  "readOnlyCondition": {
+                    "field": "status",
+                    "operator": "IS_NOT_NULL"
+                  }
+                },
+                {
+                  "fieldKey": "route-version",
+                  "position": 2,
+                  "span": 2,
+                  "componentKey": "number-input",
+                  "sectionKey": "header"
+                },
+                {
+                  "fieldKey": "status",
+                  "position": 3,
+                  "span": 2,
+                  "componentKey": "select",
+                  "sectionKey": "header"
+                },
+                {
+                  "fieldKey": "author-subject",
+                  "position": 4,
+                  "span": 4,
+                  "componentKey": "lookup",
+                  "sectionKey": "header"
+                },
+                {
+                  "fieldKey": "step-count",
+                  "position": 5,
+                  "span": 2,
+                  "componentKey": "number-input",
+                  "sectionKey": "header"
+                },
+                {
+                  "fieldKey": "steps-passing-gate",
+                  "position": 6,
+                  "span": 3,
+                  "componentKey": "number-input",
+                  "sectionKey": "header"
+                },
+                {
+                  "fieldKey": "updated-at",
+                  "position": 7,
+                  "span": 3,
+                  "componentKey": "datetime-input",
+                  "sectionKey": "header"
+                }
+              ],
+              "panels": [
+                {
+                  "panelKey": "summary",
+                  "componentKey": "speed.route-summary",
+                  "position": 100,
+                  "span": 12,
+                  "props": {},
+                  "sectionKey": "workbench"
+                },
+                {
+                  "panelKey": "gate",
+                  "componentKey": "speed.gate-workbench",
+                  "position": 110,
+                  "span": 12,
+                  "props": {
+                    "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                  },
+                  "sectionKey": "workbench"
+                }
+              ]
+            },
+            {
+              "tabKey": "oxygen-balance",
+              "label": "Oxygen balance",
+              "position": 1,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "ob",
+                  "componentKey": "speed.ob-chart",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "axisMinPercent": -350,
+                    "axisMaxPercent": 100,
+                    "tickPercent": 50,
+                    "showTable": true,
+                    "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                  }
+                }
+              ]
+            },
+            {
+              "tabKey": "thermal",
+              "label": "Thermal & runaway",
+              "position": 2,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "thermal",
+                  "componentKey": "speed.thermal-panel",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                  }
+                }
+              ]
+            },
+            {
+              "tabKey": "interactions",
+              "label": "Interactions",
+              "position": 3,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "interactions",
+                  "componentKey": "speed.interaction-matrix",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "changeReasons": "Data entry|Correction|Measured value|Literature value|Mitigation"
+                  }
+                }
+              ]
+            },
+            {
+              "tabKey": "green",
+              "label": "Green metrics",
+              "position": 4,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "green",
+                  "componentKey": "speed.green-scorecard",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "showStreams": true
+                  }
+                }
+              ]
+            },
+            {
+              "tabKey": "writeup",
+              "label": "Write-up parser",
+              "position": 5,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "writeup",
+                  "componentKey": "speed.writeup-parser",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "applyReason": "Data entry"
+                  },
+                  "readPermission": "speed.routes.write",
+                  "visibilityCondition": {
+                    "field": "status",
+                    "operator": "EQ",
+                    "value": "DRAFT"
+                  }
+                }
+              ]
+            },
+            {
+              "tabKey": "dossier",
+              "label": "Dossier",
+              "position": 6,
+              "level": 0,
+              "targetEntityKey": "speed.routes",
+              "sections": [],
+              "fields": [],
+              "panels": [
+                {
+                  "panelKey": "dossier",
+                  "componentKey": "speed.dossier-preview",
+                  "position": 0,
+                  "span": 12,
+                  "props": {
+                    "pollSeconds": 3,
+                    "historyCount": 5
+                  }
+                }
+              ]
+            }
+          ],
+          "searchFields": [
+            "name"
+          ],
+          "defaultSortField": "name"
+        }
+      ],
+      "navigation": [],
+      "actions": [
+        {
+          "actionKey": "archive",
+          "label": "Archive",
+          "type": "COMMAND",
+          "handlerKey": "speed.routes.archive",
+          "requiredPermissions": [
+            "speed.routes.write"
+          ],
+          "confirmationPrompt": "Archive this route? It stays readable with its results and can no longer change.",
+          "parameters": [
+            {
+              "key": "reason",
+              "label": "Reason",
+              "type": "TEXTAREA",
+              "required": true
+            }
+          ],
+          "visibilityCondition": {
+            "field": "status",
+            "operator": "EQ",
+            "value": "DRAFT"
+          }
+        }
+      ],
+      "messages": []
+    }
+  }
+}

@@ -1122,6 +1122,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
       "financial-operations",
       "gigaops",
       "platform",
+      "process-safety-screening",
       "product-catalogue",
       "universal-inventory",
       "universal-manufacturing",
@@ -1504,6 +1505,60 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "solutions:read",
     "entries": [
       "solution-packs"
+    ]
+  },
+  {
+    "code": "speed:read",
+    "entries": [
+      "process-safety-screening"
+    ]
+  },
+  {
+    "code": "speed.audit.read",
+    "entries": [
+      "process-safety-screening"
+    ]
+  },
+  {
+    "code": "speed.audit.read-own",
+    "entries": [
+      "process-safety-screening"
+    ]
+  },
+  {
+    "code": "speed.engines.run",
+    "entries": [
+      "process-safety-screening"
+    ]
+  },
+  {
+    "code": "speed.routes.read",
+    "entries": [
+      "process-safety-screening"
+    ]
+  },
+  {
+    "code": "speed.routes.write",
+    "entries": [
+      "process-safety-screening"
+    ]
+  },
+  {
+    "code": "speed.settings.manage",
+    "entries": [
+      "process-safety-screening"
+    ]
+  },
+  {
+    "code": "speed.substances.write",
+    "entries": [
+      "process-safety-screening"
+    ]
+  },
+  {
+    "code": "speed.thermal-data.write",
+    "entries": [
+      "process-safety-screening"
     ]
   },
   {

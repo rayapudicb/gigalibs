@@ -630,6 +630,23 @@ export const generatedPlatformModuleCatalog = [
     platformInspection: false,
     reason: 'Credit exposure, holds, netting, AR/Orders feeds and signed credit-check gateway; partner windows on metadata.',
   },
+  // modules/process-safety-screening/module.yaml
+  {
+    key: 'process-safety-screening',
+    name: 'SPEED Process Safety Screening',
+    navigationLabel: 'SPEED',
+    area: 'Process safety',
+    navigationGroup: 'Intelligence',
+    route: '/speed',
+    iconKey: 'shield-alert',
+    readiness: 'PLANNED',
+    maturity: 'CORE_IMPLEMENTED',
+    entitlementEligible: true,
+    trialEligible: false,
+    requiredPermission: 'speed:read',
+    platformInspection: false,
+    reason: 'SPEED Stage 1 R1 (WI-OI-120bn) is merged on convergence-core with static module conformance 15/15; on UAT (5180, /speed) it opens under UAT preview once entitled and deployed (WI-OI-120cd/120ce).',
+  },
   // modules/universal-manufacturing/module.yaml
   {
     key: 'universal-manufacturing',

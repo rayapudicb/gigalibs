@@ -398,6 +398,12 @@ gate result and the rail badges.
 
   Each saves through the record routes with the reason "Data entry".
 
+**As built (S8, WI-OI-120cc):** the parser is `parseWriteup` and `recogniseReagents` in the engine package (no network,
+no model); reagents are the workspace's own substances, matched by name, CAS number or formula, each with a role the
+chemist chooses (Reactant by default). The panel sits on the route's Write-up parser tab, shown on draft routes to
+`speed.routes.write`; the reason comes from the dictionary (`applyReason`). Its 20 annotated test procedures are written
+for the test; the pilot lab's own annotated procedures are the acceptance set (S9d).
+
 ### Panel `speed.dossier-preview` (S7; FR-RPT-01 to 05)
 
 1. **Actions.**
@@ -426,6 +432,16 @@ gate result and the rail badges.
 3. **Watermark.** Until the route is approved, every page of the files says "DRAFT — NOT APPROVED". On screen, a banner
    says the same.
 
+**As built (S7, WI-OI-120ca):** the model is `dossierModel` in the module's domain package
+(`modules/process-safety-screening/domain`, which now also holds the message catalogue). The API renders DOCX (`docx`,
+the watermark in every page header) and PDF (`pdfkit` with DejaVu Sans, the watermark across and atop every page) from
+it, and the panel previews the JSON export, so preview, files and export are one model. "Generate dossier" queues a
+dossier with the model as it is then; the module's worker renders the files into the object store (`SPEED_STORAGE_*`)
+and records each SHA-256. "Download" is a link to the module's file route, which serves the file only after recomputing
+its SHA-256 (409 on a mismatch, audited), not a signed object-store link. A dossier needs one criteria set and one
+library set across the steps' results. The panel reads a queued dossier's progress every `pollSeconds` and lists the
+last `historyCount` dossiers (both from the dictionary). A substance charged twice in one step is named with its role.
+
 <!-- pagebreak -->
 
 # 3. Library, criteria, audit and outcomes
@@ -448,6 +464,11 @@ gate result and the rail badges.
 - **Footer:** "Change control: the safety reviewer proposes, QA approves, the administrator applies. Each applied change
   raises the library version, which is stamped on every result."
 
+**As built (S6, WI-OI-120bz):** one window, `speed-library`, lists the library sets with "Put in force" (reason), and
+its tabs Materials, Interaction rules, Reaction classes and Energetic groups list the set's entries with these columns
+through the registered panel `speed.library-entries`. Metadata windows address records by UUID, and library entries are
+identified by their library ids inside an immutable set, so the entries are drawn per set rather than as records.
+
 ## 3.2 Screening criteria (`speed-criteria`, S5)
 
 - **Main tab: the criteria set.** Version, status (Unreviewed, Approved, In force), "in force" (one per workspace),
@@ -467,6 +488,14 @@ gate result and the rail badges.
 - **Export CSV** (`speed.audit.read`).
 - `speed.audit.read-own` users see only their own entries.
 
+**As built (WI-OI-120cc):** a module page, `/speed/audit` in the SPEED menu, like Outcomes: the metadata list view has no
+filters, local-time column or export yet. It reads SPEED's own append-only audit table (the platform audit of S2 waits on
+WI-OI-120bp): one row per changed field, people by name through the platform member lookup, filters by route (its own
+entries, entries naming it and those of its current steps), person, action and day range, 50 entries a page. Export CSV
+(`speed.audit.read`) has one line per changed field; a value a spreadsheet would read as a formula is kept as text.
+`speed.audit.read` reads the whole workspace's trail; `speed.audit.read-own` only the member's own; anyone else is
+refused (`SPEED_AUDIT_FORBIDDEN`).
+
 ## 3.4 Outcomes (module page `/speed/outcomes`, S9; BO-1 to BO-5)
 
 - **Heading and note:** "Business outcomes. The BRD's objectives, measured from SPEED's own data."
@@ -483,6 +512,14 @@ gate result and the rail badges.
 - **"What the client receives":** the dossier contents list.
 - **Moved here from the mock's Projects page:** the portfolio tiles "Routes screened before kilo-lab" and "Worst
   criticality in portfolio".
+
+**As built (S9b, WI-OI-120cc):** `GET v1/outcomes` computes the measures over the routes the member reads (archived ones
+aside), from each current step's latest result and the dossiers. BO-1 counts High and Medium interaction findings, steps
+whose worst Stoessel class (actual or full accumulation) is 3 or worse, and steps whose thermal screen releases gas.
+BO-2 is the median from a route's creation to its first finished dossier (R1). BO-3 counts routes with a finished
+dossier. BO-4 counts routes whose latest dossier holds a route PMI and atom economy (the dossier model's `facts`). The
+targets (2 h, 100 %) are the page's settings in the module manifest; a measure that meets its target is green, one that
+does not is orange.
 
 ## 3.5 Dialogs (R2)
 
@@ -543,6 +580,8 @@ same keys (`i18n`). `{…}` marks a parameter.
 | `THM_HESS_FORMATION_ENTHALPY_MISSING` | Missing ΔHf° for: {materials}. |
 | `THM_CONDITIONS_REQUIRED` | Enter Tp, Cp and the accumulation. |
 | `DATA_GAP` | Not computed: the screening criteria have no value for {missing}. |
+| `SPEED_NO_CRITERIA_IN_FORCE` | No screening criteria are in force in this workspace. An administrator imports a cited set and puts it in force. |
+| `SPEED_NO_LIBRARY_IN_FORCE` | No screening library is in force in this workspace. An administrator imports a cited pack and puts it in force. |
 | TD24 basis `KINETICS` | Decomposition kinetics |
 | TD24 basis `ENTERED` | Entered value |
 | TD24 basis `CONSERVATIVE_ONSET` | DSC onset − {offset} K (conservative, BRL-06) |
@@ -550,6 +589,38 @@ same keys (`i18n`). `{…}` marks a parameter.
 | TD24 basis `MISSING` | Missing |
 | OB `NOT_APPLICABLE` | n/a: classify by reactivity |
 | OB `INVALID_FORMULA` | Invalid formula |
+
+## 4.2a API refusals the screens explain (S4, WI-OI-120bx)
+
+The module API refuses a change with a code; the workbench shows these texts and, below them, the issues the server
+named (engine codes from §4.1 and §4.2). Any other refusal shows the server's message.
+
+| Code | Text |
+| --- | --- |
+| `SPEED_VERSION_CONFLICT` | Someone else changed this first. The route has been reloaded; make the change again. |
+| `SPEED_ROUTE_NOT_DRAFT` | Only a draft route changes. |
+| `SPEED_PROJECT_ARCHIVED` | The project is archived and its routes can no longer change. |
+| `SPEED_MATERIAL_INVALID` | The material does not fit its role (`SPEED_COEFFICIENT_NOT_FOR_ROLE`, `SPEED_BY_PRODUCT_NO_CHARGE`). |
+| `SPEED_CONDITIONS_OUT_OF_RANGE` | A condition is outside the range the criteria allow (issues: `INPUT_OUT_OF_RANGE`). |
+| `SPEED_FORMULA_INVALID` | The formula is not valid (issues: the §4.1 formula codes). |
+| `SPEED_CAS_INVALID` | The CAS number check digit does not match. |
+| `SPEED_SUBSTANCE_IN_USE` | A route uses this substance, so its formula stays; create a new substance for the new formula. |
+| `SPEED_SUBSTANCE_ARCHIVED` | The substance is archived; choose an active one. |
+| `SPEED_CRITERIA_INCOMPLETE`, `SPEED_CRITERIA_UNCITED`, `SPEED_CRITERIA_CITATION_UNKNOWN` | Criteria import: a value is missing, a value has no citation, or a citation names no value (issues: the paths). |
+| `SPEED_REACTION_CLASS_UNKNOWN` | The reaction class is not in the library in force. |
+| `SPEED_ENERGETIC_GROUP_UNKNOWN` | An energetic group is not in the library in force. |
+| `SPEED_LIBRARY_MATERIAL_UNKNOWN` | The library material is not in the library in force. |
+| `SPEED_FINDING_UNKNOWN` | The step has no interaction finding for these two materials. |
+| `SPEED_STORAGE_UNAVAILABLE` | The object store is not configured on this instance, so dossiers cannot be generated. (S7) |
+| `SPEED_DOSSIER_STALE` | The steps were screened with different criteria or library versions. Recompute the route, then generate the dossier. (S7) |
+| `SPEED_DOSSIER_NOT_READY` | The dossier is not ready yet. (S7) |
+| `SPEED_DOSSIER_INTEGRITY` | The stored file does not match its recorded SHA-256; it was not served. (S7) |
+| `SPEED_DOSSIER_RENDER_FAILED` | The dossier files could not be generated. Generate it again. (S7, on a failed dossier) |
+
+S5 (WI-OI-120by) adds the panels' own texts to the module's catalogue (`web/src/messages`), with the TD24 bases of §4.2
+and the class actions of §4.3 under the same keys the engines return.
+S7 (WI-OI-120ca) moves the catalogue to the module's domain package (`domain/src/messages`), shared by the API's files
+and the screens; the web package re-exports it.
 
 ## 4.3 Stoessel class actions (content: the process safety specialist confirms before release)
 

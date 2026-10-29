@@ -1,5 +1,5 @@
 import type { CompiledDictionaryManifestV1, DictionaryActionV1, DictionaryTabV1 } from '@gigalibs/contracts';
-import { createContext, type FormEvent, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { type ComponentType, createContext, type FormEvent, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { type LookupOption, type RecordClient, RecordClientError, type RecordPage, type RecordValues } from './record-client.js';
 import { usePublishedManifest } from './use-published-manifest.js';
 import {
@@ -11,12 +11,16 @@ import {
   inputFromValue,
   newRecordDefaults,
   type PlacedField,
+  type PlacedPanel,
   parentField,
   placedFields,
+  placedPanels,
   recordActions,
   recordTitle,
   validateValues,
-  valueFromInput,
+  createFormFields,
+  submittedValues,
+  valueWhileTyping,
   type WindowModel,
   windowModel,
   writableValues,
@@ -26,6 +30,23 @@ import {
 // the module's record dispatcher; buttons call its registered commands. The window holds no business data of its own,
 // denies by default (fields and actions a user may not use are not shown), and shows every state: loading, empty,
 // refused, not found, changed by someone else, unavailable. Styling uses the design standard's ui-* tokens only.
+
+/** WI-OI-120bs (SPEED S2b): what a registered panel component receives for the record its tab shows. */
+export interface MetadataPanelProps {
+  readonly record: RecordValues;
+  /** The placement's props, already checked at publish against the panel's declared prop types. */
+  readonly props: Readonly<Record<string, string | number | boolean>>;
+  readonly client: RecordClient;
+  readonly permissions: readonly string[];
+  /**
+   * WI-OI-120ce: rereads the record quietly (the panel stays mounted), after the panel changed something the record's
+   * own fields show (a route's step count after a step is added, say).
+   */
+  readonly refresh?: () => void;
+}
+
+/** Panel components by component key, supplied by the page that hosts the window (the module's web package). */
+export type MetadataPanelRegistry = Readonly<Record<string, ComponentType<MetadataPanelProps>>>;
 
 export interface MetadataWindowProps {
   readonly manifest: CompiledDictionaryManifestV1;
@@ -37,6 +58,10 @@ export interface MetadataWindowProps {
    * (another module's, such as the Catalogue's product window from Inventory). A module without a client is not offered.
    */
   readonly clients?: Readonly<Record<string, RecordClient>>;
+  /** WI-OI-120bs: the module's panel components; a placed panel missing here shows as unavailable, never as a gap. */
+  readonly panels?: MetadataPanelRegistry;
+  /** WI-OI-120ce: called after an action on one of the window's records succeeds (a page's summary can refresh). */
+  readonly onChanged?: () => void;
 }
 
 /** A window opened from a picker, over the current one: create a record, or open the chosen one. */
@@ -51,7 +76,9 @@ interface QuickDialog {
 interface WindowEnvironment {
   readonly clients: Readonly<Record<string, RecordClient>>;
   readonly permissions: readonly string[];
+  readonly panels: MetadataPanelRegistry;
   readonly open: (dialog: QuickDialog) => void;
+  readonly changed?: () => void;
 }
 
 const Environment = createContext<WindowEnvironment | null>(null);
@@ -75,7 +102,7 @@ function newKey(): string {
   return globalThis.crypto.randomUUID();
 }
 
-export function MetadataWindow({ manifest, client, permissions, viewKey, clients }: MetadataWindowProps) {
+export function MetadataWindow({ manifest, client, permissions, viewKey, clients, panels, onChanged }: MetadataWindowProps) {
   const model = useMemo(() => windowModel(manifest, viewKey), [manifest, viewKey]);
   const [screen, setScreen] = useState<Screen>({ kind: 'list' });
   const [dialogs, setDialogs] = useState<readonly QuickDialog[]>([]);
@@ -87,9 +114,11 @@ export function MetadataWindow({ manifest, client, permissions, viewKey, clients
       outer ?? {
         clients: { ...(clients ?? {}), ...(ownModule ? { [ownModule]: client } : {}) },
         permissions,
+        panels: panels ?? {},
         open: (dialog) => setDialogs((current) => [...current, dialog]),
+        ...(onChanged ? { changed: onChanged } : {}),
       },
-    [outer, clients, ownModule, client, permissions],
+    [outer, clients, ownModule, client, permissions, panels, onChanged],
   );
   if (!model) {
     return <Notice tone="error" title="This window cannot be drawn" text="The published definition declares no view with a main tab." />;
@@ -405,19 +434,22 @@ function RecordForm({
   const [busy, setBusy] = useState(false);
   // One key per form: a retry after a network failure replays the first answer instead of saving twice.
   const [idempotencyKey] = useState(newKey);
-  const fields = placedFields(model, tab, values, permissions, record ? 'EDIT' : 'CREATE').filter((placed) => !(placed.field.fieldKey in fixed));
+  const placed = placedFields(model, tab, values, permissions, record ? 'EDIT' : 'CREATE').filter((candidate) => !(candidate.field.fieldKey in fixed));
+  const fields = record ? placed : createFormFields(placed);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const found = validateValues(model, fields, values, tab.targetEntityKey);
+    // WI-OI-120ce: text is kept as typed while editing and trimmed here, once.
+    const saving = submittedValues(fields, values);
+    const found = validateValues(model, fields, saving, tab.targetEntityKey);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     setBusy(true);
     setFailure(null);
     try {
       const saved = record
-        ? await client.update(tab.targetEntityKey, String(record.id), writableValues(fields, values, record), Number(record.version))
-        : await client.create(tab.targetEntityKey, { ...writableValues(fields, values), ...fixed }, idempotencyKey);
+        ? await client.update(tab.targetEntityKey, String(record.id), writableValues(fields, saving, record), Number(record.version))
+        : await client.create(tab.targetEntityKey, { ...writableValues(fields, saving), ...fixed }, idempotencyKey);
       onSaved(saved);
     } catch (error) {
       // WI-OI-120r (S1): the server's field rules name each field, shown under it as the form's own checks are.
@@ -459,6 +491,8 @@ function FieldSections({
   errors,
   client,
   onChange,
+  panels = [],
+  panelSlot,
 }: {
   tab: DictionaryTabV1;
   fields: readonly PlacedField[];
@@ -466,26 +500,116 @@ function FieldSections({
   errors: Readonly<Record<string, string>>;
   client: RecordClient;
   onChange?: (fieldKey: string, value: unknown) => void;
+  /** WI-OI-120bs: panels shown with the fields (read view only), merged by position within their section. */
+  panels?: readonly PlacedPanel[];
+  panelSlot?: (panel: PlacedPanel) => ReactNode;
 }) {
+  type Item = { readonly key: string; readonly position: number; readonly span: number; readonly node: ReactNode };
   const sections = [...tab.sections].sort((a, b) => a.position - b.position);
-  const groups = sections.length > 0 ? sections.map((section) => ({ key: section.sectionKey, label: section.label, fields: fields.filter((placed) => placed.placement.sectionKey === section.sectionKey) })) : [];
-  const loose = fields.filter((placed) => !placed.placement.sectionKey || !sections.some((section) => section.sectionKey === placed.placement.sectionKey));
+  const declared = (sectionKey: string | undefined) => !!sectionKey && sections.some((section) => section.sectionKey === sectionKey);
+  const fieldItem = (placed: PlacedField): Item => ({
+    key: `field:${placed.field.fieldKey}`,
+    position: placed.placement.position,
+    span: placed.placement.span,
+    node: <FieldInput placed={placed} value={values[placed.field.fieldKey]} error={errors[placed.field.fieldKey]} client={client} onChange={onChange} />,
+  });
+  const panelItem = (panel: PlacedPanel): Item => ({
+    key: `panel:${panel.placement.panelKey}`,
+    position: panel.placement.position,
+    span: panel.placement.span,
+    node: panelSlot ? panelSlot(panel) : null,
+  });
+  const itemsFor = (inSection: (sectionKey: string | undefined) => boolean): Item[] =>
+    [
+      ...fields.filter((placed) => inSection(placed.placement.sectionKey)).map(fieldItem),
+      ...(panelSlot ? panels.filter((panel) => inSection(panel.placement.sectionKey)).map(panelItem) : []),
+    ].sort((a, b) => a.position - b.position);
+  const groups = sections.map((section) => ({ key: section.sectionKey, label: section.label, items: itemsFor((key) => key === section.sectionKey) }));
+  const loose = itemsFor((key) => !declared(key));
   return (
     <div className="space-y-4">
-      {[...groups, ...(loose.length > 0 ? [{ key: '_', label: '', fields: loose }] : [])].map((group) =>
-        group.fields.length === 0 ? null : (
+      {[...groups, ...(loose.length > 0 ? [{ key: '_', label: '', items: loose }] : [])].map((group) =>
+        group.items.length === 0 ? null : (
           <fieldset key={group.key} className="space-y-3">
             {group.label ? <legend className="text-xs font-medium uppercase text-ui-fg-muted">{group.label}</legend> : null}
             <div className="grid grid-cols-12 gap-3">
-              {group.fields.map((placed) => (
-                <div key={placed.field.fieldKey} className="col-span-12 space-y-1" style={{ gridColumn: `span ${placed.placement.span} / span ${placed.placement.span}` }}>
-                  <FieldInput placed={placed} value={values[placed.field.fieldKey]} error={errors[placed.field.fieldKey]} client={client} onChange={onChange} />
+              {group.items.map((item) => (
+                <div key={item.key} className="col-span-12 space-y-1" style={{ gridColumn: `span ${item.span} / span ${item.span}` }}>
+                  {item.node}
                 </div>
               ))}
             </div>
           </fieldset>
         ),
       )}
+    </div>
+  );
+}
+
+/**
+ * WI-OI-120bs: one placed panel. The component comes from the registry the page supplies; a panel the registry does
+ * not hold is shown as unavailable (named, so it can be fixed), never silently left out.
+ */
+export function MetadataPanel({
+  panel,
+  registry,
+  record,
+  client,
+  permissions,
+  refresh,
+}: {
+  panel: PlacedPanel;
+  registry: MetadataPanelRegistry;
+  record: RecordValues;
+  client: RecordClient;
+  permissions: readonly string[];
+  refresh?: () => void;
+}) {
+  const Component = registry[panel.placement.componentKey];
+  if (!Component) {
+    return (
+      <div data-panel-unavailable={panel.placement.componentKey}>
+        <Notice tone="error" title="This panel is not available" text={`The page does not provide ${panel.placement.componentKey}.`} />
+      </div>
+    );
+  }
+  return (
+    <div data-panel={panel.placement.panelKey}>
+      <Component
+        record={record}
+        props={panel.placement.props}
+        client={client}
+        permissions={permissions}
+        {...(refresh ? { refresh } : {})}
+      />
+    </div>
+  );
+}
+
+/** WI-OI-120bs: the panels of a panel-only record tab, in position order on a 12-column grid. */
+export function MetadataPanels({
+  panels,
+  registry,
+  record,
+  client,
+  permissions,
+  refresh,
+}: {
+  panels: readonly PlacedPanel[];
+  registry: MetadataPanelRegistry;
+  record: RecordValues;
+  client: RecordClient;
+  permissions: readonly string[];
+  refresh?: () => void;
+}) {
+  if (panels.length === 0) return <p className="text-sm text-ui-fg-muted">Nothing to show here.</p>;
+  return (
+    <div className="grid grid-cols-12 gap-3">
+      {panels.map((panel) => (
+        <div key={panel.placement.panelKey} className="col-span-12" style={{ gridColumn: `span ${panel.placement.span} / span ${panel.placement.span}` }}>
+          <MetadataPanel panel={panel} registry={registry} record={record} client={client} permissions={permissions} {...(refresh ? { refresh } : {})} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -506,7 +630,7 @@ function FieldInput({
   const { field, readOnly, required } = placed;
   const id = `field-${field.fieldKey}`;
   const disabled = readOnly || !onChange;
-  const set = (input: string | boolean) => onChange?.(field.fieldKey, valueFromInput(field, input));
+  const set = (input: string | boolean) => onChange?.(field.fieldKey, valueWhileTyping(field, input));
   const label = (
     <label htmlFor={id} className="text-xs font-medium text-ui-fg-subtle">
       {field.label}
@@ -580,51 +704,151 @@ function LookupInput({
   client: RecordClient;
   onChange: (input: string) => void;
 }) {
+  // WI-OI-120ce: one searchable field (a combobox), not a search box above a separate list: type to search, choose with
+  // the mouse or the arrow keys and Enter; the chosen record shows by its name.
   const resolverKey = placed.resolverKey;
+  const current = typeof value === 'string' && value ? value : null;
   const [options, setOptions] = useState<readonly LookupOption[]>([]);
+  const [chosen, setChosen] = useState<LookupOption | null>(null);
   const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
   const [failure, setFailure] = useState<string | null>(null);
+  const listId = `${id}-options`;
+  // The chosen record's name, looked up by its id when the form opens with a value.
   useEffect(() => {
-    if (!resolverKey) return;
-    let active = true;
-    const current = typeof value === 'string' && value ? [value] : [];
+    if (!resolverKey || !current || chosen?.value === current) return;
+    let live = true;
     client
-      .lookup(resolverKey, search ? { search } : current.length > 0 ? { ids: current } : {})
+      .lookup(resolverKey, { ids: [current] })
       .then((found) => {
-        if (active) {
-          setOptions(found);
-          setFailure(null);
-        }
+        if (live) setChosen(found.find((option) => option.value === current) ?? null);
       })
-      .catch((error: unknown) => {
-        if (active) setFailure(failureOf(error).message);
-      });
+      .catch(() => undefined);
     return () => {
-      active = false;
+      live = false;
     };
-  }, [client, resolverKey, search, value]);
+  }, [client, resolverKey, current, chosen]);
+  // The options, while the list is open; a short pause after typing before each search.
+  useEffect(() => {
+    if (!resolverKey || !open) return;
+    let live = true;
+    const timer = setTimeout(() => {
+      client
+        .lookup(resolverKey, search.trim() ? { search: search.trim() } : {})
+        .then((found) => {
+          if (live) {
+            setOptions(found);
+            setActive(0);
+            setFailure(null);
+          }
+        })
+        .catch((error: unknown) => {
+          if (live) setFailure(failureOf(error).message);
+        });
+    }, 200);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [client, resolverKey, search, open]);
   const environment = useContext(Environment);
   const target = placed.createWith;
   const targetClient = target ? environment?.clients[target.moduleKey] : undefined;
   const label = placed.field.label;
   const canAdd = Boolean(!disabled && target && targetClient && environment && holds(environment.permissions, target.permission));
-  const canOpen = Boolean(target && targetClient && typeof value === 'string' && value);
+  const canOpen = Boolean(target && targetClient && current);
   if (!resolverKey) return <p className="text-xs text-ui-fg-error">This field has no lookup.</p>;
+  const choose = (option: LookupOption) => {
+    setChosen(option);
+    setSearch('');
+    setOpen(false);
+    onChange(option.value);
+  };
+  const shownName = current ? (chosen?.value === current ? chosen.label : '') : '';
   return (
     <div className="space-y-1">
-      {!disabled && <input aria-label={`Search ${placed.field.label}`} className={inputClass} placeholder="Type to search" value={search} onChange={(event) => setSearch(event.target.value)} />}
-      <select id={id} className={inputClass} value={value === null || value === undefined ? '' : String(value)} disabled={disabled} onChange={(event) => onChange(event.target.value)}>
-        <option value="">Select…</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <input
+          id={id}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={open && options[active] ? `${listId}-${active}` : undefined}
+          className={`${inputClass} pr-8`}
+          placeholder={disabled ? '' : `Search ${label}`}
+          disabled={disabled}
+          value={open ? search : shownName}
+          onFocus={() => {
+            setSearch('');
+            setOpen(true);
+          }}
+          onBlur={() => setOpen(false)}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowDown') {
+              event.preventDefault();
+              setOpen(true);
+              setActive((index) => Math.min(index + 1, Math.max(options.length - 1, 0)));
+            } else if (event.key === 'ArrowUp') {
+              event.preventDefault();
+              setActive((index) => Math.max(index - 1, 0));
+            } else if (event.key === 'Enter' && open && options[active]) {
+              event.preventDefault();
+              choose(options[active]);
+            } else if (event.key === 'Escape') {
+              setOpen(false);
+            }
+          }}
+        />
+        {!disabled && current ? (
+          <button
+            type="button"
+            aria-label={`Clear ${label}`}
+            className="absolute inset-y-0 right-2 text-sm text-ui-fg-muted hover:text-ui-fg-base"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              setChosen(null);
+              onChange('');
+            }}
+          >
+            ×
+          </button>
+        ) : null}
+        {open && !disabled ? (
+          <ul
+            id={listId}
+            role="listbox"
+            aria-label={label}
+            className={`${box} absolute z-20 mt-1 max-h-60 w-full overflow-auto py-1 shadow-elevation-flyout`}
+          >
+            {options.map((option, index) => (
+              <li
+                key={option.value}
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={option.value === current}
+                className={`cursor-pointer px-2 py-1.5 text-sm ${index === active ? 'bg-ui-bg-base-hover text-ui-fg-base' : 'text-ui-fg-base'}`}
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActive(index)}
+                onClick={() => choose(option)}
+              >
+                {option.label}
+              </li>
+            ))}
+            {options.length === 0 && !failure ? (
+              <li className="px-2 py-1.5 text-sm text-ui-fg-muted">
+                {search.trim() ? `No ${label} matches “${search.trim()}”.` : `No ${label} records yet.`}
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
+      </div>
       {failure ? <p className="text-xs text-ui-fg-error">{failure}</p> : null}
-      {!disabled && !failure && options.length === 0 && (
-        <p className="text-xs text-ui-fg-muted">{search ? `No ${label} matches “${search}”.` : `No ${label} records yet.`}</p>
-      )}
       {(canAdd || canOpen) && environment && target && (
         <div className="flex flex-wrap gap-3 text-xs">
           {canAdd && (
@@ -637,7 +861,7 @@ function LookupInput({
                   target,
                   label,
                   onCreated: (created) => {
-                    setSearch('');
+                    setChosen(null);
                     onChange(created);
                   },
                 })
@@ -663,9 +887,21 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'error' | 'info'; text: string } | null>(null);
   const [activeChild, setActiveChild] = useState(model.childTabs[0]?.tabKey);
+  const [activeRecordTab, setActiveRecordTab] = useState(model.rootTab.tabKey);
+  const environment = useContext(Environment);
+  const registry = environment?.panels ?? {};
   // WI-OI-120l: while the record is reread after a child change, its actions wait, so they never carry the version
   // from before that change (which answered "someone else changed this record" to the person who made it).
   const [refreshing, setRefreshing] = useState(false);
+  // WI-OI-120g: reread the record quietly, so its version and status stay current for its actions (child changes) and
+  // its fields show what a panel changed (WI-OI-120ce).
+  const reread = useCallback(() => {
+    setRefreshing(true);
+    client
+      .get(entityKey, id)
+      .then((fresh) => setState({ status: 'ready', record: fresh }), () => undefined)
+      .finally(() => setRefreshing(false));
+  }, [client, entityKey, id]);
 
   const load = useCallback(async () => {
     setState({ status: 'loading' });
@@ -689,6 +925,10 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   const canEdit = placedFields(model, model.rootTab, record, permissions, 'EDIT').some((placed) => !placed.readOnly);
   const actions = recordActions(model, entityKey, record, permissions);
   const child = model.childTabs.find((tab) => tab.tabKey === activeChild);
+  const recordTab = model.recordTabs.find((tab) => tab.tabKey === activeRecordTab) ?? model.rootTab;
+  const renderPanel = (panel: PlacedPanel) => (
+    <MetadataPanel panel={panel} registry={registry} record={record} client={client} permissions={permissions} refresh={reread} />
+  );
 
   return (
     <div className="space-y-4">
@@ -717,6 +957,7 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
                   const result = await client.action(entityKey, String(record.id), actionKey(action, entityKey), { ...parameters, ...read }, newKey());
                   setState({ status: 'ready', record: { ...record, ...result } });
                   setNotice({ tone: 'info', text: `${action.label}: done.` });
+                  environment?.changed?.();
                 }}
                 onFailure={(message) => setNotice({ tone: 'error', text: message })}
               />
@@ -739,8 +980,38 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
           }}
         />
       ) : (
-        <div className={`${box} p-4`}>
-          <FieldSections tab={model.rootTab} fields={fields} values={record} errors={{}} client={client} />
+        <div className="space-y-3">
+          {model.recordTabs.length > 1 && (
+            <div role="tablist" className="flex gap-1 border-b border-ui-border-base">
+              {model.recordTabs.map((tab) => (
+                <button
+                  key={tab.tabKey}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab.tabKey === recordTab.tabKey}
+                  className={`px-3 py-2 text-sm ${tab.tabKey === recordTab.tabKey ? 'border-b-2 border-ui-border-interactive font-medium text-ui-fg-base' : 'text-ui-fg-subtle'}`}
+                  onClick={() => setActiveRecordTab(tab.tabKey)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className={`${box} p-4`}>
+            {recordTab === model.rootTab ? (
+              <FieldSections
+                tab={model.rootTab}
+                fields={fields}
+                values={record}
+                errors={{}}
+                client={client}
+                panels={placedPanels(model.rootTab, record, permissions)}
+                panelSlot={renderPanel}
+              />
+            ) : (
+              <MetadataPanels panels={placedPanels(recordTab, record, permissions)} registry={registry} record={record} client={client} permissions={permissions} refresh={reread} />
+            )}
+          </div>
         </div>
       )}
       {model.childTabs.length > 0 && (
@@ -767,14 +1038,7 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
               client={client}
               permissions={permissions}
               parentId={String(record.id)}
-              onChanged={() => {
-                // WI-OI-120g: reread the parent quietly, so its version and status stay current for its actions.
-                setRefreshing(true);
-                client
-                  .get(entityKey, String(record.id))
-                  .then((fresh) => setState({ status: 'ready', record: fresh }), () => undefined)
-                  .finally(() => setRefreshing(false));
-              }}
+              onChanged={reread}
             />
           )}
         </div>

@@ -22,6 +22,9 @@ packages:
   - modules/universal-returns/web
   - modules/project-operations/apps/api
   - modules/project-operations/web
+  - modules/process-safety-screening/apps/api
+  - modules/process-safety-screening/domain
+  - modules/process-safety-screening/web
   - modules/product-catalogue/apps/api
   - modules/product-catalogue/web
   - modules/universal-connector-hub/apps/api
@@ -46,6 +49,7 @@ packages:
   - packages/db-migrations-runtime
   - packages/document-lifecycle
   - packages/posting-rules
+  - packages/process-safety-engines
   - packages/i18n
   - packages/jobs
   - packages/logger

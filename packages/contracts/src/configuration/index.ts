@@ -951,6 +951,7 @@ export type ConfigurationSavedFilterResponse = z.infer<
 export * from './catalogue.js';
 export * from './packs.js';
 export * from './window-baselines.js';
+export * from './panels.js';
 export * from './packs.generated.js';
 export * from './dictionary.js';
 export * from './platform-lookups.js';

@@ -1,5 +1,8 @@
 # SPEED Stage 2 — Production Certification: implementation plan
 
+**Index:** [SPEED-Module-Enhancement-Implementation-Plan.md](./SPEED-Module-Enhancement-Implementation-Plan.md) (status of
+S9c/d, R2, and this document). Task card: `.pi/tasks/WI-OI-120cg.md`.
+
 **What this is.** The two owner documents (the Montelukast Sodium reaction-hazard workbook + the AI-drafted write-up)
 define SPEED's **production-certification** scope: the step from "screen the reaction at the desk" (Stage 1, shipping)
 to "a full safety assessment ready for scale-up." This plan turns the owner's four gaps into SPEED slices in the same

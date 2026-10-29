@@ -1,0 +1,131 @@
+# WI-OI-120cc (SPEED S9a): the speed-lab preview instance, Docker Compose project gigalibs-speed-lab only. It has its own
+# PostgreSQL, object store, volumes and network, and shares nothing with gigalibs-configuration-local (UAT) or
+# gigalibs-test. Render it last, after compose.yaml, compose.modules.local.yaml and generated/compose.module-host.yaml
+# (scripts/up-speed-lab.sh does).
+services:
+  lab-postgres:
+    image: postgres:16-alpine@sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229
+    pull_policy: never
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/run/postgresql:rw,noexec,nosuid,size=16m
+      - /tmp:rw,noexec,nosuid,size=128m
+    shm_size: 256m
+    environment:
+      POSTGRES_USER: gigalibs
+      POSTGRES_DB: gigalibs
+      POSTGRES_PASSWORD: ${SPEED_LAB_DATABASE_SUPERUSER_PASSWORD:?SPEED_LAB_DATABASE_SUPERUSER_PASSWORD is required}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=trust
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command: ["postgres", "-c", "password_encryption=scram-sha-256"]
+    stop_grace_period: 60s
+    mem_limit: 2g
+    volumes:
+      - lab-database:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${SPEED_LAB_POSTGRES_HOST_PORT:?SPEED_LAB_POSTGRES_HOST_PORT is required}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gigalibs -d gigalibs"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    labels: &lab-labels
+      com.gigalibs.profile-key: ${PROFILE_KEY:?PROFILE_KEY is required}
+      com.gigalibs.execution-class: ${EXECUTION_CLASS:?EXECUTION_CLASS is required}
+      com.gigalibs.release-id: ${RELEASE_ID:?RELEASE_ID is required}
+      org.opencontainers.image.revision: ${SOURCE_REVISION:?SOURCE_REVISION is required}
+      com.gigalibs.source-state-sha256: ${SOURCE_STATE_SHA256:?SOURCE_STATE_SHA256 is required}
+
+  # The instance's own S3-compatible store: the platform's uploads and SPEED's dossier files, in separate buckets,
+  # each reached with its own key that can use only its bucket. No port is published.
+  lab-objects:
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    pull_policy: never
+    restart: unless-stopped
+    command: ["server", "/data"]
+    environment:
+      MINIO_ROOT_USER: ${SPEED_LAB_OBJECTS_ROOT_USER:?SPEED_LAB_OBJECTS_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${SPEED_LAB_OBJECTS_ROOT_PASSWORD:?SPEED_LAB_OBJECTS_ROOT_PASSWORD is required}
+      MINIO_BROWSER: "off"
+    volumes:
+      - lab-objects:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/ready >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 5s
+    security_opt:
+      - no-new-privileges:true
+    labels: *lab-labels
+
+  # One-shot: the two buckets and their keys (idempotent).
+  lab-objects-init:
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    pull_policy: never
+    restart: "no"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        export MC_CONFIG_DIR=/tmp/mc
+        mc alias set lab http://lab-objects:9000 "$$ROOT_USER" "$$ROOT_PASSWORD" >/dev/null
+        for pair in "$$PLATFORM_BUCKET:$$PLATFORM_KEY:$$PLATFORM_SECRET" "$$SPEED_BUCKET:$$SPEED_KEY:$$SPEED_SECRET"; do
+          bucket="$${pair%%:*}"; rest="$${pair#*:}"; key="$${rest%%:*}"; secret="$${rest#*:}"
+          mc mb --ignore-existing "lab/$$bucket" >/dev/null
+          printf '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:*"],"Resource":["arn:aws:s3:::%s","arn:aws:s3:::%s/*"]}]}' "$$bucket" "$$bucket" >/tmp/policy.json
+          mc admin policy create lab "bucket-$$bucket" /tmp/policy.json >/dev/null
+          mc admin user add lab "$$key" "$$secret" >/dev/null
+          mc admin policy attach lab "bucket-$$bucket" --user "$$key" >/dev/null 2>&1 || true
+        done
+        echo "speed-lab object store ready (2 buckets)."
+    environment:
+      ROOT_USER: ${SPEED_LAB_OBJECTS_ROOT_USER:?SPEED_LAB_OBJECTS_ROOT_USER is required}
+      ROOT_PASSWORD: ${SPEED_LAB_OBJECTS_ROOT_PASSWORD:?SPEED_LAB_OBJECTS_ROOT_PASSWORD is required}
+      PLATFORM_BUCKET: ${STORAGE_BUCKET:?STORAGE_BUCKET is required}
+      PLATFORM_KEY: ${STORAGE_ACCESS_KEY:?STORAGE_ACCESS_KEY is required}
+      PLATFORM_SECRET: ${STORAGE_SECRET_KEY:?STORAGE_SECRET_KEY is required}
+      SPEED_BUCKET: ${SPEED_STORAGE_BUCKET:?SPEED_STORAGE_BUCKET is required}
+      SPEED_KEY: ${SPEED_STORAGE_ACCESS_KEY:?SPEED_STORAGE_ACCESS_KEY is required}
+      SPEED_SECRET: ${SPEED_STORAGE_SECRET_KEY:?SPEED_STORAGE_SECRET_KEY is required}
+    depends_on:
+      lab-objects:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    labels: *lab-labels
+
+  migrations:
+    depends_on:
+      lab-postgres:
+        condition: service_healthy
+
+  # SPEED's dossier store (WI-OI-120ca). The module host reads SPEED_STORAGE_*; without them, generation answers 503.
+  module-host:
+    environment:
+      SPEED_STORAGE_ENDPOINT: http://lab-objects:9000
+      SPEED_STORAGE_REGION: ${SPEED_STORAGE_REGION:?SPEED_STORAGE_REGION is required}
+      SPEED_STORAGE_BUCKET: ${SPEED_STORAGE_BUCKET:?SPEED_STORAGE_BUCKET is required}
+      SPEED_STORAGE_ACCESS_KEY: ${SPEED_STORAGE_ACCESS_KEY:?SPEED_STORAGE_ACCESS_KEY is required}
+      SPEED_STORAGE_SECRET_KEY: ${SPEED_STORAGE_SECRET_KEY:?SPEED_STORAGE_SECRET_KEY is required}
+
+volumes:
+  lab-database:
+    name: gigalibs-speed-lab-database
+  lab-objects:
+    name: gigalibs-speed-lab-objects
+
+networks:
+  default:
+    name: gigalibs-speed-lab
