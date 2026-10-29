@@ -1,0 +1,31 @@
+{
+  "name": "@gigalibs/iot-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@gigalibs/contracts": "workspace:*",
+    "@gigalibs/web-sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "@medusajs/icons": "^2.20.1",
+    "@medusajs/ui": "^4.2.3",
+    "next": "^15.2.0",
+    "react": "^19.2.8"
+  },
+  "devDependencies": {
+    "@medusajs/icons": "2.20.1",
+    "@medusajs/ui": "4.2.3",
+    "@types/react": "19.2.18",
+    "react": "19.2.8",
+    "typescript": "^5.8.3"
+  }
+}

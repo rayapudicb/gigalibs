@@ -50,6 +50,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "geospatial-api",
     "basePath": ""
   },
+  "iot": {
+    "module": "iot-gateway",
+    "environmentKey": "IOT_API_URL",
+    "port": "4250",
+    "serviceHostname": "iot-api",
+    "basePath": ""
+  },
   "product-catalogue": {
     "module": "product-catalogue",
     "environmentKey": "PRODUCT_CATALOGUE_API_URL",
@@ -63,6 +70,13 @@ export const generatedModuleUpstreams = {
     "port": "4790",
     "serviceHostname": "module-host",
     "basePath": "/universal-inventory"
+  },
+  "universal-manufacturing": {
+    "module": "universal-manufacturing",
+    "environmentKey": "UNIVERSAL_MANUFACTURING_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/universal-manufacturing"
   },
   "universal-orders": {
     "module": "universal-orders",

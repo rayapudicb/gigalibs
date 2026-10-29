@@ -131,6 +131,7 @@ services:
       ANALYTICS_INBOX_RELAY_PUBLIC_KEY_BASE64: ${ANALYTICS_INBOX_RELAY_PUBLIC_KEY_BASE64:?ANALYTICS_INBOX_RELAY_PUBLIC_KEY_BASE64 is required}
       ANALYTICS_GEOSPATIAL_INBOX_RELAY_PUBLIC_KEY_BASE64: ${ANALYTICS_GEOSPATIAL_INBOX_RELAY_PUBLIC_KEY_BASE64:?ANALYTICS_GEOSPATIAL_INBOX_RELAY_PUBLIC_KEY_BASE64 is required}
       ANALYTICS_WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64: ${ANALYTICS_WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64:?ANALYTICS_WORKFORCE_INBOX_RELAY_PUBLIC_KEY_BASE64 is required}
+      ANALYTICS_CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64: ${ANALYTICS_CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64:?ANALYTICS_CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64 is required}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -169,7 +170,7 @@ services:
       MODULE_SCHEMA: gigalibs_cmms
       # WI-OI-120be (W1, plan v3 steps 1.1 and 1.3): migration 000020 (CMMS requests, with their unit and site, and
       # record_idempotency) passed the W1 Security reviews; the WI-OI-120aj hold at 19 is lifted.
-      MODULE_EXPECTED_MIGRATION_VERSION: "22"
+      MODULE_EXPECTED_MIGRATION_VERSION: "24"
       MODULE_APPEND_ONLY_TABLES: audit_events,work_order_events,work_order_labour,meter_readings,stock_movements
       MODULE_READ_ONLY_TABLES: auth_revocation_events
     extra_hosts:
@@ -198,13 +199,15 @@ services:
       CMMS_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
       CMMS_DATABASE_URL: ${CMMS_DATABASE_URL:?CMMS_DATABASE_URL is required}
       CMMS_DATABASE_POOL_SIZE: "10"
-      CMMS_EXPECTED_MIGRATION_VERSION: "22"
+      CMMS_EXPECTED_MIGRATION_VERSION: "24"
       CMMS_PLATFORM_CONTEXT_AUDIENCE: gigalibs-cmms-api
       CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?CMMS_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
       # WI-OI-068 (ADR-0007 option A); keys from scripts/generate-relay-credentials.sh.
       CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64: ${CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64:?CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64 is required}
       CMMS_RELAY_WORKFORCE_URL: http://workforce-api:4700
       WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64: ${WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64:?WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64 is required}
+      CMMS_RELAY_ANALYTICS_URL: http://analytics-api:4400
+      ANALYTICS_CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64: ${ANALYTICS_CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64:?ANALYTICS_CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64 is required}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -216,6 +219,75 @@ services:
         - node
         - -e
         - "fetch('http://127.0.0.1:4200/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels: *module-labels
+
+  iot-migrations:
+    image: ${IOT_IMAGE:?IOT_IMAGE is required}
+    pull_policy: never
+    command: ["run-module-migrations.mjs"]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      DATABASE_URL: ${MODULE_MIGRATIONS_DATABASE_URL:?MODULE_MIGRATIONS_DATABASE_URL is required}
+      MODULE_RUNTIME_DATABASE_URL: ${IOT_DATABASE_URL:?IOT_DATABASE_URL is required}
+      MODULE_MIGRATIONS_DIRECTORY: /app/migrations
+      MODULE_SCHEMA: gigalibs_iot
+      MODULE_EXPECTED_MIGRATION_VERSION: "4"
+      MODULE_APPEND_ONLY_TABLES: audit_events,outbox_events,iot_telemetry_raw
+      MODULE_READ_ONLY_TABLES: auth_revocation_events
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    labels: *module-labels
+
+  iot-api:
+    image: ${IOT_IMAGE:?IOT_IMAGE is required}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      NODE_ENV: development
+      IOT_API_HOST: 0.0.0.0
+      IOT_API_PORT: "4250"
+      IOT_CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
+      IOT_DATABASE_URL: ${IOT_DATABASE_URL:?IOT_DATABASE_URL is required}
+      IOT_DATABASE_POOL_SIZE: "10"
+      IOT_EXPECTED_MIGRATION_VERSION: "4"
+      IOT_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64: ${IOT_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64:?IOT_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64 is required}
+      IOT_RELAY_CMMS_URL: http://cmms-api:4200
+      IOT_CMMS_RELAY_PRIVATE_KEY_BASE64: ${CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      iot-migrations:
+        condition: service_completed_successfully
+      cmms-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4250/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
       interval: 10s
       timeout: 5s
       retries: 12
@@ -419,6 +491,8 @@ services:
       ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
       CMMS_API_URL: http://cmms-api:4200
       CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
+      IOT_API_URL: http://iot-api:4250
+      IOT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${IOT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?IOT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
       PRODUCT_CATALOGUE_API_URL: ${PRODUCT_CATALOGUE_API_URL:-http://module-host:4790}
       PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64:?PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64 is required}
       UNIVERSAL_PROCUREMENT_API_URL: ${UNIVERSAL_PROCUREMENT_API_URL:-http://module-host:4790}

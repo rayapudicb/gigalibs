@@ -10,3 +10,4 @@
 000009_inventory_finance_replica_hardening.up.sql
 000010_material_ledger_cost_layers.up.sql
 000011_replenishment_rules.up.sql
+000012_transfer_and_procurement_relay.up.sql

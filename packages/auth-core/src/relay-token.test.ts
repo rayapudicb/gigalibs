@@ -18,6 +18,15 @@ describe('relay tokens', () => {
     expect(verifyRelayToken(token(), relay.publicKey, expected)).toMatchObject({ tenant_id: 't-1', message_id: 'm-1', sub: 'cmms' });
   });
 
+  it('accepts any source listed in the expected set', () => {
+    expect(
+      verifyRelayToken(token({ source: 'universal-manufacturing' }), relay.publicKey, {
+        ...expected,
+        source: ['universal-orders', 'universal-manufacturing'],
+      }),
+    ).toMatchObject({ sub: 'universal-manufacturing' });
+  });
+
   it('refuses another key, audience, source, body or an expired token', () => {
     expect(() => verifyRelayToken(token({}, other.privateKey), relay.publicKey, expected)).toThrow(/signature/);
     expect(() => verifyRelayToken(token({ audience: 'gigalibs-cmms-inbox' }), relay.publicKey, expected)).toThrow(/audience/);

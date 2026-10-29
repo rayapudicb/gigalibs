@@ -261,6 +261,39 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     ]
   },
   {
+    "catalogKey": "iot-gateway",
+    "key": "iot-operator",
+    "name": "IoT operator",
+    "description": "Provisions devices, confirms asset bindings, and manages condition rules.",
+    "permissions": [
+      "iot:read",
+      "iot.dashboard.read",
+      "iot.devices.read",
+      "iot.devices.write",
+      "iot.rules.read",
+      "iot.rules.write",
+      "iot.alerts.read",
+      "iot.protocols.read",
+      "iot.discovery.read",
+      "iot.discovery.write"
+    ]
+  },
+  {
+    "catalogKey": "iot-gateway",
+    "key": "iot-viewer",
+    "name": "IoT viewer",
+    "description": "Reads device status, protocols and alerts without changing configuration.",
+    "permissions": [
+      "iot:read",
+      "iot.dashboard.read",
+      "iot.devices.read",
+      "iot.rules.read",
+      "iot.alerts.read",
+      "iot.protocols.read",
+      "iot.discovery.read"
+    ]
+  },
+  {
     "catalogKey": "asset-maintenance",
     "key": "maintenance-technician",
     "name": "Maintenance technician",

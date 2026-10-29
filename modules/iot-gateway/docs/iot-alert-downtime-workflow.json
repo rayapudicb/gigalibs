@@ -1,0 +1,30 @@
+{
+  "code": "iot-critical-alert-downtime",
+  "name": "IoT critical alert → CMMS downtime",
+  "description": "When IoT publishes TELEMETRY_ALERT_V1 with CRITICAL severity, open CMMS downtime and close it when the linked work order completes.",
+  "trigger": { "topic": "telemetry.alert.v1", "filter": { "severity": "CRITICAL" } },
+  "steps": [
+    {
+      "id": "start-downtime",
+      "action": "http.post",
+      "url": "/api/cmms/v1/assets/{{assetId}}/downtime/start",
+      "body": {
+        "downtimeType": "UNPLANNED",
+        "source": "IOT_AUTO",
+        "externalAlertId": "{{alertId}}"
+      }
+    },
+    {
+      "id": "await-work-order",
+      "action": "wait.until",
+      "condition": "work_order.status == COMPLETED",
+      "timeout": "7d"
+    },
+    {
+      "id": "end-downtime",
+      "action": "http.post",
+      "url": "/api/cmms/v1/assets/{{assetId}}/downtime/end",
+      "body": { "resolutionNotes": "Restored after maintenance work order completion." }
+    }
+  ]
+}

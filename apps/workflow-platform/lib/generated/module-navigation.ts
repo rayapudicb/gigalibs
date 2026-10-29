@@ -49,6 +49,38 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "database"
     }
   ],
+  "iot-gateway": [
+    {
+      "key": "devices",
+      "label": "Devices",
+      "path": "/iot/devices",
+      "icon": "radio"
+    },
+    {
+      "key": "protocols",
+      "label": "Protocols",
+      "path": "/iot/protocols",
+      "icon": "network"
+    },
+    {
+      "key": "rules",
+      "label": "Condition Rules",
+      "path": "/iot/rules",
+      "icon": "workflow"
+    },
+    {
+      "key": "discovery",
+      "label": "Discovery",
+      "path": "/iot/discovery",
+      "icon": "scan-line"
+    },
+    {
+      "key": "alerts",
+      "label": "Alerts",
+      "path": "/iot/alerts",
+      "icon": "shield-alert"
+    }
+  ],
   "asset-maintenance": [
     {
       "key": "requests",
@@ -197,6 +229,26 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Cross-Module Triggers",
       "path": "/communications/triggers",
       "icon": "zap"
+    }
+  ],
+  "universal-manufacturing": [
+    {
+      "key": "boms",
+      "label": "BOMs",
+      "path": "/universal-manufacturing/boms",
+      "icon": "layers"
+    },
+    {
+      "key": "production",
+      "label": "Production",
+      "path": "/universal-manufacturing/production",
+      "icon": "factory"
+    },
+    {
+      "key": "mrp",
+      "label": "MRP preview",
+      "path": "/universal-manufacturing/mrp",
+      "icon": "bar-chart"
     }
   ]
 };

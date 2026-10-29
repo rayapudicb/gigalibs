@@ -1,12 +1,18 @@
 'use client';
 
+import {
+  MetadataWindow,
+  createRecordClient,
+  usePublishedManifest,
+} from '@gigalibs/configuration-react';
 import type { BarcodeResolutionResultV1 } from '@gigalibs/contracts';
-import { createRecordClient, MetadataWindow, usePublishedManifest } from '@gigalibs/configuration-react';
 import { type FormEvent, useMemo, useState } from 'react';
-import { WarehouseMapPanel } from './WarehouseMapPanel.js';
-import { InventoryScannerDrawer } from './InventoryScannerDrawer.js';
-import { ValuationSettingsPanel } from './ValuationSettingsPanel.js';
 import { AtpLivePanel } from './AtpLivePanel.js';
+import { InventoryScannerDrawer } from './InventoryScannerDrawer.js';
+import { KanbanTransferBoard } from './KanbanTransferBoard.js';
+import { ReplenishmentRadarPanel } from './ReplenishmentRadarPanel.js';
+import { ValuationSettingsPanel } from './ValuationSettingsPanel.js';
+import { WarehouseMapPanel } from './WarehouseMapPanel.js';
 
 // WI-OI-120f (F0.5, ADR-0033 D1; owner decisions 2026-10-05): Inventory's screens are metadata windows drawn from the
 // dictionary each tenant has published, over Inventory's own record dispatcher. The hand-written screen with
@@ -15,7 +21,10 @@ import { AtpLivePanel } from './AtpLivePanel.js';
 const BASE_PATH = '/api/universal-inventory';
 const CATALOGUE_PATH = '/api/product-catalogue';
 // Product and unit pickers are served by the Product Catalogue through its own gateway.
-const LOOKUP_BASE_PATHS = { 'catalogue-products': CATALOGUE_PATH, 'catalogue-uoms': CATALOGUE_PATH };
+const LOOKUP_BASE_PATHS = {
+  'catalogue-products': CATALOGUE_PATH,
+  'catalogue-uoms': CATALOGUE_PATH,
+};
 
 const WINDOWS = [
   { surface: 'inventory-warehouses', label: 'Warehouses' },
@@ -29,32 +38,62 @@ const WINDOWS = [
   { surface: 'inventory-posted-receipt-costs', label: 'Posted receipt costs' },
 ] as const;
 
-type Tab = (typeof WINDOWS)[number]['surface'] | 'barcode' | 'warehouse-map' | 'valuation-settings' | 'atp';
+type Tab =
+  | (typeof WINDOWS)[number]['surface']
+  | 'barcode'
+  | 'warehouse-map'
+  | 'valuation-settings'
+  | 'atp'
+  | 'transfers'
+  | 'replenishment';
 
 export interface UniversalInventoryWorkspaceProps {
   /** The signed-in user's permissions, for the windows' deny-by-default rules (the server still decides). */
   readonly permissions?: readonly string[];
 }
 
-export function UniversalInventoryWorkspace({ permissions = [] }: UniversalInventoryWorkspaceProps = {}) {
+export function UniversalInventoryWorkspace({
+  permissions = [],
+}: UniversalInventoryWorkspaceProps = {}) {
   const [tab, setTab] = useState<Tab>('inventory-warehouses');
   const [scannerOpen, setScannerOpen] = useState(false);
-  const client = useMemo(() => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: LOOKUP_BASE_PATHS }), []);
+  const client = useMemo(
+    () => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: LOOKUP_BASE_PATHS }),
+    [],
+  );
   // WI-OI-120 (F0.6): "Add new product" or "Add new unit" from a picker opens the Catalogue's own window.
-  const clients = useMemo(() => ({ 'product-catalogue': createRecordClient({ basePath: CATALOGUE_PATH }) }), []);
+  const clients = useMemo(
+    () => ({ 'product-catalogue': createRecordClient({ basePath: CATALOGUE_PATH }) }),
+    [],
+  );
   return (
     <div className="space-y-6 p-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold text-ui-fg-base">Inventory &amp; Warehouses</h1>
-          <p className="text-sm text-ui-fg-subtle">Warehouses, stocked items, lots, goods receipts, balances and the stock ledger of your organization.</p>
+          <p className="text-sm text-ui-fg-subtle">
+            Warehouses, stocked items, lots, goods receipts, balances and the stock ledger of your
+            organization.
+          </p>
         </div>
-        <button type="button" className="rounded-md bg-ui-button-inverted px-4 py-2 text-sm font-medium text-ui-fg-on-inverted" onClick={() => setScannerOpen(true)}>Open scanner</button>
+        <button
+          type="button"
+          className="rounded-md bg-ui-button-inverted px-4 py-2 text-sm font-medium text-ui-fg-on-inverted"
+          onClick={() => setScannerOpen(true)}
+        >
+          Open scanner
+        </button>
       </header>
-      <nav role="tablist" aria-label="Inventory" className="flex flex-wrap gap-1 border-b border-ui-border-base">
+      <nav
+        role="tablist"
+        aria-label="Inventory"
+        className="flex flex-wrap gap-1 border-b border-ui-border-base"
+      >
         {[
           ...WINDOWS,
           { surface: 'warehouse-map' as const, label: 'Warehouse map' },
+          { surface: 'transfers' as const, label: 'Transfer board' },
+          { surface: 'replenishment' as const, label: 'Replenishment' },
           { surface: 'atp' as const, label: 'Live ATP' },
           { surface: 'valuation-settings' as const, label: 'Valuation setup' },
           { surface: 'barcode' as const, label: 'Barcode lookup' },
@@ -75,12 +114,22 @@ export function UniversalInventoryWorkspace({ permissions = [] }: UniversalInven
         <BarcodeLookup />
       ) : tab === 'warehouse-map' ? (
         <WarehouseMapPanel />
+      ) : tab === 'transfers' ? (
+        <KanbanTransferBoard />
+      ) : tab === 'replenishment' ? (
+        <ReplenishmentRadarPanel />
       ) : tab === 'atp' ? (
         <AtpLivePanel />
       ) : tab === 'valuation-settings' ? (
         <ValuationSettingsPanel />
       ) : (
-        <InventoryWindow key={tab} surface={tab} client={client} clients={clients} permissions={permissions} />
+        <InventoryWindow
+          key={tab}
+          surface={tab}
+          client={client}
+          clients={clients}
+          permissions={permissions}
+        />
       )}
       {scannerOpen ? <InventoryScannerDrawer onClose={() => setScannerOpen(false)} /> : null}
     </div>
@@ -98,17 +147,31 @@ function InventoryWindow({
   clients: Readonly<Record<string, ReturnType<typeof createRecordClient>>>;
   permissions: readonly string[];
 }) {
-  const state = usePublishedManifest({ moduleKey: 'universal-inventory', entityKey: surface, surfaceKey: surface });
-  if (state.status === 'loading') return <p className="text-sm text-ui-fg-muted">Loading the window…</p>;
+  const state = usePublishedManifest({
+    moduleKey: 'universal-inventory',
+    entityKey: surface,
+    surfaceKey: surface,
+  });
+  if (state.status === 'loading')
+    return <p className="text-sm text-ui-fg-muted">Loading the window…</p>;
   if (state.status !== 'ready') {
     return (
       <div role="alert" className="rounded-lg border border-ui-border-base bg-ui-bg-base p-4">
-        <p className="text-sm font-medium text-ui-fg-error">{state.status === 'forbidden' ? 'No access' : 'This window is not available'}</p>
+        <p className="text-sm font-medium text-ui-fg-error">
+          {state.status === 'forbidden' ? 'No access' : 'This window is not available'}
+        </p>
         <p className="mt-1 text-sm text-ui-fg-subtle">{state.message}</p>
       </div>
     );
   }
-  return <MetadataWindow manifest={state.manifest} client={client} clients={clients} permissions={permissions} />;
+  return (
+    <MetadataWindow
+      manifest={state.manifest}
+      client={client}
+      clients={clients}
+      permissions={permissions}
+    />
+  );
 }
 
 function BarcodeLookup() {
@@ -132,7 +195,10 @@ function BarcodeLookup() {
       });
       const body: unknown = await response.json().catch(() => null);
       if (!response.ok) {
-        const message = body && typeof body === 'object' && 'message' in body ? String((body as { message: unknown }).message) : `Lookup failed (${response.status}).`;
+        const message =
+          body && typeof body === 'object' && 'message' in body
+            ? String((body as { message: unknown }).message)
+            : `Lookup failed (${response.status}).`;
         throw new Error(message);
       }
       setResult(body as BarcodeResolutionResultV1);
@@ -145,7 +211,10 @@ function BarcodeLookup() {
 
   return (
     <section className="max-w-xl space-y-4">
-      <p className="text-sm text-ui-fg-subtle">Scan or type a barcode to find the location, lot or product it belongs to in your organization.</p>
+      <p className="text-sm text-ui-fg-subtle">
+        Scan or type a barcode to find the location, lot or product it belongs to in your
+        organization.
+      </p>
       <form className="flex gap-2" onSubmit={(event) => void resolve(event)}>
         <input
           aria-label="Barcode"
@@ -170,7 +239,11 @@ function BarcodeLookup() {
       {result && (
         <dl className="grid grid-cols-3 gap-2 rounded-lg border border-ui-border-base bg-ui-bg-base p-4 text-sm">
           <dt className="text-ui-fg-subtle">Found</dt>
-          <dd className="col-span-2 text-ui-fg-base">{result.entityType === 'UNKNOWN' ? 'Nothing in your organization has this barcode.' : result.entityType}</dd>
+          <dd className="col-span-2 text-ui-fg-base">
+            {result.entityType === 'UNKNOWN'
+              ? 'Nothing in your organization has this barcode.'
+              : result.entityType}
+          </dd>
           {result.matchedCode ? (
             <>
               <dt className="text-ui-fg-subtle">Code</dt>

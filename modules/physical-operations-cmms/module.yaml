@@ -245,6 +245,9 @@ spec:
       - { path: 'v1/assets/{id}', GET: cmms.assets.read, PATCH: cmms.assets.write }
       - { path: 'v1/assets', POST: cmms.assets.write }
       - { path: 'v1/assets/{id}/archive', POST: cmms.assets.write }
+      - { path: 'v1/assets/{id}/downtime', GET: cmms.assets.read }
+      - { path: 'v1/assets/{id}/downtime/start', POST: cmms.assets.write }
+      - { path: 'v1/assets/{id}/downtime/end', POST: cmms.assets.write }
       - { path: 'v1/requests/search', POST: cmms.requests.read }
       - { path: 'v1/requests/{id}', GET: cmms.requests.read }
       - { path: 'v1/requests', POST: cmms.requests.create }

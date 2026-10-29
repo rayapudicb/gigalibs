@@ -135,6 +135,24 @@ describe.skipIf(!enabled)('Advanced SCM inter-warehouse transfer on isolated Pos
     expect(Number(inTransit.rows[0]?.total)).toBe(0);
   });
 
+  it('emits one GL in-transit clearance fact for dispatch and one for receipt', async () => {
+    const facts = await db.withTenantTransaction(tenantId, async (client) =>
+      client.query<{ event_type: string; aggregate_id: string }>(
+        `SELECT event_type, aggregate_id FROM gigalibs_inventory.outbox_events
+          WHERE tenant_id = $1 AND aggregate_type = 'transfer' AND status = 'PENDING'
+          ORDER BY event_type`,
+        [tenantId],
+      ),
+    );
+    const types = facts.rows.map((row) => row.event_type);
+    expect(types).toContain('inventory.transfer.dispatched.v1');
+    expect(types).toContain('inventory.transfer.received.v1');
+    // Exactly one of each, despite the idempotent dispatch/receipt replays.
+    expect(types.filter((t) => t === 'inventory.transfer.dispatched.v1')).toHaveLength(1);
+    expect(types.filter((t) => t === 'inventory.transfer.received.v1')).toHaveLength(1);
+    expect(facts.rows.every((row) => row.aggregate_id === transferId)).toBe(true);
+  });
+
   it('replays an identical receipt and refuses a second dispatch', async () => {
     const replay = await transfers.receiveTransfer(principal, transferId);
     expect(replay.status).toBe('RECEIVED');

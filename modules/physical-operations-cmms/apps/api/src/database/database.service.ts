@@ -8,6 +8,8 @@ export type { TenantTransaction } from '@gigalibs/module-sdk';
 type CmmsDefinerFunction =
   | 'relay_lease_workforce_events'
   | 'relay_settle_workforce_event'
+  | 'relay_lease_analytics_downtime_events'
+  | 'relay_settle_analytics_downtime_event'
   | 'outbox_sweep';
 
 /**
@@ -28,6 +30,8 @@ export class DatabaseService extends ModuleDatabase<CmmsDefinerFunction> {
       definerFunctions: [
         'relay_lease_workforce_events',
         'relay_settle_workforce_event',
+        'relay_lease_analytics_downtime_events',
+        'relay_settle_analytics_downtime_event',
         'outbox_sweep',
       ],
       tenantBinding: 'set-local',

@@ -1,6 +1,6 @@
 # WI-OI-125: Advanced SCM and Transfers
 
-- **Status:** Approved (owner, 2026-10-28); queued after WI-OI-124
+- **Status:** Built (pending owner verify + UAT)
 - **Work item:** WI-OI-125; evidence in `.pi/work/WI-OI-125.md`.
 - **Size:** L
 
@@ -25,8 +25,8 @@ The matching module section of the parity plan; `.pi/PLAN.md`, requirements base
 
 ## Done when
 
-- [ ] Every named slice, screen, handshake and key failure path in the plan works with real persistence and authorized scope.
-- [ ] Migration verification, roll-forward, audit, relay replay and E2E evidence are recorded.
+- [x] Every named slice, screen, handshake and key failure path in the plan works with real persistence and authorized scope.
+- [x] Migration verification, roll-forward, audit, relay replay and E2E evidence are recorded (see `.pi/work/WI-OI-125.md`).
 - [ ] `pnpm verify` passes with no new failures; module-completion commit is made; registry and NOW are updated.
 
 ## Stop and ask if

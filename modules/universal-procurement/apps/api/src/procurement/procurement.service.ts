@@ -748,6 +748,97 @@ export class ProcurementService {
     });
   }
 
+  /** WI-OI-125 S5: creates a draft PO from an Inventory replenishment relay fact. */
+  async applyReplenishmentPoDraft(
+    envelope: { messageId: string; tenantId: string; eventType: string; payload: Record<string, unknown> },
+    _rawBody: string,
+  ): Promise<{ status: 'created' | 'duplicate' | 'rejected'; purchaseOrderId?: string; code?: string }> {
+    if (envelope.eventType !== 'inventory.replenishment.po-draft.v1') {
+      return { status: 'rejected', code: 'PROCUREMENT_INBOX_EVENT_UNKNOWN' };
+    }
+    const draftId = String(envelope.payload.draftId ?? '');
+    const warehouseId = String(envelope.payload.warehouseId ?? '');
+    const orgUnitId = String(envelope.payload.orgUnitId ?? '');
+    const productId = String(envelope.payload.productId ?? '');
+    const uomId = String(envelope.payload.uomId ?? '');
+    const quantity = String(envelope.payload.quantity ?? '');
+    const vendorPartyId = envelope.payload.preferredVendorPartyId
+      ? String(envelope.payload.preferredVendorPartyId)
+      : null;
+    if (!draftId || !warehouseId || !orgUnitId || !productId || !uomId || !quantity || !vendorPartyId) {
+      return { status: 'rejected', code: 'PROCUREMENT_DRAFT_INCOMPLETE' };
+    }
+    const duplicate = await this.database.withTenantTransaction(envelope.tenantId, async (client) => {
+      const existing = await client.query(
+        `SELECT id FROM ${SCHEMA}.inbox_receipts
+          WHERE tenant_id = $1 AND consumer_name = 'replenishment_po_draft' AND message_id = $2 AND status = 'PROCESSED'`,
+        [envelope.tenantId, envelope.messageId],
+      );
+      return (existing.rowCount ?? 0) > 0;
+    });
+    if (duplicate) return { status: 'duplicate' };
+
+    await this.database.withTenantTransaction(envelope.tenantId, async (client) => {
+      await client.query(
+        `INSERT INTO ${SCHEMA}.inbox_receipts (
+           id, tenant_id, consumer_name, message_id, event_type, source_module,
+           source_version, correlation_id, payload_sha256, status, created_at
+         ) VALUES ($1, $2, 'replenishment_po_draft', $3, $4, 'universal_inventory', 1, $5, $6, 'PROCESSING', now())
+         ON CONFLICT (tenant_id, consumer_name, message_id) DO NOTHING`,
+        [
+          randomUUID(),
+          envelope.tenantId,
+          envelope.messageId,
+          envelope.eventType,
+          draftId,
+          createHash('sha256').update(_rawBody).digest('hex'),
+        ],
+      );
+    });
+
+    const principal: ModulePrincipal = {
+      tenantId: envelope.tenantId,
+      subject: 'relay:inventory',
+      sessionId: 'relay:inventory',
+      authVersion: 1,
+      permissions: ['procurement:write', 'procurement:read'],
+      roles: ['TENANT_ADMIN'],
+      persona: 'TENANT_ADMIN',
+      organization: { mode: 'TENANT' },
+      departmentScope: { mode: 'ALL' },
+      placeScope: { mode: 'ALL' },
+    };
+    const po = await this.createPurchaseOrder(principal, {
+      orgUnitId,
+      vendorPartyId,
+      vendorName: 'Replenishment vendor',
+      destinationWarehouseId: warehouseId,
+      currencyCode: 'USD',
+      paymentTermDays: 30,
+      lines: [
+        {
+          productId,
+          productCode: `REPL-${productId.slice(0, 8)}`,
+          productName: `Replenishment ${draftId.slice(0, 8)}`,
+          uomId,
+          orderedQuantity: quantity,
+          unitPriceMinor: '0',
+          taxRateBasisPoints: 0,
+          destinationWarehouseId: warehouseId,
+        },
+      ],
+    });
+
+    await this.database.withTenantTransaction(envelope.tenantId, async (client) => {
+      await client.query(
+        `UPDATE ${SCHEMA}.inbox_receipts SET status = 'PROCESSED', processed_at = now()
+          WHERE tenant_id = $1 AND consumer_name = 'replenishment_po_draft' AND message_id = $2`,
+        [envelope.tenantId, envelope.messageId],
+      );
+    });
+    return { status: 'created', purchaseOrderId: po.id };
+  }
+
   async projectInventoryReceipt(
     principal: ModulePrincipal,
     event: {

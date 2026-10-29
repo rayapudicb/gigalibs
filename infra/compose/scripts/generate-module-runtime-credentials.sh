@@ -72,6 +72,12 @@ cmms_runtime_values() {
   context_keys CMMS
 }
 
+iot_runtime_values() {
+  printf 'IOT_IMAGE=gigalibs/iot-api:%s\n' "${TAG}"
+  printf 'IOT_DATABASE_URL=%s\n' "$(runtime_database_url gigalibs_iot_runtime "$(openssl rand -hex 32)")"
+  context_keys IOT
+}
+
 ar_runtime_values() {
   printf 'AR_IMAGE=gigalibs/ar-api:%s\n' "${TAG}"
   printf 'AR_DATABASE_URL=%s\n' "$(runtime_database_url gigalibs_ar_runtime "$(openssl rand -hex 32)")"
@@ -95,6 +101,10 @@ if [[ -e "${TARGET_ENV}" ]]; then
     cmms_runtime_values >>"${TARGET_ENV}"
     added+=("CMMS image, runtime role and key pair")
   fi
+  if ! grep -q '^IOT_PLATFORM_CONTEXT_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
+    iot_runtime_values >>"${TARGET_ENV}"
+    added+=("IoT Gateway image, runtime role and key pair")
+  fi
   if ! grep -q '^AR_DATABASE_URL=' "${TARGET_ENV}"; then
     ar_runtime_values >>"${TARGET_ENV}"
     added+=("AR image, runtime role and platform-context keys")
@@ -115,6 +125,10 @@ if [[ -e "${TARGET_ENV}" ]]; then
   if ! grep -q '^ANALYTICS_GEOSPATIAL_INBOX_RELAY_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
     relay_keys ANALYTICS_GEOSPATIAL >>"${TARGET_ENV}"
     added+=("Analytics inbox relay key pair for Geospatial")
+  fi
+  if ! grep -q '^ANALYTICS_CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
+    relay_keys ANALYTICS_CMMS >>"${TARGET_ENV}"
+    added+=("Analytics inbox relay key pair for CMMS downtime")
   fi
   # WI-OI-105e: Connector Hub relays pulled places to the Geospatial inbox with its own key pair.
   if ! grep -q '^GEOSPATIAL_HUB_INBOX_RELAY_PUBLIC_KEY_BASE64=' "${TARGET_ENV}"; then
@@ -156,8 +170,10 @@ context_keys ANALYTICS >>"${TARGET_ENV}"
 context_keys CONNECTOR_HUB >>"${TARGET_ENV}"
 relay_keys ANALYTICS >>"${TARGET_ENV}"
 relay_keys ANALYTICS_GEOSPATIAL >>"${TARGET_ENV}"
+relay_keys ANALYTICS_CMMS >>"${TARGET_ENV}"
 relay_keys GEOSPATIAL_HUB >>"${TARGET_ENV}"
 cmms_runtime_values >>"${TARGET_ENV}"
+iot_runtime_values >>"${TARGET_ENV}"
 ar_runtime_values >>"${TARGET_ENV}"
 
 chmod 600 "${TARGET_ENV}"

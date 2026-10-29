@@ -43,11 +43,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
+import { projectDowntimeFact } from '../workers/downtime-fact-ingestion.worker.js';
 
 export const ANALYTICS_INBOX_AUDIENCE = 'gigalibs-analytics-inbox';
 export const ANALYTICS_RELAY_CONFIG = Symbol('ANALYTICS_RELAY_CONFIG');
 export const ANALYTICS_GEOSPATIAL_RELAY_CONFIG = Symbol('ANALYTICS_GEOSPATIAL_RELAY_CONFIG');
 export const ANALYTICS_WORKFORCE_RELAY_CONFIG = Symbol('ANALYTICS_WORKFORCE_RELAY_CONFIG');
+export const ANALYTICS_CMMS_RELAY_CONFIG = Symbol('ANALYTICS_CMMS_RELAY_CONFIG');
 export const ANALYTICS_RETENTION_CONFIG = Symbol('ANALYTICS_RETENTION_CONFIG');
 export const HUB_RECORDS_TABLE = 'records';
 const WORKFORCE_POSITION_FACT_EVENTS = Object.freeze([
@@ -55,6 +57,7 @@ const WORKFORCE_POSITION_FACT_EVENTS = Object.freeze([
   'WORKFORCE_POSITION_UPDATED_V1',
   'WORKFORCE_POSITION_SNAPSHOT_V1',
 ]);
+const CMMS_DOWNTIME_FACT_EVENTS = Object.freeze(['DOWNTIME_STARTED_V1', 'DOWNTIME_ENDED_V1'] as const);
 
 export function loadAnalyticsRelayConfig(environment: NodeJS.ProcessEnv = process.env): RelayConfig {
   return loadRelayConfig(environment, {
@@ -89,6 +92,17 @@ export function loadAnalyticsWorkforceRelayConfig(environment: NodeJS.ProcessEnv
   });
 }
 
+/** WI-OI-130: Analytics verifies CMMS-signed downtime facts (inbound only). */
+export function loadAnalyticsCmmsRelayConfig(environment: NodeJS.ProcessEnv = process.env): RelayConfig {
+  return loadRelayConfig(environment, {
+    inboxPublicKey: 'ANALYTICS_CMMS_INBOX_RELAY_PUBLIC_KEY_BASE64',
+    targetUrl: 'ANALYTICS_CMMS_OUTBOUND_TARGET_URL',
+    signingKey: 'ANALYTICS_CMMS_OUTBOUND_SIGNING_KEY',
+    interval: 'ANALYTICS_RELAY_INTERVAL_MS',
+    peerService: 'cmms-api',
+  });
+}
+
 @Injectable()
 export class ConnectorHubInboxGuard extends RelayInboxGuardBase {
   constructor(@Inject(ANALYTICS_RELAY_CONFIG) config: RelayConfig) {
@@ -110,6 +124,13 @@ export class WorkforceInboxGuard extends RelayInboxGuardBase {
   }
 }
 
+@Injectable()
+export class CmmsInboxGuard extends RelayInboxGuardBase {
+  constructor(@Inject(ANALYTICS_CMMS_RELAY_CONFIG) config: RelayConfig) {
+    super(config, { audience: ANALYTICS_INBOX_AUDIENCE, source: 'cmms', label: 'Analytics (CMMS downtime)' });
+  }
+}
+
 /** The inbox route's guard: a message passes when either producer's own key verifies it (the token names the producer). */
 @Injectable()
 export class AnalyticsRelayInboxGuard implements CanActivate {
@@ -117,11 +138,12 @@ export class AnalyticsRelayInboxGuard implements CanActivate {
     @Inject(ConnectorHubInboxGuard) private readonly hub: ConnectorHubInboxGuard,
     @Inject(GeospatialInboxGuard) private readonly geospatial: GeospatialInboxGuard,
     @Inject(WorkforceInboxGuard) private readonly workforce: WorkforceInboxGuard,
+    @Inject(CmmsInboxGuard) private readonly cmms: CmmsInboxGuard,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
     let first: unknown;
-    for (const guard of [this.hub, this.geospatial, this.workforce]) {
+    for (const guard of [this.hub, this.geospatial, this.workforce, this.cmms]) {
       try {
         if (guard.canActivate(context)) return true;
       } catch (error) {
@@ -174,6 +196,26 @@ export function parsePulledRecord(envelope: Partial<RelayEnvelope> | null): { en
   };
 }
 
+export function parseCmmsDowntimeFact(envelope: Partial<RelayEnvelope> | null) {
+  if (
+    !envelope ||
+    !CMMS_DOWNTIME_FACT_EVENTS.includes(String(envelope.eventType) as (typeof CMMS_DOWNTIME_FACT_EVENTS)[number]) ||
+    envelope.schemaVersion !== 1 ||
+    !text(envelope.messageId, 64) ||
+    !text(envelope.tenantId, 64) ||
+    !text(envelope.aggregateId, 64) ||
+    !Number.isSafeInteger(envelope.aggregateVersion) ||
+    Number.isNaN(Date.parse(String(envelope.occurredAt)))
+  ) {
+    throw new BadRequestException('The CMMS downtime fact is incomplete.');
+  }
+  const payload = (envelope.payload ?? {}) as Record<string, unknown>;
+  if (!text(payload.assetId, 64) || !text(payload.downtimeId, 64)) {
+    throw new BadRequestException('The CMMS downtime fact payload is incomplete.');
+  }
+  return { envelope: envelope as RelayEnvelope, payload };
+}
+
 export function parseWorkforcePositionFact(envelope: Partial<RelayEnvelope> | null) {
   if (
     !envelope ||
@@ -207,6 +249,9 @@ export class ConnectorHubInboxService {
     if (source === 'workforce' && WORKFORCE_POSITION_FACT_EVENTS.includes(String(eventType))) {
       return this.receiveWorkforcePosition(body);
     }
+    if (source === 'cmms' && CMMS_DOWNTIME_FACT_EVENTS.includes(String(eventType) as (typeof CMMS_DOWNTIME_FACT_EVENTS)[number])) {
+      return this.receiveCmmsDowntime(body);
+    }
     throw new BadRequestException(`${String(source)} may not deliver ${String(eventType)} here.`);
   }
 
@@ -214,6 +259,57 @@ export class ConnectorHubInboxService {
    * Stores an authenticated Workforce snapshot as a MODULE_EVENTS raw record. It then follows Analytics' existing
    * no-code discovery/mapping/build path; no cross-schema read or special chart is introduced.
    */
+  async receiveCmmsDowntime(body: unknown): Promise<{ status: 'stored' | 'duplicate'; sourceConnectionId?: string }> {
+    const { envelope, payload } = parseCmmsDowntimeFact(body as Partial<RelayEnvelope>);
+    const projected = projectDowntimeFact({
+      assetId: String(payload.assetId),
+      downtimeId: String(payload.downtimeId),
+      startedAt: typeof payload.startedAt === 'string' ? payload.startedAt : undefined,
+      endedAt: typeof payload.endedAt === 'string' ? payload.endedAt : undefined,
+    });
+    return this.db.withTenantTransaction(envelope.tenantId, async (client) => {
+      const receipt = await client.query(
+        `INSERT INTO gigalibs_analytics.inbox_receipts (message_id, tenant_id, source, event_type)
+         VALUES ($1, $2, 'cmms', $3) ON CONFLICT (message_id) DO NOTHING`,
+        [envelope.messageId, envelope.tenantId, envelope.eventType],
+      );
+      if ((receipt.rowCount ?? 0) === 0) return { status: 'duplicate' as const };
+      const source = await client.query<{ id: string }>(
+        `INSERT INTO gigalibs_analytics.source_connections
+           (tenant_id, display_name, source_type, status, created_by, module_source_key)
+         VALUES ($1, 'CMMS asset downtime', 'MODULE_EVENTS', 'ACTIVE', 'cmms', 'cmms:downtime')
+         ON CONFLICT (tenant_id, module_source_key) WHERE module_source_key IS NOT NULL
+         DO UPDATE SET display_name = EXCLUDED.display_name, updated_at = now()
+         RETURNING id`,
+        [envelope.tenantId],
+      );
+      const sourceId = source.rows[0]!.id;
+      const run = await client.query<{ id: string }>(
+        `INSERT INTO gigalibs_analytics.source_sync_runs
+           (connection_id, tenant_id, status, rows_fetched, hub_sync_job_id, started_at, completed_at)
+         VALUES ($1, $2, 'SUCCEEDED', 1, $3, $4, $4)
+         ON CONFLICT (connection_id, hub_sync_job_id) WHERE hub_sync_job_id IS NOT NULL
+         DO UPDATE SET completed_at = GREATEST(gigalibs_analytics.source_sync_runs.completed_at, EXCLUDED.completed_at)
+         RETURNING id`,
+        [sourceId, envelope.tenantId, envelope.messageId, envelope.occurredAt],
+      );
+      await client.query(
+        `INSERT INTO gigalibs_analytics.raw_record_versions
+           (sync_run_id, connection_id, tenant_id, source_table_name, source_pk_hash, raw_payload, ingested_at)
+         VALUES ($1, $2, $3, 'downtime_facts', $4, $5::jsonb, $6)`,
+        [
+          run.rows[0]!.id,
+          sourceId,
+          envelope.tenantId,
+          createHash('sha256').update(String(payload.downtimeId)).digest('hex'),
+          JSON.stringify({ eventType: envelope.eventType, occurredAt: envelope.occurredAt, ...projected }),
+          envelope.occurredAt,
+        ],
+      );
+      return { status: 'stored' as const, sourceConnectionId: sourceId };
+    });
+  }
+
   async receiveWorkforcePosition(body: unknown): Promise<{ status: 'stored' | 'duplicate'; sourceConnectionId?: string }> {
     const { envelope, fact } = parseWorkforcePositionFact(body as Partial<RelayEnvelope>);
     return this.db.withTenantTransaction(envelope.tenantId, async (client) => {
@@ -404,10 +500,12 @@ export class AnalyticsInboxRetention extends OutboxRetentionSweeper {
     { provide: ANALYTICS_RELAY_CONFIG, useFactory: () => loadAnalyticsRelayConfig() },
     { provide: ANALYTICS_GEOSPATIAL_RELAY_CONFIG, useFactory: () => loadAnalyticsGeospatialRelayConfig() },
     { provide: ANALYTICS_WORKFORCE_RELAY_CONFIG, useFactory: () => loadAnalyticsWorkforceRelayConfig() },
+    { provide: ANALYTICS_CMMS_RELAY_CONFIG, useFactory: () => loadAnalyticsCmmsRelayConfig() },
     { provide: ANALYTICS_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig(process.env, 'ANALYTICS') },
     ConnectorHubInboxGuard,
     GeospatialInboxGuard,
     WorkforceInboxGuard,
+    CmmsInboxGuard,
     AnalyticsRelayInboxGuard,
     ConnectorHubInboxService,
     AnalyticsInboxRetention,

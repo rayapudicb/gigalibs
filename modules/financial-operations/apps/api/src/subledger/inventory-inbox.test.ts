@@ -374,4 +374,104 @@ describe('Finance inventory subledger inbox', () => {
     });
     expect(costing.ingestReceiptLayer).not.toHaveBeenCalled();
   });
+
+  it('posts in-transit clearance for a transfer dispatch fact', async () => {
+    const postInventoryTransferJournal = vi.fn(async () => undefined);
+    const costing = {
+      ingestReceiptLayer: vi.fn(),
+      resolveProductStandardUnitCostScaled: vi.fn(async () => '1000000000'),
+      postInventoryTransferJournal,
+    };
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        if (sql.includes('INSERT INTO gigalibs_finance.inbox_receipts')) return { rows: [{ id: 'r1' }], rowCount: 1 };
+        if (sql.includes('currency_code')) return { rows: [{ currency_code: 'USD' }] };
+        if (sql.includes('accounting_books')) return { rows: [{ id: 'book-1' }] };
+        if (sql.includes('fiscal_periods')) return { rows: [{ id: 'period-1', status: 'OPEN' }] };
+        if (sql.includes('cost_profiles')) {
+          return {
+            rows: [{
+              id: FINANCE_PROFILE_ID,
+              costing_method: 'FIFO',
+              inventory_gl_account_id: randomUUID(),
+              landed_cost_clearing_gl_account_id: randomUUID(),
+            }],
+          };
+        }
+        if (sql.includes('inventory_fiscal_replica_publish')) return { rows: [{ tenant_id: TENANT }] };
+        if (sql.includes('subledger_posting_register')) return { rowCount: 1 };
+        if (sql.includes('pg_advisory_xact_lock')) return { rowCount: 1 };
+        return { rows: [], rowCount: 0 };
+      }),
+    };
+    const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
+    const inbox = new InventorySubledgerInboxService(database as never, costing as never);
+    const productId = randomUUID();
+    const body = receiptEnvelope({
+      eventType: 'inventory.transfer.dispatched.v1',
+      aggregateType: 'transfer',
+      payload: {
+        transferId: randomUUID(),
+        transferNumber: 'TR-1',
+        sourceWarehouseId: randomUUID(),
+        targetWarehouseId: randomUUID(),
+        orgUnitId: 'operating-unit-a',
+        financeCostProfileId: FINANCE_PROFILE_ID,
+        valuationMethod: 'FIFO',
+        lines: [{ productId, uomId: randomUUID(), quantity: '2' }],
+      },
+    });
+    await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'PROCESSED' });
+    expect(postInventoryTransferJournal).toHaveBeenCalledTimes(1);
+  });
+
+  it('posts WIP clearing for a manufacturing production completion fact', async () => {
+    const postInventoryTransferJournal = vi.fn(async () => undefined);
+    const costing = {
+      ingestReceiptLayer: vi.fn(),
+      resolveProductStandardUnitCostScaled: vi.fn(async () => '1000000000'),
+      postInventoryTransferJournal,
+    };
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        if (sql.includes('INSERT INTO gigalibs_finance.inbox_receipts')) return { rows: [{ id: 'r1' }], rowCount: 1 };
+        if (sql.includes('currency_code')) return { rows: [{ currency_code: 'USD' }] };
+        if (sql.includes('accounting_books')) return { rows: [{ id: 'book-1' }] };
+        if (sql.includes('fiscal_periods')) return { rows: [{ id: 'period-1', status: 'OPEN' }] };
+        if (sql.includes('cost_profiles')) {
+          return {
+            rows: [{
+              id: FINANCE_PROFILE_ID,
+              costing_method: 'STANDARD',
+              inventory_gl_account_id: randomUUID(),
+              landed_cost_clearing_gl_account_id: randomUUID(),
+            }],
+          };
+        }
+        if (sql.includes('inventory_fiscal_replica_publish')) return { rows: [{ tenant_id: TENANT }] };
+        if (sql.includes('subledger_posting_register')) return { rowCount: 1 };
+        if (sql.includes('pg_advisory_xact_lock')) return { rowCount: 1 };
+        return { rows: [], rowCount: 0 };
+      }),
+    };
+    const database = { withTenantTransaction: vi.fn(async (_t: string, work: (c: typeof client) => unknown) => work(client)) };
+    const inbox = new InventorySubledgerInboxService(database as never, costing as never);
+    const productId = randomUUID();
+    const body = receiptEnvelope({
+      eventType: 'manufacturing.production.completed.v1',
+      aggregateType: 'production_order',
+      payload: {
+        productionOrderId: randomUUID(),
+        orderNumber: 'MO-00001',
+        warehouseId: randomUUID(),
+        finishedProductId: randomUUID(),
+        quantity: '5',
+        orgUnitId: 'operating-unit-a',
+        financeCostProfileId: FINANCE_PROFILE_ID,
+        componentLines: [{ productId, uomId: randomUUID(), quantity: '2' }],
+      },
+    });
+    await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'PROCESSED' });
+    expect(postInventoryTransferJournal).toHaveBeenCalledTimes(1);
+  });
 });

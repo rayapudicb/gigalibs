@@ -92,6 +92,7 @@ RUN --mount=type=cache,id=gigalibs-pnpm-store,target=/pnpm/store \
       --filter @gigalibs/gigaops-api... \
       --filter @gigalibs/geospatial-api... \
       --filter @gigalibs/cmms-api... \
+      --filter @gigalibs/iot-api... \
       --filter @gigalibs/ar-api...
 RUN pnpm --recursive --sort --workspace-concurrency=1 \
       --filter @gigalibs/connectors-api... \
@@ -99,6 +100,7 @@ RUN pnpm --recursive --sort --workspace-concurrency=1 \
       --filter @gigalibs/gigaops-api... \
       --filter @gigalibs/geospatial-api... \
       --filter @gigalibs/cmms-api... \
+      --filter @gigalibs/iot-api... \
       --filter @gigalibs/ar-api... \
       run build
 RUN pnpm --filter @gigalibs/connectors-api deploy --prod --legacy /output/connector-hub-api && \
@@ -106,6 +108,7 @@ RUN pnpm --filter @gigalibs/connectors-api deploy --prod --legacy /output/connec
     pnpm --filter @gigalibs/gigaops-api deploy --prod --legacy /output/workforce-api && \
     pnpm --filter @gigalibs/geospatial-api deploy --prod --legacy /output/geospatial-api && \
     pnpm --filter @gigalibs/cmms-api deploy --prod --legacy /output/cmms-api && \
+    pnpm --filter @gigalibs/iot-api deploy --prod --legacy /output/iot-api && \
     pnpm --filter @gigalibs/ar-api deploy --prod --legacy /output/ar-api
 # WI-OI-038: CMMS installs only the ordered runtime manifest, never the prototype migrations beside it.
 RUN mkdir -p /output/cmms-api/migrations && \
@@ -113,6 +116,11 @@ RUN mkdir -p /output/cmms-api/migrations && \
       while read -r migration; do cp "modules/physical-operations-cmms/db/migrations/${migration}" /output/cmms-api/migrations/; done && \
     test "$(ls /output/cmms-api/migrations | wc -l)" -eq "$(grep -Evc '^(#|$)' modules/physical-operations-cmms/db/runtime-manifest.txt)" && \
     cp infra/compose/docker/run-module-migrations.mjs /output/cmms-api/
+RUN mkdir -p /output/iot-api/migrations && \
+    grep -Ev '^(#|$)' modules/iot-gateway/db/runtime-manifest.txt | \
+      while read -r migration; do cp "modules/iot-gateway/db/migrations/${migration}" /output/iot-api/migrations/; done && \
+    test "$(ls /output/iot-api/migrations | wc -l)" -eq "$(grep -Evc '^(#|$)' modules/iot-gateway/db/runtime-manifest.txt)" && \
+    cp infra/compose/docker/run-module-migrations.mjs /output/iot-api/
 RUN mkdir -p /output/ar-api/migrations && \
     grep -Ev '^(#|$)' modules/accounts-receivable/db/runtime-manifest.txt | \
       while read -r migration; do cp "modules/accounts-receivable/db/migrations/${migration}" /output/ar-api/migrations/; done && \
@@ -208,6 +216,23 @@ WORKDIR /app
 COPY --from=module-build --chown=65532:65532 /output/analytics-api/ ./
 USER 65532:65532
 EXPOSE 4400
+CMD ["dist/main.js"]
+
+FROM gcr.io/distroless/nodejs24-debian13@sha256:bb6b03d81066993293a10feda7250e8e1cc034035fe9b61cfceededa7c8bf04d AS iot-api
+ARG SOURCE_REVISION
+ARG SOURCE_STATE_SHA256
+LABEL org.opencontainers.image.title="GigaLibs IoT Gateway API" \
+      org.opencontainers.image.revision="${SOURCE_REVISION}" \
+      com.gigalibs.source-state-sha256="${SOURCE_STATE_SHA256}" \
+      com.gigalibs.component="iot-api" \
+      com.gigalibs.work-item="WI-OI-130" \
+      com.gigalibs.profile-key="module-runtime-local-development-v1"
+ENV NODE_ENV=development
+ENV PATH=/nodejs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WORKDIR /app
+COPY --from=module-build --chown=65532:65532 /output/iot-api/ ./
+USER 65532:65532
+EXPOSE 4250
 CMD ["dist/main.js"]
 
 FROM gcr.io/distroless/nodejs24-debian13@sha256:bb6b03d81066993293a10feda7250e8e1cc034035fe9b61cfceededa7c8bf04d AS workforce-api

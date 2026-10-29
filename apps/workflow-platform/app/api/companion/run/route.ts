@@ -18,7 +18,7 @@ import { verifiedSession } from '@/lib/verified-session';
 // WI-OI-120bc (Giga AI Companion): the session route. It runs as the signed-in user — their permissions scope which
 // tools are offered, and every tool call is proxied with their token via authenticatedUpstream, so the Companion can
 // never exceed what the person could do by hand. The model is the LOCAL Ollama (no cloud key); if OLLAMA_HOST is unset
-// the llm-inference helper throws LlmProviderUnavailableError and this returns 503 (unavailable), never a fake answer.
+// the llm-inference helper throws LlmProviderUnavailableError and this returns 503 (unavailable).
 
 export async function POST(request: Request): Promise<Response> {
   const result = await verifiedSession();

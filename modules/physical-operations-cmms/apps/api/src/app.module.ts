@@ -14,9 +14,15 @@ import { PmSchedulesController } from './pm-schedules/pm-schedules.controller.js
 import { PmSchedulesService } from './pm-schedules/pm-schedules.service.js';
 import { CmmsInboxController } from './relay/inbox.controller.js';
 import { CmmsInboxService } from './relay/inbox.service.js';
+import { CmmsAnalyticsDowntimeRelay } from './relay/analytics-downtime-relay.js';
 import { CmmsOutboxRelay } from './relay/outbox-relay.js';
 import { RelayInboxGuard } from './relay/relay-inbox.guard.js';
-import { CMMS_RELAY_CONFIG, loadCmmsRelayConfig } from './relay/relay-config.js';
+import {
+  CMMS_ANALYTICS_RELAY_CONFIG,
+  CMMS_RELAY_CONFIG,
+  loadCmmsAnalyticsRelayConfig,
+  loadCmmsRelayConfig,
+} from './relay/relay-config.js';
 import { OUTBOX_RETENTION_CONFIG, OutboxRetention, loadOutboxRetentionConfig } from './relay/outbox-retention.js';
 import { WorkOrdersController } from './work-orders/work-orders.controller.js';
 import { WorkOrdersService } from './work-orders/work-orders.service.js';
@@ -28,6 +34,8 @@ import { EamSpacesService } from './spaces/spaces.service.js';
 import { ClassificationsController } from './classifications/classifications.controller.js';
 import { ClassificationsService } from './classifications/classifications.service.js';
 import { ReliabilityModule } from './reliability/reliability.module.js';
+import { DowntimesController } from './downtimes/downtimes.controller.js';
+import { DowntimesService } from './downtimes/downtimes.service.js';
 
 import {
   createRecordController,
@@ -54,6 +62,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     // WI-OI-120as: GET v1/health/relays for the Workforce relay.
     RelayHealthController,
     AssetsController,
+    DowntimesController,
     EamSpacesController,
     ClassificationsController,
     WorkOrdersController,
@@ -68,6 +77,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
   providers: [
     CmmsAuthorizationGuard,
     AssetsService,
+    DowntimesService,
     EamSpacesService,
     ClassificationsService,
     WorkOrdersService,
@@ -78,8 +88,10 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     AnalyticsService,
     CmmsInboxService,
     CmmsOutboxRelay,
+    CmmsAnalyticsDowntimeRelay,
     RelayInboxGuard,
     { provide: CMMS_RELAY_CONFIG, useFactory: () => loadCmmsRelayConfig() },
+    { provide: CMMS_ANALYTICS_RELAY_CONFIG, useFactory: () => loadCmmsAnalyticsRelayConfig() },
     OutboxRetention,
     { provide: OUTBOX_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig() },
     {

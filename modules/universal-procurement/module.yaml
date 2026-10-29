@@ -54,6 +54,7 @@ spec:
       - platform.authorization.revoked.v1
       - platform.organization.version.v1
       - inventory.receipt.completed.v1
+      - inventory.replenishment.po-draft.v1
       - product.created.v1
   identity:
     protocol: signed-platform-context-v1

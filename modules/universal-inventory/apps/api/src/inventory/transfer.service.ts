@@ -6,11 +6,16 @@ import {
   assertOrganizationWrite,
   organizationAccess,
 } from '@gigalibs/module-sdk';
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
-import { SCHEMA } from '../config.js';
-import { DatabaseService } from '../database.service.js';
+import { SCHEMA, TOPIC } from '../config.js';
+import type { DatabaseService } from '../database.service.js';
 
 const QUANTITY = z.string().regex(/^\d+(\.\d+)?$/, 'quantity must be a non-negative decimal');
 
@@ -88,7 +93,10 @@ export class TransferService {
 
   constructor(private readonly database: DatabaseService) {}
 
-  async createTransfer(principal: ModulePrincipal, input: CreateTransferInputV1): Promise<TransferV1> {
+  async createTransfer(
+    principal: ModulePrincipal,
+    input: CreateTransferInputV1,
+  ): Promise<TransferV1> {
     if (input.sourceWarehouseId === input.targetWarehouseId) {
       throw new BadRequestException('A transfer must move stock between two different warehouses.');
     }
@@ -100,13 +108,33 @@ export class TransferService {
       await client.query(
         `INSERT INTO ${SCHEMA}.transfers (id, tenant_id, transfer_number, source_warehouse_id, target_warehouse_id, status, notes, version, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, 'DRAFT', $6, 1, $7, $7)`,
-        [id, principal.tenantId, `TRF-${Date.now()}-${randomUUID().slice(0, 8)}`, input.sourceWarehouseId, input.targetWarehouseId, input.notes ?? null, now],
+        [
+          id,
+          principal.tenantId,
+          `TRF-${Date.now()}-${randomUUID().slice(0, 8)}`,
+          input.sourceWarehouseId,
+          input.targetWarehouseId,
+          input.notes ?? null,
+          now,
+        ],
       );
       for (const line of input.lines) {
         await client.query(
           `INSERT INTO ${SCHEMA}.transfer_lines (id, tenant_id, transfer_id, product_id, uom_id, source_location_id, target_location_id, quantity, lot_id, serial_id, created_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-          [randomUUID(), principal.tenantId, id, line.productId, line.uomId, line.sourceLocationId, line.targetLocationId, line.quantity, line.lotId ?? null, line.serialId ?? null, now],
+          [
+            randomUUID(),
+            principal.tenantId,
+            id,
+            line.productId,
+            line.uomId,
+            line.sourceLocationId,
+            line.targetLocationId,
+            line.quantity,
+            line.lotId ?? null,
+            line.serialId ?? null,
+            now,
+          ],
         );
       }
       return this.loadTransfer(client, principal.tenantId, id);
@@ -120,10 +148,21 @@ export class TransferService {
       await this.requireWarehouseWrite(client, principal, transfer.targetWarehouseId);
       if (transfer.status === 'IN_TRANSIT') return transfer; // already dispatched — idempotent replay
       if (transfer.status !== 'DRAFT') {
-        throw new ConflictException(`Only a draft transfer can be dispatched (status is ${transfer.status}).`);
+        throw new ConflictException(
+          `Only a draft transfer can be dispatched (status is ${transfer.status}).`,
+        );
       }
-      const transitLocationId = await this.ensureTransitLocation(client, principal.tenantId, transfer.sourceWarehouseId);
-      const txId = await this.openLedgerTransaction(client, principal, 'STOCK_TRANSFER_DISPATCH', transfer.id);
+      const transitLocationId = await this.ensureTransitLocation(
+        client,
+        principal.tenantId,
+        transfer.sourceWarehouseId,
+      );
+      const txId = await this.openLedgerTransaction(
+        client,
+        principal,
+        'STOCK_TRANSFER_DISPATCH',
+        transfer.id,
+      );
       const now = new Date().toISOString();
       for (const line of transfer.lines) {
         await this.moveStock(client, principal.tenantId, txId, now, {
@@ -145,6 +184,14 @@ export class TransferService {
         );
       }
       await this.advanceStatus(client, principal, transfer.id, 'IN_TRANSIT');
+      // GL in-transit clearance (S2): Finance posts the in-transit clearing journal from this fact.
+      await this.emitTransferFact(
+        client,
+        principal,
+        transfer,
+        'inventory.transfer.dispatched.v1',
+        transfer.sourceWarehouseId,
+      );
       return this.loadTransfer(client, principal.tenantId, transfer.id);
     });
   }
@@ -156,10 +203,21 @@ export class TransferService {
       await this.requireWarehouseWrite(client, principal, transfer.targetWarehouseId);
       if (transfer.status === 'RECEIVED') return transfer; // already received — idempotent replay
       if (transfer.status !== 'IN_TRANSIT') {
-        throw new ConflictException(`Only an in-transit transfer can be received (status is ${transfer.status}).`);
+        throw new ConflictException(
+          `Only an in-transit transfer can be received (status is ${transfer.status}).`,
+        );
       }
-      const transitLocationId = await this.ensureTransitLocation(client, principal.tenantId, transfer.sourceWarehouseId);
-      const txId = await this.openLedgerTransaction(client, principal, 'STOCK_TRANSFER_RECEIPT', transfer.id);
+      const transitLocationId = await this.ensureTransitLocation(
+        client,
+        principal.tenantId,
+        transfer.sourceWarehouseId,
+      );
+      const txId = await this.openLedgerTransaction(
+        client,
+        principal,
+        'STOCK_TRANSFER_RECEIPT',
+        transfer.id,
+      );
       const now = new Date().toISOString();
       for (const line of transfer.lines) {
         await this.moveStock(client, principal.tenantId, txId, now, {
@@ -181,6 +239,14 @@ export class TransferService {
         );
       }
       await this.advanceStatus(client, principal, transfer.id, 'RECEIVED');
+      // GL in-transit clearance release (S2): Finance clears in-transit and books the destination on this fact.
+      await this.emitTransferFact(
+        client,
+        principal,
+        transfer,
+        'inventory.transfer.received.v1',
+        transfer.targetWarehouseId,
+      );
       return this.loadTransfer(client, principal.tenantId, transfer.id);
     });
   }
@@ -202,15 +268,25 @@ export class TransferService {
         status ? [principal.tenantId, status] : [principal.tenantId],
       );
       const transfers: TransferV1[] = [];
-      for (const header of headers.rows) transfers.push(await this.loadTransfer(client, principal.tenantId, header.id));
+      for (const header of headers.rows)
+        transfers.push(await this.loadTransfer(client, principal.tenantId, header.id));
       return transfers;
     });
   }
 
   // ─── internals ───────────────────────────────────────────────────────────────
 
-  private async requireWarehouseWrite(client: PoolClient, principal: ModulePrincipal, warehouseId: string): Promise<void> {
-    const access = await organizationAccess(this.orgReplica, client, principal.tenantId, principal.organization ?? { mode: 'TENANT' });
+  private async requireWarehouseWrite(
+    client: PoolClient,
+    principal: ModulePrincipal,
+    warehouseId: string,
+  ): Promise<void> {
+    const access = await organizationAccess(
+      this.orgReplica,
+      client,
+      principal.tenantId,
+      principal.organization ?? { mode: 'TENANT' },
+    );
     const result = await client.query<{ org_unit_id: string | null }>(
       `SELECT org_unit_id FROM ${SCHEMA}.warehouses WHERE tenant_id = $1 AND id = $2`,
       [principal.tenantId, warehouseId],
@@ -220,7 +296,11 @@ export class TransferService {
   }
 
   /** The source warehouse's single virtual in-transit (TRANSIT) locator; created on first dispatch. */
-  private async ensureTransitLocation(client: PoolClient, tenantId: string, warehouseId: string): Promise<string> {
+  private async ensureTransitLocation(
+    client: PoolClient,
+    tenantId: string,
+    warehouseId: string,
+  ): Promise<string> {
     const existing = await client.query<{ id: string }>(
       `SELECT id FROM ${SCHEMA}.locations WHERE tenant_id = $1 AND warehouse_id = $2 AND location_type = 'TRANSIT' AND code = 'IN-TRANSIT'`,
       [tenantId, warehouseId],
@@ -235,20 +315,90 @@ export class TransferService {
     return id;
   }
 
-  private async openLedgerTransaction(client: PoolClient, principal: ModulePrincipal, documentType: string, transferId: string): Promise<string> {
+  private async openLedgerTransaction(
+    client: PoolClient,
+    principal: ModulePrincipal,
+    documentType: string,
+    transferId: string,
+  ): Promise<string> {
     const txId = randomUUID();
     await client.query(
       `INSERT INTO ${SCHEMA}.stock_ledger_transactions (id, tenant_id, transaction_number, document_type, document_reference_id, reason, correlation_id, idempotency_key, posted_by, posted_at, created_at)
        VALUES ($1, $2, $3, $4, $5, 'TRANSFER', $6, $7, $8, now(), now())`,
-      [txId, principal.tenantId, `MOV-${Date.now()}-${randomUUID().slice(0, 8)}`, documentType, transferId, `transfer:${transferId}`, `${documentType}:${transferId}`, principal.subject],
+      [
+        txId,
+        principal.tenantId,
+        `MOV-${Date.now()}-${randomUUID().slice(0, 8)}`,
+        documentType,
+        transferId,
+        `transfer:${transferId}`,
+        `${documentType}:${transferId}`,
+        principal.subject,
+      ],
     );
     return txId;
   }
 
-  private async advanceStatus(client: PoolClient, principal: ModulePrincipal, transferId: string, status: string): Promise<void> {
+  private async advanceStatus(
+    client: PoolClient,
+    principal: ModulePrincipal,
+    transferId: string,
+    status: string,
+  ): Promise<void> {
     await client.query(
       `UPDATE ${SCHEMA}.transfers SET status = $3, version = version + 1, updated_at = now() WHERE tenant_id = $1 AND id = $2`,
       [principal.tenantId, transferId, status],
+    );
+  }
+
+  /** Transaction-bound outbox fact for the GL in-transit clearance handshake (Finance consumer posts the journal). */
+  private async emitTransferFact(
+    client: PoolClient,
+    principal: ModulePrincipal,
+    transfer: TransferV1,
+    eventType: string,
+    valuationWarehouseId: string,
+  ): Promise<void> {
+    const valuation = await client.query<{
+      org_unit_id: string | null;
+      finance_cost_profile_id: string | null;
+      valuation_method: 'STANDARD' | 'MOVING_AVERAGE' | 'FIFO' | null;
+    }>(
+      `SELECT w.org_unit_id, s.finance_cost_profile_id, s.valuation_method
+         FROM ${SCHEMA}.warehouses w
+         LEFT JOIN ${SCHEMA}.inventory_org_valuation_settings s
+           ON s.tenant_id = w.tenant_id AND s.org_unit_id = w.org_unit_id
+        WHERE w.tenant_id = $1 AND w.id = $2`,
+      [principal.tenantId, valuationWarehouseId],
+    );
+    const profile = valuation.rows[0];
+    const payload = {
+      transferId: transfer.id,
+      transferNumber: transfer.transferNumber,
+      sourceWarehouseId: transfer.sourceWarehouseId,
+      targetWarehouseId: transfer.targetWarehouseId,
+      orgUnitId: profile?.org_unit_id ?? null,
+      financeCostProfileId: profile?.finance_cost_profile_id ?? null,
+      valuationMethod: profile?.valuation_method ?? null,
+      lines: transfer.lines.map((line) => ({
+        productId: line.productId,
+        uomId: line.uomId,
+        quantity: line.quantity,
+      })),
+    };
+    await client.query(
+      `INSERT INTO ${SCHEMA}.outbox_events
+         (id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version, correlation_id, schema_version, payload, status, created_at)
+       VALUES ($1, $2, $3, $4, 'transfer', $5, $6, $5, 1, $7::jsonb, 'PENDING', now())`,
+      [
+        randomUUID(),
+        principal.tenantId,
+        TOPIC,
+        eventType,
+        transfer.id,
+        transfer.version + 1,
+        JSON.stringify(payload),
+      ],
     );
   }
 
@@ -279,20 +429,41 @@ export class TransferService {
           AND COALESCE(serial_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($7, '00000000-0000-0000-0000-000000000000'::uuid)
           AND stock_status = $8
         FOR UPDATE`,
-      [tenantId, p.fromWarehouseId, p.fromLocationId, p.productId, p.uomId, p.lotId, p.serialId, p.fromStatus],
+      [
+        tenantId,
+        p.fromWarehouseId,
+        p.fromLocationId,
+        p.productId,
+        p.uomId,
+        p.lotId,
+        p.serialId,
+        p.fromStatus,
+      ],
     );
     const srcOnHand = src.rows[0] ? String(src.rows[0].on_hand_quantity) : '0.000000';
     const srcReserved = src.rows[0] ? String(src.rows[0].reserved_quantity) : '0.000000';
     const movable = ExactDecimal.subtract(srcOnHand, srcReserved);
     if (ExactDecimal.isLessThan(movable, p.quantity)) {
-      throw new BadRequestException(`Insufficient unreserved stock to transfer (available: ${movable}, requested: ${p.quantity}).`);
+      throw new BadRequestException(
+        `Insufficient unreserved stock to transfer (available: ${movable}, requested: ${p.quantity}).`,
+      );
     }
     const srcNewOnHand = ExactDecimal.subtract(srcOnHand, p.quantity);
     await client.query(
       `UPDATE ${SCHEMA}.stock_balances SET on_hand_quantity = $1, available_quantity = $2, last_movement_at = $3, version = version + 1, updated_at = $3 WHERE id = $4`,
       [srcNewOnHand, ExactDecimal.subtract(srcNewOnHand, srcReserved), now, src.rows[0].id],
     );
-    await this.writeLedgerEntry(client, tenantId, txId, 'CREDIT', now, p.fromWarehouseId, p.fromLocationId, p.fromStatus, p);
+    await this.writeLedgerEntry(
+      client,
+      tenantId,
+      txId,
+      'CREDIT',
+      now,
+      p.fromWarehouseId,
+      p.fromLocationId,
+      p.fromStatus,
+      p,
+    );
 
     // DEBIT the target at the target status (create the balance row if absent).
     const tgt = await client.query(
@@ -302,7 +473,16 @@ export class TransferService {
           AND COALESCE(serial_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE($7, '00000000-0000-0000-0000-000000000000'::uuid)
           AND stock_status = $8
         FOR UPDATE`,
-      [tenantId, p.toWarehouseId, p.toLocationId, p.productId, p.uomId, p.lotId, p.serialId, p.toStatus],
+      [
+        tenantId,
+        p.toWarehouseId,
+        p.toLocationId,
+        p.productId,
+        p.uomId,
+        p.lotId,
+        p.serialId,
+        p.toStatus,
+      ],
     );
     const tgtOnHand = tgt.rows[0] ? String(tgt.rows[0].on_hand_quantity) : '0.000000';
     const tgtReserved = tgt.rows[0] ? String(tgt.rows[0].reserved_quantity) : '0.000000';
@@ -316,10 +496,32 @@ export class TransferService {
       await client.query(
         `INSERT INTO ${SCHEMA}.stock_balances (id, tenant_id, warehouse_id, location_id, product_id, uom_id, lot_id, serial_id, stock_status, on_hand_quantity, reserved_quantity, available_quantity, last_movement_at, version, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, $10, $11, 1, $11)`,
-        [randomUUID(), tenantId, p.toWarehouseId, p.toLocationId, p.productId, p.uomId, p.lotId, p.serialId, p.toStatus, tgtNewOnHand, now],
+        [
+          randomUUID(),
+          tenantId,
+          p.toWarehouseId,
+          p.toLocationId,
+          p.productId,
+          p.uomId,
+          p.lotId,
+          p.serialId,
+          p.toStatus,
+          tgtNewOnHand,
+          now,
+        ],
       );
     }
-    await this.writeLedgerEntry(client, tenantId, txId, 'DEBIT', now, p.toWarehouseId, p.toLocationId, p.toStatus, p);
+    await this.writeLedgerEntry(
+      client,
+      tenantId,
+      txId,
+      'DEBIT',
+      now,
+      p.toWarehouseId,
+      p.toLocationId,
+      p.toStatus,
+      p,
+    );
   }
 
   private async writeLedgerEntry(
@@ -331,16 +533,40 @@ export class TransferService {
     warehouseId: string,
     locationId: string,
     stockStatus: string,
-    p: { productId: string; uomId: string; quantity: string; lotId: string | null; serialId: string | null },
+    p: {
+      productId: string;
+      uomId: string;
+      quantity: string;
+      lotId: string | null;
+      serialId: string | null;
+    },
   ): Promise<void> {
     await client.query(
       `INSERT INTO ${SCHEMA}.stock_ledger_entries (id, tenant_id, transaction_id, direction, warehouse_id, location_id, product_id, uom_id, quantity, base_quantity, lot_id, serial_id, stock_status, unit_cost_minor, total_cost_minor, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10, $11, $12, NULL, NULL, $13)`,
-      [randomUUID(), tenantId, txId, direction, warehouseId, locationId, p.productId, p.uomId, p.quantity, p.lotId, p.serialId, stockStatus, now],
+      [
+        randomUUID(),
+        tenantId,
+        txId,
+        direction,
+        warehouseId,
+        locationId,
+        p.productId,
+        p.uomId,
+        p.quantity,
+        p.lotId,
+        p.serialId,
+        stockStatus,
+        now,
+      ],
     );
   }
 
-  private async lockTransfer(client: PoolClient, tenantId: string, transferId: string): Promise<TransferV1> {
+  private async lockTransfer(
+    client: PoolClient,
+    tenantId: string,
+    transferId: string,
+  ): Promise<TransferV1> {
     const header = await client.query(
       `SELECT * FROM ${SCHEMA}.transfers WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
       [tenantId, transferId],
@@ -349,7 +575,11 @@ export class TransferService {
     return this.hydrate(client, tenantId, header.rows[0]);
   }
 
-  private async loadTransfer(client: PoolClient, tenantId: string, transferId: string): Promise<TransferV1> {
+  private async loadTransfer(
+    client: PoolClient,
+    tenantId: string,
+    transferId: string,
+  ): Promise<TransferV1> {
     const header = await client.query(
       `SELECT * FROM ${SCHEMA}.transfers WHERE tenant_id = $1 AND id = $2`,
       [tenantId, transferId],
@@ -358,7 +588,11 @@ export class TransferService {
     return this.hydrate(client, tenantId, header.rows[0]);
   }
 
-  private async hydrate(client: PoolClient, tenantId: string, row: Record<string, unknown>): Promise<TransferV1> {
+  private async hydrate(
+    client: PoolClient,
+    tenantId: string,
+    row: Record<string, unknown>,
+  ): Promise<TransferV1> {
     const lines = await client.query<LineRow>(
       `SELECT * FROM ${SCHEMA}.transfer_lines WHERE tenant_id = $1 AND transfer_id = $2 ORDER BY created_at, id`,
       [tenantId, row.id],

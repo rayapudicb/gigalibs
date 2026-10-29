@@ -61,10 +61,15 @@ export function signRelayToken(
  * Verifies signature, header type, issuer, audience, expected source, lifetime, and that the token was issued
  * for exactly this request body.
  */
+function sourceMatches(claimSource: unknown, expected: string | readonly string[]): boolean {
+  if (typeof claimSource !== 'string' || !claimSource) return false;
+  return typeof expected === 'string' ? claimSource === expected : expected.includes(claimSource);
+}
+
 export function verifyRelayToken(
   token: string,
   publicKeyPem: string,
-  expected: { readonly audience: string; readonly source: string; readonly body: string },
+  expected: { readonly audience: string; readonly source: string | readonly string[]; readonly body: string },
 ): RelayTokenClaims {
   const parts = typeof token === 'string' ? token.trim().split('.') : [];
   if (parts.length !== 3 || parts.some((part) => !part)) throw new RelayTokenError('Relay token is malformed.', 'INVALID_FORMAT');
@@ -88,7 +93,7 @@ export function verifyRelayToken(
   }
   if (typeof claims.iat !== 'number' || typeof claims.exp !== 'number') throw new RelayTokenError('Relay token times are invalid.', 'INVALID_CLAIMS');
   if (claims.aud !== expected.audience) throw new RelayTokenError('Relay token audience is wrong.', 'WRONG_AUDIENCE');
-  if (claims.sub !== expected.source) throw new RelayTokenError('Relay token source is wrong.', 'WRONG_SOURCE');
+  if (!sourceMatches(claims.sub, expected.source)) throw new RelayTokenError('Relay token source is wrong.', 'WRONG_SOURCE');
   if (claims.exp <= now) throw new RelayTokenError('Relay token has expired.', 'EXPIRED_TOKEN');
   if (claims.iat > now + 5 || claims.exp - claims.iat > MAX_LIFETIME_SECONDS) throw new RelayTokenError('Relay token lifetime is invalid.', 'INVALID_LIFETIME');
   if (claims.body_sha256 !== relayBodyDigest(expected.body)) throw new RelayTokenError('Relay token was issued for different content.', 'BODY_MISMATCH');

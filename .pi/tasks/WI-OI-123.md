@@ -1,6 +1,6 @@
 # WI-OI-123: Universal Business Partner
 
-- **Status:** Built (agent, 2026-10-28) — static `pnpm module:conformance business-partners` **15/15**; migration **6**; five metadata windows (partners, credit exposure, credit gauge, netting, holds); bank vault API; hold explainer; OPEN_AP component + vendor feed mark. **Owner gate:** `--live --record`, full `pnpm verify` (repo baseline), batch UAT on 5180/test-stack, procurement bill feed for live OPEN_AP amounts.
+- **Status:** In Progress (2026-10-28) — static `pnpm module:conformance business-partners` **15/15**; migration **6**; five metadata windows (partners, credit exposure, credit gauge, netting, holds); bank vault API; hold explainer; OPEN_AP component + vendor feed mark. Full module and verification gates remain open; owner deploys the batch only after all seven builds.
 - **Work item:** WI-OI-123; evidence in `.pi/work/WI-OI-123.md`.
 - **Size:** L
 

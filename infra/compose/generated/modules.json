@@ -79,8 +79,30 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_inventory",
-    "migrationVersion": 11,
+    "migrationVersion": 12,
     "audience": "gigalibs-universal-inventory-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ]
+  },
+  "universal-manufacturing": {
+    "hosting": "host",
+    "basePath": "/universal-manufacturing",
+    "package": "@gigalibs/universal-manufacturing-api",
+    "directory": "modules/universal-manufacturing",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Manufacturing & MRP",
+    "workItem": "WI-OI-126",
+    "prefix": "UNIVERSAL_MANUFACTURING",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_universal_manufacturing",
+    "migrationVersion": 4,
+    "audience": "gigalibs-universal-manufacturing-api",
     "appendOnlyTables": [
       "audit_events"
     ],

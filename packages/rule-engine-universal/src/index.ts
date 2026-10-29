@@ -12,3 +12,4 @@ export * from './engine.js';
 export * from './operators.js';
 export * from './fact-extractor.js';
 export * from './types.js';
+export * from './telemetry-operators.js';

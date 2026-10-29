@@ -1,0 +1,4 @@
+000001_iot_foundation.up.sql
+000002_iot_rls.up.sql
+000003_iot_auth_revocation.up.sql
+000004_iot_outbox_relay.up.sql

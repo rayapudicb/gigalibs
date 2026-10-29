@@ -1760,8 +1760,16 @@ export class InventoryService {
 
       await this.requireWarehouseAccess(client, principal, res.warehouse_id, 'write');
 
-      if (res.demand_type !== 'SALES_ORDER' || res.demand_reference_id !== input.orderId || !res.demand_line_id) {
-        throw new BadRequestException('Reservation is not bound to this sales order and line.');
+      if (res.demand_type === 'SALES_ORDER') {
+        if (res.demand_reference_id !== input.orderId || !res.demand_line_id) {
+          throw new BadRequestException('Reservation is not bound to this sales order and line.');
+        }
+      } else if (res.demand_type === 'WORK_ORDER') {
+        if (res.demand_reference_id !== input.orderId) {
+          throw new BadRequestException('Reservation is not bound to this production order.');
+        }
+      } else {
+        throw new BadRequestException(`Demand type ${res.demand_type} cannot be issued through this command.`);
       }
       const priorIssue = await client.query<{
         issue_id: string; reservation_id: string; order_id: string; issued_quantity: string;
@@ -1968,6 +1976,124 @@ export class InventoryService {
         issuedQuantity: issueQty,
         status: 'ISSUED',
       };
+    });
+  }
+
+  /** WI-OI-126: issue reserved components for a production order line (fulfillment key = line id). */
+  async issueStockForWorkOrderDemand(
+    principal: ModulePrincipal,
+    input: {
+      readonly reservationId: string;
+      readonly productionOrderId: string;
+      readonly productionLineId: string;
+      readonly quantity?: string;
+      readonly correlationId?: string;
+    },
+  ) {
+    return this.issueStockForOrderFulfillment(principal, {
+      reservationId: input.reservationId,
+      orderId: input.productionOrderId,
+      fulfillmentId: input.productionLineId,
+      quantity: input.quantity,
+      correlationId: input.correlationId,
+    });
+  }
+
+  /** WI-OI-126: idempotent finished-goods receipt for a completed production order. */
+  async receiveManufacturingFinishedGoods(
+    principal: ModulePrincipal,
+    input: {
+      readonly commandKey: string;
+      readonly productionOrderId: string;
+      readonly warehouseId: string;
+      readonly productId: string;
+      readonly uomId: string;
+      readonly quantity: string;
+    },
+  ): Promise<{ receiptId: string; receiptNumber: string }> {
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const externalRef = `manufacturing:${input.productionOrderId}`;
+      const prior = await client.query<{ id: string; receipt_number: string; status: string }>(
+        `SELECT id, receipt_number, status FROM ${SCHEMA}.receipts
+          WHERE tenant_id = $1 AND external_document_reference = $2`,
+        [principal.tenantId, externalRef],
+      );
+      if (prior.rows[0]?.status === 'COMPLETED') {
+        return { receiptId: prior.rows[0].id, receiptNumber: prior.rows[0].receipt_number };
+      }
+
+      const idem = await client.query<{ response_payload: { receiptId: string; receiptNumber: string } }>(
+        `SELECT response_payload FROM ${SCHEMA}.idempotency_records
+          WHERE tenant_id = $1 AND idempotency_key = $2`,
+        [principal.tenantId, input.commandKey],
+      );
+      if (idem.rows[0]) return idem.rows[0].response_payload;
+
+      await this.requireWarehouseAccess(client, principal, input.warehouseId, 'write');
+      const locationRes = await client.query<{ id: string }>(
+        `SELECT id FROM ${SCHEMA}.locations
+          WHERE tenant_id = $1 AND warehouse_id = $2 AND location_type = 'RECEIVING' AND active = true
+          ORDER BY code ASC LIMIT 1`,
+        [principal.tenantId, input.warehouseId],
+      );
+      const targetLocationId = locationRes.rows[0]?.id;
+      if (!targetLocationId) {
+        throw new BadRequestException('Warehouse has no active RECEIVING location for manufacturing output.');
+      }
+
+      let receiptId = prior.rows[0]?.id;
+      let receiptNumber = prior.rows[0]?.receipt_number;
+      const now = new Date().toISOString();
+      if (!receiptId) {
+        receiptId = randomUUID();
+        receiptNumber = `REC-MO-${Date.now()}-${documentSuffix()}`;
+        await client.query(
+          `INSERT INTO ${SCHEMA}.receipts (
+            id, tenant_id, receipt_number, warehouse_id, external_document_reference, status, notes, version, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, 'DRAFT', $6, 1, $7, $7)`,
+          [
+            receiptId,
+            principal.tenantId,
+            receiptNumber,
+            input.warehouseId,
+            externalRef,
+            `Manufacturing output for production order ${input.productionOrderId}`,
+            now,
+          ],
+        );
+        await client.query(
+          `INSERT INTO ${SCHEMA}.receipt_lines (
+            id, tenant_id, receipt_id, line_number, product_id, uom_id,
+            expected_quantity, received_quantity, target_location_id, inspection_status, custom_extensions, created_at, updated_at
+          ) VALUES ($1, $2, $3, 1, $4, $5, $6, $6, $7, 'PENDING', '{}'::jsonb, $8, $8)`,
+          [randomUUID(), principal.tenantId, receiptId, input.productId, input.uomId, input.quantity, targetLocationId, now],
+        );
+      } else {
+        await client.query(
+          `UPDATE ${SCHEMA}.receipt_lines
+              SET received_quantity = $1, expected_quantity = $1, target_location_id = COALESCE(target_location_id, $2), updated_at = $3
+            WHERE tenant_id = $4 AND receipt_id = $5`,
+          [input.quantity, targetLocationId, now, principal.tenantId, receiptId],
+        );
+      }
+
+      const receiptRes = await client.query(`SELECT * FROM ${SCHEMA}.receipts WHERE tenant_id = $1 AND id = $2 FOR UPDATE`, [
+        principal.tenantId,
+        receiptId,
+      ]);
+      const linesRes = await client.query(`SELECT * FROM ${SCHEMA}.receipt_lines WHERE tenant_id = $1 AND receipt_id = $2`, [
+        principal.tenantId,
+        receiptId,
+      ]);
+      await this.persistReceiptComplete(client, principal, receiptRes.rows[0], linesRes.rows);
+
+      const result = { receiptId, receiptNumber: receiptNumber! };
+      await client.query(
+        `INSERT INTO ${SCHEMA}.idempotency_records (tenant_id, idempotency_key, resource_id, action, response_payload)
+         VALUES ($1, $2, $3, 'MANUFACTURING_FINISHED_RECEIPT', $4::jsonb)`,
+        [principal.tenantId, input.commandKey, receiptId, JSON.stringify(result)],
+      );
+      return result;
     });
   }
 

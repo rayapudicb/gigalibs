@@ -24,6 +24,18 @@ import {
   ReserveReleaseCommandGuard,
   loadReserveReleaseCommandConfig,
 } from './inventory/reserve-release-command.guard.js';
+import { IssueDemandCommandController } from './inventory/issue-demand-command.controller.js';
+import {
+  ISSUE_DEMAND_COMMAND_CONFIG,
+  IssueDemandCommandGuard,
+  loadIssueDemandCommandConfig,
+} from './inventory/issue-demand-command.guard.js';
+import { ProductionReceiptCommandController } from './inventory/production-receipt-command.controller.js';
+import {
+  PRODUCTION_RECEIPT_COMMAND_CONFIG,
+  ProductionReceiptCommandGuard,
+  loadProductionReceiptCommandConfig,
+} from './inventory/production-receipt-command.guard.js';
 import { InventoryPostingCutoffService } from './inventory/inventory-posting-cutoff.service.js';
 import { InventoryService } from './inventory/inventory.service.js';
 import { ReplenishmentService } from './inventory/replenishment.service.js';
@@ -34,11 +46,14 @@ import { FinanceInventoryInboxController } from './relay/finance-inbox.controlle
 import { FinanceInventoryInboxService } from './relay/finance-inbox.service.js';
 import { InventoryRelayInboxGuard } from './relay/inbox.guard.js';
 import { InventoryFinanceOutboxRelay } from './relay/inventory-finance-relay.js';
+import { InventoryProcurementOutboxRelay } from './relay/inventory-procurement-relay.js';
 import {
   INVENTORY_FINANCE_INBOX_CONFIG,
   INVENTORY_RELAY_CONFIG,
   loadInventoryFinanceInboxConfig,
   loadInventoryFinanceRelayConfig,
+  loadInventoryProcurementRelayConfig,
+  INVENTORY_PROCUREMENT_RELAY_CONFIG,
 } from './relay/relay-config.js';
 
 const InventoryRelayHealthController = createRelayHealthController('v1/health');
@@ -54,16 +69,20 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     InventoryController,
     AtpCheckCommandController,
     ReserveReleaseCommandController,
+    IssueDemandCommandController,
+    ProductionReceiptCommandController,
     OrganizationController,
     FinanceInventoryInboxController,
     InventoryRecordController,
   ],
   providers: [
     { provide: INVENTORY_RELAY_CONFIG, useFactory: () => loadInventoryFinanceRelayConfig() },
+    { provide: INVENTORY_PROCUREMENT_RELAY_CONFIG, useFactory: () => loadInventoryProcurementRelayConfig() },
     { provide: INVENTORY_FINANCE_INBOX_CONFIG, useFactory: () => loadInventoryFinanceInboxConfig() },
     InventoryRelayInboxGuard,
     FinanceInventoryInboxService,
     InventoryFinanceOutboxRelay,
+    InventoryProcurementOutboxRelay,
     runtimeConfigProvider,
     DatabaseService,
     AuthorizationGuard,
@@ -75,6 +94,10 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     AtpCheckCommandGuard,
     { provide: RESERVE_RELEASE_COMMAND_CONFIG, useFactory: () => loadReserveReleaseCommandConfig() },
     ReserveReleaseCommandGuard,
+    { provide: ISSUE_DEMAND_COMMAND_CONFIG, useFactory: () => loadIssueDemandCommandConfig() },
+    IssueDemandCommandGuard,
+    { provide: PRODUCTION_RECEIPT_COMMAND_CONFIG, useFactory: () => loadProductionReceiptCommandConfig() },
+    ProductionReceiptCommandGuard,
     InventoryRecordsService,
     {
       provide: RECORD_DISPATCHER,

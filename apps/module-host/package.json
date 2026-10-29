@@ -15,6 +15,7 @@
     "@gigalibs/module-sdk": "workspace:*",
     "@gigalibs/product-catalogue-api": "workspace:*",
     "@gigalibs/universal-inventory-api": "workspace:*",
+    "@gigalibs/universal-manufacturing-api": "workspace:*",
     "@gigalibs/universal-orders-api": "workspace:*",
     "@gigalibs/universal-procurement-api": "workspace:*",
     "@nestjs/common": "^11.2.3",

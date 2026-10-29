@@ -182,11 +182,22 @@ export class ReplenishmentService {
           packSize: String(rule.rows[0].pack_size),
         });
         if (!outcome.shouldReplenish) continue;
+        const context = await client.query<{ org_unit_id: string | null; uom_id: string | null }>(
+          `SELECT w.org_unit_id,
+                  (SELECT sb.uom_id FROM ${SCHEMA}.stock_balances sb
+                    WHERE sb.tenant_id = w.tenant_id AND sb.warehouse_id = w.id AND sb.product_id = $3
+                    LIMIT 1) AS uom_id
+             FROM ${SCHEMA}.warehouses w
+            WHERE w.tenant_id = $1 AND w.id = $2`,
+          [principal.tenantId, input.warehouseId, productId],
+        );
         const draftId = randomUUID();
         const payload = {
           draftId,
           warehouseId: input.warehouseId,
+          orgUnitId: context.rows[0]?.org_unit_id ?? null,
           productId,
+          uomId: context.rows[0]?.uom_id ?? null,
           quantity: outcome.suggestedQuantity,
           preferredVendorPartyId: rule.rows[0].preferred_vendor_party_id,
           source: 'MIN_MAX_REPLENISHMENT',

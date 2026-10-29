@@ -1461,6 +1461,117 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
       }
     ]
   },
+  "iot-gateway": {
+    "module": "iot-gateway",
+    "basePaths": [
+      "/api/iot"
+    ],
+    "catalogKey": "iot-gateway",
+    "audience": "gigalibs-iot-api",
+    "upstream": "iot",
+    "signingKeyEnvironment": "IOT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "IOT",
+    "routeNoun": "IoT",
+    "serviceName": "IoT Gateway",
+    "entitlementName": "IoT Gateway",
+    "routes": [
+      {
+        "template": "v1/dashboard/summary",
+        "pattern": "^v1/dashboard/summary$",
+        "methods": {
+          "GET": "iot.dashboard.read"
+        }
+      },
+      {
+        "template": "v1/devices",
+        "pattern": "^v1/devices$",
+        "methods": {
+          "GET": "iot.devices.read",
+          "POST": "iot.devices.write"
+        }
+      },
+      {
+        "template": "v1/devices/{id}",
+        "pattern": "^v1/devices/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "iot.devices.read"
+        }
+      },
+      {
+        "template": "v1/devices/{id}/bind-asset",
+        "pattern": "^v1/devices/[0-9a-fA-F-]{36}/bind-asset$",
+        "methods": {
+          "POST": "iot.devices.write"
+        }
+      },
+      {
+        "template": "v1/devices/{id}/bind-meter",
+        "pattern": "^v1/devices/[0-9a-fA-F-]{36}/bind-meter$",
+        "methods": {
+          "POST": "iot.devices.write"
+        }
+      },
+      {
+        "template": "v1/devices/{id}/unbind-asset",
+        "pattern": "^v1/devices/[0-9a-fA-F-]{36}/unbind-asset$",
+        "methods": {
+          "POST": "iot.devices.write"
+        }
+      },
+      {
+        "template": "v1/devices/{id}/regenerate-credential",
+        "pattern": "^v1/devices/[0-9a-fA-F-]{36}/regenerate-credential$",
+        "methods": {
+          "POST": "iot.devices.write"
+        }
+      },
+      {
+        "template": "v1/alerts",
+        "pattern": "^v1/alerts$",
+        "methods": {
+          "GET": "iot.alerts.read"
+        }
+      },
+      {
+        "template": "v1/alerts/{id}",
+        "pattern": "^v1/alerts/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "iot.alerts.read"
+        }
+      },
+      {
+        "template": "v1/rules",
+        "pattern": "^v1/rules$",
+        "methods": {
+          "GET": "iot.rules.read",
+          "POST": "iot.rules.write"
+        }
+      },
+      {
+        "template": "v1/protocols",
+        "pattern": "^v1/protocols$",
+        "methods": {
+          "GET": "iot.protocols.read"
+        }
+      },
+      {
+        "template": "v1/discovery",
+        "pattern": "^v1/discovery$",
+        "methods": {
+          "GET": "iot.discovery.read"
+        }
+      },
+      {
+        "template": "v1/discovery/scan",
+        "pattern": "^v1/discovery/scan$",
+        "methods": {
+          "POST": "iot.discovery.write"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "physical-operations-cmms": {
     "module": "physical-operations-cmms",
     "basePaths": [
@@ -1537,6 +1648,27 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
       {
         "template": "v1/assets/{id}/archive",
         "pattern": "^v1/assets/[0-9a-fA-F-]{36}/archive$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/assets/{id}/downtime",
+        "pattern": "^v1/assets/[0-9a-fA-F-]{36}/downtime$",
+        "methods": {
+          "GET": "cmms.assets.read"
+        }
+      },
+      {
+        "template": "v1/assets/{id}/downtime/start",
+        "pattern": "^v1/assets/[0-9a-fA-F-]{36}/downtime/start$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/assets/{id}/downtime/end",
+        "pattern": "^v1/assets/[0-9a-fA-F-]{36}/downtime/end$",
         "methods": {
           "POST": "cmms.assets.write"
         }
@@ -2560,6 +2692,91 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "pattern": "^v1/lookups/[a-z][a-z0-9-]*$",
         "methods": {
           "GET": "inventory.read"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
+  "universal-manufacturing": {
+    "module": "universal-manufacturing",
+    "basePaths": [
+      "/api/universal-manufacturing"
+    ],
+    "catalogKey": "universal-manufacturing",
+    "audience": "gigalibs-universal-manufacturing-api",
+    "upstream": "universal-manufacturing",
+    "signingKeyEnvironment": "UNIVERSAL_MANUFACTURING_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "UNIVERSAL_MANUFACTURING",
+    "routeNoun": "Manufacturing & MRP",
+    "serviceName": "Manufacturing & MRP",
+    "entitlementName": "Manufacturing & MRP",
+    "routes": [
+      {
+        "template": "v1/records",
+        "pattern": "^v1/records$",
+        "methods": {
+          "GET": "universal-manufacturing.records.read",
+          "POST": "universal-manufacturing.records.manage"
+        }
+      },
+      {
+        "template": "v1/records/{id}",
+        "pattern": "^v1/records/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "universal-manufacturing.records.read",
+          "PATCH": "universal-manufacturing.records.manage"
+        }
+      },
+      {
+        "template": "v1/boms",
+        "pattern": "^v1/boms$",
+        "methods": {
+          "GET": "universal-manufacturing.bom.read",
+          "POST": "universal-manufacturing.bom.manage"
+        }
+      },
+      {
+        "template": "v1/boms/{id}/tree",
+        "pattern": "^v1/boms/[0-9a-fA-F-]{36}/tree$",
+        "methods": {
+          "GET": "universal-manufacturing.bom.read"
+        }
+      },
+      {
+        "template": "v1/production-orders",
+        "pattern": "^v1/production-orders$",
+        "methods": {
+          "GET": "universal-manufacturing.production.read",
+          "POST": "universal-manufacturing.production.manage"
+        }
+      },
+      {
+        "template": "v1/production-orders/{id}/release",
+        "pattern": "^v1/production-orders/[0-9a-fA-F-]{36}/release$",
+        "methods": {
+          "POST": "universal-manufacturing.production.manage"
+        }
+      },
+      {
+        "template": "v1/production-orders/{id}/issue",
+        "pattern": "^v1/production-orders/[0-9a-fA-F-]{36}/issue$",
+        "methods": {
+          "POST": "universal-manufacturing.production.manage"
+        }
+      },
+      {
+        "template": "v1/production-orders/{id}/complete",
+        "pattern": "^v1/production-orders/[0-9a-fA-F-]{36}/complete$",
+        "methods": {
+          "POST": "universal-manufacturing.production.manage"
+        }
+      },
+      {
+        "template": "v1/mrp/preview",
+        "pattern": "^v1/mrp/preview$",
+        "methods": {
+          "POST": "universal-manufacturing.mrp.read"
         }
       }
     ],

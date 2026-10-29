@@ -7,6 +7,10 @@ export type { RelayRequest } from '@gigalibs/module-sdk';
 @Injectable()
 export class FinanceRelayInboxGuard extends RelayInboxGuardBase {
   constructor(@Inject(FINANCE_RELAY_CONFIG) config: FinanceRelayConfig) {
-    super(config, { audience: FINANCE_INBOX_AUDIENCE, source: 'inventory', label: 'Finance' });
+    super(config, {
+      audience: FINANCE_INBOX_AUDIENCE,
+      source: ['inventory', 'universal-manufacturing'],
+      label: 'Finance',
+    });
   }
 }

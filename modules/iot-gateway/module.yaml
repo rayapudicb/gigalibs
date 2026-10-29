@@ -1,0 +1,143 @@
+apiVersion: modules.gigalibs.io/v1
+kind: Module
+metadata:
+  name: iot-gateway
+  displayName: IoT Gateway
+  version: 0.1.0-dev
+  lifecycle: implementation
+  workItem: WI-OI-130
+spec:
+  standalone: true
+  category: capability
+  requiredModules: []
+  optionalModules:
+    - physical-operations-cmms
+    - analytics-studio
+    - universal-rule-pro
+  capabilities:
+    - iot-device-registry
+    - telemetry-ingest
+    - condition-rules
+    - alert-feed
+    - protocol-adapter-status
+  events:
+    emits:
+      - telemetry.raw.v1
+      - telemetry.alert.v1
+      - iot.meter_readings.v1
+  ui:
+    application: apps/workflow-platform
+    basePath: /iot
+    package: '@gigalibs/iot-web'
+    pages:
+      - route: /iot
+        component: IotWorkspace
+        props:
+          section: home
+      - route: /iot/devices
+        component: IotWorkspace
+        props:
+          section: devices
+      - route: /iot/protocols
+        component: IotWorkspace
+        props:
+          section: protocols
+      - route: /iot/rules
+        component: IotWorkspace
+        props:
+          section: rules
+      - route: /iot/discovery
+        component: IotWorkspace
+        props:
+          section: discovery
+      - route: /iot/alerts
+        component: IotWorkspace
+        props:
+          section: alerts
+  api:
+    application: apps/api
+    port: 4250
+    upstream:
+      key: iot
+      serviceHostname: iot-api
+      environmentKey: IOT_API_URL
+    version: v1
+  database:
+    engine: postgresql
+    minimumVersion: '16'
+    ownsSchema: true
+    defaultSchema: gigalibs_iot
+    crossSchemaAccess: false
+    runtimeManifest: db/runtime-manifest.txt
+  catalog:
+    - key: iot-gateway
+      name: IoT Gateway
+      navigationLabel: IoT Gateway
+      area: Physical Operations
+      navigationGroup: Workforce & Operations
+      route: /iot
+      iconKey: radio
+      readiness: REVIEW
+      maturity: INTEGRATED_CANDIDATE
+      entitlementEligible: true
+      trialEligible: true
+      requiredPermission: iot:read
+      platformInspection: true
+      reason: Device registry, telemetry ingest, condition rules and alert feed with tenant isolation. Protocol daemons and live network scan are phased.
+      navigationOrder: 215
+      menu:
+        - { key: devices, label: Devices, path: /iot/devices, icon: radio }
+        - { key: protocols, label: Protocols, path: /iot/protocols, icon: network }
+        - { key: rules, label: Condition Rules, path: /iot/rules, icon: workflow }
+        - { key: discovery, label: Discovery, path: /iot/discovery, icon: scan-line }
+        - { key: alerts, label: Alerts, path: /iot/alerts, icon: shield-alert }
+      roles:
+        - key: iot-operator
+          name: IoT operator
+          description: Provisions devices, confirms asset bindings, and manages condition rules.
+          permissions:
+            - iot:read
+            - iot.dashboard.read
+            - iot.devices.read
+            - iot.devices.write
+            - iot.rules.read
+            - iot.rules.write
+            - iot.alerts.read
+            - iot.protocols.read
+            - iot.discovery.read
+            - iot.discovery.write
+        - key: iot-viewer
+          name: IoT viewer
+          description: Reads device status, protocols and alerts without changing configuration.
+          permissions:
+            - iot:read
+            - iot.dashboard.read
+            - iot.devices.read
+            - iot.rules.read
+            - iot.alerts.read
+            - iot.protocols.read
+            - iot.discovery.read
+  gateway:
+    basePaths: [/api/iot]
+    catalogKey: iot-gateway
+    audience: gigalibs-iot-api
+    upstream: iot
+    signingKeyEnvironment: IOT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64
+    codePrefix: IOT
+    routeNoun: IoT
+    serviceName: IoT Gateway
+    entitlementName: IoT Gateway
+    routes:
+      - { path: 'v1/dashboard/summary', GET: iot.dashboard.read }
+      - { path: 'v1/devices', GET: iot.devices.read, POST: iot.devices.write }
+      - { path: 'v1/devices/{id}', GET: iot.devices.read }
+      - { path: 'v1/devices/{id}/bind-asset', POST: iot.devices.write }
+      - { path: 'v1/devices/{id}/bind-meter', POST: iot.devices.write }
+      - { path: 'v1/devices/{id}/unbind-asset', POST: iot.devices.write }
+      - { path: 'v1/devices/{id}/regenerate-credential', POST: iot.devices.write }
+      - { path: 'v1/alerts', GET: iot.alerts.read }
+      - { path: 'v1/alerts/{id}', GET: iot.alerts.read }
+      - { path: 'v1/rules', GET: iot.rules.read, POST: iot.rules.write }
+      - { path: 'v1/protocols', GET: iot.protocols.read }
+      - { path: 'v1/discovery', GET: iot.discovery.read }
+      - { path: 'v1/discovery/scan', POST: iot.discovery.write }

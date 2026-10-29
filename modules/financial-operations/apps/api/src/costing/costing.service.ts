@@ -1184,6 +1184,16 @@ export class CostingService {
       createdAt: new Date(row.created_at).toISOString(),
     };
   }
+
+  /** WI-OI-125: balanced two-line journal for inter-warehouse in-transit GL clearance (caller supplies accounts). */
+  async postInventoryTransferJournal(
+    client: PoolClient,
+    tenantId: string,
+    actor: string,
+    input: PostJournalInputV1,
+  ): Promise<void> {
+    await this.financeService.postJournal(tenantId, actor, input, client);
+  }
 }
 
 function resolveJournalEntryType(value: string | undefined, fallback: JournalEntryType): JournalEntryType {

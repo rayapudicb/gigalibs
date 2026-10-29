@@ -944,6 +944,66 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "iot:read",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
+    "code": "iot.alerts.read",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
+    "code": "iot.dashboard.read",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
+    "code": "iot.devices.read",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
+    "code": "iot.devices.write",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
+    "code": "iot.discovery.read",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
+    "code": "iot.discovery.write",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
+    "code": "iot.protocols.read",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
+    "code": "iot.rules.read",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
+    "code": "iot.rules.write",
+    "entries": [
+      "iot-gateway"
+    ]
+  },
+  {
     "code": "maps:read",
     "entries": [
       "asset-maintenance",
@@ -1240,6 +1300,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   },
   {
     "code": "procurement:vendors:manage",
+    "entries": [
+      "universal-procurement"
+    ]
+  },
+  {
+    "code": "procurement:write",
     "entries": [
       "universal-procurement"
     ]
@@ -1572,6 +1638,48 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "tenant:update",
     "entries": [
       "platform"
+    ]
+  },
+  {
+    "code": "universal-manufacturing.bom.manage",
+    "entries": [
+      "universal-manufacturing"
+    ]
+  },
+  {
+    "code": "universal-manufacturing.bom.read",
+    "entries": [
+      "universal-manufacturing"
+    ]
+  },
+  {
+    "code": "universal-manufacturing.mrp.read",
+    "entries": [
+      "universal-manufacturing"
+    ]
+  },
+  {
+    "code": "universal-manufacturing.production.manage",
+    "entries": [
+      "universal-manufacturing"
+    ]
+  },
+  {
+    "code": "universal-manufacturing.production.read",
+    "entries": [
+      "universal-manufacturing"
+    ]
+  },
+  {
+    "code": "universal-manufacturing.records.manage",
+    "entries": [
+      "universal-manufacturing"
+    ]
+  },
+  {
+    "code": "universal-manufacturing.records.read",
+    "entries": [
+      "universal-manufacturing"
     ]
   },
   {

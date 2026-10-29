@@ -17,8 +17,8 @@ export interface RelayRequest {
 export interface RelayInboxGuardOptions {
   /** This module's inbox audience. */
   readonly audience: string;
-  /** The only accepted relay token source (the peer module). */
-  readonly source: string;
+  /** Accepted relay token source(s) (the peer module). */
+  readonly source: string | readonly string[];
   /** Used in the "inbox is not configured" message, for example "CMMS". */
   readonly label: string;
 }

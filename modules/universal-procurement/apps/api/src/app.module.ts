@@ -13,6 +13,7 @@ import { OrganizationController } from './organization/organization.controller.j
 import { procurementRecordDispatcher } from './procurement/procurement-record-adapters.js';
 import { ProcurementController } from './procurement/procurement.controller.js';
 import { ProcurementService } from './procurement/procurement.service.js';
+import { ProcurementInventoryInboxModule } from './relay/inventory-replenishment-inbox.js';
 
 const ProcurementRecordController = createRecordController({
   guard: AuthorizationGuard,
@@ -20,6 +21,7 @@ const ProcurementRecordController = createRecordController({
 });
 
 @Module({
+  imports: [ProcurementInventoryInboxModule],
   controllers: [HealthController, ProcurementController, OrganizationController, ProcurementRecordController],
   providers: [
     runtimeConfigProvider,

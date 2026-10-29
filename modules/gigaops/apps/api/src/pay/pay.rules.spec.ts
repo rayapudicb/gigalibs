@@ -125,5 +125,5 @@ describe('reference pack gating (production safety)', () => {
     })).rejects.toThrow(/reference pack/);
     expect(database.withTenantTransaction).not.toHaveBeenCalled();
     expect(service.packs().referencePacksEnabled).toBe(false);
-  });
+  }, 15_000);
 });

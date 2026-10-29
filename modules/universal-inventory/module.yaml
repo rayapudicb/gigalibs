@@ -71,6 +71,9 @@ spec:
       - inventory.kit.issued.v1
       - inventory.count.closed.v1
       - inventory.adjustment.approved.v1
+      - inventory.transfer.dispatched.v1
+      - inventory.transfer.received.v1
+      - inventory.replenishment.po-draft.v1
     consumes:
       - finance.inventory-receipt.posting-outcome.v1
       - finance.fiscal-period.state-changed.v1

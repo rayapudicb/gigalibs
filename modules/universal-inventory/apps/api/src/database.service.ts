@@ -5,6 +5,8 @@ import { RUNTIME_CONFIG, SCHEMA } from './config.js';
 export const INVENTORY_DEFINER_FUNCTIONS = [
   'relay_lease_inventory_events',
   'relay_settle_inventory_event',
+  'relay_lease_procurement_draft_events',
+  'relay_settle_procurement_draft_event',
 ] as const;
 
 export type InventoryDefinerFunction = (typeof INVENTORY_DEFINER_FUNCTIONS)[number];

@@ -113,7 +113,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               connected; it showed an invented chat. */}
           {/* WI-OI-120bc: the Giga AI Companion launcher. Shown in development always, and in other environments only
               when the local model is configured (OLLAMA_HOST) — so on UAT it is never a dead button where it cannot
-              run (honours owner decision D4a). The chat degrades to a plain "model not running" message, never a fake. */}
+              run (honours owner decision D4a). The chat displays "model not running" when the service is unavailable. */}
           {process.env.NODE_ENV === 'development' || process.env.OLLAMA_HOST ? (
             <CompanionLauncher />
           ) : null}

@@ -474,14 +474,21 @@ function AssetPanel({
   onChanged: (asset: CmmsAssetV1) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'hierarchy'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'hierarchy' | 'downtime'>('overview');
+  const [downtimes, setDowntimes] = useState<readonly Record<string, unknown>[]>([]);
   const [error, setError] = useState<CmmsApiError | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     setEditing(false);
     setActiveTab('overview');
     setError(null);
+    setDowntimes([]);
   }, [asset?.id]);
+
+  useEffect(() => {
+    if (!asset || activeTab !== 'downtime') return;
+    void cmmsApi.listAssetDowntimes(asset.id).then((page) => setDowntimes(page.items)).catch(() => setDowntimes([]));
+  }, [asset, activeTab]);
 
   if (!asset) {
     return (
@@ -565,6 +572,17 @@ function AssetPanel({
             }`}
           >
             Hierarchy &amp; Cascade
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('downtime')}
+            className={`px-3 py-1 text-xs rounded transition-colors ${
+              activeTab === 'downtime'
+                ? 'bg-ui-bg-highlight text-ui-fg-interactive font-semibold shadow-sm'
+                : 'text-ui-fg-subtle hover:text-ui-fg-base'
+            }`}
+          >
+            Downtime
           </button>
         </div>
 
@@ -686,6 +704,79 @@ function AssetPanel({
               await onChanged(refreshed);
             }}
           />
+        )}
+
+        {activeTab === 'downtime' && (
+          <div className="mt-4 space-y-3">
+            <div className="flex gap-2">
+              <Button
+                size="small"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await cmmsApi.startAssetDowntime(asset.id, {
+                      downtimeType: 'UNPLANNED',
+                      source: 'MANUAL',
+                      notes: 'Manual downtime recorded from asset tab.',
+                    });
+                    const page = await cmmsApi.listAssetDowntimes(asset.id);
+                    setDowntimes(page.items);
+                  } catch (reason) {
+                    setError(reason as CmmsApiError);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Record downtime (now)
+              </Button>
+              <Button
+                size="small"
+                variant="secondary"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await cmmsApi.endAssetDowntime(asset.id, {});
+                    const page = await cmmsApi.listAssetDowntimes(asset.id);
+                    setDowntimes(page.items);
+                  } catch (reason) {
+                    setError(reason as CmmsApiError);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                End open downtime
+              </Button>
+            </div>
+            <Table>
+              <Table.Header>
+                <Table.Row>
+                  <Table.HeaderCell>Type</Table.HeaderCell>
+                  <Table.HeaderCell>Started</Table.HeaderCell>
+                  <Table.HeaderCell>Ended</Table.HeaderCell>
+                  <Table.HeaderCell>Hours</Table.HeaderCell>
+                  <Table.HeaderCell>Source</Table.HeaderCell>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {downtimes.map((row) => {
+                  const d = row as Record<string, string | number | null>;
+                  return (
+                    <Table.Row key={String(d.id)}>
+                      <Table.Cell>{String(d.downtime_type ?? '—')}</Table.Cell>
+                      <Table.Cell>{d.started_at ? formatDate(String(d.started_at)) : '—'}</Table.Cell>
+                      <Table.Cell>{d.ended_at ? formatDate(String(d.ended_at)) : 'Ongoing'}</Table.Cell>
+                      <Table.Cell>{d.duration_hours ?? '—'}</Table.Cell>
+                      <Table.Cell>{String(d.source ?? 'MANUAL')}</Table.Cell>
+                    </Table.Row>
+                  );
+                })}
+              </Table.Body>
+            </Table>
+          </div>
         )}
 
         <ActionError error={error} />

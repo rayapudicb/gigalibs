@@ -3,6 +3,9 @@ import {
   inventoryPostingCutoffV1,
   inventoryReceiptCompletedPostingPolicyV1,
   inventoryReceiptPostingDate,
+  inventoryTransferDispatchedPostingPolicyV1,
+  inventoryTransferReceivedPostingPolicyV1,
+  manufacturingProductionCompletedPostingPolicyV1,
 } from '@gigalibs/posting-rules';
 import { ExactDecimal, RelayEnvelopeV1Schema, type RelayEnvelopeV1, type FinanceInventoryReceiptCostLineV1 } from '@gigalibs/contracts';
 import { type InboxReceiptOptions, receiveOnce } from '@gigalibs/module-sdk';
@@ -62,6 +65,46 @@ const PostingCutoffPayloadSchema = z
   })
   .strict();
 
+const transferQuantityPattern = /^(?:0|[1-9]\d*)(?:\.\d{1,6})?$/;
+
+const ManufacturingProductionPayloadSchema = z
+  .object({
+    productionOrderId: z.string().uuid(),
+    orderNumber: z.string().optional(),
+    warehouseId: z.string().uuid(),
+    finishedProductId: z.string().uuid(),
+    quantity: z.string().regex(transferQuantityPattern),
+    orgUnitId: z.string().min(1).max(64).nullable().optional(),
+    financeCostProfileId: z.string().uuid().nullable().optional(),
+    componentLines: z.array(
+      z.object({
+        productId: z.string().uuid(),
+        uomId: z.string().uuid(),
+        quantity: z.string().regex(transferQuantityPattern),
+      }),
+    ),
+  })
+  .strict();
+
+const TransferPayloadSchema = z
+  .object({
+    transferId: z.string().uuid(),
+    transferNumber: z.string(),
+    sourceWarehouseId: z.string().uuid(),
+    targetWarehouseId: z.string().uuid(),
+    orgUnitId: z.string().min(1).max(64).nullable(),
+    financeCostProfileId: z.string().uuid().nullable(),
+    valuationMethod: z.enum(['STANDARD', 'MOVING_AVERAGE', 'FIFO', 'AVERAGE']).nullable(),
+    lines: z.array(
+      z.object({
+        productId: z.string().uuid(),
+        uomId: z.string().uuid(),
+        quantity: z.string().regex(transferQuantityPattern),
+      }),
+    ),
+  })
+  .strict();
+
 export type FinanceInventoryInboxOutcome = { readonly status: 'PROCESSED' | 'DUPLICATE' | 'REJECTED'; readonly code?: string };
 
 export type RetryRejectedPostingOutcome =
@@ -96,6 +139,21 @@ export class InventorySubledgerInboxService {
     if (envelope.eventType === inventoryPostingCutoffV1.eventType) {
       return this.database.withTenantTransaction(envelope.tenantId, (client) =>
         receiveOnce(client, RECEIPTS, envelope, rawBody, () => this.applyPostingCutoff(client, envelope)),
+      );
+    }
+    if (envelope.eventType === inventoryTransferDispatchedPostingPolicyV1.eventType) {
+      return this.database.withTenantTransaction(envelope.tenantId, (client) =>
+        receiveOnce(client, RECEIPTS, envelope, rawBody, () => this.applyTransferPosting(client, envelope, 'dispatch')),
+      );
+    }
+    if (envelope.eventType === inventoryTransferReceivedPostingPolicyV1.eventType) {
+      return this.database.withTenantTransaction(envelope.tenantId, (client) =>
+        receiveOnce(client, RECEIPTS, envelope, rawBody, () => this.applyTransferPosting(client, envelope, 'receive')),
+      );
+    }
+    if (envelope.eventType === manufacturingProductionCompletedPostingPolicyV1.eventType) {
+      return this.database.withTenantTransaction(envelope.tenantId, (client) =>
+        receiveOnce(client, RECEIPTS, envelope, rawBody, () => this.applyManufacturingProductionCompleted(client, envelope)),
       );
     }
     throw new BadRequestException({ code: 'FINANCE_INBOX_EVENT_UNKNOWN', message: `No consumer for ${envelope.eventType}.` });
@@ -346,6 +404,235 @@ export class InventorySubledgerInboxService {
 
     await appendInventoryReceiptPostingOutcome(client, envelope.tenantId, payload.data.receiptId, 'POSTED', null, costLines);
     return { result: { status: 'PROCESSED' }, postingDate };
+  }
+
+  /** WI-OI-125 S2: Dr/Cr inventory vs in-transit clearing (landed-cost clearing account) at standard cost. */
+  private async applyTransferPosting(
+    client: PoolClient,
+    envelope: RelayEnvelopeV1,
+    phase: 'dispatch' | 'receive',
+  ): Promise<FinanceInventoryInboxOutcome> {
+    await ensureInventoryFiscalPeriodSnapshotPublished(client, envelope.tenantId);
+    const payload = TransferPayloadSchema.safeParse(envelope.payload);
+    if (!payload.success) {
+      return { status: 'REJECTED', code: 'FINANCE_INBOX_PAYLOAD_INVALID' };
+    }
+    if (!payload.data.orgUnitId || !payload.data.financeCostProfileId || !payload.data.valuationMethod) {
+      return { status: 'REJECTED', code: 'FINANCE_ORG_COST_PROFILE_MISSING' };
+    }
+    const postingDate = inventoryReceiptPostingDate(envelope.occurredAt);
+    const postingContext = await resolvePrimaryBookPostingContext(client, SCHEMA, envelope.tenantId, postingDate);
+    if (typeof postingContext === 'string') {
+      return { status: 'REJECTED', code: postingContext };
+    }
+    const profile = await client.query<{
+      id: string;
+      costing_method: string;
+      inventory_gl_account_id: string;
+      landed_cost_clearing_gl_account_id: string;
+    }>(
+      `SELECT id, costing_method, inventory_gl_account_id, landed_cost_clearing_gl_account_id
+         FROM ${SCHEMA}.cost_profiles
+        WHERE tenant_id = $1 AND id = $2 AND is_active = true LIMIT 1`,
+      [envelope.tenantId, payload.data.financeCostProfileId],
+    );
+    const costProfile = profile.rows[0];
+    if (!costProfile) {
+      return { status: 'REJECTED', code: 'FINANCE_COST_PROFILE_MISSING' };
+    }
+    const normalizedMethod =
+      payload.data.valuationMethod === 'MOVING_AVERAGE' ? 'AVERAGE' : payload.data.valuationMethod;
+    if (costProfile.costing_method !== normalizedMethod) {
+      return { status: 'REJECTED', code: 'FINANCE_COST_METHOD_MISMATCH' };
+    }
+    const bookRes = await client.query<{ currency_code: string }>(
+      `SELECT currency_code FROM ${SCHEMA}.accounting_books WHERE tenant_id = $1 AND id = $2`,
+      [envelope.tenantId, postingContext.bookId],
+    );
+    const bookCurrency = bookRes.rows[0]?.currency_code;
+    if (!bookCurrency) {
+      return { status: 'REJECTED', code: 'FINANCE_BOOK_NOT_FOUND' };
+    }
+    const policy =
+      phase === 'dispatch'
+        ? inventoryTransferDispatchedPostingPolicyV1
+        : inventoryTransferReceivedPostingPolicyV1;
+    const inTransitAccountId = costProfile.landed_cost_clearing_gl_account_id;
+    for (const line of payload.data.lines) {
+      if (ExactDecimal.isZero(line.quantity)) continue;
+      const unitCostScaled = await this.costing.resolveProductStandardUnitCostScaled(
+        client,
+        envelope.tenantId,
+        costProfile.id,
+        line.productId,
+        postingDate,
+      );
+      if (!unitCostScaled) {
+        return { status: 'REJECTED', code: 'FINANCE_STANDARD_COST_MISSING' };
+      }
+      const qtyScaled = ExactDecimal.toScaledBigInt(line.quantity);
+      const totalCostMinor = (qtyScaled * BigInt(unitCostScaled)) / 10_000_000_000n;
+      if (totalCostMinor <= 0n) continue;
+      const inventoryLine =
+        phase === 'dispatch'
+          ? {
+              accountId: costProfile.inventory_gl_account_id,
+              debitAmountMinor: '0',
+              creditAmountMinor: totalCostMinor.toString(),
+            }
+          : {
+              accountId: costProfile.inventory_gl_account_id,
+              debitAmountMinor: totalCostMinor.toString(),
+              creditAmountMinor: '0',
+            };
+      const inTransitLine =
+        phase === 'dispatch'
+          ? {
+              accountId: inTransitAccountId,
+              debitAmountMinor: totalCostMinor.toString(),
+              creditAmountMinor: '0',
+            }
+          : {
+              accountId: inTransitAccountId,
+              debitAmountMinor: '0',
+              creditAmountMinor: totalCostMinor.toString(),
+            };
+      const sourceDocumentId = policy.sourceLineDocumentId(payload.data.transferId, line.productId);
+      await this.costing.postInventoryTransferJournal(client, envelope.tenantId, 'relay:inventory', {
+        accountingBookId: postingContext.bookId,
+        fiscalPeriodId: postingContext.periodId,
+        postingDate,
+        entryType: policy.entryType,
+        description: `${phase === 'dispatch' ? 'Dispatch' : 'Receive'} transfer ${payload.data.transferNumber}`,
+        sourceDocumentType: policy.sourceDocumentType,
+        sourceDocumentId,
+        lines: [
+          {
+            ...inventoryLine,
+            currencyCode: bookCurrency,
+            exchangeRate: '1.000000',
+            memo: `Transfer ${payload.data.transferNumber} inventory`,
+          },
+          {
+            ...inTransitLine,
+            currencyCode: bookCurrency,
+            exchangeRate: '1.000000',
+            memo: `Transfer ${payload.data.transferNumber} in-transit clearing`,
+          },
+        ],
+      });
+      await recordInventoryReceiptLinePosting(client, SCHEMA, {
+        tenantId: envelope.tenantId,
+        messageId: envelope.messageId,
+        sourceDocumentId,
+        journalEntryType: policy.entryType,
+      });
+    }
+    return { status: 'PROCESSED' };
+  }
+
+  /** WI-OI-126 S7: Dr WIP clearing / Cr inventory for component standard cost at production completion. */
+  private async applyManufacturingProductionCompleted(
+    client: PoolClient,
+    envelope: RelayEnvelopeV1,
+  ): Promise<FinanceInventoryInboxOutcome> {
+    await ensureInventoryFiscalPeriodSnapshotPublished(client, envelope.tenantId);
+    const payload = ManufacturingProductionPayloadSchema.safeParse(envelope.payload);
+    if (!payload.success) {
+      return { status: 'REJECTED', code: 'FINANCE_INBOX_PAYLOAD_INVALID' };
+    }
+    const postingDate = inventoryReceiptPostingDate(envelope.occurredAt);
+    const postingContext = await resolvePrimaryBookPostingContext(client, SCHEMA, envelope.tenantId, postingDate);
+    if (typeof postingContext === 'string') {
+      return { status: 'REJECTED', code: postingContext };
+    }
+    let costProfileId = payload.data.financeCostProfileId ?? null;
+    if (!costProfileId) {
+      const defaultProfile = await client.query<{ id: string }>(
+        `SELECT id FROM ${SCHEMA}.cost_profiles
+          WHERE tenant_id = $1 AND is_active = true AND is_default = true LIMIT 1`,
+        [envelope.tenantId],
+      );
+      costProfileId = defaultProfile.rows[0]?.id ?? null;
+    }
+    if (!costProfileId) {
+      return { status: 'REJECTED', code: 'FINANCE_COST_PROFILE_MISSING' };
+    }
+    const profile = await client.query<{
+      id: string;
+      costing_method: string;
+      inventory_gl_account_id: string;
+      landed_cost_clearing_gl_account_id: string;
+    }>(
+      `SELECT id, costing_method, inventory_gl_account_id, landed_cost_clearing_gl_account_id
+         FROM ${SCHEMA}.cost_profiles
+        WHERE tenant_id = $1 AND id = $2 AND is_active = true LIMIT 1`,
+      [envelope.tenantId, costProfileId],
+    );
+    const costProfile = profile.rows[0];
+    if (!costProfile) {
+      return { status: 'REJECTED', code: 'FINANCE_COST_PROFILE_MISSING' };
+    }
+    const bookRes = await client.query<{ currency_code: string }>(
+      `SELECT currency_code FROM ${SCHEMA}.accounting_books WHERE tenant_id = $1 AND id = $2`,
+      [envelope.tenantId, postingContext.bookId],
+    );
+    const bookCurrency = bookRes.rows[0]?.currency_code;
+    if (!bookCurrency) {
+      return { status: 'REJECTED', code: 'FINANCE_BOOK_NOT_FOUND' };
+    }
+    const policy = manufacturingProductionCompletedPostingPolicyV1;
+    for (const line of payload.data.componentLines) {
+      if (ExactDecimal.isZero(line.quantity)) continue;
+      const unitCostScaled = await this.costing.resolveProductStandardUnitCostScaled(
+        client,
+        envelope.tenantId,
+        costProfile.id,
+        line.productId,
+        postingDate,
+      );
+      if (!unitCostScaled) {
+        return { status: 'REJECTED', code: 'FINANCE_STANDARD_COST_MISSING' };
+      }
+      const qtyScaled = ExactDecimal.toScaledBigInt(line.quantity);
+      const totalCostMinor = (qtyScaled * BigInt(unitCostScaled)) / 10_000_000_000n;
+      if (totalCostMinor <= 0n) continue;
+      const sourceDocumentId = policy.sourceLineDocumentId(payload.data.productionOrderId, line.productId);
+      await this.costing.postInventoryTransferJournal(client, envelope.tenantId, 'relay:manufacturing', {
+        accountingBookId: postingContext.bookId,
+        fiscalPeriodId: postingContext.periodId,
+        postingDate,
+        entryType: policy.entryType,
+        description: `Production complete ${payload.data.orderNumber ?? payload.data.productionOrderId} WIP material`,
+        sourceDocumentType: policy.sourceDocumentType,
+        sourceDocumentId,
+        lines: [
+          {
+            accountId: costProfile.landed_cost_clearing_gl_account_id,
+            debitAmountMinor: totalCostMinor.toString(),
+            creditAmountMinor: '0',
+            currencyCode: bookCurrency,
+            exchangeRate: '1.000000',
+            memo: 'Manufacturing WIP clearing',
+          },
+          {
+            accountId: costProfile.inventory_gl_account_id,
+            debitAmountMinor: '0',
+            creditAmountMinor: totalCostMinor.toString(),
+            currencyCode: bookCurrency,
+            exchangeRate: '1.000000',
+            memo: 'Manufacturing material consumption',
+          },
+        ],
+      });
+      await recordInventoryReceiptLinePosting(client, SCHEMA, {
+        tenantId: envelope.tenantId,
+        messageId: envelope.messageId,
+        sourceDocumentId,
+        journalEntryType: policy.entryType,
+      });
+    }
+    return { status: 'PROCESSED' };
   }
 
   private async applyPostingCutoff(client: PoolClient, envelope: RelayEnvelopeV1): Promise<FinanceInventoryInboxOutcome> {

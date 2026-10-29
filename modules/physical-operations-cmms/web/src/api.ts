@@ -118,6 +118,12 @@ export const cmmsApi = {
       `/assets/${id(assetId)}/cascade-status`,
       post(input),
     ),
+  listAssetDowntimes: (assetId: string) =>
+    requestCmms<{ items: readonly Record<string, unknown>[] }>(`/assets/${id(assetId)}/downtime`),
+  startAssetDowntime: (assetId: string, input: Record<string, unknown>) =>
+    requestCmms<Record<string, unknown>>(`/assets/${id(assetId)}/downtime/start`, post(input)),
+  endAssetDowntime: (assetId: string, input: Record<string, unknown> = {}) =>
+    requestCmms<Record<string, unknown>>(`/assets/${id(assetId)}/downtime/end`, post(input)),
 
   listClassificationTree: () =>
     requestCmms<{ items: CmmsClassificationTreeV1[] }>('/classifications/tree'),
