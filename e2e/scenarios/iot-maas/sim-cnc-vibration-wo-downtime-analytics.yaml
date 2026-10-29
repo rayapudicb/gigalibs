@@ -1,0 +1,55 @@
+# WI-OI-130 certification scenario (skeleton). Drives HTTP replay against real APIs on an isolated test tenant.
+# See docs/runbooks/iot-maas-certification.md for orchestration and assert queries.
+schema: gigalibs.iot-maas-scenario/v1
+id: sim-cnc-vibration-wo-downtime-analytics
+tenant:
+  slug: test-iot-maas
+  industryPack: manufacturing
+asset:
+  tag: SIM-CNC-01
+  classification: CNC_MACHINING
+  siteRef: north-plant
+meter:
+  name: spindle_vibration_rms
+  readingType: GAUGE
+  maxThreshold: 8.0
+trigger:
+  type: THRESHOLD_BREACH
+  thresholdType: UPPER
+  workOrderTitle: "Sim: spindle vibration exceedance"
+  workOrderPriority: HIGH
+device:
+  name: sim-cnc-01-edge
+  metricType: vibration_rms
+  channelKey: VIBRATION_RMS
+iotRule:
+  conditionType: THRESHOLD
+  threshold: 8.0
+  severity: CRITICAL
+  consecutiveCount: 1
+timeline:
+  - phase: healthy
+    offsetSeconds: 0
+    readings:
+      - value: 3.5
+  - phase: breach
+    offsetSeconds: 30
+    readings:
+      - value: 9.8
+    expect:
+      iotAlertsMin: 1
+      cmmsDowntimeSource: IOT_AUTO
+      cmmsWorkOrdersMin: 0
+    notes: Work orders require a CMMS meter trigger; CRITICAL alert opens downtime via IoT relay.
+  - phase: recovery
+    offsetSeconds: 3600
+    actions:
+      - completeOpenWorkOrders
+      - endActiveDowntime
+    expect:
+      analyticsDowntimeFactsMin: 1
+dataLayers:
+  telemetry: [GOOD, STALE, OUT_OF_RANGE]
+  alert: [WARNING, CRITICAL]
+  downtimeType: [PLANNED, UNPLANNED, PROCESS]
+  downtimeSource: [MANUAL, IOT_AUTO, WORKFLOW]

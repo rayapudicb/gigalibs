@@ -54,6 +54,16 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       icon: moduleIcons.scale,
       personas: ['OPERATIONS_SUPERVISOR'],
     },
+    'iot-gateway': {
+      group: 'Workforce & Operations',
+      icon: moduleIcons.radio,
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
+    'universal-manufacturing': {
+      group: 'Workforce & Operations',
+      icon: moduleIcons.factory,
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
   } as const;
 
   it('covers exactly the catalogue entries the frozen tables covered, less the intended removals', () => {
@@ -110,6 +120,19 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       ...LEGACY_MODULE_MENUS.gigaops!.slice(0, 5),
       { key: 'bookings', label: 'Bookings', href: '/gigaops/bookings', icon: moduleIcons.layers },
       ...LEGACY_MODULE_MENUS.gigaops!.slice(5).filter((item) => item.key !== 'compliance' && item.key !== 'analytics'),
+    ],
+    // WI-OI-130 / WI-OI-126: new capability modules after the WI-OI-083c freeze.
+    'iot-gateway': [
+      { key: 'devices', label: 'Devices', href: '/iot/devices', icon: moduleIcons.radio },
+      { key: 'protocols', label: 'Protocols', href: '/iot/protocols', icon: moduleIcons.network },
+      { key: 'rules', label: 'Condition Rules', href: '/iot/rules', icon: moduleIcons.workflow },
+      { key: 'discovery', label: 'Discovery', href: '/iot/discovery', icon: moduleIcons['scan-line'] },
+      { key: 'alerts', label: 'Alerts', href: '/iot/alerts', icon: moduleIcons['shield-alert'] },
+    ],
+    'universal-manufacturing': [
+      { key: 'boms', label: 'BOMs', href: '/universal-manufacturing/boms', icon: moduleIcons.layers },
+      { key: 'production', label: 'Production', href: '/universal-manufacturing/production', icon: moduleIcons.factory },
+      { key: 'mrp', label: 'MRP preview', href: '/universal-manufacturing/mrp', icon: moduleIcons['bar-chart'] },
     ],
   };
 

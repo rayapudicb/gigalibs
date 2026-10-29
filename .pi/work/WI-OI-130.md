@@ -35,3 +35,10 @@
 
 - Rebuild module images (`build-module-images.sh`), refresh `.env.modules` IoT keys, bring stack up, journey: provision device → ingest → bind meter → rule breach → CMMS reading/downtime.
 - `pnpm verify` (expect only known repo baseline failures until full green run).
+
+## Certification automation (Option A, 2026-10-29)
+
+- Runbook: [`docs/runbooks/iot-maas-certification.md`](../../docs/runbooks/iot-maas-certification.md)
+- Playwright UI: `e2e/specs/iot-maas-ui.spec.ts` (`pnpm --filter @gigalibs/e2e test:iot-maas-ui`)
+- Ingest helper: `e2e/helpers/iot-ingest.ts` + optional `specs/iot-maas-ingest.spec.ts`
+- Scenario skeleton: `e2e/scenarios/iot-maas/sim-cnc-vibration-wo-downtime-analytics.yaml`

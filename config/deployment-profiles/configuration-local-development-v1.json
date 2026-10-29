@@ -133,6 +133,7 @@
         "ANALYTICS_API_URL",
         "ESIGN_API_URL",
         "CMMS_API_URL",
+        "IOT_API_URL",
         "WORKFORCE_API_URL"
       ],
       "liveness": "/api/health/live",

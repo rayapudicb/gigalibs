@@ -79,6 +79,7 @@ spec:
       entitlementEligible: true
       trialEligible: false
       requiredPermission: universal-manufacturing.bom.read
+      personas: [OPERATIONS_SUPERVISOR]
       menu:
         - { key: boms, label: BOMs, path: /universal-manufacturing/boms, icon: layers }
         - { key: production, label: Production, path: /universal-manufacturing/production, icon: factory }

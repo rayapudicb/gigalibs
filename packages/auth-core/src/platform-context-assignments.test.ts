@@ -86,9 +86,11 @@ describe('assignment claims in the signed context', () => {
   // fits a request header; anything larger is refused when minted, with a reason.
   it('fits the worst configuration under the header limit, and refuses a larger context with a reason', () => {
     const catalogue = PERMISSION_CATALOGUE.map((entry) => entry.code);
-    const roles = Array.from({ length: MAX_CONTEXT_ASSIGNMENTS - 1 }, (_, index) => ({
+    // Catalogue growth (e.g. WI-OI-130 iot:* codes) shrinks how many max-length roles still fit in 14 KiB.
+    const worstRoleCount = MAX_CONTEXT_ASSIGNMENTS - 3;
+    const roles = Array.from({ length: worstRoleCount }, (_, index) => ({
       name: `Role ${index} `.padEnd(100, 'x'),
-      permissions: catalogue.filter((_, code) => code % (MAX_CONTEXT_ASSIGNMENTS - 1) === index || code % 7 === index % 7),
+      permissions: catalogue.filter((_, code) => code % worstRoleCount === index || code % 7 === index % 7),
     }));
     const base = baseRolePermissions('MANAGER');
     const worst: PlatformContextSubject = {

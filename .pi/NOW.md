@@ -2,7 +2,9 @@
 
 ## Active task
 
-**WI-OI-126 Manufacturing & MRP (Module 4) — In progress (2026-10-29).** Migration **v4**; full production handshake + **Finance WIP clearing** on `manufacturing.production.completed.v1`. Evidence [WI-OI-126](work/WI-OI-126.md). **Open:** inventory issue/receipt inbox keys, PG/conformance, full `pnpm verify`, commit. [task card](tasks/WI-OI-126.md).
+**WI-OI-126 Manufacturing & MRP (Module 4) — In progress (2026-10-29).** Migration **v4**; full production handshake + **Finance WIP clearing** on `manufacturing.production.completed.v1`. Evidence [WI-OI-126](work/WI-OI-126.md). **Open:** inventory issue/receipt inbox keys, PG/conformance. **`pnpm verify` PASS** (2026-10-29, all ran steps). [task card](tasks/WI-OI-126.md).
+
+**WI-OI-130 IoT MaaS — Built; certification automation added (2026-10-29).** Playwright + ingest helper + scenario YAML + [runbook](../docs/runbooks/iot-maas-certification.md). **Done** still needs owner UAT on redeployed **5180** + `iot-api`. [handoff](handoff/WI-OI-130-UAT-JOURNEY.md).
 
 **WI-OI-125 Advanced SCM (Module 3) — Built (2026-10-29).** Owner: relay credentials, module-host rebuild, UAT, verify, **commit** when ready. [WI-OI-125](work/WI-OI-125.md).
 

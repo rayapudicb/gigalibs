@@ -320,6 +320,9 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   "analytics-studio": [
     "C_LEVEL"
   ],
+  "iot-gateway": [
+    "OPERATIONS_SUPERVISOR"
+  ],
   "asset-maintenance": [
     "OPERATIONS_SUPERVISOR",
     "WORKFORCE_MEMBER",
@@ -350,6 +353,9 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
     "WORKFORCE_MEMBER"
   ],
   "business-partners": [
+    "OPERATIONS_SUPERVISOR"
+  ],
+  "universal-manufacturing": [
     "OPERATIONS_SUPERVISOR"
   ]
 };

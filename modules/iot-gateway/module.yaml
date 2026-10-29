@@ -82,6 +82,7 @@ spec:
       entitlementEligible: true
       trialEligible: true
       requiredPermission: iot:read
+      personas: [OPERATIONS_SUPERVISOR]
       platformInspection: true
       reason: Device registry, telemetry ingest, condition rules and alert feed with tenant isolation. Protocol daemons and live network scan are phased.
       navigationOrder: 215

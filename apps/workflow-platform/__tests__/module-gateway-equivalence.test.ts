@@ -73,6 +73,16 @@ function intendedCmmsPermission(method: string, path: string): string | null {
   if (method === 'POST' && new RegExp(`^v1/spaces/${UUID_SEGMENT}/cad-layers$`).test(path)) {
     return 'cmms.assets.write';
   }
+  // WI-OI-130: asset downtime API (MaaS IoT relay + CMMS downtime tab).
+  if (method === 'GET' && new RegExp(`^v1/assets/${UUID_SEGMENT}/downtime$`).test(path)) {
+    return 'cmms.assets.read';
+  }
+  if (method === 'POST' && new RegExp(`^v1/assets/${UUID_SEGMENT}/downtime/start$`).test(path)) {
+    return 'cmms.assets.write';
+  }
+  if (method === 'POST' && new RegExp(`^v1/assets/${UUID_SEGMENT}/downtime/end$`).test(path)) {
+    return 'cmms.assets.write';
+  }
   const screenRoute = SCREEN_ROUTES_U19A.find(
     ([routeMethod, pattern]) => routeMethod === method && new RegExp(`^v1/${pattern.replaceAll('{id}', UUID_SEGMENT)}$`).test(path),
   );
@@ -345,6 +355,11 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
         port: '4720',
         serviceHostname: 'geospatial-api',
       },
+      iot: {
+        environmentKey: 'IOT_API_URL',
+        port: '4250',
+        serviceHostname: 'iot-api',
+      },
       'product-catalogue': {
         environmentKey: 'PRODUCT_CATALOGUE_API_URL',
         port: '4790',
@@ -352,6 +367,11 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
       },
       'universal-inventory': {
         environmentKey: 'UNIVERSAL_INVENTORY_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
+      'universal-manufacturing': {
+        environmentKey: 'UNIVERSAL_MANUFACTURING_API_URL',
         port: '4790',
         serviceHostname: 'module-host',
       },

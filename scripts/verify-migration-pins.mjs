@@ -80,6 +80,17 @@ const MODULES = [
       pattern: /export const SCHEMA_CONTRACT_VERSION = (\d+);/,
     },
   },
+  {
+    compose: 'infra/compose/compose.modules.local.yaml',
+    job: 'iot-migrations',
+    api: 'iot-api',
+    apiVariable: 'IOT_EXPECTED_MIGRATION_VERSION',
+    shipped: { manifest: 'modules/iot-gateway/db/runtime-manifest.txt' },
+    code: {
+      file: 'modules/iot-gateway/apps/api/src/runtime-config.ts',
+      pattern: /export const IOT_SCHEMA_CONTRACT_VERSION = (\d+);/,
+    },
+  },
 ];
 
 const read = (file) => readFileSync(join(root, file), 'utf8');
