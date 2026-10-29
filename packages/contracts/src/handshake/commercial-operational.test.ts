@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   ArCreditInvoiceBalanceV1Schema,
   OrdersCreditUninvoicedBalanceV1Schema,
+  ProcurementVendorBillOpenBalanceV1Schema,
   PartnerCreditCheckRequestV1Schema,
   PartnerCreditCheckResponseV1Schema,
   ExactDecimal,
@@ -198,6 +199,19 @@ describe('Commercial & Operational Handshake Schemas', () => {
     };
     expect(OrdersCreditUninvoicedBalanceV1Schema.safeParse(valid).success).toBe(true);
     expect(OrdersCreditUninvoicedBalanceV1Schema.safeParse({ ...valid, uninvoicedAmountMinor: '-1' }).success).toBe(false);
+  });
+
+  it('validates ProcurementVendorBillOpenBalanceV1Schema', () => {
+    const valid = {
+      vendorBillId: 'a0000000-0000-4000-a000-000000000001',
+      vendorPartyId: 'b0000000-0000-4000-a000-000000000001',
+      orgUnitId: 'north',
+      currencyCode: 'USD',
+      openAmountMinor: '8800',
+      sourceVersion: 1,
+    };
+    expect(ProcurementVendorBillOpenBalanceV1Schema.safeParse(valid).success).toBe(true);
+    expect(ProcurementVendorBillOpenBalanceV1Schema.safeParse({ ...valid, openAmountMinor: '-1' }).success).toBe(false);
   });
 
   it('validates partner credit-check request and response', () => {

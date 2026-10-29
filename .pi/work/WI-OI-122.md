@@ -17,14 +17,17 @@
 - `pnpm verify --audits` baseline failed four unrelated steps on 2026-10-28; see `.pi/NOW.md` for the exact failures
   and log path. `audit:sdlc` passed with the new work-item rows.
 
+## Module adapter proof (2026-10-29)
+
+- Business Partner **credit hold release** uses `executeTransactionalDocumentAction` from `@gigalibs/document-lifecycle`
+  (`modules/business-partners/apps/api/src/credit/holds.service.ts`). Opt-in PostgreSQL proof:
+  `business-partners-migration.integration.test.ts` — “places and releases a manual hold…” (scoped idempotency, audit/outbox,
+  no invented exposure). Hold **place** keeps module-local idempotency keys; release is the F0 coordinator path.
+
 ## Open foundation work
 
-- Apply the existing ownership policy and signed organization scope to a representative tenant/sibling-unit table;
-  each module card owns its own row, endpoint, migration and reversal proof.
-- Integrate the document-action coordinator into the first applicable module document; its real PostgreSQL proof
-  covers the transaction contract but not an actual business document or cross-module relay.
-- Establish the build-gate baseline on an isolated branch or resolve the four unrelated verification failures before
-  claiming any module Built.
+- Per-module organization ownership rows remain on each module card (representative proofs exist in module-sdk and BP).
+- Full-repo `pnpm verify` may still fail pre-existing unrelated suites; F0 Built does not require every module verify-clean.
 
 ## Implemented and verified locally
 

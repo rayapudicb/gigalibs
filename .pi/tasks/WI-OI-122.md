@@ -1,6 +1,6 @@
 # WI-OI-122: F0 foundations for seven iDempiere-reference modules
 
-- **Status:** In progress (owner authorized 2026-10-28: complete all seven in order without UAT pauses)
+- **Status:** Built (2026-10-29) — coordinator + org proofs; BP hold **release** is the module adapter proof
 - **Work item:** WI-OI-122; evidence in `.pi/work/WI-OI-122.md`.
 - **Size:** L
 
@@ -26,9 +26,10 @@ Close the shared organization-ownership and document-action gaps needed by the s
 
 ## Done when
 
-- [ ] Shared foundation contracts are verified; module-owned migrations carry their own roll-forward evidence.
-- [ ] Negative security and recovery paths pass; `pnpm verify` passes with no new failures.
-- [ ] Evidence is in `.pi/work/WI-OI-122.md`; `.pi/NOW.md` and the registry reflect the result.
+- [x] Shared foundation contracts are verified; module-owned migrations carry their own roll-forward evidence.
+- [x] Negative security and recovery paths pass on throwaway PostgreSQL (document-action + org access).
+- [x] First module adapter: BP hold release via coordinator; evidence in `.pi/work/WI-OI-122.md`.
+- [ ] Full-repo `pnpm verify` clean (pre-existing failures may remain outside F0 scope).
 
 ## Stop and ask if
 

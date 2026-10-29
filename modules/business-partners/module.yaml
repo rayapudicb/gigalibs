@@ -25,6 +25,8 @@ spec:
       - party.merged.v1
       - party.role.changed.v1
       - ar.credit.invoice-balance.v1
+      - orders.credit.uninvoiced-balance.v1
+      - procurement.credit.vendor-bill-balance.v1
   # Pages (WI-OI-083b): the generic records screen from the core web SDK until the module needs its own screens.
   ui:
     basePath: /business-partners

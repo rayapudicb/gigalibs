@@ -2,3 +2,4 @@
 000002_procurement_outbox_inbox_relay.up.sql
 000003_procurement_auth_revocation_shape.up.sql
 000004_procurement_party_reference_guard.up.sql
+000005_procurement_vendor_bill_credit_relay.up.sql

@@ -19,6 +19,7 @@ import {
   ProcurementInventoryInboxGuard,
   loadProcurementInventoryRelayConfig,
 } from './relay/inventory-replenishment-inbox.js';
+import { ProcurementCreditVendorBillRelay } from './relay/procurement-credit-relay.js';
 
 const ProcurementRecordController = createRecordController({
   guard: AuthorizationGuard,
@@ -40,6 +41,7 @@ const ProcurementRecordController = createRecordController({
     DatabaseService,
     AuthorizationGuard,
     ProcurementService,
+    ProcurementCreditVendorBillRelay,
     ProcurementInventoryInboxGuard,
     { provide: PROCUREMENT_INVENTORY_RELAY_CONFIG, useFactory: () => loadProcurementInventoryRelayConfig() },
     {

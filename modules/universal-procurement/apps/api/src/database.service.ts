@@ -5,6 +5,8 @@ import { RUNTIME_CONFIG, SCHEMA } from './config.js';
 export const PROCUREMENT_DEFINER_FUNCTIONS = [
   'relay_lease_procurement_events',
   'relay_settle_procurement_event',
+  'relay_lease_credit_vendor_bills',
+  'relay_settle_credit_vendor_bill',
 ] as const;
 
 export type ProcurementDefinerFunction = (typeof PROCUREMENT_DEFINER_FUNCTIONS)[number];

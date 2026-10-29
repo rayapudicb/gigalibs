@@ -327,6 +327,19 @@ export const OrdersCreditUninvoicedBalanceV1Schema = z
   .strict();
 export type OrdersCreditUninvoicedBalanceV1 = z.infer<typeof OrdersCreditUninvoicedBalanceV1Schema>;
 
+/** Procurement publishes open vendor-bill AP exposure after approval and settlement changes. */
+export const ProcurementVendorBillOpenBalanceV1Schema = z
+  .object({
+    vendorBillId: z.string().uuid(),
+    vendorPartyId: z.string().uuid(),
+    orgUnitId: z.string().min(1).max(64),
+    currencyCode: z.string().regex(/^[A-Z]{3}$/),
+    openAmountMinor: z.string().regex(/^(0|[1-9]\d{0,18})$/),
+    sourceVersion: z.number().int().positive(),
+  })
+  .strict();
+export type ProcurementVendorBillOpenBalanceV1 = z.infer<typeof ProcurementVendorBillOpenBalanceV1Schema>;
+
 /** Business Partner credit-check command (gateway: `partners.credit.check`). */
 export const PartnerCreditCheckRequestV1Schema = z
   .object({

@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   ArCreditInvoiceBalanceV1Schema,
   OrdersCreditUninvoicedBalanceV1Schema,
+  ProcurementVendorBillOpenBalanceV1Schema,
   RelayEnvelopeV1Schema,
   type RelayEnvelopeV1,
 } from '@gigalibs/contracts';
@@ -34,7 +35,7 @@ interface BalanceFact {
   balanceMinor: bigint;
 }
 
-/** Converts AR and Orders balance snapshots into immutable credit deltas. */
+/** Converts AR, Orders, and Procurement balance snapshots into immutable credit deltas. */
 @Injectable()
 export class CreditInboxService {
   constructor(private readonly database: DatabaseService) {}
@@ -102,6 +103,21 @@ export class CreditInboxService {
         currencyCode: fact.data.currencyCode,
         sourceVersion: fact.data.sourceVersion,
         balanceMinor: BigInt(fact.data.uninvoicedAmountMinor),
+      };
+    }
+    if (envelope.eventType === 'procurement.credit.vendor-bill-balance.v1' && envelope.aggregateType === 'vendor_bill') {
+      const fact = ProcurementVendorBillOpenBalanceV1Schema.safeParse(envelope.payload);
+      if (!fact.success || envelope.aggregateId !== fact.data.vendorBillId ||
+          envelope.aggregateVersion !== fact.data.sourceVersion) return null;
+      return {
+        sourceModule: 'universal-procurement',
+        component: 'OPEN_AP',
+        documentId: fact.data.vendorBillId,
+        customerPartyId: fact.data.vendorPartyId,
+        orgUnitId: fact.data.orgUnitId,
+        currencyCode: fact.data.currencyCode,
+        sourceVersion: fact.data.sourceVersion,
+        balanceMinor: BigInt(fact.data.openAmountMinor),
       };
     }
     return null;

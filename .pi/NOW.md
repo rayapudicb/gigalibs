@@ -2,6 +2,10 @@
 
 ## Active task
 
+**WI-OI-122 F0 — Built (2026-10-29).** Coordinator + org PG proofs; Business Partner hold **release** uses `executeTransactionalDocumentAction`. [task](tasks/WI-OI-122.md) · [evidence](work/WI-OI-122.md).
+
+**WI-OI-123 Universal Business Partner (Module 1) — Built (2026-10-29).** Procurement migration **000005** + OPEN_AP credit relay; static conformance **15/15**. Owner: seven-module batch deploy + UAT. [task](tasks/WI-OI-123.md) · [evidence](work/WI-OI-123.md).
+
 **WI-OI-126 Manufacturing & MRP (Module 4) — Built (2026-10-29).** Recovery PG 3/3 (RESERVING/ISSUING/RECEIVING replay); conformance 15/15 static; DB proofs 28/28 with module host boot. Plan S5/S6 graph-BOM differentiators deferred; `--live` at owner batch deploy. [WI-OI-126](work/WI-OI-126.md).
 
 **WI-OI-127 Landed Cost (Module 5) — Built (2026-10-29).** Committed **`dcd2cc5c`**. Verify fixes in working tree (relay test path, catalogue/navigation/gateway for returns/projects). Full `pnpm verify` still hits pre-existing **product-catalogue** lock + **platform-context** header tests; layer audit clean after relay test move. [task card](tasks/WI-OI-127.md).

@@ -338,6 +338,50 @@ describe.skipIf(!enabled)('Business Partner migration on isolated PostgreSQL 16'
     await runtime.query('ROLLBACK');
   });
 
+  it('turns vendor bill OPEN_AP snapshots into immutable credit deltas', async () => {
+    const tenantId = 'tenant-open-ap-proof';
+    const partyId = randomUUID();
+    const vendorBillId = randomUUID();
+    const database = {
+      withTenantTransaction: async <T>(tenant: string, work: (client: pg.Client) => Promise<T>): Promise<T> => {
+        await runtime.query('BEGIN');
+        try {
+          await runtime.query(`SELECT set_config('app.tenant_id', $1, true)`, [tenant]);
+          const result = await work(runtime);
+          await runtime.query('COMMIT');
+          return result;
+        } catch (error) { await runtime.query('ROLLBACK'); throw error; }
+      },
+    };
+    await database.withTenantTransaction(tenantId, (client) => client.query(
+      `INSERT INTO ${schema}.party_references
+       (tenant_id, party_id, source_version, code, display_name, party_type, status)
+       VALUES ($1, $2, 1, 'VENDOR-AP', 'Vendor AP', 'ORGANIZATION', 'ACTIVE')`, [tenantId, partyId],
+    ));
+    const service = new CreditInboxService(database as never);
+    const envelope = (version: number, amount: string, messageId = randomUUID()) => ({
+      messageId, tenantId, eventType: 'procurement.credit.vendor-bill-balance.v1', aggregateType: 'vendor_bill',
+      aggregateId: vendorBillId, aggregateVersion: version, correlationId: randomUUID(),
+      causationId: null, schemaVersion: 1, occurredAt: new Date().toISOString(),
+      payload: { vendorBillId, vendorPartyId: partyId, orgUnitId: 'north', currencyCode: 'USD',
+        openAmountMinor: amount, sourceVersion: version },
+    });
+    expect(await service.receive(envelope(1, '5000'), JSON.stringify(envelope(1, '5000'))))
+      .toMatchObject({ status: 'PROCESSED' });
+    expect(await service.receive(envelope(2, '3000'), JSON.stringify(envelope(2, '3000'))))
+      .toMatchObject({ status: 'PROCESSED' });
+    const state = await database.withTenantTransaction(tenantId, async (client) => {
+      const position = await client.query(`SELECT source_version, balance_minor::text FROM ${schema}.credit_source_positions
+        WHERE tenant_id = $1 AND source_module = 'universal-procurement' AND component = 'OPEN_AP'`, [tenantId]);
+      const deltas = await client.query<{ delta_minor: string }>(
+        `SELECT delta_minor::text FROM ${schema}.credit_status
+         WHERE tenant_id = $1 AND component = 'OPEN_AP' ORDER BY source_version`, [tenantId]);
+      return { position: position.rows[0], deltas: deltas.rows.map((row) => row.delta_minor) };
+    });
+    expect(state.position).toMatchObject({ source_version: 2, balance_minor: '3000' });
+    expect(state.deltas).toEqual(['5000', '-2000']);
+  });
+
   it('places and releases a manual hold with scoped idempotent document actions and no invented exposure', async () => {
     const tenantId = 'tenant-manual-hold-proof';
     const partyId = randomUUID();

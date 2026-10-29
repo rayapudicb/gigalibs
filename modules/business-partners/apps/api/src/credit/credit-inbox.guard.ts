@@ -17,6 +17,10 @@ export function loadCreditInboxConfig(environment: NodeJS.ProcessEnv = process.e
 @Injectable()
 export class CreditInboxGuard extends RelayInboxGuardBase {
   constructor(@Inject(CREDIT_INBOX_CONFIG) config: RelayConfig) {
-    super(config, { audience: CREDIT_INBOX_AUDIENCE, source: 'accounts-receivable', label: 'Business Partner credit' });
+    super(config, {
+      audience: CREDIT_INBOX_AUDIENCE,
+      source: ['accounts-receivable', 'universal-orders', 'universal-procurement'],
+      label: 'Business Partner credit',
+    });
   }
 }

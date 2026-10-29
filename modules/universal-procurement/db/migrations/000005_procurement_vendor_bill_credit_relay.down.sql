@@ -1,0 +1,10 @@
+BEGIN;
+DROP TRIGGER IF EXISTS vendor_bill_credit_balance_queued ON gigalibs_procurement.vendor_bills;
+DROP FUNCTION IF EXISTS gigalibs_procurement.queue_credit_after_vendor_bill_change();
+DROP FUNCTION IF EXISTS gigalibs_procurement.queue_credit_vendor_bill_open_balance(varchar, uuid, text);
+DROP FUNCTION IF EXISTS gigalibs_procurement.relay_lease_credit_vendor_bills(integer, integer);
+DROP FUNCTION IF EXISTS gigalibs_procurement.relay_settle_credit_vendor_bill(uuid, boolean, text, integer, integer);
+DROP TABLE IF EXISTS gigalibs_procurement.credit_outbox_events;
+DROP TABLE IF EXISTS gigalibs_procurement.credit_snapshot_positions;
+DELETE FROM gigalibs_procurement.schema_migrations WHERE version = 5;
+COMMIT;

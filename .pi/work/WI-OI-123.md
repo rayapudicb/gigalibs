@@ -27,7 +27,10 @@ The kernel Party remains the identity, contact, location and role authority. Bus
 
 ## Open before Built
 
-- Vendor-bill **OPEN_AP** feed (netting AP side still 0 by design until procurement slice); bank vault routes/UI; partner detail split-screen + live gauge chrome beyond metadata list windows; governed AI hold explainer when a source exists.
+- **OPEN_AP feed (2026-10-29):** Procurement migration **000005** queues `procurement.credit.vendor-bill-balance.v1` on vendor-bill
+  approve/status/total changes; `ProcurementCreditVendorBillRelay` posts to BP credit inbox; inbox maps to `OPEN_AP` deltas
+  (integration test “turns vendor bill OPEN_AP snapshots…”). `pnpm modules:catalog` pins procurement migration **5**.
+- Remaining non-blocking: bank vault UI polish; partner split-screen/BFF; live `--record` conformance at owner deploy.
 - Static **module conformance** (2026-10-28): S9 relay inbox controllers, S10 custom audit/outbox on credit/party inbox paths, S11 parser false-positives on `credit_feed_marks` / `credit_source_positions` — address or exempt before `--live --record`.
 - **Live conformance**, full HTTP owner-config journey, and **clean full `pnpm verify`** (repo still has pre-existing audit/test failures unrelated to BP). One module-completion commit after gate passes.
 

@@ -50,6 +50,7 @@ spec:
       - procurement.order.issued.v1
       - procurement.match.receipt.created.v1
       - procurement.match.invoice.created.v1
+      - procurement.credit.vendor-bill-balance.v1
     consumes:
       - platform.authorization.revoked.v1
       - platform.organization.version.v1
