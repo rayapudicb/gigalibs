@@ -1,6 +1,6 @@
 # WI-OI-129 Project Operations — evidence
 
-**Status:** In progress (Module 7); S1–S3 committed through S3 commit (2026-10-29).
+**Status:** In progress (Module 7); S1–S3 committed through **`4d942a9b`** (2026-10-29).
 
 ## S1 (WBS schema) — `1c191256`
 
