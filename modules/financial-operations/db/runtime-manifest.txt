@@ -14,3 +14,4 @@
 000013_finance_table2_hardening.up.sql
 000014_finance_table2_releasability.up.sql
 000015_finance_d1_replica_hardening.up.sql
+000016_finance_manufacturing_accounts.up.sql

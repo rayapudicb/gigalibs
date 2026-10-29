@@ -1471,6 +1471,29 @@ export class InventoryService {
       };
     }
 
+    // A retried Manufacturing command must be answered from its committed reservation before ATP is
+    // checked again: the first reservation itself lowers ATP and would otherwise make the replay short.
+    if (input.demandType === 'WORK_ORDER' && input.idempotencyKey) {
+      const prior = await this.database.withTenantTransaction(principal.tenantId, async (client) => {
+        await this.requireWarehouseAccess(client, principal, input.warehouseId, 'write');
+        const result = await client.query<{ response_payload: InventoryReservationV1 }>(
+          `SELECT response_payload FROM ${SCHEMA}.idempotency_records
+            WHERE tenant_id = $1 AND idempotency_key = $2 AND action = 'CREATE_RESERVATION'`,
+          [principal.tenantId, input.idempotencyKey],
+        );
+        return result.rows[0]?.response_payload ?? null;
+      });
+      if (prior) {
+        if (prior.demandType !== input.demandType || prior.demandReferenceId !== input.demandReferenceId ||
+            prior.demandLineId !== input.demandLineId || prior.warehouseId !== input.warehouseId ||
+            prior.productId !== input.productId || prior.uomId !== input.uomId ||
+            ExactDecimal.toScaledBigInt(prior.quantity) !== ExactDecimal.toScaledBigInt(input.quantity)) {
+          throw new ConflictException('Reservation idempotency key was used for a different demand.');
+        }
+        return { outcome: 'RESERVED', commandKey: input.commandKey, reservationId: prior.id };
+      }
+    }
+
     const atp = await this.checkAtp(principal, {
       requestKey: input.commandKey,
       warehouseId: input.warehouseId,
@@ -1765,8 +1788,8 @@ export class InventoryService {
           throw new BadRequestException('Reservation is not bound to this sales order and line.');
         }
       } else if (res.demand_type === 'WORK_ORDER') {
-        if (res.demand_reference_id !== input.orderId) {
-          throw new BadRequestException('Reservation is not bound to this production order.');
+        if (res.demand_reference_id !== input.orderId || res.demand_line_id !== input.fulfillmentId) {
+          throw new BadRequestException('Reservation is not bound to this production order and component line.');
         }
       } else {
         throw new BadRequestException(`Demand type ${res.demand_type} cannot be issued through this command.`);
@@ -2006,30 +2029,69 @@ export class InventoryService {
       readonly commandKey: string;
       readonly productionOrderId: string;
       readonly warehouseId: string;
+      readonly orgUnitId: string;
       readonly productId: string;
       readonly uomId: string;
       readonly quantity: string;
     },
-  ): Promise<{ receiptId: string; receiptNumber: string }> {
+  ): Promise<{ receiptId: string; receiptNumber: string; financeCostProfileId: string }> {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const externalRef = `manufacturing:${input.productionOrderId}`;
-      const prior = await client.query<{ id: string; receipt_number: string; status: string }>(
-        `SELECT id, receipt_number, status FROM ${SCHEMA}.receipts
+      await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+        [`${principal.tenantId}:${externalRef}`]);
+      await this.requireWarehouseAccess(client, principal, input.warehouseId, 'write');
+      const valuation = await client.query<{ org_unit_id: string | null; finance_cost_profile_id: string | null }>(
+        `SELECT w.org_unit_id, s.finance_cost_profile_id FROM ${SCHEMA}.warehouses w
+           LEFT JOIN ${SCHEMA}.inventory_org_valuation_settings s
+             ON s.tenant_id = w.tenant_id AND s.org_unit_id = w.org_unit_id
+          WHERE w.tenant_id = $1 AND w.id = $2`, [principal.tenantId, input.warehouseId],
+      );
+      const profile = valuation.rows[0];
+      if (!profile?.org_unit_id || profile.org_unit_id !== input.orgUnitId) {
+        throw new ConflictException('Production output warehouse must have the order owning unit.');
+      }
+      const prior = await client.query<{ id: string; receipt_number: string; status: string; warehouse_id: string }>(
+        `SELECT id, receipt_number, status, warehouse_id FROM ${SCHEMA}.receipts
           WHERE tenant_id = $1 AND external_document_reference = $2`,
         [principal.tenantId, externalRef],
       );
       if (prior.rows[0]?.status === 'COMPLETED') {
-        return { receiptId: prior.rows[0].id, receiptNumber: prior.rows[0].receipt_number };
+        const completedFact = await client.query<{ payload: {
+          financeCostProfileId?: string; orgUnitId?: string; warehouseId?: string;
+          lines?: Array<{ productId: string; uomId: string; receivedQuantity: string }>;
+        } }>(
+          `SELECT payload
+             FROM ${SCHEMA}.outbox_events
+            WHERE tenant_id = $1 AND aggregate_id = $2 AND event_type = 'inventory.receipt.completed.v1'
+            ORDER BY created_at DESC LIMIT 1`,
+          [principal.tenantId, prior.rows[0].id],
+        );
+        const fact = completedFact.rows[0]?.payload;
+        if (fact?.orgUnitId !== input.orgUnitId || fact.warehouseId !== input.warehouseId ||
+            !fact.financeCostProfileId || fact.lines?.length !== 1 ||
+            fact.lines[0]?.productId !== input.productId || fact.lines[0]?.uomId !== input.uomId ||
+            ExactDecimal.toScaledBigInt(fact.lines[0]?.receivedQuantity ?? '0') !==
+              ExactDecimal.toScaledBigInt(input.quantity)) {
+          throw new ConflictException('Completed production receipt differs from the original command; reconcile Inventory.');
+        }
+        return { receiptId: prior.rows[0].id, receiptNumber: prior.rows[0].receipt_number,
+          financeCostProfileId: fact.financeCostProfileId };
+      }
+      if (prior.rows[0]) {
+        throw new ConflictException('Production receipt reference is already held by an incomplete Inventory receipt; reconcile it.');
+      }
+      if (!profile.finance_cost_profile_id) {
+        throw new ConflictException('Production output warehouse needs a Finance cost profile.');
       }
 
       const idem = await client.query<{ response_payload: { receiptId: string; receiptNumber: string } }>(
         `SELECT response_payload FROM ${SCHEMA}.idempotency_records
-          WHERE tenant_id = $1 AND idempotency_key = $2`,
+          WHERE tenant_id = $1 AND idempotency_key = $2 AND action = 'MANUFACTURING_FINISHED_RECEIPT'`,
         [principal.tenantId, input.commandKey],
       );
-      if (idem.rows[0]) return idem.rows[0].response_payload;
-
-      await this.requireWarehouseAccess(client, principal, input.warehouseId, 'write');
+      if (idem.rows[0]) {
+        throw new ConflictException('Production receipt idempotency record has no completed receipt; reconcile Inventory.');
+      }
       const locationRes = await client.query<{ id: string }>(
         `SELECT id FROM ${SCHEMA}.locations
           WHERE tenant_id = $1 AND warehouse_id = $2 AND location_type = 'RECEIVING' AND active = true
@@ -2041,8 +2103,8 @@ export class InventoryService {
         throw new BadRequestException('Warehouse has no active RECEIVING location for manufacturing output.');
       }
 
-      let receiptId = prior.rows[0]?.id;
-      let receiptNumber = prior.rows[0]?.receipt_number;
+      let receiptId: string | undefined;
+      let receiptNumber: string | undefined;
       const now = new Date().toISOString();
       if (!receiptId) {
         receiptId = randomUUID();
@@ -2068,13 +2130,6 @@ export class InventoryService {
           ) VALUES ($1, $2, $3, 1, $4, $5, $6, $6, $7, 'PENDING', '{}'::jsonb, $8, $8)`,
           [randomUUID(), principal.tenantId, receiptId, input.productId, input.uomId, input.quantity, targetLocationId, now],
         );
-      } else {
-        await client.query(
-          `UPDATE ${SCHEMA}.receipt_lines
-              SET received_quantity = $1, expected_quantity = $1, target_location_id = COALESCE(target_location_id, $2), updated_at = $3
-            WHERE tenant_id = $4 AND receipt_id = $5`,
-          [input.quantity, targetLocationId, now, principal.tenantId, receiptId],
-        );
       }
 
       const receiptRes = await client.query(`SELECT * FROM ${SCHEMA}.receipts WHERE tenant_id = $1 AND id = $2 FOR UPDATE`, [
@@ -2087,7 +2142,7 @@ export class InventoryService {
       ]);
       await this.persistReceiptComplete(client, principal, receiptRes.rows[0], linesRes.rows);
 
-      const result = { receiptId, receiptNumber: receiptNumber! };
+      const result = { receiptId, receiptNumber: receiptNumber!, financeCostProfileId: profile.finance_cost_profile_id };
       await client.query(
         `INSERT INTO ${SCHEMA}.idempotency_records (tenant_id, idempotency_key, resource_id, action, response_payload)
          VALUES ($1, $2, $3, 'MANUFACTURING_FINISHED_RECEIPT', $4::jsonb)`,

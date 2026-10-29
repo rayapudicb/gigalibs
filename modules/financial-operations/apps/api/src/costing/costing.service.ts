@@ -110,6 +110,7 @@ export class CostingService {
         inventory_gl_account_id, grni_gl_account_id, cogs_gl_account_id,
         landed_cost_clearing_gl_account_id, purchase_price_variance_gl_account_id,
         scrap_gl_account_id, valuation_loss_gl_account_id,
+        manufacturing_wip_gl_account_id, manufacturing_variance_gl_account_id,
         standard_unit_cost_scaled, is_default, is_active, version,
         created_at, updated_at, created_by, updated_by
       ) VALUES (
@@ -117,8 +118,9 @@ export class CostingService {
         $7, $8, $9,
         $10, $11,
         $12, $13,
-        $14, $15, $16, $17,
-        $18, $19, $20, $21
+        $14, $15,
+        $16, $17, $18, $19,
+        $20, $21, $22, $23
       ) RETURNING *;
     `;
 
@@ -137,6 +139,8 @@ export class CostingService {
         input.purchasePriceVarianceGlAccountId,
         input.scrapGlAccountId,
         input.valuationLossGlAccountId,
+        input.manufacturingWipGlAccountId ?? null,
+        input.manufacturingVarianceGlAccountId ?? null,
         input.standardUnitCostScaled ?? null,
         input.isDefault ?? false,
         true,
@@ -1105,6 +1109,8 @@ export class CostingService {
       purchasePriceVarianceGlAccountId: row.purchase_price_variance_gl_account_id,
       scrapGlAccountId: row.scrap_gl_account_id,
       valuationLossGlAccountId: row.valuation_loss_gl_account_id,
+      manufacturingWipGlAccountId: row.manufacturing_wip_gl_account_id ?? null,
+      manufacturingVarianceGlAccountId: row.manufacturing_variance_gl_account_id ?? null,
       standardUnitCostScaled: row.standard_unit_cost_scaled?.toString() ?? null,
       isDefault: Boolean(row.is_default),
       isActive: Boolean(row.is_active),

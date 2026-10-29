@@ -40,7 +40,7 @@ describe.skipIf(!enabled)('Material Ledger reservation concurrency on isolated P
     db = new DatabaseService({
       databaseUrl: postgres.runtimeUrl,
       databasePoolSize: 5,
-      expectedMigrationVersion: 11,
+      expectedMigrationVersion: 12,
       platformContextAudience: 'proof',
       platformContextPublicKey: 'proof',
       corsOrigins: [],
@@ -119,6 +119,45 @@ describe.skipIf(!enabled)('Material Ledger reservation concurrency on isolated P
     expect(afterReverse.find((row) => row.locationId === destination.id)?.onHandQuantity).toBe('0.000000');
     expect(afterReverse.find((row) => row.locationId === locationId && row.productId === productId)
       ?.onHandQuantity).toBe('10.000000');
+  }, 60_000);
+
+  it('replays a finished-goods receipt from its immutable fact and refuses changed output', async () => {
+    await inventory.createLocation(principal, {
+      warehouseId, code: 'RECEIVING-MO', name: 'Manufacturing receiving', locationType: 'RECEIVING',
+    });
+    const financeProfileId = randomUUID();
+    await db.withTenantTransaction(tenantId, async (client) => {
+      await client.query(
+        `UPDATE gigalibs_inventory.inventory_org_valuation_settings
+            SET finance_cost_profile_id = $1
+          WHERE tenant_id = $2 AND org_unit_id = 'unit-a'`, [financeProfileId, tenantId],
+      );
+    });
+    const command = {
+      commandKey: randomUUID(), productionOrderId: randomUUID(), warehouseId,
+      orgUnitId: 'unit-a', productId: randomUUID(), uomId,
+      quantity: '2.000000',
+    };
+    const first = await inventory.receiveManufacturingFinishedGoods(principal, command);
+    expect(first.financeCostProfileId).toBe(financeProfileId);
+    const nextProfileId = randomUUID();
+    await db.withTenantTransaction(tenantId, async (client) => {
+      await client.query(
+        `UPDATE gigalibs_inventory.inventory_org_valuation_settings
+            SET finance_cost_profile_id = $1
+          WHERE tenant_id = $2 AND org_unit_id = 'unit-a'`, [nextProfileId, tenantId],
+      );
+    });
+    expect(await inventory.receiveManufacturingFinishedGoods(principal, command)).toEqual(first);
+    await expect(inventory.receiveManufacturingFinishedGoods(principal, {
+      ...command, quantity: '3.000000',
+    })).rejects.toThrow('differs from the original command');
+    const count = await db.withTenantTransaction(tenantId, async (client) => client.query<{ count: number }>(
+      `SELECT COUNT(*)::int AS count FROM gigalibs_inventory.receipts
+        WHERE tenant_id = $1 AND external_document_reference = $2`,
+      [tenantId, `manufacturing:${command.productionOrderId}`],
+    ));
+    expect(count.rows[0]?.count).toBe(1);
   }, 60_000);
 
   it('refuses a count loss that would consume another demand’s reserved stock', async () => {

@@ -4,3 +4,4 @@
 000002_manufacturing_bom_and_production.up.sql
 000003_manufacturing_inventory_handshake.up.sql
 000004_manufacturing_finance_relay.up.sql
+000005_production_recovery.up.sql

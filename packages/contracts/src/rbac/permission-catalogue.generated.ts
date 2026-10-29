@@ -1124,6 +1124,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
       "platform",
       "product-catalogue",
       "universal-inventory",
+      "universal-manufacturing",
       "universal-orders",
       "universal-procurement"
     ]

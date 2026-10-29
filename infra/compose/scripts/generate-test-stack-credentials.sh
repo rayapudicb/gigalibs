@@ -149,6 +149,7 @@ TABLE1_MODULES=(
   universal-procurement
   universal-orders
   universal-inventory
+  universal-manufacturing
 )
 for module in "${TABLE1_MODULES[@]}"; do
   if [[ ! -e "${COMPOSE_DIR}/.env.test.module.${module}" ]]; then

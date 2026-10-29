@@ -13,7 +13,6 @@ import {
   HttpStatus,
   Inject,
   Injectable,
-  Module,
   Post,
   Req,
   UseGuards,
@@ -55,12 +54,5 @@ export class ProcurementInventoryInboxController {
     return this.procurement.applyReplenishmentPoDraft(parsed.data, request.rawBody?.toString('utf8') ?? JSON.stringify(body));
   }
 }
-
-@Module({
-  controllers: [ProcurementInventoryInboxController],
-  providers: [
-    { provide: PROCUREMENT_INVENTORY_RELAY_CONFIG, useFactory: () => loadProcurementInventoryRelayConfig() },
-    ProcurementInventoryInboxGuard,
-  ],
-})
-export class ProcurementInventoryInboxModule {}
+// The controller, guard and relay-config are registered directly in the module's AppModule so they share the scope
+// where ProcurementService is provided (NestJS DI encapsulation); there is deliberately no separate @Module here.

@@ -3,19 +3,23 @@ import { signRelayToken } from '@gigalibs/auth-core';
 import { loadRelayConfig, type ModulePrincipal } from '@gigalibs/module-sdk';
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 
-function relayConfig(environment: NodeJS.ProcessEnv = process.env) {
-  return loadRelayConfig(environment, {
+export function isManufacturingInventoryHandshakeConfigured(environment: NodeJS.ProcessEnv = process.env): boolean {
+  const configured = { ...environment };
+  if (configured.MANUFACTURING_INVENTORY_RELAY_URL?.trim()) {
+    configured.MANUFACTURING_INVENTORY_ISSUE_DEMAND_COMMAND_PATH ??=
+      '/universal-inventory/internal/v1/issue-demand-command';
+    configured.MANUFACTURING_INVENTORY_PRODUCTION_RECEIPT_COMMAND_PATH ??=
+      '/universal-inventory/internal/v1/production-receipt-command';
+  }
+  const outbound = (inboxPath: string) => loadRelayConfig(configured, {
     inboxPublicKey: 'MANUFACTURING_INVENTORY_RELAY_UNUSED_PUBLIC_KEY',
     targetUrl: 'MANUFACTURING_INVENTORY_RELAY_URL',
     signingKey: 'MANUFACTURING_INVENTORY_RELAY_PRIVATE_KEY_BASE64',
     interval: 'MANUFACTURING_INVENTORY_RELAY_INTERVAL_MS',
-    peerService: 'module-host',
-    inboxPath: 'MANUFACTURING_INVENTORY_RELAY_UNUSED_PATH',
-  });
-}
-
-export function isManufacturingInventoryHandshakeConfigured(environment: NodeJS.ProcessEnv = process.env): boolean {
-  return Boolean(relayConfig(environment).outbound);
+    peerService: 'module-host', inboxPath,
+  }).outbound;
+  return Boolean(outbound('MANUFACTURING_INVENTORY_ISSUE_DEMAND_COMMAND_PATH') &&
+    outbound('MANUFACTURING_INVENTORY_PRODUCTION_RECEIPT_COMMAND_PATH'));
 }
 
 @Injectable()
@@ -100,6 +104,7 @@ export class InventoryHandshakeClient {
       commandKey: string;
       productionOrderId: string;
       warehouseId: string;
+      orgUnitId: string;
       productId: string;
       uomId: string;
       quantity: string;
@@ -115,6 +120,6 @@ export class InventoryHandshakeClient {
     if (!response.ok) {
       throw new ServiceUnavailableException({ code: 'MANUFACTURING_INVENTORY_RECEIPT_UNAVAILABLE' });
     }
-    return response.json() as Promise<{ receiptId: string; receiptNumber: string }>;
+    return response.json() as Promise<{ receiptId: string; receiptNumber: string; financeCostProfileId: string }>;
   }
 }

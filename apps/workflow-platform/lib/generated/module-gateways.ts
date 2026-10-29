@@ -2744,11 +2744,48 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/boms/where-used/{id}",
+        "pattern": "^v1/boms/where-used/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "universal-manufacturing.bom.read"
+        }
+      },
+      {
+        "template": "v1/boms/{id}/shortages",
+        "pattern": "^v1/boms/[0-9a-fA-F-]{36}/shortages$",
+        "methods": {
+          "GET": "universal-manufacturing.bom.read"
+        }
+      },
+      {
+        "template": "v1/work-centers",
+        "pattern": "^v1/work-centers$",
+        "methods": {
+          "GET": "universal-manufacturing.bom.read",
+          "POST": "universal-manufacturing.bom.manage"
+        }
+      },
+      {
+        "template": "v1/routings",
+        "pattern": "^v1/routings$",
+        "methods": {
+          "GET": "universal-manufacturing.bom.read",
+          "POST": "universal-manufacturing.bom.manage"
+        }
+      },
+      {
         "template": "v1/production-orders",
         "pattern": "^v1/production-orders$",
         "methods": {
           "GET": "universal-manufacturing.production.read",
           "POST": "universal-manufacturing.production.manage"
+        }
+      },
+      {
+        "template": "v1/production-orders/{id}",
+        "pattern": "^v1/production-orders/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "universal-manufacturing.production.read"
         }
       },
       {

@@ -9,7 +9,7 @@ export class FinanceRelayInboxGuard extends RelayInboxGuardBase {
   constructor(@Inject(FINANCE_RELAY_CONFIG) config: FinanceRelayConfig) {
     super(config, {
       audience: FINANCE_INBOX_AUDIENCE,
-      source: ['inventory', 'universal-manufacturing'],
+      source: 'inventory',
       label: 'Finance',
     });
   }

@@ -7,8 +7,10 @@ import { RecordsController } from './records/records.controller.js';
 import { RecordsService } from './records/records.service.js';
 import { InventoryHandshakeClient } from './inventory/inventory-handshake.client.js';
 import { InventoryReserveReleaseClient } from './inventory/inventory-reserve-release.client.js';
+import { InventoryAtpClient } from './inventory/inventory-atp.client.js';
 import { ManufacturingController } from './manufacturing/manufacturing.controller.js';
 import { ManufacturingService } from './manufacturing/manufacturing.service.js';
+import { OrganizationController } from './organization/organization.controller.js';
 import { createRelayHealthController } from '@gigalibs/module-sdk';
 import {
   loadManufacturingFinanceRelayConfig,
@@ -20,7 +22,7 @@ const ManufacturingRelayHealthController = createRelayHealthController('v1/healt
 
 /** Manufacturing & MRP runtime (WI-OI-126) on the module SDK. */
 @Module({
-  controllers: [HealthController, ManufacturingRelayHealthController, RecordsController, ManufacturingController],
+  controllers: [HealthController, ManufacturingRelayHealthController, RecordsController, ManufacturingController, OrganizationController],
   providers: [
     runtimeConfigProvider,
     DatabaseService,
@@ -28,6 +30,7 @@ const ManufacturingRelayHealthController = createRelayHealthController('v1/healt
     RecordsService,
     ManufacturingService,
     InventoryReserveReleaseClient,
+    InventoryAtpClient,
     InventoryHandshakeClient,
     { provide: MANUFACTURING_FINANCE_RELAY_CONFIG, useFactory: () => loadManufacturingFinanceRelayConfig() },
     ManufacturingFinanceOutboxRelay,

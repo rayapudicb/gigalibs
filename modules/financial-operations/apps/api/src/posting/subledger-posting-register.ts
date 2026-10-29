@@ -8,6 +8,8 @@ export type SubledgerPostingRegisterInput = {
   readonly messageId: string;
   readonly sourceDocumentId: string;
   readonly journalEntryType: string;
+  readonly sourceDocumentType?: string;
+  readonly eventType?: string;
 };
 
 /** Records the expected journal source key and links the posted journal when present (same tenant). */
@@ -17,6 +19,7 @@ export async function recordInventoryReceiptLinePosting(
   input: SubledgerPostingRegisterInput,
 ): Promise<void> {
   const policy = inventoryReceiptCompletedPostingPolicyV1;
+  const sourceDocumentType = input.sourceDocumentType ?? policy.sourceDocumentType;
   const journal = await client.query<{ id: string }>(
     `SELECT id FROM ${schema}.gl_journals
       WHERE tenant_id = $1
@@ -24,7 +27,7 @@ export async function recordInventoryReceiptLinePosting(
         AND source_document_id = $3
         AND entry_type = $4
       LIMIT 1`,
-    [input.tenantId, policy.sourceDocumentType, input.sourceDocumentId, input.journalEntryType],
+    [input.tenantId, sourceDocumentType, input.sourceDocumentId, input.journalEntryType],
   );
 
   await client.query(
@@ -39,8 +42,8 @@ export async function recordInventoryReceiptLinePosting(
       input.tenantId,
       INVENTORY_CONSUMER,
       input.messageId,
-      policy.eventType,
-      policy.sourceDocumentType,
+      input.eventType ?? policy.eventType,
+      sourceDocumentType,
       input.sourceDocumentId,
       journal.rows[0]?.id ?? null,
     ],

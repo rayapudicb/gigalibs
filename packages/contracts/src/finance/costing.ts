@@ -68,6 +68,8 @@ export const CostProfileV1Schema = z
     purchasePriceVarianceGlAccountId: z.string().uuid(),
     scrapGlAccountId: z.string().uuid(),
     valuationLossGlAccountId: z.string().uuid(),
+    manufacturingWipGlAccountId: z.string().uuid().optional().nullable(),
+    manufacturingVarianceGlAccountId: z.string().uuid().optional().nullable(),
     standardUnitCostScaled: ScaledRateSchema.optional().nullable(),
     isDefault: z.boolean().default(false),
     isActive: z.boolean().default(true),
@@ -183,6 +185,8 @@ export const CreateCostProfileInputV1Schema = z
     purchasePriceVarianceGlAccountId: z.string().uuid(),
     scrapGlAccountId: z.string().uuid(),
     valuationLossGlAccountId: z.string().uuid(),
+    manufacturingWipGlAccountId: z.string().uuid().optional().nullable(),
+    manufacturingVarianceGlAccountId: z.string().uuid().optional().nullable(),
     standardUnitCostScaled: ScaledRateSchema.optional().nullable(),
     isDefault: z.boolean().optional().default(false),
   })

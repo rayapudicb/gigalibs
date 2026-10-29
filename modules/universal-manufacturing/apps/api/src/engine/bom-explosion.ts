@@ -29,6 +29,9 @@ export function explodeBomRequirements(
         visit(child, lineQty);
       } else {
         const existing = totals.get(line.componentProductId);
+        if (existing && existing.uomId !== line.uomId) {
+          throw new Error(`Component ${line.componentProductId} has conflicting units of measure.`);
+        }
         const next = existing
           ? ExactDecimal.add(existing.quantity, lineQty)
           : lineQty;

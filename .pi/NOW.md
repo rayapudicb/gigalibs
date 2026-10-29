@@ -2,7 +2,7 @@
 
 ## Active task
 
-**WI-OI-126 Manufacturing & MRP (Module 4) — In progress (2026-10-29).** Migration **v4**; full production handshake + **Finance WIP clearing** on `manufacturing.production.completed.v1`. Evidence [WI-OI-126](work/WI-OI-126.md). **Open:** inventory issue/receipt inbox keys, PG/conformance. **`pnpm verify` PASS** (2026-10-29, all ran steps). [task card](tasks/WI-OI-126.md).
+**WI-OI-126 Manufacturing & MRP (Module 4) — In progress (2026-10-29).** Migration **v5**; full production handshake + **Finance WIP clearing** on `manufacturing.production.completed.v1`. **Verified on isolated PostgreSQL 16: conformance 15/15, recovery PG 3/3, and the full DB-proof suite 28/28 with the module host booting all modules** — after fixing two deploy-blocking NestJS DI breaks found via the module-host-http proof (TransferService and ProcurementInventoryInboxController; the host would not start otherwise; static conformance + unit tests missed them). Evidence [WI-OI-126](work/WI-OI-126.md). **Open:** S5/S6 UI differentiators, relay credentials + `--live` on the deploy, compensation on failed issue/receipt, clean full `pnpm verify`, module-completion commit. [task card](tasks/WI-OI-126.md).
 
 **WI-OI-130 IoT MaaS — Built; certification automation added (2026-10-29).** Playwright + ingest helper + scenario YAML + [runbook](../docs/runbooks/iot-maas-certification.md). **Done** still needs owner UAT on redeployed **5180** + `iot-api`. [handoff](handoff/WI-OI-130-UAT-JOURNEY.md).
 

@@ -12,6 +12,12 @@ import { HealthController } from './health.controller.js';
 import { inventoryRecordDispatcher } from './inventory/inventory-record-adapters.js';
 import { InventoryRecordsService } from './inventory/inventory-records.service.js';
 import { AtpCheckCommandController } from './inventory/atp-check-command.controller.js';
+import { ManufacturingAtpCommandController } from './inventory/manufacturing-atp-command.controller.js';
+import {
+  MANUFACTURING_ATP_COMMAND_CONFIG,
+  ManufacturingAtpCommandGuard,
+  loadManufacturingAtpCommandConfig,
+} from './inventory/manufacturing-atp-command.guard.js';
 import {
   ATP_CHECK_COMMAND_CONFIG,
   AtpCheckCommandGuard,
@@ -19,6 +25,12 @@ import {
 } from './inventory/atp-check-command.guard.js';
 import { InventoryController } from './inventory/inventory.controller.js';
 import { ReserveReleaseCommandController } from './inventory/reserve-release-command.controller.js';
+import { ManufacturingReserveCommandController } from './inventory/manufacturing-reserve-command.controller.js';
+import {
+  MANUFACTURING_RESERVE_COMMAND_CONFIG,
+  ManufacturingReserveCommandGuard,
+  loadManufacturingReserveCommandConfig,
+} from './inventory/manufacturing-reserve-command.guard.js';
 import {
   RESERVE_RELEASE_COMMAND_CONFIG,
   ReserveReleaseCommandGuard,
@@ -68,7 +80,9 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     InventoryRelayHealthController,
     InventoryController,
     AtpCheckCommandController,
+    ManufacturingAtpCommandController,
     ReserveReleaseCommandController,
+    ManufacturingReserveCommandController,
     IssueDemandCommandController,
     ProductionReceiptCommandController,
     OrganizationController,
@@ -92,8 +106,12 @@ const InventoryRecordController = createRecordController({ guard: AuthorizationG
     ReplenishmentService,
     { provide: ATP_CHECK_COMMAND_CONFIG, useFactory: () => loadAtpCheckCommandConfig() },
     AtpCheckCommandGuard,
+    { provide: MANUFACTURING_ATP_COMMAND_CONFIG, useFactory: () => loadManufacturingAtpCommandConfig() },
+    ManufacturingAtpCommandGuard,
     { provide: RESERVE_RELEASE_COMMAND_CONFIG, useFactory: () => loadReserveReleaseCommandConfig() },
     ReserveReleaseCommandGuard,
+    { provide: MANUFACTURING_RESERVE_COMMAND_CONFIG, useFactory: () => loadManufacturingReserveCommandConfig() },
+    ManufacturingReserveCommandGuard,
     { provide: ISSUE_DEMAND_COMMAND_CONFIG, useFactory: () => loadIssueDemandCommandConfig() },
     IssueDemandCommandGuard,
     { provide: PRODUCTION_RECEIPT_COMMAND_CONFIG, useFactory: () => loadProductionReceiptCommandConfig() },

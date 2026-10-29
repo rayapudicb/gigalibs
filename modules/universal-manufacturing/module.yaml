@@ -103,7 +103,12 @@ spec:
       - { path: 'v1/records/{id}', GET: universal-manufacturing.records.read, PATCH: universal-manufacturing.records.manage }
       - { path: 'v1/boms', GET: universal-manufacturing.bom.read, POST: universal-manufacturing.bom.manage }
       - { path: 'v1/boms/{id}/tree', GET: universal-manufacturing.bom.read }
+      - { path: 'v1/boms/where-used/{id}', GET: universal-manufacturing.bom.read }
+      - { path: 'v1/boms/{id}/shortages', GET: universal-manufacturing.bom.read }
+      - { path: 'v1/work-centers', GET: universal-manufacturing.bom.read, POST: universal-manufacturing.bom.manage }
+      - { path: 'v1/routings', GET: universal-manufacturing.bom.read, POST: universal-manufacturing.bom.manage }
       - { path: 'v1/production-orders', GET: universal-manufacturing.production.read, POST: universal-manufacturing.production.manage }
+      - { path: 'v1/production-orders/{id}', GET: universal-manufacturing.production.read }
       - { path: 'v1/production-orders/{id}/release', POST: universal-manufacturing.production.manage }
       - { path: 'v1/production-orders/{id}/issue', POST: universal-manufacturing.production.manage }
       - { path: 'v1/production-orders/{id}/complete', POST: universal-manufacturing.production.manage }

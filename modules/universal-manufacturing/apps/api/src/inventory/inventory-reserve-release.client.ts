@@ -10,8 +10,13 @@ import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 export function isManufacturingInventoryReserveReleaseConfigured(
   environment: NodeJS.ProcessEnv = process.env,
 ): boolean {
+  const configured = { ...environment };
+  if (configured.MANUFACTURING_INVENTORY_RELAY_URL?.trim()) {
+    configured.MANUFACTURING_INVENTORY_RESERVE_RELEASE_COMMAND_PATH ??=
+      '/universal-inventory/internal/v1/manufacturing-reserve-command';
+  }
   return Boolean(
-    loadRelayConfig(environment, {
+    loadRelayConfig(configured, {
       inboxPublicKey: 'MANUFACTURING_INVENTORY_RELAY_UNUSED_PUBLIC_KEY',
       targetUrl: 'MANUFACTURING_INVENTORY_RELAY_URL',
       signingKey: 'MANUFACTURING_INVENTORY_RELAY_PRIVATE_KEY_BASE64',
@@ -31,7 +36,7 @@ export class InventoryReserveReleaseClient {
       !environment.MANUFACTURING_INVENTORY_RESERVE_RELEASE_COMMAND_PATH?.trim()
     ) {
       environment.MANUFACTURING_INVENTORY_RESERVE_RELEASE_COMMAND_PATH =
-        '/universal-inventory/internal/v1/reserve-release-command';
+        '/universal-inventory/internal/v1/manufacturing-reserve-command';
     }
     const config = loadRelayConfig(environment, {
       inboxPublicKey: 'MANUFACTURING_INVENTORY_RELAY_UNUSED_PUBLIC_KEY',
@@ -63,7 +68,7 @@ export class InventoryReserveReleaseClient {
     });
     const token = signRelayToken(
       {
-        audience: 'gigalibs-universal-inventory-reserve-release-command',
+        audience: 'gigalibs-universal-inventory-manufacturing-reserve-command',
         source: 'universal-manufacturing',
         tenantId: principal.tenantId,
         messageId,

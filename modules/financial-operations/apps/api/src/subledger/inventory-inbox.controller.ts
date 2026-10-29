@@ -10,6 +10,6 @@ export class FinanceInventoryInboxController {
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
   receive(@Req() request: RelayRequest, @Body() body: unknown) {
-    return this.inbox.receive(body, request.rawBody!.toString('utf8'));
+    return this.inbox.receive(body, request.rawBody!.toString('utf8'), 'inventory');
   }
 }

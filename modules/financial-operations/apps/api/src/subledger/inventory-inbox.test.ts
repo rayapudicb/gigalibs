@@ -434,6 +434,7 @@ describe('Finance inventory subledger inbox', () => {
     };
     const client = {
       query: vi.fn(async (sql: string) => {
+        if (sql.includes('AS posted')) return { rows: [{ posted: true }] };
         if (sql.includes('INSERT INTO gigalibs_finance.inbox_receipts')) return { rows: [{ id: 'r1' }], rowCount: 1 };
         if (sql.includes('currency_code')) return { rows: [{ currency_code: 'USD' }] };
         if (sql.includes('accounting_books')) return { rows: [{ id: 'book-1' }] };
@@ -444,7 +445,9 @@ describe('Finance inventory subledger inbox', () => {
               id: FINANCE_PROFILE_ID,
               costing_method: 'STANDARD',
               inventory_gl_account_id: randomUUID(),
-              landed_cost_clearing_gl_account_id: randomUUID(),
+              grni_gl_account_id: randomUUID(),
+              manufacturing_wip_gl_account_id: randomUUID(),
+              manufacturing_variance_gl_account_id: randomUUID(),
             }],
           };
         }
@@ -465,13 +468,14 @@ describe('Finance inventory subledger inbox', () => {
         orderNumber: 'MO-00001',
         warehouseId: randomUUID(),
         finishedProductId: randomUUID(),
+        inventoryReceiptId: randomUUID(),
         quantity: '5',
         orgUnitId: 'operating-unit-a',
         financeCostProfileId: FINANCE_PROFILE_ID,
         componentLines: [{ productId, uomId: randomUUID(), quantity: '2' }],
       },
     });
-    await expect(inbox.receive(body, JSON.stringify(body))).resolves.toEqual({ status: 'PROCESSED' });
-    expect(postInventoryTransferJournal).toHaveBeenCalledTimes(1);
+    await expect(inbox.receive(body, JSON.stringify(body), 'manufacturing')).resolves.toEqual({ status: 'PROCESSED' });
+    expect(postInventoryTransferJournal).toHaveBeenCalledTimes(2);
   });
 });

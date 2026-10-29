@@ -17,7 +17,23 @@ export const manufacturingApi = {
   listBoms: () => requestManufacturing<unknown[]>('/boms'),
   bomTree: (id: string) =>
     requestManufacturing<{ bom: unknown; unitRequirements: unknown[] }>(`/boms/${id}/tree`),
+  whereUsed: (productId: string) => requestManufacturing<unknown[]>(`/boms/where-used/${productId}`),
+  bomShortages: (id: string, warehouseId: string, quantity: string) =>
+    requestManufacturing<{ bomId: string; lines: unknown[] }>(
+      `/boms/${id}/shortages?warehouseId=${encodeURIComponent(warehouseId)}&quantity=${encodeURIComponent(quantity)}`),
+  createBom: (body: unknown) => requestManufacturing('/boms', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  }),
+  listWorkCenters: () => requestManufacturing<unknown[]>('/work-centers'),
+  createWorkCenter: (body: unknown) => requestManufacturing('/work-centers', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  }),
+  listRoutings: () => requestManufacturing<unknown[]>('/routings'),
+  createRouting: (body: unknown) => requestManufacturing('/routings', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  }),
   listProductionOrders: () => requestManufacturing<unknown[]>('/production-orders'),
+  productionOrder: (id: string) => requestManufacturing<unknown>(`/production-orders/${id}`),
   createProductionOrder: (body: unknown) =>
     requestManufacturing('/production-orders', {
       method: 'POST',

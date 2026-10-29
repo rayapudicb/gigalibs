@@ -1,5 +1,5 @@
 import { CurrentPrincipal, RequirePermissions, type ModulePrincipal } from '@gigalibs/module-sdk';
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthorizationGuard } from '../authorization.js';
 import { ManufacturingService } from './manufacturing.service.js';
 
@@ -26,10 +26,53 @@ export class ManufacturingController {
     return this.manufacturing.getBomTree(principal, id);
   }
 
+  @Get('boms/where-used/:productId')
+  @RequirePermissions('universal-manufacturing.bom.read')
+  whereUsed(@CurrentPrincipal() principal: ModulePrincipal, @Param('productId') productId: string) {
+    return this.manufacturing.whereUsed(principal, productId);
+  }
+
+  @Get('boms/:id/shortages')
+  @RequirePermissions('universal-manufacturing.bom.read')
+  shortages(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string,
+    @Query('warehouseId') warehouseId: string, @Query('quantity') quantity = '1') {
+    return this.manufacturing.bomShortages(principal, id, warehouseId, quantity);
+  }
+
   @Get('production-orders')
   @RequirePermissions('universal-manufacturing.production.read')
   listOrders(@CurrentPrincipal() principal: ModulePrincipal) {
     return this.manufacturing.listProductionOrders(principal);
+  }
+
+  @Get('production-orders/:id')
+  @RequirePermissions('universal-manufacturing.production.read')
+  getOrder(@CurrentPrincipal() principal: ModulePrincipal, @Param('id') id: string) {
+    return this.manufacturing.getProductionOrder(principal, id);
+  }
+
+  @Get('work-centers')
+  @RequirePermissions('universal-manufacturing.bom.read')
+  listWorkCenters(@CurrentPrincipal() principal: ModulePrincipal) {
+    return this.manufacturing.listWorkCenters(principal);
+  }
+
+  @Post('work-centers')
+  @RequirePermissions('universal-manufacturing.bom.manage')
+  createWorkCenter(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
+    return this.manufacturing.createWorkCenter(principal, body);
+  }
+
+  @Get('routings')
+  @RequirePermissions('universal-manufacturing.bom.read')
+  listRoutings(@CurrentPrincipal() principal: ModulePrincipal) {
+    return this.manufacturing.listRoutings(principal);
+  }
+
+  @Post('routings')
+  @RequirePermissions('universal-manufacturing.bom.manage')
+  createRouting(@CurrentPrincipal() principal: ModulePrincipal, @Body() body: unknown) {
+    return this.manufacturing.createRouting(principal, body);
   }
 
   @Post('production-orders')

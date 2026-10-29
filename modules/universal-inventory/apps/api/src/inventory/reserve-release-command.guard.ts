@@ -19,7 +19,7 @@ export class ReserveReleaseCommandGuard extends RelayInboxGuardBase {
   constructor(@Inject(RESERVE_RELEASE_COMMAND_CONFIG) config: RelayConfig) {
     super(config, {
       audience: RESERVE_RELEASE_COMMAND_AUDIENCE,
-      source: ['universal-orders', 'universal-manufacturing'],
+      source: 'universal-orders',
       label: 'Universal Inventory reserve/release',
     });
   }

@@ -12,7 +12,7 @@ export const SCHEMA = 'gigalibs_universal_manufacturing';
 /** Outbox topic of this module's facts. */
 export const TOPIC = 'universal-manufacturing.facts.v1';
 /** Last migration in `db/runtime-manifest.txt`; readiness requires the database to be exactly here. */
-export const SCHEMA_CONTRACT_VERSION = 4;
+export const SCHEMA_CONTRACT_VERSION = 5;
 
 export const RUNTIME_CONFIG = Symbol('UNIVERSAL_MANUFACTURING_RUNTIME_CONFIG');
 

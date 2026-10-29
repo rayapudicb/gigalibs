@@ -67,17 +67,35 @@ if [[ -f "${INVENTORY_MODULE_ENV}" && -f "${PROCUREMENT_MODULE_ENV}" ]] &&
   echo "Added Inventory→Procurement replenishment relay keys (values not printed)."
 fi
 
-if [[ -f "${MANUFACTURING_MODULE_ENV}" && -f "${MODULE_ENV}" ]] &&
-  ! grep -q '^MANUFACTURING_RELAY_FINANCE_URL=' "${MANUFACTURING_MODULE_ENV}"; then
-  if grep -q '^FINANCE_INBOX_RELAY_PRIVATE_KEY_BASE64=' "${MODULE_ENV}"; then
+if [[ -f "${MANUFACTURING_MODULE_ENV}" && -f "${MODULE_ENV}" ]]; then
+  if ! grep -q '^MANUFACTURING_INVENTORY_RELAY_PRIVATE_KEY_BASE64=' "${MANUFACTURING_MODULE_ENV}"; then
+    gen_pair
     {
-      printf 'MANUFACTURING_RELAY_FINANCE_URL=http://127.0.0.1:4790\n'
-      printf 'MANUFACTURING_RELAY_FINANCE_INBOX_PATH=/financial-operations/internal/v1/inbox\n'
-      printf 'MANUFACTURING_FINANCE_RELAY_INTERVAL_MS=400\n'
-      printf '# Uses FINANCE_INBOX_RELAY_PRIVATE_KEY_BASE64 from module-host .env.modules when unset.\n'
+      printf 'INVENTORY_MANUFACTURING_RESERVE_COMMAND_INBOX_PUBLIC_KEY_BASE64=%s\n' "${PUBLIC}"
+      printf 'INVENTORY_ISSUE_DEMAND_COMMAND_INBOX_PUBLIC_KEY_BASE64=%s\n' "${PUBLIC}"
+      printf 'INVENTORY_PRODUCTION_RECEIPT_COMMAND_INBOX_PUBLIC_KEY_BASE64=%s\n' "${PUBLIC}"
+    } >>"${MODULE_ENV}"
+    {
+      printf 'MANUFACTURING_INVENTORY_RELAY_PRIVATE_KEY_BASE64=%s\n' "${PRIVATE}"
+      printf 'MANUFACTURING_INVENTORY_RELAY_URL=http://127.0.0.1:4790\n'
     } >>"${MANUFACTURING_MODULE_ENV}"
-    echo "Added Manufacturing→Finance relay URLs to ${MANUFACTURING_MODULE_ENV} (signing key shared with Inventory relay)."
+    echo 'Added Manufacturing→Inventory command keys (values not printed).'
   fi
+  if ! grep -q '^MANUFACTURING_FINANCE_RELAY_PRIVATE_KEY_BASE64=' "${MANUFACTURING_MODULE_ENV}"; then
+    gen_pair
+    printf 'FINANCE_MANUFACTURING_INBOX_PUBLIC_KEY_BASE64=%s\n' "${PUBLIC}" >>"${MODULE_ENV}"
+    {
+      printf 'MANUFACTURING_FINANCE_RELAY_PRIVATE_KEY_BASE64=%s\n' "${PRIVATE}"
+      printf 'MANUFACTURING_RELAY_FINANCE_URL=http://127.0.0.1:4790\n'
+      printf 'MANUFACTURING_RELAY_FINANCE_INBOX_PATH=/financial-operations/internal/v1/manufacturing-inbox\n'
+      printf 'MANUFACTURING_FINANCE_RELAY_INTERVAL_MS=400\n'
+    } >>"${MANUFACTURING_MODULE_ENV}"
+    echo 'Added Manufacturing→Finance inbox keys (values not printed).'
+  fi
+  # Older generated env files pointed Manufacturing at Inventory's Finance inbox.
+  # Keep one route setting when an older env file already contains the previous inbox path.
+  perl -0pi -e 's#^MANUFACTURING_RELAY_FINANCE_INBOX_PATH=.*\n##mg' "${MANUFACTURING_MODULE_ENV}"
+  printf 'MANUFACTURING_RELAY_FINANCE_INBOX_PATH=/financial-operations/internal/v1/manufacturing-inbox\n' >>"${MANUFACTURING_MODULE_ENV}"
 fi
 
 chmod 600 "${MODULE_ENV}" 2>/dev/null || true

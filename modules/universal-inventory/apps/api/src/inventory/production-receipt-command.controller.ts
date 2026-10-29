@@ -27,6 +27,7 @@ const ProductionReceiptCommandEnvelope = z
         commandKey: z.string().uuid(),
         productionOrderId: z.string().uuid(),
         warehouseId: z.string().uuid(),
+        orgUnitId: z.string().min(1).max(64),
         productId: z.string().uuid(),
         uomId: z.string().uuid(),
         quantity: z.string(),

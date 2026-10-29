@@ -13,7 +13,12 @@ import { OrganizationController } from './organization/organization.controller.j
 import { procurementRecordDispatcher } from './procurement/procurement-record-adapters.js';
 import { ProcurementController } from './procurement/procurement.controller.js';
 import { ProcurementService } from './procurement/procurement.service.js';
-import { ProcurementInventoryInboxModule } from './relay/inventory-replenishment-inbox.js';
+import {
+  PROCUREMENT_INVENTORY_RELAY_CONFIG,
+  ProcurementInventoryInboxController,
+  ProcurementInventoryInboxGuard,
+  loadProcurementInventoryRelayConfig,
+} from './relay/inventory-replenishment-inbox.js';
 
 const ProcurementRecordController = createRecordController({
   guard: AuthorizationGuard,
@@ -21,13 +26,22 @@ const ProcurementRecordController = createRecordController({
 });
 
 @Module({
-  imports: [ProcurementInventoryInboxModule],
-  controllers: [HealthController, ProcurementController, OrganizationController, ProcurementRecordController],
+  // The inventory→procurement replenishment inbox is registered here (not as a separate module) so its controller
+  // shares AppModule's scope where ProcurementService and DatabaseService are provided (NestJS DI encapsulation).
+  controllers: [
+    HealthController,
+    ProcurementController,
+    OrganizationController,
+    ProcurementRecordController,
+    ProcurementInventoryInboxController,
+  ],
   providers: [
     runtimeConfigProvider,
     DatabaseService,
     AuthorizationGuard,
     ProcurementService,
+    ProcurementInventoryInboxGuard,
+    { provide: PROCUREMENT_INVENTORY_RELAY_CONFIG, useFactory: () => loadProcurementInventoryRelayConfig() },
     {
       provide: RECORD_DISPATCHER,
       inject: [ProcurementService, DatabaseService],
