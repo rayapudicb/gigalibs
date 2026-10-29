@@ -16,3 +16,4 @@
 000015_finance_d1_replica_hardening.up.sql
 000016_finance_manufacturing_accounts.up.sql
 000017_finance_landed_cost_inventory_relay.up.sql
+000018_finance_project_wip_accounts.up.sql

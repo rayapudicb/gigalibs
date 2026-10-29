@@ -2405,6 +2405,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
           "GET": "project-operations.records.read",
           "PATCH": "project-operations.records.manage"
         }
+      },
+      {
+        "template": "v1/projects/{id}/wip-accrual",
+        "pattern": "^v1/projects/[0-9a-fA-F-]{36}/wip-accrual$",
+        "methods": {
+          "POST": "project-operations.cost.post"
+        }
       }
     ],
     "transformBody": null,

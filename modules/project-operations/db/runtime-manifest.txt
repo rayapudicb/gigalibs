@@ -2,3 +2,4 @@
 # order, are copied into the module image and installed by run-module-migrations.mjs.
 000001_project_operations_foundation.up.sql
 000002_wbs_domain.up.sql
+000003_project_wip_posting.up.sql

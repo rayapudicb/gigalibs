@@ -77,3 +77,4 @@ spec:
     routes:
       - { path: 'v1/records', GET: project-operations.records.read, POST: project-operations.records.manage }
       - { path: 'v1/records/{id}', GET: project-operations.records.read, PATCH: project-operations.records.manage }
+      - { path: 'v1/projects/{id}/wip-accrual', POST: project-operations.cost.post }

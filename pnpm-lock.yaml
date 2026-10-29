@@ -1357,6 +1357,9 @@ importers:
       '@gigalibs/auth-core':
         specifier: workspace:*
         version: link:../../../../packages/auth-core
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
       '@gigalibs/module-sdk':
         specifier: workspace:*
         version: link:../../../../packages/module-sdk

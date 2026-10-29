@@ -12,7 +12,7 @@ export const SCHEMA = 'gigalibs_project_operations';
 /** Outbox topic of this module's facts. */
 export const TOPIC = 'project-operations.facts.v1';
 /** Last migration in `db/runtime-manifest.txt`; readiness requires the database to be exactly here. */
-export const SCHEMA_CONTRACT_VERSION = 1;
+export const SCHEMA_CONTRACT_VERSION = 3;
 
 export const RUNTIME_CONFIG = Symbol('PROJECT_OPERATIONS_RUNTIME_CONFIG');
 
