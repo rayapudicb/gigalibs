@@ -14,16 +14,14 @@ spec:
   optionalModules: []
   capabilities:
     - project-operations-records
-  # Pages (WI-OI-083b): the generic records screen from the core web SDK until the module needs its own screens.
+    - project-gantt-burn
   ui:
+    application: apps/workflow-platform
     basePath: /project-operations
-    package: '@gigalibs/web-sdk'
+    package: '@gigalibs/project-operations-web'
     pages:
       - route: /project-operations
-        component: RecordsWorkspace
-        props:
-          gateway: project-operations
-          title: Project Operations
+        component: ProjectOperationsWorkspace
   api:
     application: apps/api
     port: 4790
@@ -80,3 +78,6 @@ spec:
       - { path: 'v1/projects/{id}/wip-accrual', POST: project-operations.cost.post }
       - { path: 'v1/projects/{id}/bill-time-materials', POST: project-operations.billing.post }
       - { path: 'v1/projects/{id}/bill-milestone', POST: project-operations.billing.post }
+      - { path: 'v1/projects', GET: project-operations.insights.read }
+      - { path: 'v1/projects/{id}/gantt', GET: project-operations.insights.read }
+      - { path: 'v1/projects/{id}/burn-matrix', GET: project-operations.insights.read }

@@ -1371,6 +1371,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "project-operations.insights.read",
+    "entries": [
+      "project-operations"
+    ]
+  },
+  {
     "code": "project-operations.records.manage",
     "entries": [
       "project-operations"

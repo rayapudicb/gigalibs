@@ -24,6 +24,7 @@
     "@gigalibs/logger": "workspace:*",
     "@gigalibs/maps-core": "workspace:*",
     "@gigalibs/product-catalogue-web": "workspace:*",
+    "@gigalibs/project-operations-web": "workspace:*",
     "@gigalibs/universal-inventory-web": "workspace:*",
     "@gigalibs/universal-manufacturing-web": "workspace:*",
     "@gigalibs/iot-web": "workspace:*",

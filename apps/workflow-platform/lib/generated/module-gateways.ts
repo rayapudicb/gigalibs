@@ -2426,6 +2426,27 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "POST": "project-operations.billing.post"
         }
+      },
+      {
+        "template": "v1/projects",
+        "pattern": "^v1/projects$",
+        "methods": {
+          "GET": "project-operations.insights.read"
+        }
+      },
+      {
+        "template": "v1/projects/{id}/gantt",
+        "pattern": "^v1/projects/[0-9a-fA-F-]{36}/gantt$",
+        "methods": {
+          "GET": "project-operations.insights.read"
+        }
+      },
+      {
+        "template": "v1/projects/{id}/burn-matrix",
+        "pattern": "^v1/projects/[0-9a-fA-F-]{36}/burn-matrix$",
+        "methods": {
+          "GET": "project-operations.insights.read"
+        }
       }
     ],
     "transformBody": null,
