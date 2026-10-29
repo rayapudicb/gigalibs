@@ -15,7 +15,9 @@ import {
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
 import { SCHEMA, TOPIC } from '../config.js';
-import type { DatabaseService } from '../database.service.js';
+// Value import (not `import type`): TransferService constructor-injects DatabaseService, so NestJS DI needs the
+// runtime symbol. biome's useImportType is a tolerated false positive here (see sibling services).
+import { DatabaseService } from '../database.service.js';
 
 const QUANTITY = z.string().regex(/^\d+(\.\d+)?$/, 'quantity must be a non-negative decimal');
 
