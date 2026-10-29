@@ -12,7 +12,7 @@ export const SCHEMA = 'gigalibs_universal_returns';
 /** Outbox topic of this module's facts. */
 export const TOPIC = 'universal-returns.facts.v1';
 /** Last migration in `db/runtime-manifest.txt`; readiness requires the database to be exactly here. */
-export const SCHEMA_CONTRACT_VERSION = 4;
+export const SCHEMA_CONTRACT_VERSION = 5;
 
 export const RUNTIME_CONFIG = Symbol('UNIVERSAL_RETURNS_RUNTIME_CONFIG');
 

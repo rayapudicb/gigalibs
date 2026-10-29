@@ -43,6 +43,13 @@ import {
 } from './relay/manufacturing-inbox.guard.js';
 import { FinanceInventoryInboxController } from './subledger/inventory-inbox.controller.js';
 import { FinanceManufacturingInboxController } from './subledger/manufacturing-inbox.controller.js';
+import { FinanceReturnsInboxController } from './subledger/returns-inbox.controller.js';
+import { ReturnsInboxService } from './subledger/returns-inbox.service.js';
+import {
+  FINANCE_RETURNS_INBOX_CONFIG,
+  FinanceReturnsInboxGuard,
+  loadFinanceReturnsInboxConfig,
+} from './relay/returns-inbox.guard.js';
 import { InventorySubledgerController } from './subledger/inventory-subledger.controller.js';
 import { InventorySubledgerInboxService } from './subledger/inventory-inbox.service.js';
 import { InventoryReceiptPostingReconciliationJob } from './posting/inventory-receipt-posting-reconciliation-job.js';
@@ -72,6 +79,7 @@ const FinanceRelayHealthController = createRelayHealthController('v1/health');
     FinanceRecordController,
     FinanceInventoryInboxController,
     FinanceManufacturingInboxController,
+    FinanceReturnsInboxController,
     InventorySubledgerController,
   ],
   providers: [
@@ -82,6 +90,9 @@ const FinanceRelayHealthController = createRelayHealthController('v1/health');
     FinanceRelayInboxGuard,
     { provide: FINANCE_MANUFACTURING_INBOX_CONFIG, useFactory: () => loadFinanceManufacturingInboxConfig() },
     FinanceManufacturingInboxGuard,
+    { provide: FINANCE_RETURNS_INBOX_CONFIG, useFactory: () => loadFinanceReturnsInboxConfig() },
+    FinanceReturnsInboxGuard,
+    ReturnsInboxService,
     FinanceInventoryOutboxRelay,
     InventorySubledgerInboxService,
     InventoryReceiptPostingReconciliationJob,

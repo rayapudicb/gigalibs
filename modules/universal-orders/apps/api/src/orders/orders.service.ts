@@ -2,6 +2,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   type AllocateOrderLineInputV1,
   type CreateCustomerCreditMemoInputV1,
+  type RelayEnvelopeV1,
+  type RmaCreditMemoRequestedPayloadV1,
+  RMA_CREDIT_MEMO_REQUESTED_V1,
   type CreateCustomerInvoiceInputV1,
   type CreateFulfillmentOrderInputV1,
   type CreateSalesOrderInputV1,
@@ -1302,6 +1305,78 @@ export class OrderService {
   }
 
   // ─── 6. Customer Credit Memos ──────────────────────────────────────────────
+
+  async applyRmaCreditMemoFromRelay(
+    envelope: RelayEnvelopeV1,
+    rawBody: string,
+    payload: RmaCreditMemoRequestedPayloadV1,
+  ): Promise<{ duplicate: boolean; creditMemoId: string | null }> {
+    const sha256 = createHash('sha256').update(rawBody, 'utf8').digest('hex');
+    const principal: ModulePrincipal = {
+      tenantId: envelope.tenantId,
+      subject: 'returns-relay',
+      sessionId: envelope.messageId,
+      authVersion: 1,
+      permissions: ['orders:credit-memos:manage'],
+      roles: ['TENANT_ADMIN'],
+      persona: 'TENANT_ADMIN',
+      organization: { mode: 'TENANT' },
+      departmentScope: { mode: 'ALL' },
+      placeScope: { mode: 'ALL' },
+    };
+    const duplicate = await this.database.withTenantTransaction(envelope.tenantId, async (client) => {
+      const existing = await client.query<{ status: string }>(
+        `SELECT status FROM gigalibs_orders.inbox_receipts
+         WHERE tenant_id = $1 AND consumer_name = 'orders.returns.rma_credit_memo' AND message_id = $2`,
+        [envelope.tenantId, envelope.messageId],
+      );
+      if (existing.rows[0]?.status === 'PROCESSED') return true;
+      if (!existing.rows[0]) {
+        await client.query(
+          `INSERT INTO gigalibs_orders.inbox_receipts (
+            id, tenant_id, consumer_name, message_id, event_type, source_module,
+            source_version, correlation_id, payload_sha256, raw_body, status, created_at
+          ) VALUES ($1, $2, 'orders.returns.rma_credit_memo', $3, $4, 'universal-returns', $5, $6, $7, $8, 'PROCESSING', NOW())`,
+          [
+            randomUUID(),
+            envelope.tenantId,
+            envelope.messageId,
+            RMA_CREDIT_MEMO_REQUESTED_V1,
+            envelope.schemaVersion,
+            envelope.correlationId,
+            sha256,
+            rawBody,
+          ],
+        );
+      }
+      return false;
+    });
+    if (duplicate) return { duplicate: true, creditMemoId: null };
+
+    const memo = await this.createCreditMemo(principal, {
+      customerPartyId: payload.customerPartyId,
+      invoiceId: payload.customerInvoiceId,
+      orderId: payload.salesOrderId,
+      currencyCode: payload.currencyCode,
+      reason: `RMA ${payload.rmaId} credit memo`,
+      lines: payload.lines.map((line) => ({
+        productId: line.productId,
+        quantity: line.quantity,
+        unitPriceMinor: line.unitPriceMinor,
+        reason: line.reason,
+      })),
+    });
+
+    await this.database.withTenantTransaction(envelope.tenantId, async (client) => {
+      await client.query(
+        `UPDATE gigalibs_orders.inbox_receipts
+         SET status = 'PROCESSED', processed_at = NOW()
+         WHERE tenant_id = $1 AND consumer_name = 'orders.returns.rma_credit_memo' AND message_id = $2`,
+        [envelope.tenantId, envelope.messageId],
+      );
+    });
+    return { duplicate: false, creditMemoId: memo.id };
+  }
 
   async createCreditMemo(principal: ModulePrincipal, input: CreateCustomerCreditMemoInputV1): Promise<CustomerCreditMemoV1> {
     const { tenantId, subject: actorId } = principal;

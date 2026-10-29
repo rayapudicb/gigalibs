@@ -1,10 +1,36 @@
 import { z } from 'zod';
-import { DecimalQuantitySchema } from '../catalogue/index.js';
+import { DecimalQuantitySchema, MoneyMinorSchema } from '../catalogue/index.js';
 import { RmaDispositionCodeSchema } from './rma.js';
 
 export const RMA_RETURN_RECEIPT_COMMAND_AUDIENCE = 'gigalibs-universal-inventory-rma-return-receipt-command' as const;
 
 export const RMA_SCRAP_GL_REQUESTED_V1 = 'returns.rma.scrap_gl_requested.v1' as const;
+
+export const ORDERS_RETURNS_RMA_INBOX_AUDIENCE = 'gigalibs-orders-returns-rma-inbox' as const;
+export const FINANCE_RETURNS_INBOX_AUDIENCE = 'gigalibs-finance-returns-inbox' as const;
+
+export const RmaCreditMemoRequestedLineV1Schema = z
+  .object({
+    rmaLineId: z.string().uuid(),
+    productId: z.string().uuid(),
+    quantity: DecimalQuantitySchema,
+    unitPriceMinor: MoneyMinorSchema,
+    reason: z.string().min(1).max(500),
+  })
+  .strict();
+
+export const RmaCreditMemoRequestedPayloadV1Schema = z
+  .object({
+    rmaId: z.string().uuid(),
+    requestKey: z.string().uuid(),
+    customerPartyId: z.string().uuid(),
+    salesOrderId: z.string().uuid().nullable(),
+    customerInvoiceId: z.string().uuid().nullable(),
+    currencyCode: z.string().length(3),
+    lines: z.array(RmaCreditMemoRequestedLineV1Schema).min(1),
+  })
+  .strict();
+export type RmaCreditMemoRequestedPayloadV1 = z.infer<typeof RmaCreditMemoRequestedPayloadV1Schema>;
 
 export const RmaReturnReceiptCommandV1Schema = z
   .object({

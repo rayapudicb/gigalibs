@@ -9,6 +9,7 @@ import {
   type RequestRmaCreditMemoInputV1,
   RMA_CREDIT_MEMO_REQUESTED_V1,
   RMA_SCRAP_GL_REQUESTED_V1,
+  RmaCreditMemoRequestedPayloadV1Schema,
   RmaScrapGlRequestedPayloadV1Schema,
 } from '@gigalibs/contracts';
 import {
@@ -561,16 +562,25 @@ export class RmaService {
         throw new ConflictException({ code: 'DocumentVersionConflictError' });
       }
       const nextVersion = rma.version + 1;
-      const outboxPayload = {
+      const outboxPayload = RmaCreditMemoRequestedPayloadV1Schema.parse({
         rmaId: rma.id,
+        requestKey: input.requestKey,
         customerPartyId: rma.customerPartyId,
         salesOrderId: rma.salesOrderId,
         customerInvoiceId: rma.customerInvoiceId,
         currencyCode: input.currencyCode,
-        lines: input.lines,
-        aggregateId: rma.id,
-        aggregateVersion: nextVersion,
-      };
+        lines: input.lines.map((line) => {
+          const rmaLine = rma.lines.find((entry) => entry.id === line.rmaLineId);
+          if (!rmaLine) throw new BadRequestException({ code: 'RMA_LINE_NOT_FOUND' });
+          return {
+            rmaLineId: line.rmaLineId,
+            productId: rmaLine.productId,
+            quantity: rmaLine.authorizedQuantity,
+            unitPriceMinor: line.unitPriceMinor,
+            reason: line.reason,
+          };
+        }),
+      });
       await client.query(
         `INSERT INTO ${SCHEMA}.audit_events
            (id, tenant_id, actor_subject, action, entity_type, entity_id, correlation_id, payload)

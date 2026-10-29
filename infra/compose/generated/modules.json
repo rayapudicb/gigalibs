@@ -189,7 +189,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_universal_returns",
-    "migrationVersion": 4,
+    "migrationVersion": 5,
     "audience": "gigalibs-universal-returns-api",
     "appendOnlyTables": [
       "audit_events"

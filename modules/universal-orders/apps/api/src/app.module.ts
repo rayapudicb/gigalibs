@@ -18,6 +18,12 @@ import { BusinessPartnersCreditCheckClient } from './credit/business-partners-cr
 import { InventoryAtpCheckClient } from './inventory/inventory-atp-check.client.js';
 import { InventoryReserveReleaseClient } from './inventory/inventory-reserve-release.client.js';
 import { OrdersCreditUninvoicedRelay } from './relay/orders-credit-relay.js';
+import { OrdersReturnsRmaInboxController } from './relay/returns-rma-inbox.controller.js';
+import {
+  ORDERS_RETURNS_RMA_INBOX_CONFIG,
+  OrdersReturnsRmaInboxGuard,
+  loadOrdersReturnsRmaInboxConfig,
+} from './relay/returns-rma-inbox.guard.js';
 
 const OrdersRecordController = createRecordController({
   guard: AuthorizationGuard,
@@ -25,8 +31,16 @@ const OrdersRecordController = createRecordController({
 });
 
 @Module({
-  controllers: [HealthController, OrderController, OrganizationController, OrdersRecordController],
+  controllers: [
+    HealthController,
+    OrderController,
+    OrganizationController,
+    OrdersRecordController,
+    OrdersReturnsRmaInboxController,
+  ],
   providers: [
+    { provide: ORDERS_RETURNS_RMA_INBOX_CONFIG, useFactory: () => loadOrdersReturnsRmaInboxConfig() },
+    OrdersReturnsRmaInboxGuard,
     runtimeConfigProvider,
     DatabaseService,
     AuthorizationGuard,
