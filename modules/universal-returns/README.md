@@ -18,4 +18,10 @@ infra/compose/scripts/build-module-host-image.sh
 pnpm module:conformance universal-returns --live
 ```
 
+Isolated PostgreSQL proof (damaged return → partial scrap → credit-memo outbox; requires Docker):
+
+```bash
+UNIVERSAL_RETURNS_PG_PROOF=1 pnpm --filter @gigalibs/universal-returns-api exec vitest run --root ../../../.. modules/universal-returns/apps/api/src/rma/rma-scrap-credit.integration.test.ts
+```
+
 It stays `readiness: PLANNED` until it passes conformance and is reviewed.

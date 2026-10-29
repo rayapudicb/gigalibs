@@ -276,6 +276,9 @@ importers:
       '@gigalibs/universal-procurement-web':
         specifier: workspace:*
         version: link:../../modules/universal-procurement/web
+      '@gigalibs/universal-returns-web':
+        specifier: workspace:*
+        version: link:../../modules/universal-returns/web
       '@gigalibs/web-sdk':
         specifier: workspace:*
         version: link:../../packages/web-sdk
@@ -2002,6 +2005,31 @@ importers:
       vitest:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@24.13.3)
+
+  modules/universal-returns/web:
+    dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+      '@medusajs/ui':
+        specifier: 4.2.3
+        version: 4.2.3(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      next:
+        specifier: 15.5.24
+        version: 15.5.24(@playwright/test@1.62.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
 
   modules/universal-rule-pro/apps/api:
     dependencies:

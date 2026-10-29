@@ -28,6 +28,7 @@
     "@gigalibs/universal-manufacturing-web": "workspace:*",
     "@gigalibs/iot-web": "workspace:*",
     "@gigalibs/universal-procurement-web": "workspace:*",
+    "@gigalibs/universal-returns-web": "workspace:*",
     "@gigalibs/universal-orders-web": "workspace:*",
     "@gigalibs/financial-operations-web": "workspace:*",
     "@gigalibs/web-sdk": "workspace:*",
