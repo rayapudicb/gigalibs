@@ -357,5 +357,11 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   ],
   "universal-manufacturing": [
     "OPERATIONS_SUPERVISOR"
+  ],
+  "universal-returns": [
+    "OPERATIONS_SUPERVISOR"
+  ],
+  "project-operations": [
+    "OPERATIONS_SUPERVISOR"
   ]
 };

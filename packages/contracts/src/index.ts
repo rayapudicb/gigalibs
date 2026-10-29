@@ -43,6 +43,7 @@ export * from './parties/index.js';
 export * from './catalogue/index.js';
 export * from './inventory/index.js';
 export * from './procurement/index.js';
+export * from './returns/index.js';
 export * from './orders/index.js';
 export * from './finance/index.js';
 export * from './agent/index.js';

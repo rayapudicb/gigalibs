@@ -64,6 +64,16 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       icon: moduleIcons.factory,
       personas: ['OPERATIONS_SUPERVISOR'],
     },
+    'universal-returns': {
+      group: 'Financial Operations',
+      icon: moduleIcons.boxes,
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
+    'project-operations': {
+      group: 'Workforce & Operations',
+      icon: moduleIcons.boxes,
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
   } as const;
 
   it('covers exactly the catalogue entries the frozen tables covered, less the intended removals', () => {

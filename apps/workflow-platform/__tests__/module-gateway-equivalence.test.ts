@@ -365,6 +365,11 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
         port: '4790',
         serviceHostname: 'module-host',
       },
+      'project-operations': {
+        environmentKey: 'PROJECT_OPERATIONS_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
       'universal-inventory': {
         environmentKey: 'UNIVERSAL_INVENTORY_API_URL',
         port: '4790',
@@ -382,6 +387,11 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
       },
       'universal-procurement': {
         environmentKey: 'UNIVERSAL_PROCUREMENT_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
+      'universal-returns': {
+        environmentKey: 'UNIVERSAL_RETURNS_API_URL',
         port: '4790',
         serviceHostname: 'module-host',
       },

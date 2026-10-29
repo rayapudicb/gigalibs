@@ -4,9 +4,11 @@
 
 **WI-OI-126 Manufacturing & MRP (Module 4) — Built (2026-10-29).** Recovery PG 3/3 (RESERVING/ISSUING/RECEIVING replay); conformance 15/15 static; DB proofs 28/28 with module host boot. Plan S5/S6 graph-BOM differentiators deferred; `--live` at owner batch deploy. [WI-OI-126](work/WI-OI-126.md).
 
-**WI-OI-127 Landed Cost (Module 5) — In progress (near Built).** Receipt-driven wizard loads Procurement `GET v1/landed-cost/receipt-lines` + Inventory posted costs + Finance `GET v1/costing/cost-layers`; schema pins finance **17** / inventory **13**. PG: `INVENTORY_LANDED_COST_PG_PROOF=1` posting outcome → landed adjustment (**1/1**). Open: vendor-bill tie-in, live relay worker E2E, `pnpm verify`, module-completion commit. [task card](tasks/WI-OI-127.md).
+**WI-OI-127 Landed Cost (Module 5) — Built (2026-10-29).** Committed **`dcd2cc5c`**. Verify fixes in working tree (relay test path, catalogue/navigation/gateway for returns/projects). Full `pnpm verify` still hits pre-existing **product-catalogue** lock + **platform-context** header tests; layer audit clean after relay test move. [task card](tasks/WI-OI-127.md).
 
-**WI-OI-128 / WI-OI-129 — Scaffolds only (2026-10-29).** `universal-returns` and `project-operations` generated via `pnpm module:new`; business slices not started.
+**WI-OI-128 Returns / RMA (Module 6) — In progress.** S1 migration **000002** (`rma`, `rma_lines`, `rma_types`, `dispositions`, Orders `orders_return_id` uniqueness); contracts qty guard. Next: DocAction service, disposition handshakes, checklist UI, PG proof. [task card](tasks/WI-OI-128.md).
+
+**WI-OI-129 — Scaffold only.** `project-operations` foundation only.
 
 **WI-OI-130 IoT MaaS — Built; certification automation added (2026-10-29).** Playwright + ingest helper + scenario YAML + [runbook](../docs/runbooks/iot-maas-certification.md). **Done** still needs owner UAT on redeployed **5180** + `iot-api`. [handoff](handoff/WI-OI-130-UAT-JOURNEY.md).
 

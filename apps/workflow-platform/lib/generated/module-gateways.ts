@@ -728,10 +728,24 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/costing/landed-costs/preview",
+        "pattern": "^v1/costing/landed-costs/preview$",
+        "methods": {
+          "POST": "finance:read"
+        }
+      },
+      {
         "template": "v1/costing/landed-costs",
         "pattern": "^v1/costing/landed-costs$",
         "methods": {
           "POST": "finance:journals:manage"
+        }
+      },
+      {
+        "template": "v1/costing/cost-layers",
+        "pattern": "^v1/costing/cost-layers$",
+        "methods": {
+          "GET": "finance:reports:view"
         }
       },
       {
@@ -3140,6 +3154,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "procurement:read",
           "POST": "procurement:orders:approve"
+        }
+      },
+      {
+        "template": "v1/landed-cost/receipt-lines",
+        "pattern": "^v1/landed-cost/receipt-lines$",
+        "methods": {
+          "GET": "procurement:read"
         }
       }
     ],
