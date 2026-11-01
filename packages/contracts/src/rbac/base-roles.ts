@@ -66,6 +66,17 @@ export const BASE_ROLE_DEFINITIONS: readonly BaseRoleDefinition[] = [
       'procurement:*',
       'orders:*',
       'finance:*',
+      // Owner, 2026-11-01: the same rule for every licensed business module. These families reached a Tenant Admin only
+      // through seeded direct permissions, so a new Tenant Admin could not open them, and giving one a module role was
+      // refused by the Workforce duty-conflict check (workforce:* holds both sides). tenant-admin-coverage.test.ts keeps
+      // this list complete as modules are added.
+      'iot:*',
+      'business-partners:*',
+      'speed:*',
+      'universal-manufacturing:*',
+      'universal-returns:*',
+      'project-operations:*',
+      'operator-rounds:*',
     ],
   },
   {

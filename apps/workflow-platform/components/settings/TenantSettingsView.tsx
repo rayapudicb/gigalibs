@@ -18,6 +18,8 @@ interface TenantSettingsViewProps {
   session: VerifiedSession;
   tenantId: string;
   canUpdateConfiguredValues: boolean;
+  /** The server's UAT preview setting; a client component cannot read it from process.env. */
+  uatPreview?: boolean;
 }
 
 type SettingsTab = 'team' | 'people' | 'hierarchy' | 'plan' | 'general' | 'security';
@@ -26,6 +28,7 @@ export function TenantSettingsView({
   session,
   tenantId,
   canUpdateConfiguredValues,
+  uatPreview = false,
 }: TenantSettingsViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -215,7 +218,7 @@ export function TenantSettingsView({
         )}
 
         {activeTab === 'plan' && (
-          <TenantPlanEntitlements session={session} />
+          <TenantPlanEntitlements session={session} uatPreview={uatPreview} />
         )}
 
         {activeTab === 'general' && (

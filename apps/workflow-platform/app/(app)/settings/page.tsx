@@ -1,5 +1,6 @@
 import { StudioSurfaceBoundary } from '@/components/configuration/StudioMode';
 import { TenantSettingsView } from '@/components/settings/TenantSettingsView';
+import { uatPreviewEnabled } from '@/lib/uat-module-status';
 import { verifiedSession } from '@/lib/verified-session';
 import { holdsAnyPermission } from '@gigalibs/contracts';
 
@@ -27,6 +28,7 @@ export default async function TenantSettingsPage() {
         session={session.context}
         tenantId={tenantId}
         canUpdateConfiguredValues={canUpdateConfiguredValues}
+        uatPreview={uatPreviewEnabled()}
       />
     </StudioSurfaceBoundary>
   );

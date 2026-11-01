@@ -14,6 +14,8 @@ interface TenantPlanEntitlementsProps {
   planName?: string | null;
   isolationMode?: string | null;
   region?: string | null;
+  /** The server's UAT preview setting; without it every PLANNED module read NO ACCESS here while the sidebar opened it. */
+  uatPreview?: boolean;
 }
 
 export function TenantPlanEntitlements({
@@ -21,6 +23,7 @@ export function TenantPlanEntitlements({
   planName = null,
   isolationMode = null,
   region = null,
+  uatPreview = false,
 }: TenantPlanEntitlementsProps) {
   const trialEndsAt = session.tenant?.trialEndsAt;
   const isTrial = !!trialEndsAt;
@@ -36,6 +39,7 @@ export function TenantPlanEntitlements({
     'module-marketplace',
     enabledModuleKeys,
     session.permissions,
+    { uatPreview },
   );
   const contractStatus = isExpired
     ? 'TRIAL EXPIRED'
@@ -132,6 +136,7 @@ export function TenantPlanEntitlements({
               module.key,
               enabledModuleKeys,
               session.permissions,
+              { uatPreview },
             );
             return (
               <div
