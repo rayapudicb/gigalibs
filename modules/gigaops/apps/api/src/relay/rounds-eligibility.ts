@@ -21,20 +21,6 @@ export class WorkforceRoundsGuard extends RelayInboxGuardBase {
   }
 }
 
-@Controller('internal/v1/rounds-eligibility')
-@UseGuards(WorkforceRoundsGuard)
-export class WorkforceRoundsEligibilityController {
-  constructor(private readonly service:WorkforceRoundsEligibilityService) {}
-
-  @Post()
-  @HttpCode(HttpStatus.OK)
-  check(@Body() body:unknown) {return this.service.check(body);}
-
-  @Post('windows')
-  @HttpCode(HttpStatus.OK)
-  windows(@Body() body:unknown) {return this.service.windows(body);}
-}
-
 /** Checks the canonical human, position, working slot and blockers in one tenant-bound read. */
 @Injectable()
 export class WorkforceRoundsEligibilityService {
@@ -167,4 +153,18 @@ export class WorkforceRoundsEligibilityService {
       return RoundWorkforceEligibilityResponseV1.parse({eligible:code==='ACTIVE_LINK',code});
     });
   }
+}
+
+@Controller('internal/v1/rounds-eligibility')
+@UseGuards(WorkforceRoundsGuard)
+export class WorkforceRoundsEligibilityController {
+  constructor(private readonly service:WorkforceRoundsEligibilityService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.OK)
+  check(@Body() body:unknown) {return this.service.check(body);}
+
+  @Post('windows')
+  @HttpCode(HttpStatus.OK)
+  windows(@Body() body:unknown) {return this.service.windows(body);}
 }

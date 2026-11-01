@@ -16,28 +16,6 @@ export class RoundsInboxGuard extends RelayInboxGuardBase {
   }
 }
 
-@Controller('internal/v1/rounds-inbox')
-@UseGuards(RoundsInboxGuard)
-export class RoundsInboxController {
-  constructor(private readonly inbox: RoundsInboxService) {}
-
-  @Post()
-  @HttpCode(HttpStatus.ACCEPTED)
-  receive(@Req() request: RelayRequest, @Body() body: unknown) {
-    return this.inbox.receive(body, request.rawBody!.toString('utf8'));
-  }
-}
-
-@Controller('internal/v1/rounds-meter-context')
-@UseGuards(RoundsInboxGuard)
-export class RoundsMeterContextController {
-  constructor(private readonly inbox: RoundsInboxService) {}
-
-  @Post()
-  @HttpCode(HttpStatus.OK)
-  read(@Body() body: unknown) { return this.inbox.meterContext(body); }
-}
-
 /** Accepts one signed, body-bound corrective command and creates the CMMS-owned work order atomically. */
 @Injectable()
 export class RoundsInboxService {
@@ -138,6 +116,28 @@ export class RoundsInboxService {
       return { status:'DUPLICATE' as const, workOrderId:workOrder.id, requestKey:command.requestKey };
     });
   }
+}
+
+@Controller('internal/v1/rounds-inbox')
+@UseGuards(RoundsInboxGuard)
+export class RoundsInboxController {
+  constructor(private readonly inbox: RoundsInboxService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.ACCEPTED)
+  receive(@Req() request: RelayRequest, @Body() body: unknown) {
+    return this.inbox.receive(body, request.rawBody!.toString('utf8'));
+  }
+}
+
+@Controller('internal/v1/rounds-meter-context')
+@UseGuards(RoundsInboxGuard)
+export class RoundsMeterContextController {
+  constructor(private readonly inbox: RoundsInboxService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.OK)
+  read(@Body() body: unknown) { return this.inbox.meterContext(body); }
 }
 
 function relayPrincipal(tenantId: string): CmmsPrincipal {

@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@gigalibs/auth-core": "workspace:*",
     "@gigalibs/rule-engine-universal": "workspace:*",
     "@gigalibs/contracts": "workspace:*",
     "@gigalibs/module-sdk": "workspace:*",
@@ -23,7 +24,6 @@
     "zod": "^4.5.2"
   },
   "devDependencies": {
-    "@gigalibs/auth-core": "workspace:*",
     "@types/node": "^24.10.0",
     "@types/pg": "^8.23.1",
     "typescript": "^5.8.3",

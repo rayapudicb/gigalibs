@@ -1010,6 +1010,9 @@ importers:
 
   modules/iot-gateway/apps/api:
     dependencies:
+      '@gigalibs/auth-core':
+        specifier: workspace:*
+        version: link:../../../../packages/auth-core
       '@gigalibs/contracts':
         specifier: workspace:*
         version: link:../../../../packages/contracts
@@ -1044,9 +1047,6 @@ importers:
         specifier: ^4.5.2
         version: 4.5.2
     devDependencies:
-      '@gigalibs/auth-core':
-        specifier: workspace:*
-        version: link:../../../../packages/auth-core
       '@types/node':
         specifier: ^24.10.0
         version: 24.13.3
