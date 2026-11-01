@@ -1,7 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ModuleWindowWorkspace } from '@gigalibs/configuration-react';
+import { ModuleWindowWorkspace } from '@gigalibs/configuration-react/module-window';
 import { generatedModuleGateways } from '../lib/generated/module-gateways';
 
 // The Universal Business Partner page posted to `v1/records`, which the module stopped serving when its record
@@ -23,6 +25,13 @@ describe('Universal Business Partner page', () => {
     expect(forwards('v1/records', 'POST')).toBe(false);
     expect(forwards('v1/records', 'GET')).toBe(false);
     expect(forwards(`v1/records/${ID}`, 'PATCH')).toBe(false);
+  });
+
+  it('imports a client component from the server page, never the package index', () => {
+    const page = readFileSync(join(__dirname, '../app/(app)/business-partners/page.tsx'), 'utf8');
+    expect(page).toContain("from '@gigalibs/configuration-react/module-window'");
+    const component = readFileSync(join(__dirname, '../../../packages/configuration-react/src/window/ModuleWindowWorkspace.tsx'), 'utf8');
+    expect(component.startsWith("'use client';")).toBe(true);
   });
 
   it('renders the page heading while the published window loads', () => {

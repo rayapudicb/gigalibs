@@ -29,9 +29,11 @@ spec:
       - procurement.credit.vendor-bill-balance.v1
   # Pages: the Partners metadata window (dictionary/partners.window.json) over the SDK record routes. The generic
   # records placeholder posted to v1/records, which the module stopped serving when its record dispatcher arrived.
+  # The generated page is a server component, so it imports the client component's own entry, not the package index
+  # (whose hooks modules carry no 'use client').
   ui:
     basePath: /business-partners
-    package: '@gigalibs/configuration-react'
+    package: '@gigalibs/configuration-react/module-window'
     pages:
       - route: /business-partners
         component: ModuleWindowWorkspace

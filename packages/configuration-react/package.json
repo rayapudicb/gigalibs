@@ -10,6 +10,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./module-window": {
+      "import": "./dist/window/ModuleWindowWorkspace.js",
+      "types": "./dist/window/ModuleWindowWorkspace.d.ts"
     }
   },
   "scripts": {
