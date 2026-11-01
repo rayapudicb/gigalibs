@@ -260,6 +260,10 @@ export const MOBILE_PROBLEMS = {
   MOBILE_NOT_FOUND: { status: 404, title: 'There is no such mobile route.' },
   MOBILE_IDEMPOTENCY_CONFLICT: { status: 409, title: 'That request key was already used for another choice.' },
   MOBILE_ROUND_CONFLICT: { status: 409, title: 'The round changed. Reload the assignment and reconcile your pending work.' },
+  MOBILE_CALIBRATION_CONFLICT: {
+    status: 409,
+    title: 'The calibration profile or a standard changed. Download the instrument again and repeat the calibration.',
+  },
   MOBILE_SELECTION_EXPIRED: { status: 410, title: 'That choice has expired. Load the workspaces again.' },
   MOBILE_CONTRACT_UNSUPPORTED: { status: 426, title: 'This app version or profile is not supported.' },
   MOBILE_UNAVAILABLE: { status: 503, title: 'The service is unavailable. Try again shortly.' },

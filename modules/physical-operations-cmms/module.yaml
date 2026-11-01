@@ -63,6 +63,12 @@ spec:
         component: CmmsWorkspace
         props:
           section: meters
+      # WI-OI-134 M-CAL: instrument calibration (standards, profiles, records, approval, certificates).
+      - route: /cmms/calibration
+        component: CmmsWorkspace
+        sessionPermissions: true
+        props:
+          section: calibration
       - route: /cmms/inventory
         component: CmmsWorkspace
         props:
@@ -187,6 +193,7 @@ spec:
         - { key: schedules, label: PM Schedules, path: /cmms/schedules, icon: clock }
         - { key: inventory, label: MRO Parts, path: /cmms/inventory, icon: boxes }
         - { key: meters, label: Meters & IoT, path: /cmms/meters, icon: gauge }
+        - { key: calibration, label: Calibration, path: /cmms/calibration, icon: shield-check, permissions: [cmms.calibration.read] }
         - { key: analytics, label: Reliability, path: /cmms/analytics, icon: bar-chart, permissions: [cmms.analytics.read, analytics:read] }
         - { key: floor, label: Floor Kiosk, path: /cmms/floor, icon: radio }
       # WI-OI-120n (owner, 2026-10-06): module roles, copied into a workspace when CMMS is switched on and assigned on
@@ -199,15 +206,20 @@ spec:
           # UAT before it: the work-order screen and REST API still require it. Narrowing them to their own work orders
           # (cmms.work-orders.execute-own only, WI-OI-120t) comes with the work-order window.
           description: Carries out work orders, records meter readings and labour, and punches their own time.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, cmms.calibration.read, cmms.calibration.execute, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
         - key: maintenance-planner
           name: Maintenance planner
           description: Plans, assigns and closes work; manages assets, preventive schedules and parts; manages people and approves time and absence for everyone in the workspace (not only the maintenance team) until roles are held per unit (ADR-0034). Linking logins stays with administrators.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.requests.write, cmms.assets.read, cmms.assets.write, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.pm.write, cmms.parts.read, cmms.parts.write, cmms.analytics.read, maps:read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.time.read, workforce.time.punch, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.requests.write, cmms.assets.read, cmms.assets.write, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.pm.write, cmms.parts.read, cmms.parts.write, cmms.analytics.read, cmms.calibration.read, cmms.calibration.manage, maps:read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.time.read, workforce.time.punch, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
         - key: maintenance-viewer
           name: Maintenance viewer
           description: Reads assets, work orders, schedules, meters, parts and reliability figures without changing them, and raises and follows their own maintenance requests.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.pm.read, cmms.parts.read, cmms.analytics.read, maps.nodes.read]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.pm.read, cmms.parts.read, cmms.analytics.read, cmms.calibration.read, maps.nodes.read]
+        # WI-OI-134 M-CAL: approves calibrations and publishes instrument profiles (never their own: four eyes).
+        - key: metrology-lead
+          name: Metrology lead
+          description: Keeps master standards and instrument calibration profiles, publishes profiles others drafted, and approves or rejects calibrations others performed.
+          permissions: [cmms:read, cmms.assets.read, cmms.work-orders.read, cmms.calibration.read, cmms.calibration.manage, cmms.calibration.publish, cmms.calibration.approve, maps.nodes.read]
   # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context.
   # Templates: `{id}` is an identifier; `a|b` is one of several segment values. Generated by `pnpm modules:catalog`.
   gateway:
@@ -282,6 +294,17 @@ spec:
       - { path: 'v1/meters/telemetry/batch', POST: cmms.meters.write }
       - { path: 'v1/meters/triggers', GET: cmms.meters.read, POST: cmms.meters.write }
       - { path: 'v1/meters/triggers/{id}', PATCH: cmms.meters.write, DELETE: cmms.meters.write }
+      - { path: 'v1/calibration/standards', GET: cmms.calibration.read, POST: cmms.calibration.manage }
+      - { path: 'v1/calibration/standards/{id}', PATCH: cmms.calibration.manage }
+      - { path: 'v1/calibration/profiles', GET: cmms.calibration.read, POST: cmms.calibration.manage }
+      - { path: 'v1/calibration/profiles/{id}', PATCH: cmms.calibration.manage }
+      - { path: 'v1/calibration/profiles/{id}/publish', POST: cmms.calibration.publish }
+      - { path: 'v1/calibration/instruments', GET: cmms.calibration.read }
+      - { path: 'v1/calibration/instruments/{id}/bundle|drift', GET: cmms.calibration.read }
+      - { path: 'v1/calibration/records', GET: cmms.calibration.read, POST: cmms.calibration.execute }
+      - { path: 'v1/calibration/records/{id}', GET: cmms.calibration.read }
+      - { path: 'v1/calibration/records/{id}/decision', POST: cmms.calibration.approve }
+      - { path: 'v1/calibration/records/{id}/certificate', GET: cmms.calibration.read }
       - { path: 'v1/parts/storerooms', GET: cmms.parts.read, POST: cmms.parts.write }
       - { path: 'v1/parts/storerooms/{id}', PATCH: cmms.parts.write, DELETE: cmms.parts.write }
       - { path: 'v1/parts/balances', GET: cmms.parts.read, PUT: cmms.parts.write }

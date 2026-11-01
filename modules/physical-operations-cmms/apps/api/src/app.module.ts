@@ -6,6 +6,8 @@ import { AssetsService } from './assets/assets.service.js';
 import { CmmsAuthorizationGuard } from './auth/authorization.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthController } from './health/health.controller.js';
+import { CalibrationController } from './calibration/calibration.controller.js';
+import { CalibrationService } from './calibration/calibration.service.js';
 import { MetersController } from './meters/meters.controller.js';
 import { MetersService } from './meters/meters.service.js';
 import { PartsController } from './parts/parts.controller.js';
@@ -72,6 +74,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     RequestsController,
     PmSchedulesController,
     MetersController,
+    CalibrationController,
     PartsController,
     AnalyticsController,
     CmmsInboxController,
@@ -80,6 +83,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     CmmsRecordController,
   ],
   providers: [
+    CalibrationService,
     CmmsAuthorizationGuard,
     AssetsService,
     DowntimesService,

@@ -93,15 +93,26 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
     holdsPermission(assignment.permissions,'operator-rounds.board.read'));
   const roundsEnabled = entitlements.includes('operator-rounds') &&
     (canExecuteRounds || canReadRoundsBoard);
-  const modules = roundsEnabled ? [{
-    key:'operator-rounds',enabled:true,navigationOrder:370,
-    capabilities:[
-      ...(canExecuteRounds ? ['operator-rounds.routes.execute'] : []),
-      ...(canReadRoundsBoard ? ['operator-rounds.board.read'] : []),
-    ],
-    presentationRevision:'operator-rounds.v1',
-    requiredDeviceCapabilities:canExecuteRounds ? ['camera'] : [],
-  }] : [];
+  // WI-OI-134 M-CAL: calibration is a CMMS (asset-maintenance) journey for members who may execute calibrations.
+  const calibrationEnabled = entitlements.includes('asset-maintenance') && projected.some((assignment) =>
+    holdsPermission(assignment.permissions,'cmms.calibration.execute'));
+  const modules = [
+    ...(roundsEnabled ? [{
+      key:'operator-rounds',enabled:true,navigationOrder:370,
+      capabilities:[
+        ...(canExecuteRounds ? ['operator-rounds.routes.execute'] : []),
+        ...(canReadRoundsBoard ? ['operator-rounds.board.read'] : []),
+      ],
+      presentationRevision:'operator-rounds.v1',
+      requiredDeviceCapabilities:canExecuteRounds ? ['camera'] : [],
+    }] : []),
+    ...(calibrationEnabled ? [{
+      key:'calibration',enabled:true,navigationOrder:380,
+      capabilities:['cmms.calibration.execute'],
+      presentationRevision:'calibration.v1',
+      requiredDeviceCapabilities:[],
+    }] : []),
+  ];
 
   const parsed = MobileSessionV3Schema.safeParse({
     contractVersion: 'mobile-session.v3',

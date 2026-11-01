@@ -20,6 +20,9 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   'GET rounds/board': '/api/v1/mobile/rounds/board',
   'POST rounds/sync': '/api/v1/mobile/rounds/sync',
   'POST rounds/evidence': '/api/v1/mobile/rounds/evidence',
+  // WI-OI-134 M-CAL.
+  'GET calibration/instruments': '/api/v1/mobile/calibration/instruments',
+  'POST calibration/records': '/api/v1/mobile/calibration/records',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -42,6 +45,12 @@ function mobileUpstreamPath(method: string, path: readonly string[]): string | u
   if (method === 'POST' && path.length === 4 && path[0] === 'rounds' &&
       path[1] === 'evidence' && path[3] === 'commit' && UUID.test(path[2] ?? ''))
     return `/api/v1/mobile/rounds/evidence/${path[2]}/commit`;
+  if (method === 'GET' && path.length === 4 && path[0] === 'calibration' &&
+      path[1] === 'instruments' && path[3] === 'bundle' && UUID.test(path[2] ?? ''))
+    return `/api/v1/mobile/calibration/instruments/${path[2]}/bundle`;
+  if (method === 'GET' && path.length === 3 && path[0] === 'calibration' &&
+      path[1] === 'records' && UUID.test(path[2] ?? ''))
+    return `/api/v1/mobile/calibration/records/${path[2]}`;
   return undefined;
 }
 

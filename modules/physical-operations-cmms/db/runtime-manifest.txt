@@ -23,3 +23,4 @@
 000024_cmms_analytics_downtime_relay.up.sql
 000025_cmms_downtime_analytics_backfill.up.sql
 000026_round_exception_origin.up.sql
+000027_instrument_calibration.up.sql

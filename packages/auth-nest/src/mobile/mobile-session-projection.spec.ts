@@ -99,6 +99,33 @@ describe('mobile session v3 projection', () => {
     }]);
   });
 
+  it('offers Calibration only with CMMS enabled and the execute permission (WI-OI-134)',() => {
+    const base = source();
+    const entitled = {
+      ...base,
+      tenant:{...base.tenant!,entitlements:[...base.tenant!.entitlements,{moduleKey:'asset-maintenance',version:'2026-11-01'}]},
+    };
+    const technician = {
+      ...entitled,
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,'cmms.calibration.execute']}
+        : assignment),
+    };
+    expect(projectMobileSession(technician,binding).modules).toEqual([{
+      key:'calibration',enabled:true,navigationOrder:380,capabilities:['cmms.calibration.execute'],
+      presentationRevision:'calibration.v1',requiredDeviceCapabilities:[],
+    }]);
+    expect(projectMobileSession(entitled,binding).modules).toEqual([]);
+    expect(projectMobileSession({...technician,tenant:base.tenant!},binding).modules).toEqual([]);
+    const readOnly = {
+      ...entitled,
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,'cmms.calibration.read']}
+        : assignment),
+    };
+    expect(projectMobileSession(readOnly,binding).modules).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();

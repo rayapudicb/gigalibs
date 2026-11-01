@@ -134,6 +134,12 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
         { key: 'classifications', label: 'Classifications', href: '/cmms/classifications', icon: moduleIcons.layers },
         ...base.slice(assetsAt + 1),
       ];
+      // WI-OI-134 M-CAL: Calibration follows Meters & IoT and is gated on cmms.calibration.read.
+      const metersAt = items.findIndex((item) => item.key === 'meters');
+      items.splice(metersAt + 1, 0, {
+        key: 'calibration', label: 'Calibration', href: '/cmms/calibration', icon: moduleIcons['shield-check'],
+        permissions: ['cmms.calibration.read'] as const,
+      } as (typeof items)[number]);
       // WI-OI-131 C11: Reliability tab is permission-gated in the sidebar.
       return items.map((item) =>
         item.key === 'analytics'

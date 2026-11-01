@@ -83,11 +83,34 @@ function intendedCmmsPermission(method: string, path: string): string | null {
   if (method === 'POST' && new RegExp(`^v1/assets/${UUID_SEGMENT}/downtime/end$`).test(path)) {
     return 'cmms.assets.write';
   }
+  // WI-OI-134 M-CAL: calibration routes, transcribed from CalibrationController's @RequirePermissions.
+  const calibrationRoute = CALIBRATION_ROUTES.find(
+    ([routeMethod, pattern]) => routeMethod === method && new RegExp(`^v1/${pattern.replaceAll('{id}', UUID_SEGMENT)}$`).test(path),
+  );
+  if (calibrationRoute) return calibrationRoute[2];
   const screenRoute = SCREEN_ROUTES_U19A.find(
     ([routeMethod, pattern]) => routeMethod === method && new RegExp(`^v1/${pattern.replaceAll('{id}', UUID_SEGMENT)}$`).test(path),
   );
   return screenRoute?.[2] ?? null;
 }
+
+const CALIBRATION_ROUTES: readonly (readonly [string, string, string])[] = [
+  ['GET', 'calibration/standards', 'cmms.calibration.read'],
+  ['POST', 'calibration/standards', 'cmms.calibration.manage'],
+  ['PATCH', 'calibration/standards/{id}', 'cmms.calibration.manage'],
+  ['GET', 'calibration/profiles', 'cmms.calibration.read'],
+  ['POST', 'calibration/profiles', 'cmms.calibration.manage'],
+  ['PATCH', 'calibration/profiles/{id}', 'cmms.calibration.manage'],
+  ['POST', 'calibration/profiles/{id}/publish', 'cmms.calibration.publish'],
+  ['GET', 'calibration/instruments', 'cmms.calibration.read'],
+  ['GET', 'calibration/instruments/{id}/bundle', 'cmms.calibration.read'],
+  ['GET', 'calibration/instruments/{id}/drift', 'cmms.calibration.read'],
+  ['GET', 'calibration/records', 'cmms.calibration.read'],
+  ['POST', 'calibration/records', 'cmms.calibration.execute'],
+  ['GET', 'calibration/records/{id}', 'cmms.calibration.read'],
+  ['POST', 'calibration/records/{id}/decision', 'cmms.calibration.approve'],
+  ['GET', 'calibration/records/{id}/certificate', 'cmms.calibration.read'],
+];
 
 /**
  * WI-OI-120h (U19a): the routes the CMMS screens call that the API already served, with the permission each CMMS API

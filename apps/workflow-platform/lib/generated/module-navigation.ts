@@ -132,6 +132,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "gauge"
     },
     {
+      "key": "calibration",
+      "label": "Calibration",
+      "path": "/cmms/calibration",
+      "icon": "shield-check",
+      "permissions": [
+        "cmms.calibration.read"
+      ]
+    },
+    {
       "key": "analytics",
       "label": "Reliability",
       "path": "/cmms/analytics",

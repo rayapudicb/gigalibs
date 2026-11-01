@@ -2161,6 +2161,86 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/calibration/standards",
+        "pattern": "^v1/calibration/standards$",
+        "methods": {
+          "GET": "cmms.calibration.read",
+          "POST": "cmms.calibration.manage"
+        }
+      },
+      {
+        "template": "v1/calibration/standards/{id}",
+        "pattern": "^v1/calibration/standards/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "cmms.calibration.manage"
+        }
+      },
+      {
+        "template": "v1/calibration/profiles",
+        "pattern": "^v1/calibration/profiles$",
+        "methods": {
+          "GET": "cmms.calibration.read",
+          "POST": "cmms.calibration.manage"
+        }
+      },
+      {
+        "template": "v1/calibration/profiles/{id}",
+        "pattern": "^v1/calibration/profiles/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "cmms.calibration.manage"
+        }
+      },
+      {
+        "template": "v1/calibration/profiles/{id}/publish",
+        "pattern": "^v1/calibration/profiles/[0-9a-fA-F-]{36}/publish$",
+        "methods": {
+          "POST": "cmms.calibration.publish"
+        }
+      },
+      {
+        "template": "v1/calibration/instruments",
+        "pattern": "^v1/calibration/instruments$",
+        "methods": {
+          "GET": "cmms.calibration.read"
+        }
+      },
+      {
+        "template": "v1/calibration/instruments/{id}/bundle|drift",
+        "pattern": "^v1/calibration/instruments/[0-9a-fA-F-]{36}/(?:bundle|drift)$",
+        "methods": {
+          "GET": "cmms.calibration.read"
+        }
+      },
+      {
+        "template": "v1/calibration/records",
+        "pattern": "^v1/calibration/records$",
+        "methods": {
+          "GET": "cmms.calibration.read",
+          "POST": "cmms.calibration.execute"
+        }
+      },
+      {
+        "template": "v1/calibration/records/{id}",
+        "pattern": "^v1/calibration/records/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.calibration.read"
+        }
+      },
+      {
+        "template": "v1/calibration/records/{id}/decision",
+        "pattern": "^v1/calibration/records/[0-9a-fA-F-]{36}/decision$",
+        "methods": {
+          "POST": "cmms.calibration.approve"
+        }
+      },
+      {
+        "template": "v1/calibration/records/{id}/certificate",
+        "pattern": "^v1/calibration/records/[0-9a-fA-F-]{36}/certificate$",
+        "methods": {
+          "GET": "cmms.calibration.read"
+        }
+      },
+      {
         "template": "v1/parts/storerooms",
         "pattern": "^v1/parts/storerooms$",
         "methods": {

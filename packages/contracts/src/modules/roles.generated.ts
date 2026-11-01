@@ -310,6 +310,8 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.meters.write",
       "cmms.pm.read",
       "cmms.parts.read",
+      "cmms.calibration.read",
+      "cmms.calibration.execute",
       "maps.nodes.read",
       "workforce:read",
       "workforce.resources.read",
@@ -339,6 +341,8 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.parts.read",
       "cmms.parts.write",
       "cmms.analytics.read",
+      "cmms.calibration.read",
+      "cmms.calibration.manage",
       "maps:read",
       "maps.nodes.read",
       "workforce:read",
@@ -373,6 +377,23 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.pm.read",
       "cmms.parts.read",
       "cmms.analytics.read",
+      "cmms.calibration.read",
+      "maps.nodes.read"
+    ]
+  },
+  {
+    "catalogKey": "asset-maintenance",
+    "key": "metrology-lead",
+    "name": "Metrology lead",
+    "description": "Keeps master standards and instrument calibration profiles, publishes profiles others drafted, and approves or rejects calibrations others performed.",
+    "permissions": [
+      "cmms:read",
+      "cmms.assets.read",
+      "cmms.work-orders.read",
+      "cmms.calibration.read",
+      "cmms.calibration.manage",
+      "cmms.calibration.publish",
+      "cmms.calibration.approve",
       "maps.nodes.read"
     ]
   },

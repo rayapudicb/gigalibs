@@ -106,6 +106,29 @@ describe('mobile v1 BFF front door', () => {
     expect(upstreamFetch).toHaveBeenCalledTimes(1);
   });
 
+  it('forwards the calibration routes, UUID-bound where an id is named (WI-OI-134)', async () => {
+    const id = '10000000-0000-4000-8000-000000000001';
+    upstreamFetch.mockImplementation(async () => new Response('{}', { status: 200 }));
+    const auth = { headers: { Authorization: 'Bearer mobile-token' } };
+    expect((await GET(mobileRequest('calibration/instruments', auth), context(['calibration', 'instruments']))).status).toBe(200);
+    expect((await GET(mobileRequest(`calibration/instruments/${id}/bundle`, auth),
+      context(['calibration', 'instruments', id, 'bundle']))).status).toBe(200);
+    expect((await GET(mobileRequest(`calibration/records/${id}`, auth), context(['calibration', 'records', id]))).status).toBe(200);
+    expect((await POST(mobileRequest('calibration/records', { ...auth, method: 'POST', body: '{}' }),
+      context(['calibration', 'records']))).status).toBe(200);
+    expect(upstreamFetch.mock.calls.map((call) => String(call[0]))).toEqual([
+      'https://control.example.invalid/api/v1/mobile/calibration/instruments',
+      `https://control.example.invalid/api/v1/mobile/calibration/instruments/${id}/bundle`,
+      `https://control.example.invalid/api/v1/mobile/calibration/records/${id}`,
+      'https://control.example.invalid/api/v1/mobile/calibration/records',
+    ]);
+    expect((await GET(mobileRequest('calibration/instruments/nope/bundle'),
+      context(['calibration', 'instruments', 'nope', 'bundle']))).status).toBe(404);
+    expect((await POST(mobileRequest(`calibration/records/${id}`, { method: 'POST', body: '{}' }),
+      context(['calibration', 'records', id]))).status).toBe(404);
+    expect(upstreamFetch).toHaveBeenCalledTimes(4);
+  });
+
   it('forwards only the listed Rounds supervisor board read', async () => {
     upstreamFetch.mockResolvedValueOnce(new Response('{"items":[]}', {status:200}));
     const response=await GET(mobileRequest('rounds/board'),context(['rounds','board']));
