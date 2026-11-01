@@ -13,10 +13,13 @@ const tx = vi.hoisted(() => ({
     createMany: vi.fn(),
     updateMany: vi.fn(),
   },
+  controlOutboxEvent: {
+    create: vi.fn(),
+    count: vi.fn(),
+  },
   tenantIsolationBinding: { create: vi.fn() },
   tenantSubdomainBinding: { create: vi.fn() },
   auditLog: { create: vi.fn() },
-  controlOutboxEvent: { create: vi.fn() },
 }));
 const database = vi.hoisted(() => ({
   $transaction: vi.fn(async (operation: (client: unknown) => unknown) => operation(tx)),
@@ -36,9 +39,12 @@ describe('licensed module update', () => {
     vi.restoreAllMocks();
   });
 
-  it('writes tenant.entitlements.changed.v1 inside the entitlement transaction', async () => {
+  it('writes tenant.entitlements.changed.v1 and v2 inside the entitlement transaction', async () => {
     tx.tenant.findUnique.mockResolvedValue({ id: 'tenant-1', status: 'ACTIVE', trialEndsAt: null });
-    tx.tenantModuleEntitlement.findMany.mockResolvedValue([]);
+    tx.tenantModuleEntitlement.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ moduleKey: 'universal-inventory', status: 'ENABLED' }]);
+    tx.controlOutboxEvent.count.mockResolvedValue(0);
     const service = new PlatformAdministrationService();
     vi.spyOn(service, 'getTenant').mockResolvedValue({} as never);
 
@@ -55,13 +61,26 @@ describe('licensed module update', () => {
         update: expect.objectContaining({ status: 'ENABLED', updatedById: 'admin-1' }),
       }),
     );
-    expect(tx.controlOutboxEvent.create).toHaveBeenCalledWith({
+    expect(tx.controlOutboxEvent.create).toHaveBeenCalledTimes(2);
+    expect(tx.controlOutboxEvent.create).toHaveBeenNthCalledWith(1, {
       data: expect.objectContaining({
         tenantId: 'tenant-1',
         aggregateType: 'tenant-module-entitlements',
         aggregateId: 'tenant-1',
         eventType: 'tenant.entitlements.changed.v1',
         payload: { tenantId: 'tenant-1', enabledModuleKeys: ['universal-inventory'] },
+      }),
+    });
+    expect(tx.controlOutboxEvent.create).toHaveBeenNthCalledWith(2, {
+      data: expect.objectContaining({
+        tenantId: 'tenant-1',
+        eventType: 'tenant.entitlements.changed.v2',
+        payload: {
+          tenantId: 'tenant-1',
+          snapshotVersion: 1,
+          enabledModuleKeys: ['universal-inventory'],
+          modules: [{ catalogModuleKey: 'universal-inventory', status: 'ENABLED' }],
+        },
       }),
     });
   });
@@ -78,6 +97,7 @@ describe('a module no longer offered', () => {
   const save = async (enabled: string[]) => {
     tx.tenant.findUnique.mockResolvedValue({ id: 'tenant-1', status: 'ACTIVE', trialEndsAt: null });
     tx.tenantModuleEntitlement.findMany.mockResolvedValue(enabled.map((moduleKey) => ({ moduleKey, status: 'ENABLED' })));
+    tx.controlOutboxEvent.count.mockResolvedValue(0);
     const service = new PlatformAdministrationService();
     vi.spyOn(service, 'getTenant').mockResolvedValue({} as never);
     await service.updateEntitlements('tenant-1', { moduleKeys: ['universal-inventory'], reason: 'UAT: modules' }, 'admin-1');
@@ -113,14 +133,26 @@ describe('a new workspace', () => {
 
   /** The event, and that it is written in the same transaction as the trial entitlements, after them. */
   function expectEventAfterEntitlements(tenantId: string, moduleKeys: readonly string[]) {
-    expect(tx.controlOutboxEvent.create).toHaveBeenCalledTimes(1);
-    expect(tx.controlOutboxEvent.create).toHaveBeenCalledWith({
+    const enabledModuleKeys = [...moduleKeys].sort();
+    expect(tx.controlOutboxEvent.create).toHaveBeenCalledTimes(2);
+    expect(tx.controlOutboxEvent.create).toHaveBeenNthCalledWith(1, {
       data: expect.objectContaining({
         tenantId,
         aggregateType: 'tenant-module-entitlements',
         aggregateId: tenantId,
         eventType: 'tenant.entitlements.changed.v1',
-        payload: { tenantId, enabledModuleKeys: [...moduleKeys] },
+        payload: { tenantId, enabledModuleKeys },
+      }),
+    });
+    expect(tx.controlOutboxEvent.create).toHaveBeenNthCalledWith(2, {
+      data: expect.objectContaining({
+        tenantId,
+        eventType: 'tenant.entitlements.changed.v2',
+        payload: expect.objectContaining({
+          tenantId,
+          enabledModuleKeys,
+          snapshotVersion: 1,
+        }),
       }),
     });
     const entitlements =
@@ -142,6 +174,10 @@ describe('a new workspace', () => {
       region: 'eu',
     });
 
+    tx.tenantModuleEntitlement.findMany.mockResolvedValue(
+      trialModuleKeys.map((moduleKey) => ({ moduleKey, status: 'ENABLED' })),
+    );
+    tx.controlOutboxEvent.count.mockResolvedValue(0);
     await new TenancyService().createTenant(
       { name: 'Journey Works', slug: 'journey', isolationMode: 'SHARED', region: 'eu' } as never,
       'owner-1',
@@ -158,6 +194,8 @@ describe('a new workspace', () => {
     const service = new PlatformAdministrationService();
     vi.spyOn(service, 'getTenant').mockResolvedValue({} as never);
 
+    tx.tenantModuleEntitlement.findMany.mockResolvedValue([{ moduleKey: 'gigaops', status: 'ENABLED' }]);
+    tx.controlOutboxEvent.count.mockResolvedValue(0);
     await service.createTenant(
       {
         name: 'Plant Two',
@@ -201,6 +239,7 @@ describe('a trial extension', () => {
   async function extend(rows: ReturnType<typeof entitlement>[], trialEndsAt: Date) {
     tx.tenant.findUnique.mockResolvedValue({ id: 'tenant-1', status: 'TRIAL', trialEndsAt });
     tx.tenantModuleEntitlement.findMany.mockResolvedValue(rows);
+    tx.controlOutboxEvent.count.mockResolvedValue(0);
     const service = new PlatformAdministrationService();
     vi.spyOn(service, 'getTenant').mockResolvedValue({} as never);
     await service.extendTrial('tenant-1', { days: 14, reason: 'UAT: more time' }, 'admin-1');
@@ -244,8 +283,8 @@ describe('a trial extension', () => {
       ],
       lapsed,
     );
-    expect(tx.controlOutboxEvent.create).toHaveBeenCalledTimes(1);
-    expect(tx.controlOutboxEvent.create).toHaveBeenCalledWith({
+    expect(tx.controlOutboxEvent.create).toHaveBeenCalledTimes(2);
+    expect(tx.controlOutboxEvent.create).toHaveBeenNthCalledWith(1, {
       data: expect.objectContaining({
         eventType: 'tenant.entitlements.changed.v1',
         payload: { tenantId: 'tenant-1', enabledModuleKeys: ['gigaops', 'tenant-access'] },

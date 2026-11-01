@@ -48,17 +48,20 @@ function createWorker(
   publish = vi.fn().mockResolvedValue(undefined),
   applyForTenant = vi.fn().mockResolvedValue([]),
   deliverParty = vi.fn().mockResolvedValue(undefined),
+  deliverEntitlement = vi.fn().mockResolvedValue(undefined),
 ) {
   return {
     publish,
     applyForTenant,
     deliverParty,
+    deliverEntitlement,
     worker: new ControlOutboxWorker(
       { processSourceEvent: vi.fn() } as never,
       {} as never,
       { publish } as never,
       { applyForTenant } as never,
       { deliver: deliverParty } as never,
+      { deliver: deliverEntitlement } as never,
     ),
   };
 }
@@ -239,5 +242,30 @@ describe('ControlOutboxWorker module window activation', () => {
     expect(database.transaction.controlOutboxEvent.updateMany).toHaveBeenLastCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: 'PENDING' }) }),
     );
+  });
+});
+
+describe('ControlOutboxWorker Analytics entitlement relay', () => {
+  const entitlementV2 = {
+    ...event,
+    aggregateId: 'tenant_01',
+    eventType: 'tenant.entitlements.changed.v2',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    database.$queryRaw.mockResolvedValue([{ ...entitlementV2 }]);
+    database.controlOutboxEvent.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it('relays v2 snapshots to Analytics then publishes the outbox row', async () => {
+    const deliverEntitlement = vi.fn().mockResolvedValue(undefined);
+    const { worker } = createWorker(undefined, vi.fn(), vi.fn(), deliverEntitlement);
+    await worker.tick();
+    expect(deliverEntitlement).toHaveBeenCalledWith(expect.objectContaining({ eventType: 'tenant.entitlements.changed.v2' }));
+    expect(database.controlOutboxEvent.updateMany).toHaveBeenCalledWith({
+      where: { id: entitlementV2.id, status: 'PROCESSING', attempts: 1 },
+      data: { status: 'PUBLISHED', publishedAt: expect.any(Date), claimedAt: null, lastErrorCode: null },
+    });
   });
 });

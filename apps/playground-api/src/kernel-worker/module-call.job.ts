@@ -53,6 +53,7 @@ export type ModuleCallPayload =
   | { readonly operation: 'analytics.report-run'; readonly reportDefinitionId: string }
   | { readonly operation: 'connector-hub.sync'; readonly connectionId: string }
   | { readonly operation: 'analytics.dataset-build'; readonly mappingId: string }
+  | { readonly operation: 'operator-rounds.generate'; readonly routeId: string }
   /** Chained after a dataset build (never scheduled directly). */
   | { readonly operation: 'analytics.summaries-build'; readonly datasetVersionId: string }
   /** WI-OI-107: queued when a tenant activates an industry or country pack (never scheduled directly). */
@@ -65,7 +66,8 @@ export type ModuleCallPayload =
         | 'business-partners.organization-sync'
         | 'accounts-receivable.organization-sync'
         | 'manufacturing.organization-sync'
-        | 'process-safety-screening.organization-sync';
+        | 'process-safety-screening.organization-sync'
+        | 'operator-rounds.organization-sync';
       readonly versionId: string;
     };
 
@@ -88,6 +90,7 @@ export const ORGANIZATION_SYNC_OPERATIONS = {
   'universal-manufacturing': { operation: 'manufacturing.organization-sync' },
   // WI-OI-120cc (SPEED S9): a SPEED project belongs to a site of the organization in force.
   'process-safety-screening': { operation: 'process-safety-screening.organization-sync' },
+  'operator-rounds': { operation: 'operator-rounds.organization-sync' },
 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -121,6 +124,15 @@ export const MODULE_CALL_OPERATIONS: Readonly<Record<ModuleCallPayload['operatio
     permission: SCHEDULED_OPERATIONS['analytics.dataset-build'].runPermission,
     path: () => 'v1/datasets/build',
     body: (payload) => ({ mappingId: (payload as { mappingId: string }).mappingId }),
+  },
+  'operator-rounds.generate': {
+    moduleKey: SCHEDULED_OPERATIONS['operator-rounds.generate'].moduleKey,
+    audience: 'gigalibs-operator-rounds-api',
+    baseUrlEnvironment: 'OPERATOR_ROUNDS_API_URL',
+    privateKeyEnvironment: 'OPERATOR_ROUNDS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: SCHEDULED_OPERATIONS['operator-rounds.generate'].runPermission,
+    path: (payload) => `operator-rounds/v1/routes/${encodeURIComponent((payload as { routeId:string }).routeId)}/generate-current`,
+    body: () => ({}),
   },
   'analytics.summaries-build': {
     moduleKey: 'analytics-studio',
@@ -221,6 +233,16 @@ export const MODULE_CALL_OPERATIONS: Readonly<Record<ModuleCallPayload['operatio
     body: () => ({}),
     organizationVersion: true,
   },
+  'operator-rounds.organization-sync': {
+    moduleKey: 'operator-rounds',
+    audience: 'gigalibs-operator-rounds-api',
+    baseUrlEnvironment: 'OPERATOR_ROUNDS_API_URL',
+    privateKeyEnvironment: 'OPERATOR_ROUNDS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `operator-rounds/v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
 };
 
 export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
@@ -233,6 +255,9 @@ export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
   }
   if (input.operation === 'analytics.dataset-build' && typeof input.mappingId === 'string' && UUID.test(input.mappingId)) {
     return { operation: 'analytics.dataset-build', mappingId: input.mappingId };
+  }
+  if (input.operation === 'operator-rounds.generate' && typeof input.routeId === 'string' && UUID.test(input.routeId)) {
+    return { operation: 'operator-rounds.generate', routeId: input.routeId };
   }
   if (input.operation === 'analytics.summaries-build' && typeof input.datasetVersionId === 'string' && UUID.test(input.datasetVersionId)) {
     return { operation: 'analytics.summaries-build', datasetVersionId: input.datasetVersionId };
@@ -252,7 +277,8 @@ export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
       input.operation === 'business-partners.organization-sync' ||
       input.operation === 'accounts-receivable.organization-sync' ||
       input.operation === 'manufacturing.organization-sync' ||
-      input.operation === 'process-safety-screening.organization-sync') &&
+      input.operation === 'process-safety-screening.organization-sync' ||
+      input.operation === 'operator-rounds.organization-sync') &&
     typeof input.versionId === 'string' &&
     /^[A-Za-z0-9_-]{8,64}$/.test(input.versionId)
   ) {
@@ -267,6 +293,7 @@ export function moduleCallPayload(operation: ModuleCallPayload['operation'], tar
     'analytics.report-run': { reportDefinitionId: targetId },
     'connector-hub.sync': { connectionId: targetId },
     'analytics.dataset-build': { mappingId: targetId },
+    'operator-rounds.generate': { routeId: targetId },
     'analytics.summaries-build': { datasetVersionId: targetId },
     'workforce.pack-apply': { publishedVersionId: targetId },
     'geospatial.pack-apply': { publishedVersionId: targetId },
@@ -277,6 +304,7 @@ export function moduleCallPayload(operation: ModuleCallPayload['operation'], tar
     'accounts-receivable.organization-sync': { versionId: targetId },
     'manufacturing.organization-sync': { versionId: targetId },
     'process-safety-screening.organization-sync': { versionId: targetId },
+    'operator-rounds.organization-sync': { versionId: targetId },
   }[operation];
   return parseModuleCallPayload({ operation, ...target });
 }
@@ -290,6 +318,8 @@ export function moduleCallTarget(payload: ModuleCallPayload): string {
       return payload.connectionId;
     case 'analytics.dataset-build':
       return payload.mappingId;
+    case 'operator-rounds.generate':
+      return payload.routeId;
     case 'analytics.summaries-build':
       return payload.datasetVersionId;
     case 'workforce.pack-apply':
@@ -302,6 +332,7 @@ export function moduleCallTarget(payload: ModuleCallPayload): string {
     case 'accounts-receivable.organization-sync':
     case 'manufacturing.organization-sync':
     case 'process-safety-screening.organization-sync':
+    case 'operator-rounds.organization-sync':
       return payload.versionId;
   }
 }

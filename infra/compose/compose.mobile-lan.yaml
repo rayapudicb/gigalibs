@@ -1,0 +1,39 @@
+# WI-OI-120cf: the local-network HTTPS address for the mobile pilot (owner, 2026-10-22: a local-network address with a
+# locally trusted certificate). Its own Compose project, gigalibs-mobile-lan: one TLS proxy that joins the UAT network
+# and forwards `/mobile/v1/*` to UAT's web service and nothing else. It holds no data and no secret but its TLS key, read
+# from the certificate directory that scripts/mobile-lan-certificate.sh writes outside the repository. Stopping it ends
+# phone access; UAT is unaffected.
+#
+#   MOBILE_LAN_ADDRESS=<this Mac's network address> MOBILE_LAN_CERT_DIR=<certificate directory> \
+#     docker compose -p gigalibs-mobile-lan -f infra/compose/compose.mobile-lan.yaml up -d
+name: gigalibs-mobile-lan
+services:
+  mobile-lan:
+    image: node:24-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    read_only: true
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    command: ["node", "/opt/mobile-lan/proxy.mjs"]
+    environment:
+      MOBILE_LAN_UPSTREAM: http://web:5180
+      MOBILE_LAN_PORT: "8443"
+      MOBILE_LAN_CERT_DIR: /run/mobile-lan
+    volumes:
+      - ./mobile-lan/proxy.mjs:/opt/mobile-lan/proxy.mjs:ro
+      - ${MOBILE_LAN_CERT_DIR:?MOBILE_LAN_CERT_DIR is required}:/run/mobile-lan:ro
+    ports:
+      - "${MOBILE_LAN_ADDRESS:?MOBILE_LAN_ADDRESS is required}:${MOBILE_LAN_PORT:-8443}:8443"
+    mem_limit: 128m
+    networks:
+      - uat
+
+networks:
+  uat:
+    external: true
+    name: gigalibs-configuration-local

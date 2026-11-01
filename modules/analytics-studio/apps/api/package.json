@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "proof:real-database": "tsx scripts/real-database-proof.ts",
     "benchmark:summaries": "tsx scripts/benchmark-summaries.ts",
-    "proof:connector-hub-inbox": "tsx scripts/connector-hub-inbox-proof.ts"
+    "proof:connector-hub-inbox": "tsx scripts/connector-hub-inbox-proof.ts",
+    "seed:module-analytics-e2e": "tsx scripts/module-analytics-e2e-seed.ts"
   },
   "dependencies": {
     "@gigalibs/analytics-charts": "workspace:*",

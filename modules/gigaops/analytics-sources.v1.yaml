@@ -1,0 +1,46 @@
+# WI-OI-131: Workforce position snapshots for Analytics (catalog key gigaops).
+apiVersion: analytics.gigalibs.io/v1
+kind: ModuleAnalyticsSources
+spec:
+  sources:
+    - contractVersion: 1
+      catalogModuleKey: gigaops
+      sourceKey: workforce-positions
+      title: Workforce positions
+      requiredReadPermission: workforce.positions.read
+      factSchema:
+        schemaVersion: 1
+        primaryKeyField: entity_id
+        eventTimeField: effective_from
+        ownerUnitIdField: organization_unit_id
+      ownerScopePolicy: TENANT_SHARED_EXPLICIT
+      dataClassification: PERSONAL
+      dimensions:
+        - key: position_status
+          label: Position status
+          factField: status
+        - key: position_code
+          label: Position code
+          factField: code
+      measures:
+        - key: position_count
+          label: Positions
+          aggregation: COUNT
+          unit: COUNT
+          precision: 0
+          factField: entity_id
+          reversalPolicy: NET
+        - key: total_fte
+          label: Total FTE
+          aggregation: SUM
+          unit: RATIO
+          precision: 2
+          factField: fte
+          reversalPolicy: NET
+      defaultViews:
+        - key: staffing_overview
+          label: Staffing overview
+          kpiMeasureKeys: [position_count, total_fte]
+          trendMeasureKey: position_count
+          breakdownDimensionKey: position_status
+      freshnessTargetSeconds: 900

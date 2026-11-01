@@ -17,6 +17,7 @@ import * as path from 'path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest';
 
 const jest = vi;
+const allowSource = { assertAnalyticsSourceAccess: jest.fn().mockResolvedValue(undefined) } as never;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -188,7 +189,7 @@ describe('DatasetService — build lifecycle', () => {
 
   test('creates version as BUILDING then transitions to READY', async () => {
     const db = makeDb([{ raw_payload: { amount: 42 }, source_pk_hash: 'source-1' }]);
-    const svc = new DatasetService(db as any);
+    const svc = new DatasetService(db as any, allowSource);
     const result = await svc.buildDatasetVersion(
       { tenantId: 'tenant-A', subject: 'user-1', entitlements: new Set(['analytics-studio']) },
       { mappingId: 'map-1', mappingVersion: 1 },
@@ -209,7 +210,7 @@ describe('DatasetService — build lifecycle', () => {
   test('transitions to FAILED when no raw records and mapping has fields', async () => {
     // With empty raw rows, recordCount = 0 but build still succeeds (empty is valid)
     const db = makeDb([]);
-    const svc = new DatasetService(db as any);
+    const svc = new DatasetService(db as any, allowSource);
     const result = await svc.buildDatasetVersion(
       { tenantId: 'tenant-A', subject: 'user-1', entitlements: new Set(['analytics-studio']) },
       { mappingId: 'map-1', mappingVersion: 1 },
@@ -234,7 +235,7 @@ describe('DatasetService — build lifecycle', () => {
       // WI-OI-104e: a build moves the models on the same mapping version in one transaction (none here).
       withTenantTransaction: jest.fn(async (_tenantId: string, work: (client: unknown) => unknown) => work({ query: jest.fn(async () => ({ rows: [] })) })),
     };
-    const svc = new DatasetService(db as any);
+    const svc = new DatasetService(db as any, allowSource);
     await expect(
       svc.buildDatasetVersion(
         { tenantId: 'T', subject: 's', entitlements: new Set(['analytics-studio']) },
@@ -253,7 +254,7 @@ describe('DatasetService — tenant isolation', () => {
       // WI-OI-104e: a build moves the models on the same mapping version in one transaction (none here).
       withTenantTransaction: jest.fn(async (_tenantId: string, work: (client: unknown) => unknown) => work({ query: jest.fn(async () => ({ rows: [] })) })),
     };
-    const svc = new DatasetService(db as any);
+    const svc = new DatasetService(db as any, allowSource);
     await expect(
       svc.getDatasetVersion(
         { tenantId: 'tenant-B', subject: 'u', entitlements: new Set(['analytics-studio']) },
@@ -292,7 +293,7 @@ describe('DatasetService — append-only enforcement (source code audit)', () =>
 describe('DatasetService — measure validation', () => {
   function svc() {
     const db = { queryWithTenant: jest.fn(), withTenantTransaction: jest.fn() };
-    return new DatasetService(db as any);
+    return new DatasetService(db as any, allowSource);
   }
   const principal = { tenantId: 'T', subject: 'u', entitlements: new Set(['analytics-studio']) };
   const baseMeasures = () => [{
@@ -390,7 +391,7 @@ describe('DatasetService — createSemanticModel requires READY dataset', () => 
         },
       ),
     };
-    const svc = new DatasetService(db as any);
+    const svc = new DatasetService(db as any, allowSource);
     await expect(svc.createSemanticModel(
       { tenantId: 'T', subject: 'u', entitlements: new Set(['analytics-studio']) },
       {
@@ -413,7 +414,7 @@ describe('DatasetService — createSemanticModel requires READY dataset', () => 
         },
       ),
     };
-    const svc = new DatasetService(db as any);
+    const svc = new DatasetService(db as any, allowSource);
     await expect(svc.createSemanticModel(
       { tenantId: 'T', subject: 'u', entitlements: new Set(['analytics-studio']) },
       {

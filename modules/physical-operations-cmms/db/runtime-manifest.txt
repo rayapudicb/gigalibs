@@ -21,3 +21,5 @@
 000022_work_order_signed_off_event.up.sql
 000023_asset_downtime_maasa.up.sql
 000024_cmms_analytics_downtime_relay.up.sql
+000025_cmms_downtime_analytics_backfill.up.sql
+000026_round_exception_origin.up.sql

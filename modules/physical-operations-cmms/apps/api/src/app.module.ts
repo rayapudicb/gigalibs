@@ -15,6 +15,7 @@ import { PmSchedulesService } from './pm-schedules/pm-schedules.service.js';
 import { CmmsInboxController } from './relay/inbox.controller.js';
 import { CmmsInboxService } from './relay/inbox.service.js';
 import { CmmsAnalyticsDowntimeRelay } from './relay/analytics-downtime-relay.js';
+import { CmmsAnalyticsControlTotalRelay } from './relay/analytics-control-total-relay.js';
 import { CmmsOutboxRelay } from './relay/outbox-relay.js';
 import { RelayInboxGuard } from './relay/relay-inbox.guard.js';
 import {
@@ -43,9 +44,11 @@ import {
   ModuleIdempotencyStore,
   RECORD_DISPATCHER,
   RelayHealthController,
+  loadRelayConfig,
 } from '@gigalibs/module-sdk';
 import { DatabaseService } from './database/database.service.js';
 import { cmmsRecordDispatcher } from './work-orders/cmms-record-adapters.js';
+import { CMMS_ROUNDS_INBOX_CONFIG, RoundsInboxController, RoundsInboxGuard, RoundsInboxService, RoundsMeterContextController } from './relay/rounds-inbox.js';
 
 const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGuard, readPermission: 'cmms:read' });
 
@@ -72,6 +75,8 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     PartsController,
     AnalyticsController,
     CmmsInboxController,
+    RoundsInboxController,
+    RoundsMeterContextController,
     CmmsRecordController,
   ],
   providers: [
@@ -87,8 +92,16 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     PartsService,
     AnalyticsService,
     CmmsInboxService,
+    RoundsInboxService,
+    RoundsInboxGuard,
+    { provide: CMMS_ROUNDS_INBOX_CONFIG, useFactory: () => loadRelayConfig(process.env, {
+      inboxPublicKey:'CMMS_ROUNDS_INBOX_RELAY_PUBLIC_KEY_BASE64',
+      targetUrl:'CMMS_ROUNDS_UNUSED_RELAY_URL',signingKey:'CMMS_ROUNDS_UNUSED_RELAY_KEY_BASE64',
+      interval:'CMMS_ROUNDS_INBOX_INTERVAL_MS',peerService:'operator-rounds-api',
+    }) },
     CmmsOutboxRelay,
     CmmsAnalyticsDowntimeRelay,
+    CmmsAnalyticsControlTotalRelay,
     RelayInboxGuard,
     { provide: CMMS_RELAY_CONFIG, useFactory: () => loadCmmsRelayConfig() },
     { provide: CMMS_ANALYTICS_RELAY_CONFIG, useFactory: () => loadCmmsAnalyticsRelayConfig() },

@@ -360,6 +360,11 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
         port: '4250',
         serviceHostname: 'iot-api',
       },
+      'operator-rounds': {
+        environmentKey: 'OPERATOR_ROUNDS_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
       'product-catalogue': {
         environmentKey: 'PRODUCT_CATALOGUE_API_URL',
         port: '4790',

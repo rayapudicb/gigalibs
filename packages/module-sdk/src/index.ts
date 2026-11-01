@@ -14,6 +14,7 @@ export {
   type RelayDatabase,
   type RelayEnvelope,
 } from './outbox-relay.js';
+export { publishModuleAnalyticsControlTotal } from './module-analytics-control-total.js';
 export {
   loadOutboxRetentionConfig,
   OutboxRetentionSweeper,

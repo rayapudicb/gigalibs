@@ -74,6 +74,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       icon: moduleIcons.boxes,
       personas: ['OPERATIONS_SUPERVISOR'],
     },
+    'operator-rounds': {
+      group: 'Workforce & Operations',
+      icon: moduleIcons['scan-line'],
+      personas: ['OPERATIONS_SUPERVISOR'],
+    },
     // WI-OI-120bw (SPEED S3, WI-OI-120bn): SPEED process safety screening for lab leads and chemists.
     'process-safety-screening': {
       group: 'Intelligence',
@@ -123,12 +128,18 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
         ...LEGACY_MODULE_MENUS['asset-maintenance']!.slice(1),
       ];
       const assetsAt = base.findIndex((item) => item.key === 'assets');
-      return [
+      const items = [
         { key: 'requests', label: 'Maintenance Requests', href: '/cmms/requests', icon: moduleIcons['file-text'] },
         ...base.slice(0, assetsAt + 1),
         { key: 'classifications', label: 'Classifications', href: '/cmms/classifications', icon: moduleIcons.layers },
         ...base.slice(assetsAt + 1),
       ];
+      // WI-OI-131 C11: Reliability tab is permission-gated in the sidebar.
+      return items.map((item) =>
+        item.key === 'analytics'
+          ? { ...item, permissions: ['cmms.analytics.read', 'analytics:read'] as const }
+          : item,
+      );
     })(),
     // WI-OI-120u: Bookings, a read-only metadata window, follows Availability (Slice 2); Compliance and Workforce
     // Analytics, which showed the retired WFO screens, are gone (Slice 3, owner "retire all").
@@ -136,6 +147,13 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       ...LEGACY_MODULE_MENUS.gigaops!.slice(0, 5),
       { key: 'bookings', label: 'Bookings', href: '/gigaops/bookings', icon: moduleIcons.layers },
       ...LEGACY_MODULE_MENUS.gigaops!.slice(5).filter((item) => item.key !== 'compliance' && item.key !== 'analytics'),
+      {
+        key: 'analytics',
+        label: 'Analytics & Trends',
+        href: '/gigaops/analytics',
+        icon: moduleIcons['bar-chart'],
+        permissions: ['workforce.positions.read', 'analytics:read'] as const,
+      },
     ],
     // WI-OI-130 / WI-OI-126: new capability modules after the WI-OI-083c freeze.
     'iot-gateway': [

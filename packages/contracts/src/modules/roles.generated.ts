@@ -512,5 +512,42 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "speed.audit.read",
       "speed.settings.manage"
     ]
+  },
+  {
+    "catalogKey": "operator-rounds",
+    "key": "rounds-operator",
+    "name": "Rounds Operator",
+    "description": "Executes assigned inspection rounds and records evidence.",
+    "permissions": [
+      "operator-rounds.routes.read",
+      "operator-rounds.runs.execute"
+    ]
+  },
+  {
+    "catalogKey": "operator-rounds",
+    "key": "rounds-supervisor",
+    "name": "Rounds Supervisor",
+    "description": "Assigns rounds and reviews progress and exceptions.",
+    "permissions": [
+      "operator-rounds.routes.read",
+      "operator-rounds.assignments.manage",
+      "operator-rounds.board.read",
+      "operator-rounds.exceptions.read",
+      "operator-rounds.exceptions.review",
+      "operator-rounds.runs.execute"
+    ]
+  },
+  {
+    "catalogKey": "operator-rounds",
+    "key": "rounds-engineer",
+    "name": "Rounds Reliability Engineer",
+    "description": "Builds and publishes routes and thresholds.",
+    "permissions": [
+      "operator-rounds.routes.read",
+      "operator-rounds.routes.manage",
+      "operator-rounds.routes.publish",
+      "operator-rounds.board.read",
+      "operator-rounds.exceptions.read"
+    ]
   }
 ];

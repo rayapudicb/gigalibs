@@ -26,8 +26,7 @@ The module's supported production path is source-agnostic:
 **External system → Connector → Ingestion → Dataset → Semantic model → Chart/Dashboard/Report**
 
 No internal business module appears in this work item's requirements, contracts, migrations, tests or
-release claims. Adding a GigaLibs business module as a source is outside this plan and would require a new
-accepted work item.
+release claims. **Superseded for internal module sources by WI-OI-131** (`docs/plans/universal-module-analytics-implementation-plan.md`), which owns MODULE_EVENTS sources, entitlement lifecycle and the shared analytics workbench. External connector-only scope in this document remains unchanged.
 
 ### 1.2 Architecture relationship to GigaLibs SaaS
 

@@ -8,6 +8,7 @@ export interface GeneratedModuleMenuItem {
   readonly label: string;
   readonly path: string;
   readonly icon: PlatformModuleIcon;
+  readonly permissions?: readonly string[];
 }
 
 export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedModuleMenuItem[]>> = {
@@ -134,7 +135,11 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "key": "analytics",
       "label": "Reliability",
       "path": "/cmms/analytics",
-      "icon": "bar-chart"
+      "icon": "bar-chart",
+      "permissions": [
+        "cmms.analytics.read",
+        "analytics:read"
+      ]
     },
     {
       "key": "floor",
@@ -197,6 +202,16 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Pay-ready Outputs",
       "path": "/gigaops/pay",
       "icon": "coins"
+    },
+    {
+      "key": "analytics",
+      "label": "Analytics & Trends",
+      "path": "/gigaops/analytics",
+      "icon": "bar-chart",
+      "permissions": [
+        "workforce.positions.read",
+        "analytics:read"
+      ]
     }
   ],
   "communications-textfly": [
@@ -410,6 +425,9 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
     "OPERATIONS_SUPERVISOR"
   ],
   "project-operations": [
+    "OPERATIONS_SUPERVISOR"
+  ],
+  "operator-rounds": [
     "OPERATIONS_SUPERVISOR"
   ]
 };

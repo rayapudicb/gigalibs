@@ -54,6 +54,9 @@
     "e2e:uat:journey": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh --journey",
     "e2e:uat:all": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh --all",
     "e2e:uat:screens": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh --screens",
+    "seed:module-analytics-e2e": "node infra/compose/scripts/run-seed-module-analytics-e2e-local.mjs",
+    "e2e:module-analytics": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-module-analytics.sh",
+    "e2e:uat:rounds": "bash -c 'source e2e/load-uat-env.sh && RUN_ROUNDS_CERTIFICATION=1 pnpm --dir e2e exec playwright test specs/operator-rounds-certification.spec.ts --config playwright.config.ts'",
     "proof:ar-compose-health": "bash infra/compose/scripts/verify-ar-compose-health.sh",
     "proof:ar-compose-rebuild": "bash infra/compose/scripts/rebuild-ar-compose-local.sh",
     "audit:compose-database-url": "node infra/compose/scripts/verify-compose-database-url.mjs",
@@ -71,7 +74,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "turbo": "^2.3.3",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "vitest": "^3.0.0"
   }
 }

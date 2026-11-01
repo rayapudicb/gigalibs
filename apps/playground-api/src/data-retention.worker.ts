@@ -1,4 +1,4 @@
-import { pruneLoginThrottles } from '@gigalibs/auth-nest';
+import { pruneLoginThrottles, pruneMobileAuthState } from '@gigalibs/auth-nest';
 import { effectiveRetentionDays, retentionCutoff } from '@gigalibs/contracts';
 import { Prisma, prisma } from '@gigalibs/db';
 import {
@@ -82,6 +82,10 @@ export class DataRetentionWorker implements OnApplicationBootstrap, OnApplicatio
         this.logger.error(
           `Login throttle pruning failed. error=${error instanceof Error ? error.name : 'UnknownError'}`,
         ),
+      );
+      // WI-OI-120cf: spent mobile MFA challenges, switch outcomes and retired refresh-token hashes.
+      await pruneMobileAuthState().catch((error: unknown) =>
+        this.logger.error(`Mobile sign-in pruning failed. error=${error instanceof Error ? error.name : 'UnknownError'}`),
       );
     } finally {
       this.running = false;

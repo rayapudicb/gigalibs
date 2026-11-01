@@ -35,7 +35,7 @@ const config = {
   corsOrigins: [],
   databaseUrl: 'postgresql://runtime:unused@127.0.0.1:1/unused',
   databasePoolSize: 1,
-  expectedMigrationVersion: 27,
+  expectedMigrationVersion: 28,
   platformContextPublicKey: publicKey,
   platformContextAudience: 'gigalibs-workforce-api',
 } as unknown as GigaOpsRuntimeConfig;

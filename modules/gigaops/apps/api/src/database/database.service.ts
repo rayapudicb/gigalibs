@@ -8,6 +8,7 @@ type WorkforceDefinerFunction =
   | 'relay_settle_cmms_event'
   | 'relay_lease_analytics_positions'
   | 'relay_settle_analytics_position'
+  | 'analytics_report_position_control_totals'
   | 'outbox_sweep';
 
 /**
@@ -29,6 +30,7 @@ export class WorkforceDatabaseService extends ModuleDatabase<WorkforceDefinerFun
         'relay_settle_cmms_event',
         'relay_lease_analytics_positions',
         'relay_settle_analytics_position',
+        'analytics_report_position_control_totals',
         'outbox_sweep',
       ],
       tenantBinding: 'set-config',

@@ -14,7 +14,7 @@
  * UNAUTHORIZED is never a freshness state.
  */
 
-import { BadRequestException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
 import {
   type AnalyticsFieldType,
   type AnalyticsQueryResultV1,
@@ -28,6 +28,7 @@ import { chooseSummary } from './summary-plan.js';
 import { SummaryService } from './summary.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
+import { SourceAccessService } from '../auth/source-access.service.js';
 import { assertPlacedDataset, placeScopeCondition, placesUnder, resolvePlaceScope, type PlaceScope } from '../places/place-scope.js';
 import { organizationFilters, resolveOrganizationAccess } from '../organization/organization-scope.js';
 
@@ -53,7 +54,8 @@ export class QueryEngineService {
 
   constructor(
     private readonly db: DatabaseService,
-    private readonly summaries?: SummaryService,
+    @Optional() private readonly summaries?: SummaryService,
+    @Optional() private readonly sourceAccess?: SourceAccessService,
   ) {}
 
   // ── Freshness computation ──────────────────────────────────────────────────
@@ -75,10 +77,15 @@ export class QueryEngineService {
     const modelResult = await this.db.queryWithTenant<any>(
       tenantId,
       `SELECT sm.id, sm.dataset_version_id, smv.version_number,
+              sm.module_source_key, sm.contract_version, sm.compiled_measure_manifest,
+              sc.module_lifecycle,
               sm_meas.measure_name, sm_meas.aggregate_fn, sm_meas.field_reference, sm_meas.display_label
        FROM gigalibs_analytics.semantic_models sm
        JOIN gigalibs_analytics.semantic_model_versions smv ON smv.model_id = sm.id
        JOIN gigalibs_analytics.semantic_measures sm_meas ON sm_meas.model_id = sm.id
+       LEFT JOIN gigalibs_analytics.analytical_dataset_versions adv ON adv.id = sm.dataset_version_id
+       LEFT JOIN gigalibs_analytics.data_studio_mappings dsm ON dsm.id = adv.mapping_id
+       LEFT JOIN gigalibs_analytics.source_connections sc ON sc.id = dsm.connection_id
        WHERE sm.id = $1
          AND smv.version_number = (
            SELECT MAX(version_number) FROM gigalibs_analytics.semantic_model_versions WHERE model_id = sm.id
@@ -88,6 +95,7 @@ export class QueryEngineService {
     if (modelResult.rows.length === 0) {
       throw new NotFoundException(`Semantic model '${query.semanticModelId}' not found.`);
     }
+    await this.sourceAccess?.assertForSemanticModel(principal, query.semanticModelId);
     const datasetVersionId: string = modelResult.rows[0]!.dataset_version_id;
     const definitionVersion: number = modelResult.rows[0]!.version_number;
     const empty = (freshness: AnalyticsQueryResultV1['freshness'], watermark: string | null): AnalyticsQueryResultV1 => ({
@@ -103,8 +111,11 @@ export class QueryEngineService {
       truncated: false,
     });
 
-    const { freshness, watermark } = await this.computeFreshness(tenantId, datasetVersionId, SPEC_FRESHNESS_TTL_SECONDS);
-    if (freshness === 'UNAVAILABLE') return empty(freshness, watermark);
+    const moduleLineage = moduleLineageFromModelRow(modelResult.rows[0]);
+    const freshnessTtl =
+      moduleLineage?.freshnessTargetSeconds ?? SPEC_FRESHNESS_TTL_SECONDS;
+    const { freshness, watermark } = await this.computeFreshness(tenantId, datasetVersionId, freshnessTtl, moduleLineage?.moduleLifecycle);
+    if (freshness === 'UNAVAILABLE') return { ...empty(freshness, watermark), ...(moduleLineage ? { moduleLineage } : {}) };
 
     const fields = await loadDatasetFields(this.db, tenantId, datasetVersionId);
     // WI-OI-105d (D2, D3): a member with a place scope sees only records under their places, from the rows.
@@ -194,7 +205,7 @@ export class QueryEngineService {
     });
     const cached = this.answers.get(cacheKey);
     // The answer cannot change for this dataset version; freshness is about now, so it is recomputed above.
-    if (cached) return { ...cached, freshness, watermark };
+    if (cached) return { ...cached, freshness, watermark, ...(moduleLineage ? { moduleLineage } : {}) };
 
     // A READY summary that answers the question exactly is used instead of the raw rows (WI-OI-103c).
     const summary = this.summaries && !placeScope && !unitScope
@@ -234,6 +245,7 @@ export class QueryEngineService {
       rows,
       truncated,
       answeredFrom: summary ? 'summary' : 'rows',
+      ...(moduleLineage ? { moduleLineage } : {}),
     };
     this.answers.set(cacheKey, answer);
     return answer;
@@ -260,7 +272,14 @@ export class QueryEngineService {
     tenantId: string,
     datasetVersionId: string,
     freshnessttlSeconds: number | null,
+    moduleLifecycle: string | null = null,
   ): Promise<{ freshness: FreshnessState; watermark: string | null }> {
+    if (moduleLifecycle === 'NO_DATA') {
+      return { freshness: 'PARTIAL', watermark: null };
+    }
+    if (moduleLifecycle === 'UNAVAILABLE' || moduleLifecycle === 'QUARANTINED') {
+      return { freshness: 'UNAVAILABLE', watermark: null };
+    }
     // Check if any BUILDING build is currently running (REBUILDING)
     const buildingResult = await this.db.queryWithTenant<{ count: string }>(
       tenantId,
@@ -328,6 +347,18 @@ export class QueryEngineService {
 }
 
 /** Converts a database value to the contract's cell type; numeric and bigint arrive as strings from pg. */
+function moduleLineageFromModelRow(row: Record<string, unknown> | undefined): AnalyticsQueryResultV1['moduleLineage'] {
+  if (!row?.module_source_key || !row.contract_version) return undefined;
+  const manifest = row.compiled_measure_manifest as { freshnessTargetSeconds?: number } | null;
+  const freshnessTargetSeconds = manifest?.freshnessTargetSeconds;
+  return {
+    sourceKey: String(row.module_source_key),
+    contractVersion: Number(row.contract_version),
+    moduleLifecycle: row.module_lifecycle ? String(row.module_lifecycle) : null,
+    ...(freshnessTargetSeconds ? { freshnessTargetSeconds } : {}),
+  };
+}
+
 function toCell(value: unknown, type: AnalyticsFieldType): string | number | boolean | null {
   if (value === null || value === undefined) return null;
   if (value instanceof Date) return value.toISOString();

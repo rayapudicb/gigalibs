@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { SourceAccessService } from '../auth/source-access.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
 
@@ -92,6 +93,7 @@ export class SchemaDiscoveryService {
 
   constructor(
     private readonly db: DatabaseService,
+    private readonly sourceAccess: SourceAccessService,
   ) {}
 
   /**
@@ -113,7 +115,7 @@ export class SchemaDiscoveryService {
     this.validateIdentifier(sourceTableName, 'sourceTableName');
 
     // Confirm connection belongs to tenant
-    await this.requireSource(principal, connectionId);
+    await this.sourceAccess.assertAnalyticsSourceAccess(principal, connectionId);
 
     // Sample raw records for this connection + table
     const sampleResult = await this.db.queryWithTenant<{ raw_payload: Record<string, unknown> }>(
@@ -202,6 +204,7 @@ export class SchemaDiscoveryService {
     schemaId: string,
   ): Promise<DiscoveredSchema> {
     const { tenantId } = principal;
+    await this.sourceAccess.assertForDiscoveredSchema(principal, schemaId);
 
     const schemaResult = await this.db.queryWithTenant<any>(
       tenantId,
@@ -260,7 +263,7 @@ export class SchemaDiscoveryService {
     this.validateIdentifier(dto.sourceTableName, 'sourceTableName');
     this.validateFieldMappings(dto.fieldMappings);
 
-    await this.requireSource(principal, dto.connectionId);
+    await this.sourceAccess.assertAnalyticsSourceAccess(principal, dto.connectionId);
 
     const result = await this.db.queryWithTenant<{ id: string }>(
       tenantId,
@@ -288,6 +291,7 @@ export class SchemaDiscoveryService {
     dto: PublishMappingDto,
   ): Promise<MappingSummary> {
     const { tenantId, subject } = principal;
+    await this.sourceAccess.assertForMapping(principal, mappingId);
 
     this.validateFieldMappings(dto.fieldMappings);
 
@@ -344,23 +348,13 @@ export class SchemaDiscoveryService {
     });
   }
 
-  /** WI-OI-104f: the source must exist in this tenant (RLS); Analytics' own Postgres connector is retired. */
-  private async requireSource(principal: AnalyticsPrincipal, connectionId: string): Promise<void> {
-    const found = await this.db.queryWithTenant<{ id: string }>(
-      principal.tenantId,
-      'SELECT id FROM gigalibs_analytics.source_connections WHERE id = $1',
-      [connectionId],
-    );
-    if (found.rows.length === 0) throw new NotFoundException(`Source '${connectionId}' not found.`);
+  /** WI-OI-104e / WI-OI-131 A5: mappable sources the caller may use (no connection secrets). */
+  async listSources(principal: AnalyticsPrincipal): Promise<Array<{ id: string; displayName: string; sourceType: string; status: string }>> {
+    return this.sourceAccess.listAccessibleSources(principal);
   }
 
-  /** WI-OI-104e: mappable sources, without connection details. */
-  async listSources(principal: AnalyticsPrincipal): Promise<Array<{ id: string; displayName: string; sourceType: string; status: string }>> {
-    const result = await this.db.queryWithTenant<{ id: string; display_name: string; source_type: string; status: string }>(
-      principal.tenantId,
-      `SELECT id, display_name, source_type::text, status::text FROM gigalibs_analytics.source_connections ORDER BY display_name`,
-    );
-    return result.rows.map((row) => ({ id: row.id, displayName: row.display_name, sourceType: row.source_type, status: row.status }));
+  async listModuleSources(principal: AnalyticsPrincipal) {
+    return this.sourceAccess.listModuleSources(principal);
   }
 
   async listMappings(principal: AnalyticsPrincipal): Promise<MappingSummary[]> {

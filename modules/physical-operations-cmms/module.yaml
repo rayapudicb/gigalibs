@@ -36,7 +36,6 @@ spec:
     - purchase-orders
     - iot-ingress
     - automatic-pm-generation
-    - reliability-analytics
     - import-export
   ui:
     application: apps/workflow-platform
@@ -141,13 +140,8 @@ spec:
             - Scheduling technicians through the legacy CMMS-local workforce model.
             - Presenting unpersisted calendar allocations as tenant records.
       - route: /cmms/analytics
-        unavailable:
-          title: Reliability reporting is not connected yet
-          summary: Mean time between failures, availability and downtime Pareto need attributable downtime and service-restoration records, which arrive with downtime capture (CM-07). The CMMS overview shows open, overdue and completed work and the stock position from persisted records.
-          availableForTesting:
-            - Work-order and stock overview at /cmms, derived from persisted CMMS records.
-          blockedActions:
-            - Presenting reliability, availability or downtime figures that are not measured.
+        component: CmmsModuleAnalytics
+        sessionPermissions: true
   api:
     application: apps/api
     port: 4200
@@ -193,7 +187,7 @@ spec:
         - { key: schedules, label: PM Schedules, path: /cmms/schedules, icon: clock }
         - { key: inventory, label: MRO Parts, path: /cmms/inventory, icon: boxes }
         - { key: meters, label: Meters & IoT, path: /cmms/meters, icon: gauge }
-        - { key: analytics, label: Reliability, path: /cmms/analytics, icon: bar-chart }
+        - { key: analytics, label: Reliability, path: /cmms/analytics, icon: bar-chart, permissions: [cmms.analytics.read, analytics:read] }
         - { key: floor, label: Floor Kiosk, path: /cmms/floor, icon: radio }
       # WI-OI-120n (owner, 2026-10-06): module roles, copied into a workspace when CMMS is switched on and assigned on
       # Settings -> Team, so maintenance access goes to the people who maintain and not to every Member. Each carries

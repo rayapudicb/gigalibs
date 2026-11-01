@@ -497,6 +497,7 @@ model Tenant {
   invites                 TenantInvite[]
   auditLogs               AuditLog[]
   sessions                Session[]
+  mobileMfaChallenges     MobileMfaChallenge[]
   settings                TenantSettings?
   subscriptions           Subscription[]
   invoices                Invoice[]
@@ -644,6 +645,7 @@ model User {
 
   // Relations
   sessions                   Session[]
+  mobileMfaChallenges        MobileMfaChallenge[]
   passkeys                   Passkey[]
   totpCredential             TotpCredential?
   mfaRecoveryCodes           MfaRecoveryCode[]
@@ -822,10 +824,80 @@ model Session {
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
 
+  mobile MobileSession?
+
   @@index([userId])
   @@index([tenantId])
   @@index([refreshToken])
   @@map("sessions")
+}
+
+// WI-OI-120cf: what a mobile sign-in adds to its row in "sessions": the installation and app profile it is bound to
+// and its rotating refresh token (the session's own refreshToken column holds a random value nobody has, so the web
+// refresh can never use a mobile session). Every revocation of the session ends the mobile session with it.
+model MobileSession {
+  sessionId        String   @id
+  session          Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  appProfile       String   @db.VarChar(100)
+  installationId   String   @db.Uuid
+  refreshTokenHash String   @unique @db.Char(64)
+  /// Grows by one at every workspace switch; the session revision the mobile session projection reports.
+  revision         Int      @default(1)
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+
+  retiredRefreshTokens MobileRetiredRefreshToken[]
+  switchOutcomes       MobileSwitchOutcome[]
+
+  @@map("mobile_sessions")
+}
+
+// A refresh token the mobile session has rotated away from. Presenting one again revokes the session (reuse).
+model MobileRetiredRefreshToken {
+  tokenHash String        @id @db.Char(64)
+  sessionId String
+  session   MobileSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  retiredAt DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@index([sessionId])
+  @@map("mobile_retired_refresh_tokens")
+}
+
+// A password sign-in waiting for its TOTP code: one use, five tries, short-lived, bound to installation and profile.
+model MobileMfaChallenge {
+  challengeHash  String    @id @db.Char(64)
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// The workspace the sign-in binds to when the user has exactly one; null when the user chooses one after.
+  tenantId       String?
+  tenant         Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appProfile     String    @db.VarChar(100)
+  installationId String    @db.Uuid
+  failedAttempts Int       @default(0)
+  expiresAt      DateTime  @db.Timestamptz(3)
+  consumedAt     DateTime? @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("mobile_mfa_challenges")
+}
+
+// The outcome of one workspace switch, so a retry with the same idempotency key answers the same refresh token
+// (encrypted) instead of rotating twice. Kept for a few minutes.
+model MobileSwitchOutcome {
+  sessionId            String
+  session              MobileSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  idempotencyKey       String        @db.Uuid
+  selectionHash        String        @db.Char(64)
+  tenantId             String
+  refreshTokenEnvelope String
+  expiresAt            DateTime      @db.Timestamptz(3)
+  createdAt            DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@id([sessionId, idempotencyKey])
+  @@index([expiresAt])
+  @@map("mobile_switch_outcomes")
 }
 
 // WI-OI-120e (U3.2, P1-20): failed password logins per account. The key is a SHA-256 of the

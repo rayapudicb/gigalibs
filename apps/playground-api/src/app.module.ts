@@ -149,6 +149,8 @@ import { ConfigurationStudioService } from './configuration-studio.service.js';
 import { ConnectorCredentialService } from './connector-credential.service.js';
 import { ConnectorProfileService } from './connector-profile.service.js';
 import { ControlOutboxWorker } from './control-outbox.worker.js';
+import { AnalyticsEntitlementRelayService } from './analytics/analytics-entitlement-relay.service.js';
+import { AnalyticsEntitlementSnapshotReadController } from './analytics/analytics-entitlement-snapshot-read.controller.js';
 import { PartyProjectionRelayService } from './parties/party-projection-relay.service.js';
 import { ModuleWindowBaselineService } from './module-window-baselines.service.js';
 import { DataRetentionWorker } from './data-retention.worker.js';
@@ -217,6 +219,7 @@ import { WorkflowService } from './workflow.service.js';
     TenantExchangeRateController,
     ScimController,
     PartyController,
+    AnalyticsEntitlementSnapshotReadController,
   ],
   providers: [
     { provide: APP_FILTER, useClass: DatabaseAvailabilityFilter },
@@ -246,6 +249,7 @@ import { WorkflowService } from './workflow.service.js';
     ValueLedgerService,
     ControlOutboxWorker,
     PartyProjectionRelayService,
+    AnalyticsEntitlementRelayService,
     ModuleWindowBaselineService,
     TenantDataExportService,
     KernelSchedulesService,

@@ -1,0 +1,36 @@
+# WI-OI-131: versioned MODULE_EVENTS source contract for Analytics (catalog key asset-maintenance).
+apiVersion: analytics.gigalibs.io/v1
+kind: ModuleAnalyticsSources
+spec:
+  sources:
+    - contractVersion: 1
+      catalogModuleKey: asset-maintenance
+      sourceKey: cmms-downtime
+      title: CMMS asset downtime
+      requiredReadPermission: cmms.analytics.read
+      factSchema:
+        schemaVersion: 1
+        primaryKeyField: event_id
+        eventTimeField: occurred_at
+        ownerUnitIdField: owning_unit_id
+      ownerScopePolicy: UNIT_REQUIRED
+      dataClassification: OPERATIONAL
+      dimensions:
+        - key: failure_code
+          label: Failure code
+          factField: failure_code
+      measures:
+        - key: downtime_minutes
+          label: Downtime minutes
+          aggregation: SUM
+          unit: MINUTES
+          precision: 0
+          factField: duration_minutes
+          reversalPolicy: NET
+      defaultViews:
+        - key: reliability_overview
+          label: Reliability overview
+          kpiMeasureKeys: [downtime_minutes]
+          trendMeasureKey: downtime_minutes
+          breakdownDimensionKey: failure_code
+      freshnessTargetSeconds: 900

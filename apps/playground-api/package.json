@@ -64,10 +64,10 @@
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "zod": "^4.5.2"
+    "zod": "^4.5.2",
+    "@gigalibs/module-sdk": "workspace:*"
   },
   "devDependencies": {
-    "@gigalibs/module-sdk": "workspace:*",
     "@types/node": "^24.10.0",
     "@types/pg": "^8.23.1",
     "tsx": "^4.20.6",

@@ -46,6 +46,30 @@ export const TENANT_EXPORT_INVENTORY = Object.freeze([
     'Recovery-code digests remain authentication secrets.',
   ),
   entry(
+    'MobileSession',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'The installation binding and refresh-token hash of a mobile sign-in are session security state.',
+  ),
+  entry(
+    'MobileRetiredRefreshToken',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'Retired refresh-token hashes exist only to detect a reused token.',
+  ),
+  entry(
+    'MobileMfaChallenge',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'A pending second-factor challenge is short-lived authentication state.',
+  ),
+  entry(
+    'MobileSwitchOutcome',
+    undefined,
+    'EXCLUDE_SECURITY',
+    'A sealed refresh token kept a few minutes so a retried workspace switch answers the same.',
+  ),
+  entry(
     'LoginThrottle',
     undefined,
     'EXCLUDE_SECURITY',

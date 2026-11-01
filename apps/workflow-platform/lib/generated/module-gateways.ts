@@ -1586,6 +1586,160 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
     "transformBody": null,
     "unavailable": []
   },
+  "operator-rounds": {
+    "module": "operator-rounds",
+    "basePaths": [
+      "/api/operator-rounds"
+    ],
+    "catalogKey": "operator-rounds",
+    "audience": "gigalibs-operator-rounds-api",
+    "upstream": "operator-rounds",
+    "signingKeyEnvironment": "OPERATOR_ROUNDS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "OPERATOR_ROUNDS",
+    "routeNoun": "Operator Inspection Rounds",
+    "serviceName": "Operator Inspection Rounds",
+    "entitlementName": "Operator Inspection Rounds",
+    "routes": [
+      {
+        "template": "v1/routes",
+        "pattern": "^v1/routes$",
+        "methods": {
+          "GET": "operator-rounds.routes.read",
+          "POST": "operator-rounds.routes.manage"
+        }
+      },
+      {
+        "template": "v1/routes/{id}",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "operator-rounds.routes.read",
+          "PATCH": "operator-rounds.routes.manage"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/checkpoints",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/checkpoints$",
+        "methods": {
+          "POST": "operator-rounds.routes.manage"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/publish",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/publish$",
+        "methods": {
+          "POST": "operator-rounds.routes.publish"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/assignments",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/assignments$",
+        "methods": {
+          "POST": "operator-rounds.assignments.manage"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/roster",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/roster$",
+        "methods": {
+          "GET": "operator-rounds.assignments.manage",
+          "POST": "operator-rounds.assignments.manage"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/generate",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/generate$",
+        "methods": {
+          "POST": "operator-rounds.assignments.manage"
+        }
+      },
+      {
+        "template": "v1/assignments/mine",
+        "pattern": "^v1/assignments/mine$",
+        "methods": {
+          "GET": "operator-rounds.runs.execute"
+        }
+      },
+      {
+        "template": "v1/assignments/board",
+        "pattern": "^v1/assignments/board$",
+        "methods": {
+          "GET": "operator-rounds.board.read"
+        }
+      },
+      {
+        "template": "v1/assignments/{id}/bundle",
+        "pattern": "^v1/assignments/[0-9a-fA-F-]{36}/bundle$",
+        "methods": {
+          "GET": "operator-rounds.runs.execute"
+        }
+      },
+      {
+        "template": "v1/sync",
+        "pattern": "^v1/sync$",
+        "methods": {
+          "POST": "operator-rounds.runs.execute"
+        }
+      },
+      {
+        "template": "v1/receipts/{id}",
+        "pattern": "^v1/receipts/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "operator-rounds.runs.execute"
+        }
+      },
+      {
+        "template": "v1/evidence",
+        "pattern": "^v1/evidence$",
+        "methods": {
+          "POST": "operator-rounds.runs.execute"
+        }
+      },
+      {
+        "template": "v1/evidence/{id}/commit",
+        "pattern": "^v1/evidence/[0-9a-fA-F-]{36}/commit$",
+        "methods": {
+          "POST": "operator-rounds.runs.execute"
+        }
+      },
+      {
+        "template": "v1/exceptions",
+        "pattern": "^v1/exceptions$",
+        "methods": {
+          "GET": "operator-rounds.exceptions.read"
+        }
+      },
+      {
+        "template": "v1/exceptions/{id}",
+        "pattern": "^v1/exceptions/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "operator-rounds.exceptions.review"
+        }
+      },
+      {
+        "template": "v1/exceptions/{id}/retry",
+        "pattern": "^v1/exceptions/[0-9a-fA-F-]{36}/retry$",
+        "methods": {
+          "POST": "operator-rounds.exceptions.review"
+        }
+      },
+      {
+        "template": "v1/organization/versions/{id}/units",
+        "pattern": "^v1/organization/versions/[0-9a-fA-F-]{36}/units$",
+        "methods": {
+          "POST": "organization:activate"
+        }
+      },
+      {
+        "template": "v1/organization/versions/{id}/complete",
+        "pattern": "^v1/organization/versions/[0-9a-fA-F-]{36}/complete$",
+        "methods": {
+          "POST": "organization:activate"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "physical-operations-cmms": {
     "module": "physical-operations-cmms",
     "basePaths": [

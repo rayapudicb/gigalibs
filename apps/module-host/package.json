@@ -13,6 +13,7 @@
     "@gigalibs/business-partners-api": "workspace:*",
     "@gigalibs/financial-operations-api": "workspace:*",
     "@gigalibs/module-sdk": "workspace:*",
+    "@gigalibs/operator-rounds-api": "workspace:*",
     "@gigalibs/process-safety-screening-api": "workspace:*",
     "@gigalibs/product-catalogue-api": "workspace:*",
     "@gigalibs/project-operations-api": "workspace:*",

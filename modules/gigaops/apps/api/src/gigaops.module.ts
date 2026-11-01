@@ -31,6 +31,7 @@ import { BookingsController, WorkRequirementsController } from './bookings/booki
 import { BookingsService } from './bookings/bookings.service.js';
 import { WorkforceInboxController } from './relay/inbox.controller.js';
 import { WorkforceInboxService } from './relay/inbox.service.js';
+import { WorkforceAnalyticsControlTotalRelay } from './relay/analytics-control-total-relay.js';
 import { WorkforceAnalyticsOutboxRelay, WorkforceOutboxRelay } from './relay/outbox-relay.js';
 import { RelayInboxGuard } from './relay/relay-inbox.guard.js';
 import {
@@ -61,6 +62,7 @@ import { WfoCommsService } from './comms/wfo-comms.service.js';
 import { WfoVendorsService } from './vendors/wfo-vendors.service.js';
 import { WfoPacksService } from './packs/wfo-packs.service.js';
 import { WfoReportsService } from './reports/wfo-reports.service.js';
+import { WORKFORCE_ROUNDS_INBOX_CONFIG, WorkforceRoundsEligibilityController, WorkforceRoundsEligibilityService, WorkforceRoundsGuard, loadWorkforceRoundsInboxConfig } from './relay/rounds-eligibility.js';
 
 const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthorizationGuard, readPermission: 'workforce:read' });
 
@@ -83,6 +85,7 @@ const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthoriza
     WorkRequirementsController,
     BookingsController,
     WorkforceInboxController,
+    WorkforceRoundsEligibilityController,
     PunchesController,
     TimesheetsController,
     TimeCorrectionsController,
@@ -118,11 +121,15 @@ const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthoriza
     AvailabilityService,
     BookingsService,
     WorkforceInboxService,
+    WorkforceRoundsEligibilityService,
+    WorkforceRoundsGuard,
+    { provide:WORKFORCE_ROUNDS_INBOX_CONFIG,useFactory:() => loadWorkforceRoundsInboxConfig() },
     TimeService,
     PayService,
     PayExportService,
     WorkforceOutboxRelay,
     WorkforceAnalyticsOutboxRelay,
+    WorkforceAnalyticsControlTotalRelay,
     RelayInboxGuard,
     { provide: WORKFORCE_RELAY_CONFIG, useFactory: () => loadWorkforceRelayConfig() },
     { provide: WORKFORCE_ANALYTICS_RELAY_CONFIG, useFactory: () => loadWorkforceAnalyticsRelayConfig() },

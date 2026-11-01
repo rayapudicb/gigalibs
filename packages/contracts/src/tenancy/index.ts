@@ -583,6 +583,8 @@ export type PlatformExternalIdentityMutationDto = z.infer<
   typeof PlatformExternalIdentityMutationSchema
 >;
 
+export * from './entitlement-snapshot-v2.js';
+
 // Runtime context injected into every request
 export interface TenantContext {
   tenantId: string;

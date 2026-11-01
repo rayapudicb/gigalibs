@@ -3,7 +3,7 @@
  * base measures, approved formula measures (with the version a chart may pin) and the dataset's typed fields.
  */
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import {
   type AnalyticsCatalogMeasureV1,
   type AnalyticsModelCatalogV1,
@@ -12,6 +12,7 @@ import {
 } from '@gigalibs/contracts';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
+import { SourceAccessService } from '../auth/source-access.service.js';
 import { loadDatasetFields } from './dataset-fields.js';
 
 const MODEL_COLUMNS = `sm.id, sm.display_name, sm.description, sm.dataset_version_id, sm.updated_at,
@@ -20,7 +21,10 @@ const MODEL_COLUMNS = `sm.id, sm.display_name, sm.description, sm.dataset_versio
 
 @Injectable()
 export class ModelCatalogService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    @Optional() private readonly sourceAccess?: SourceAccessService,
+  ) {}
 
   async listModels(principal: AnalyticsPrincipal): Promise<AnalyticsModelSummaryV1[]> {
     const result = await this.db.queryWithTenant<any>(
@@ -31,11 +35,22 @@ export class ModelCatalogService {
        LIMIT 200`,
       [],
     );
-    return result.rows.map(toSummary);
+    const summaries: AnalyticsModelSummaryV1[] = [];
+    for (const row of result.rows) {
+      try {
+        await this.sourceAccess?.assertForSemanticModel(principal, row.id as string);
+        summaries.push(toSummary(row));
+      } catch (error) {
+        if (error instanceof ForbiddenException) continue;
+        throw error;
+      }
+    }
+    return summaries;
   }
 
   async getCatalog(principal: AnalyticsPrincipal, modelId: string): Promise<AnalyticsModelCatalogV1> {
     const { tenantId } = principal;
+    await this.sourceAccess?.assertForSemanticModel(principal, modelId);
     const modelResult = await this.db.queryWithTenant<any>(
       tenantId,
       `SELECT ${MODEL_COLUMNS} FROM gigalibs_analytics.semantic_models sm WHERE sm.id = $1`,
@@ -43,6 +58,15 @@ export class ModelCatalogService {
     );
     if (modelResult.rows.length === 0) throw new NotFoundException(`Semantic model '${modelId}' not found.`);
     const model = toSummary(modelResult.rows[0]);
+
+    const manifestResult = await this.db.queryWithTenant<{ compiled_measure_manifest: unknown }>(
+      tenantId,
+      `SELECT compiled_measure_manifest FROM gigalibs_analytics.semantic_models WHERE id = $1`,
+      [modelId],
+    );
+    const measureUnits =
+      (manifestResult.rows[0]?.compiled_measure_manifest as { measureUnits?: Record<string, string> } | null)?.measureUnits ??
+      {};
 
     const baseResult = await this.db.queryWithTenant<{ measure_name: string; aggregate_fn: string; display_label: string }>(
       tenantId,
@@ -67,7 +91,7 @@ export class ModelCatalogService {
       label: row.display_label || row.measure_name,
       kind: 'base',
       aggregateFn: row.aggregate_fn,
-      unit: null,
+      unit: measureUnits[row.measure_name] ?? null,
       versionId: null,
     }));
     for (const row of formulaResult.rows) {

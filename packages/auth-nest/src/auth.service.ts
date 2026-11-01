@@ -36,7 +36,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { type LegacyOrgScope, primaryVersionInForce, resolveTreeScope, resolveUnitRootsScope } from './organization-scope.js';
+import { type LegacyOrgScope, NO_TREE_IN_FORCE, primaryVersionInForce, resolveTreeScope, resolveUnitRootsScope } from './organization-scope.js';
 import {
   activeLoginLock,
   clearLoginFailures,
@@ -107,18 +107,46 @@ export class AuthService {
   }
 
   async login(dto: LoginWithEmailDto): Promise<AuthResponse> {
+    const user = await this.authenticatePassword(dto.email, dto.password);
+
+    const memberships = await prisma.tenantMember.findMany({
+      where: {
+        userId: user.id,
+        status: 'ACTIVE',
+        tenant: {
+          OR: [{ status: 'ACTIVE' }, { status: 'TRIAL', trialEndsAt: { gt: new Date() } }],
+        },
+      },
+      select: { tenantId: true, role: true },
+      take: 2,
+    });
+    const selectedMembership = memberships.length === 1 ? memberships[0] : undefined;
+
+    return this.createAuthSession(
+      user.id,
+      selectedMembership?.tenantId,
+      selectedMembership ? [selectedMembership.role] : [],
+    );
+  }
+
+  /**
+   * The password check every sign-in channel uses (the web login and, WI-OI-120cf, the mobile BFF): the account's
+   * user when the email and password are right; otherwise the login lock (429 `LOGIN_LOCKED`) or 401, counted the same
+   * whether or not the account exists.
+   */
+  async authenticatePassword(email: string, password: string): Promise<{ id: string }> {
     // WI-OI-120e (U3.2, P1-20): a locked email is refused before any password check, and every failure is counted,
     // whether or not the account exists.
-    const emailHash = loginThrottleKey(dto.email);
+    const emailHash = loginThrottleKey(email);
     const lockedUntil = await activeLoginLock(emailHash);
     if (lockedUntil) throw this.loginLocked(lockedUntil);
 
     const user = await prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email },
     });
 
     // An unknown or unusable account still pays for a password check, so its answer takes as long as a wrong password.
-    const isValid = await verifyPassword(dto.password, user?.passwordHash ?? (await this.unusablePasswordHash()));
+    const isValid = await verifyPassword(password, user?.passwordHash ?? (await this.unusablePasswordHash()));
     if (!user || user.status !== 'ACTIVE' || !user.passwordHash || !isValid) {
       const failure = await recordLoginFailure(emailHash);
       if (failure.lockedUntil) {
@@ -143,25 +171,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
     await clearLoginFailures(emailHash);
-
-    const memberships = await prisma.tenantMember.findMany({
-      where: {
-        userId: user.id,
-        status: 'ACTIVE',
-        tenant: {
-          OR: [{ status: 'ACTIVE' }, { status: 'TRIAL', trialEndsAt: { gt: new Date() } }],
-        },
-      },
-      select: { tenantId: true, role: true },
-      take: 2,
-    });
-    const selectedMembership = memberships.length === 1 ? memberships[0] : undefined;
-
-    return this.createAuthSession(
-      user.id,
-      selectedMembership?.tenantId,
-      selectedMembership ? [selectedMembership.role] : [],
-    );
+    return { id: user.id };
   }
 
   /** A valid hash of a random password nobody knows, so a login for an unknown account costs a full password check. */
@@ -604,14 +614,14 @@ export class AuthService {
               }
             : {
                 permissions,
-                scope: { kind: 'UNITS', tree_version: 'none-in-force', unit_ids: [...role.unitIds] },
+                scope: { kind: 'UNITS', tree_version: NO_TREE_IN_FORCE, unit_ids: [...role.unitIds] },
                 legacy: { orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: [] }, organizationScope: { mode: 'DENIED' }, spatialScope: { mode: 'SCOPED_PLACES', placeIds: [] } },
               },
         );
       } else
         assignments.push({
           permissions,
-          scope: { kind: 'UNITS', tree_version: 'none-in-force', unit_ids: [...role.unitIds] },
+          scope: { kind: 'UNITS', tree_version: NO_TREE_IN_FORCE, unit_ids: [...role.unitIds] },
           legacy: { orgScope: { mode: 'SCOPED_DEPARTMENTS', departmentIds: [] }, organizationScope: { mode: 'DENIED' }, spatialScope: { mode: 'SCOPED_PLACES', placeIds: [] } },
         });
     }
@@ -774,72 +784,91 @@ export class AuthService {
       if (!this.mfaRequiredFromSecurity(session.tenant.settings?.security, true)) {
         throw new ConflictException('This tenant does not require MFA verification');
       }
-      await transaction.$queryRaw`SELECT "id" FROM "totp_credentials" WHERE "userId" = ${userId} FOR UPDATE`;
-      const credential = await transaction.totpCredential.findUnique({ where: { userId } });
-      if (!credential) throw new ConflictException('Enroll an authenticator before verification');
-      const now = new Date();
-      if (credential.lockedUntil && credential.lockedUntil > now) {
-        return { ok: false as const, locked: true, retryAt: credential.lockedUntil };
-      }
-      const secret = await decrypt(
-        credential.secretEnvelope,
-        this.requireMfaDecryptionKey(credential.keyVersion),
-        this.mfaAuthenticatedContext(credential.id, userId),
-      );
-      const matchedStep = matchTotpStep(code, secret);
-      const replayed =
-        matchedStep !== null &&
-        credential.lastUsedStep !== null &&
-        matchedStep <= credential.lastUsedStep;
-      if (matchedStep === null || replayed) {
-        const failedAttempts =
-          credential.lockedUntil && credential.lockedUntil <= now
-            ? 1
-            : credential.failedAttempts + 1;
-        const lockedUntil = failedAttempts >= 5 ? new Date(now.getTime() + 15 * 60 * 1_000) : null;
-        await transaction.totpCredential.update({
-          where: { id: credential.id },
-          data: { failedAttempts, lockedUntil },
+      const outcome = await this.consumeTotpCode(transaction, userId, code, session.tenant.id, { requireEnrolled: false });
+      if (outcome.ok) {
+        await transaction.session.update({
+          where: { id: session.id },
+          data: { mfaVerifiedAt: outcome.verifiedAt },
         });
-        await transaction.auditLog.create({
-          data: {
-            action: 'LOGIN',
-            resource: 'mfa_totp_credential',
-            resourceId: credential.id,
-            userId,
-            tenantId: session.tenant.id,
-            metadata: {
-              event: replayed ? 'REPLAY_REJECTED' : 'VERIFICATION_FAILED',
-              failedAttempts,
-              locked: !!lockedUntil,
-            },
-          },
-        });
-        return { ok: false as const, locked: !!lockedUntil, retryAt: lockedUntil };
       }
+      return outcome;
+    });
 
-      const rotatedEnvelope =
-        credential.keyVersion === this.mfaKeyVersion
-          ? credential.secretEnvelope
-          : await encrypt(
-              secret,
-              this.mfaEncryptionKey,
-              this.mfaAuthenticatedContext(credential.id, userId),
-            );
+    if (!outcome.ok) throw this.totpRefused(outcome);
+    return { authenticated: true, method: 'TOTP' as const, verified: true };
+  }
+
+  private totpRefused(outcome: { locked: boolean; retryAt: Date | null }): HttpException {
+    if (outcome.locked) {
+      return new HttpException(
+        {
+          code: 'MFA_LOCKED',
+          message: 'Too many failed MFA attempts. Try again after the lock expires.',
+          retryAt: outcome.retryAt,
+        },
+        429,
+      );
+    }
+    return new UnauthorizedException('Invalid or previously used MFA code');
+  }
+
+  /**
+   * WI-OI-120cf: checks a TOTP code for a password sign-in that has no session yet (the mobile BFF, which issues no
+   * token before the second factor). The code is checked exactly as for a web session (lock, replay, attempts, audit)
+   * and `onVerified` runs in the same transaction, so the challenge is consumed and the session created only when the
+   * code is right. Only an enrolled authenticator is accepted.
+   */
+  async verifyTotpForSignIn<T>(
+    userId: string,
+    code: string,
+    tenantId: string | null,
+    onVerified: (transaction: Prisma.TransactionClient, verifiedAt: Date) => Promise<T>,
+  ): Promise<T> {
+    const outcome = await prisma.$transaction(async (transaction) => {
+      const verified = await this.consumeTotpCode(transaction, userId, code, tenantId, { requireEnrolled: true, channel: 'MOBILE' });
+      if (!verified.ok) return verified;
+      return { ok: true as const, value: await onVerified(transaction, verified.verifiedAt) };
+    });
+    if (!outcome.ok) throw this.totpRefused(outcome);
+    return outcome.value;
+  }
+
+  /** One TOTP code against the user's credential, under its row lock: lock, replay and attempt counting, and audit. */
+  private async consumeTotpCode(
+    transaction: Prisma.TransactionClient,
+    userId: string,
+    code: string,
+    tenantId: string | null,
+    options: { readonly requireEnrolled: boolean; readonly channel?: 'MOBILE' },
+  ): Promise<{ ok: true; verifiedAt: Date } | { ok: false; locked: boolean; retryAt: Date | null }> {
+    await transaction.$queryRaw`SELECT "id" FROM "totp_credentials" WHERE "userId" = ${userId} FOR UPDATE`;
+    const credential = await transaction.totpCredential.findUnique({ where: { userId } });
+    if (!credential || (options.requireEnrolled && !credential.verifiedAt)) {
+      throw new ConflictException('Enroll an authenticator before verification');
+    }
+    const now = new Date();
+    if (credential.lockedUntil && credential.lockedUntil > now) {
+      return { ok: false as const, locked: true, retryAt: credential.lockedUntil };
+    }
+    const secret = await decrypt(
+      credential.secretEnvelope,
+      this.requireMfaDecryptionKey(credential.keyVersion),
+      this.mfaAuthenticatedContext(credential.id, userId),
+    );
+    const matchedStep = matchTotpStep(code, secret);
+    const replayed =
+      matchedStep !== null &&
+      credential.lastUsedStep !== null &&
+      matchedStep <= credential.lastUsedStep;
+    if (matchedStep === null || replayed) {
+      const failedAttempts =
+        credential.lockedUntil && credential.lockedUntil <= now
+          ? 1
+          : credential.failedAttempts + 1;
+      const lockedUntil = failedAttempts >= 5 ? new Date(now.getTime() + 15 * 60 * 1_000) : null;
       await transaction.totpCredential.update({
         where: { id: credential.id },
-        data: {
-          secretEnvelope: rotatedEnvelope,
-          keyVersion: this.mfaKeyVersion,
-          verifiedAt: credential.verifiedAt ?? now,
-          lastUsedStep: matchedStep,
-          failedAttempts: 0,
-          lockedUntil: null,
-        },
-      });
-      await transaction.session.update({
-        where: { id: session.id },
-        data: { mfaVerifiedAt: now },
+        data: { failedAttempts, lockedUntil },
       });
       await transaction.auditLog.create({
         data: {
@@ -847,31 +876,53 @@ export class AuthService {
           resource: 'mfa_totp_credential',
           resourceId: credential.id,
           userId,
-          tenantId: session.tenant.id,
+          tenantId,
           metadata: {
-            event: credential.verifiedAt ? 'VERIFIED' : 'ENROLLMENT_COMPLETED',
-            keyRotated: credential.keyVersion !== this.mfaKeyVersion,
-            keyVersion: this.mfaKeyVersion,
+            event: replayed ? 'REPLAY_REJECTED' : 'VERIFICATION_FAILED',
+            failedAttempts,
+            locked: !!lockedUntil,
+            ...(options.channel ? { channel: options.channel } : {}),
           },
         },
       });
-      return { ok: true as const };
-    });
-
-    if (!outcome.ok) {
-      if (outcome.locked) {
-        throw new HttpException(
-          {
-            code: 'MFA_LOCKED',
-            message: 'Too many failed MFA attempts. Try again after the lock expires.',
-            retryAt: outcome.retryAt,
-          },
-          429,
-        );
-      }
-      throw new UnauthorizedException('Invalid or previously used MFA code');
+      return { ok: false as const, locked: !!lockedUntil, retryAt: lockedUntil };
     }
-    return { authenticated: true, method: 'TOTP' as const, verified: true };
+
+    const rotatedEnvelope =
+      credential.keyVersion === this.mfaKeyVersion
+        ? credential.secretEnvelope
+        : await encrypt(
+            secret,
+            this.mfaEncryptionKey,
+            this.mfaAuthenticatedContext(credential.id, userId),
+          );
+    await transaction.totpCredential.update({
+      where: { id: credential.id },
+      data: {
+        secretEnvelope: rotatedEnvelope,
+        keyVersion: this.mfaKeyVersion,
+        verifiedAt: credential.verifiedAt ?? now,
+        lastUsedStep: matchedStep,
+        failedAttempts: 0,
+        lockedUntil: null,
+      },
+    });
+    await transaction.auditLog.create({
+      data: {
+        action: 'LOGIN',
+        resource: 'mfa_totp_credential',
+        resourceId: credential.id,
+        userId,
+        tenantId,
+        metadata: {
+          event: credential.verifiedAt ? 'VERIFIED' : 'ENROLLMENT_COMPLETED',
+          keyRotated: credential.keyVersion !== this.mfaKeyVersion,
+          keyVersion: this.mfaKeyVersion,
+          ...(options.channel ? { channel: options.channel } : {}),
+        },
+      },
+    });
+    return { ok: true as const, verifiedAt: now };
   }
 
   async generateRecoveryCodes(userId: string, sessionId: string, reason: string) {

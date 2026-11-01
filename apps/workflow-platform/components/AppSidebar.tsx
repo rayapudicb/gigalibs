@@ -13,6 +13,7 @@ import {
   type PlatformModuleReadiness,
   type PlatformContextPersona,
   holdsAnyPermission,
+  holdsPermission,
   platformModuleCatalog,
 } from '@gigalibs/contracts';
 import { determinePersona } from '@/lib/persona-utils';
@@ -277,6 +278,7 @@ export default function AppSidebar({
                   pathname={pathname}
                   isActive={activeModuleKey === module.key}
                   uatPreview={uatPreview}
+                  permissions={session.permissions}
                 />
               ))}
               {group === 'Platform' && hasHierarchyAccess && (
@@ -344,15 +346,19 @@ function ModuleLink({
   pathname,
   isActive,
   uatPreview = false,
+  permissions,
 }: {
   module: PlatformModuleDefinition;
   label?: string;
   pathname: string;
   isActive: boolean;
   uatPreview?: boolean;
+  permissions: readonly string[];
 }) {
   const isUnavailable = module.readiness === 'CONTAINED' || module.readiness === 'PLANNED';
-  const submodules = moduleMenu(module.key);
+  const submodules = moduleMenu(module.key).filter(
+    (item) => !item.permissions?.length || item.permissions.every((code) => holdsPermission(permissions, code)),
+  );
 
   if ((!isUnavailable || uatPreview) && submodules.length > 0) {
     return (

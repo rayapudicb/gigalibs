@@ -13,7 +13,9 @@ import { createHash } from 'node:crypto';
 import {
   type SpatialNodeChangedV1,
   SpatialNodeChangedV1Schema,
+  TENANT_MODULE_ENTITLEMENTS_SNAPSHOT_V2,
   WorkforcePositionFactV1Schema,
+  RelayEnvelopeV1Schema,
   boundaryAreaM2,
   boundaryBoundingBox,
 } from '@gigalibs/contracts';
@@ -42,14 +44,24 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { z } from 'zod';
 import { DatabaseService } from '../database/database.service.js';
-import { projectDowntimeFact } from '../workers/downtime-fact-ingestion.worker.js';
+import { DatasetModule } from '../datasets/dataset.module.js';
+import { EntitlementSnapshotInboxService } from './entitlement-snapshot-inbox.service.js';
+import { cmmsDowntimeToModuleFactIngest, workforcePositionToModuleFactIngest } from './module-fact-adapters.js';
+import { ModuleFactIngestorService } from './module-fact-ingestor.service.js';
+import { MODULE_ANALYTICS_CONTROL_TOTAL_V1, MODULE_ANALYTICS_FACT_V1 } from '@gigalibs/contracts';
+import { ModuleSourceReconciliationService } from './module-source-reconciliation.service.js';
+import { ModuleSourceReconciliationSweeper } from './module-source-reconciliation.sweeper.js';
+import { EntitlementSnapshotReconciliationService } from './entitlement-snapshot-reconciliation.service.js';
 
 export const ANALYTICS_INBOX_AUDIENCE = 'gigalibs-analytics-inbox';
 export const ANALYTICS_RELAY_CONFIG = Symbol('ANALYTICS_RELAY_CONFIG');
 export const ANALYTICS_GEOSPATIAL_RELAY_CONFIG = Symbol('ANALYTICS_GEOSPATIAL_RELAY_CONFIG');
 export const ANALYTICS_WORKFORCE_RELAY_CONFIG = Symbol('ANALYTICS_WORKFORCE_RELAY_CONFIG');
 export const ANALYTICS_CMMS_RELAY_CONFIG = Symbol('ANALYTICS_CMMS_RELAY_CONFIG');
+export const ANALYTICS_CONTROL_PLANE_RELAY_CONFIG = Symbol('ANALYTICS_CONTROL_PLANE_RELAY_CONFIG');
+export const ANALYTICS_ROUNDS_RELAY_CONFIG = Symbol('ANALYTICS_ROUNDS_RELAY_CONFIG');
 export const ANALYTICS_RETENTION_CONFIG = Symbol('ANALYTICS_RETENTION_CONFIG');
 export const HUB_RECORDS_TABLE = 'records';
 const WORKFORCE_POSITION_FACT_EVENTS = Object.freeze([
@@ -58,6 +70,18 @@ const WORKFORCE_POSITION_FACT_EVENTS = Object.freeze([
   'WORKFORCE_POSITION_SNAPSHOT_V1',
 ]);
 const CMMS_DOWNTIME_FACT_EVENTS = Object.freeze(['DOWNTIME_STARTED_V1', 'DOWNTIME_ENDED_V1'] as const);
+const ROUNDS_READING_EVENTS = Object.freeze(['READING_ACCEPTED_V1','EXCEPTION_RAISED_V1'] as const);
+const ROUNDS_READING_PAYLOAD = z.object({
+  aggregateId:z.uuid(),aggregateVersion:z.number().int().positive(),
+  runId:z.uuid(),assignmentId:z.uuid(),routeId:z.uuid(),routeRevision:z.number().int().positive(),
+  checkpointId:z.uuid(),assetRef:z.uuid(),meterRef:z.uuid().nullable(),
+  owningUnitId:z.string().min(1).max(128).nullable().optional(),placeRef:z.uuid().nullable().optional(),
+  numericValue:z.string().regex(/^-?\d{1,12}(?:\.\d{1,6})?$/).nullable(),
+  choiceValue:z.string().min(1).max(64).nullable(),unitCode:z.string().min(1).max(32).nullable(),
+  status:z.enum(['NORMAL','AMBER','RED']),source:z.literal('MANUAL'),
+  proofMethod:z.enum(['NFC','BARCODE']),exceptionId:z.uuid().nullable(),
+  capturedAt:z.iso.datetime({offset:true}),
+}).passthrough();
 
 export function loadAnalyticsRelayConfig(environment: NodeJS.ProcessEnv = process.env): RelayConfig {
   return loadRelayConfig(environment, {
@@ -103,6 +127,27 @@ export function loadAnalyticsCmmsRelayConfig(environment: NodeJS.ProcessEnv = pr
   });
 }
 
+/** WI-OI-131: control plane relays entitlement snapshots with its own inbox key. */
+export function loadAnalyticsControlPlaneRelayConfig(environment: NodeJS.ProcessEnv = process.env): RelayConfig {
+  return loadRelayConfig(environment, {
+    inboxPublicKey: 'ANALYTICS_CONTROL_PLANE_INBOX_RELAY_PUBLIC_KEY_BASE64',
+    targetUrl: 'ANALYTICS_CONTROL_PLANE_OUTBOUND_TARGET_URL',
+    signingKey: 'ANALYTICS_CONTROL_PLANE_OUTBOUND_SIGNING_KEY',
+    interval: 'ANALYTICS_RELAY_INTERVAL_MS',
+    peerService: 'playground-api',
+  });
+}
+
+export function loadAnalyticsRoundsRelayConfig(environment: NodeJS.ProcessEnv = process.env): RelayConfig {
+  return loadRelayConfig(environment, {
+    inboxPublicKey: 'ANALYTICS_ROUNDS_INBOX_RELAY_PUBLIC_KEY_BASE64',
+    targetUrl: 'ANALYTICS_ROUNDS_UNUSED_RELAY_URL',
+    signingKey: 'ANALYTICS_ROUNDS_UNUSED_RELAY_KEY_BASE64',
+    interval: 'ANALYTICS_RELAY_INTERVAL_MS',
+    peerService: 'module-host',
+  });
+}
+
 @Injectable()
 export class ConnectorHubInboxGuard extends RelayInboxGuardBase {
   constructor(@Inject(ANALYTICS_RELAY_CONFIG) config: RelayConfig) {
@@ -131,6 +176,20 @@ export class CmmsInboxGuard extends RelayInboxGuardBase {
   }
 }
 
+@Injectable()
+export class ControlPlaneInboxGuard extends RelayInboxGuardBase {
+  constructor(@Inject(ANALYTICS_CONTROL_PLANE_RELAY_CONFIG) config: RelayConfig) {
+    super(config, { audience: ANALYTICS_INBOX_AUDIENCE, source: 'control-plane', label: 'Analytics (entitlements)' });
+  }
+}
+
+@Injectable()
+export class RoundsInboxGuard extends RelayInboxGuardBase {
+  constructor(@Inject(ANALYTICS_ROUNDS_RELAY_CONFIG) config: RelayConfig) {
+    super(config, { audience: ANALYTICS_INBOX_AUDIENCE, source: 'operator-rounds', label: 'Analytics (Rounds)' });
+  }
+}
+
 /** The inbox route's guard: a message passes when either producer's own key verifies it (the token names the producer). */
 @Injectable()
 export class AnalyticsRelayInboxGuard implements CanActivate {
@@ -139,11 +198,13 @@ export class AnalyticsRelayInboxGuard implements CanActivate {
     @Inject(GeospatialInboxGuard) private readonly geospatial: GeospatialInboxGuard,
     @Inject(WorkforceInboxGuard) private readonly workforce: WorkforceInboxGuard,
     @Inject(CmmsInboxGuard) private readonly cmms: CmmsInboxGuard,
+    @Inject(ControlPlaneInboxGuard) private readonly controlPlane: ControlPlaneInboxGuard,
+    @Inject(RoundsInboxGuard) private readonly rounds: RoundsInboxGuard,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
     let first: unknown;
-    for (const guard of [this.hub, this.geospatial, this.workforce, this.cmms]) {
+    for (const guard of [this.hub, this.geospatial, this.workforce, this.cmms, this.controlPlane, this.rounds]) {
       try {
         if (guard.canActivate(context)) return true;
       } catch (error) {
@@ -239,11 +300,25 @@ export function parseWorkforcePositionFact(envelope: Partial<RelayEnvelope> | nu
 
 @Injectable()
 export class ConnectorHubInboxService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    @Inject(EntitlementSnapshotInboxService) private readonly entitlements: EntitlementSnapshotInboxService,
+    @Inject(ModuleFactIngestorService) private readonly moduleFacts: ModuleFactIngestorService,
+    @Inject(ModuleSourceReconciliationService) private readonly sourceReconciliation: ModuleSourceReconciliationService,
+  ) {}
 
   /** Routes a verified message by its producer: each may deliver only its own event type. */
   async receiveFrom(source: string | undefined, body: unknown): Promise<{ status: string; sourceConnectionId?: string; placeId?: string }> {
     const eventType = (body as { eventType?: unknown } | null)?.eventType;
+    if (source === 'control-plane' && eventType === TENANT_MODULE_ENTITLEMENTS_SNAPSHOT_V2) {
+      return this.entitlements.receive(body);
+    }
+    if (eventType === MODULE_ANALYTICS_FACT_V1) {
+      return this.moduleFacts.ingestFromRelayBody(source, body);
+    }
+    if (eventType === MODULE_ANALYTICS_CONTROL_TOTAL_V1) {
+      return this.sourceReconciliation.receiveFromRelay(source, body);
+    }
     if (source === 'geospatial' && eventType === 'SpatialNodeChangedV1') return this.receivePlace(body);
     if (source === 'connector-hub' && eventType === 'CONNECTOR_RECORD_PULLED_V1') return this.receive(body);
     if (source === 'workforce' && WORKFORCE_POSITION_FACT_EVENTS.includes(String(eventType))) {
@@ -252,107 +327,85 @@ export class ConnectorHubInboxService {
     if (source === 'cmms' && CMMS_DOWNTIME_FACT_EVENTS.includes(String(eventType) as (typeof CMMS_DOWNTIME_FACT_EVENTS)[number])) {
       return this.receiveCmmsDowntime(body);
     }
+    if (source === 'operator-rounds' && ROUNDS_READING_EVENTS.includes(String(eventType) as (typeof ROUNDS_READING_EVENTS)[number])) {
+      return this.receiveRoundsReading(body);
+    }
     throw new BadRequestException(`${String(source)} may not deliver ${String(eventType)} here.`);
+  }
+
+  /** Stores bounded inspection facts with source and capture time, separately from CMMS telemetry. */
+  async receiveRoundsReading(body:unknown):Promise<{status:'stored'|'duplicate';sourceConnectionId?:string}> {
+    const parsed=RelayEnvelopeV1Schema.safeParse(body);
+    if (!parsed.success || parsed.data.schemaVersion!==1 ||
+        !ROUNDS_READING_EVENTS.includes(parsed.data.eventType as (typeof ROUNDS_READING_EVENTS)[number]) ||
+        parsed.data.aggregateType!=='reading')
+      throw new BadRequestException('Invalid Rounds reading fact envelope.');
+    const envelope=parsed.data;
+    const fact=ROUNDS_READING_PAYLOAD.safeParse(envelope.payload);
+    if (!fact.success || fact.data.aggregateId!==envelope.aggregateId ||
+        fact.data.aggregateVersion!==envelope.aggregateVersion ||
+        (envelope.eventType==='EXCEPTION_RAISED_V1')!==(fact.data.exceptionId!==null))
+      throw new BadRequestException('Invalid Rounds reading fact payload.');
+    const projected={readingId:envelope.aggregateId,runId:fact.data.runId,
+      assignmentId:fact.data.assignmentId,routeId:fact.data.routeId,
+      routeRevision:fact.data.routeRevision,checkpointId:fact.data.checkpointId,
+      assetId:fact.data.assetRef,meterId:fact.data.meterRef,
+      owningUnitId:fact.data.owningUnitId ?? null,placeRef:fact.data.placeRef ?? null,
+      scopeKnown:Object.hasOwn(fact.data,'owningUnitId') && Object.hasOwn(fact.data,'placeRef'),
+      numericValue:fact.data.numericValue,choiceValue:fact.data.choiceValue,
+      unitCode:fact.data.unitCode,status:fact.data.status,source:fact.data.source,
+      proofMethod:fact.data.proofMethod,exceptionId:fact.data.exceptionId,
+      capturedAt:fact.data.capturedAt,acceptedAt:envelope.occurredAt,
+      eventType:envelope.eventType};
+    return this.db.withTenantTransaction(envelope.tenantId,async (client) => {
+      const receipt=await client.query(
+        `INSERT INTO gigalibs_analytics.inbox_receipts(message_id,tenant_id,source,event_type)
+         VALUES($1,$2,'operator-rounds',$3) ON CONFLICT(message_id) DO NOTHING`,
+        [envelope.messageId,envelope.tenantId,envelope.eventType],
+      );
+      if ((receipt.rowCount??0)===0) return {status:'duplicate' as const};
+      const source=await client.query<{id:string}>(
+        `INSERT INTO gigalibs_analytics.source_connections
+         (tenant_id,display_name,source_type,status,created_by,module_source_key)
+         VALUES($1,'Operator inspection readings','MODULE_EVENTS','ACTIVE','operator-rounds','operator-rounds:readings')
+         ON CONFLICT(tenant_id,module_source_key) WHERE module_source_key IS NOT NULL
+         DO UPDATE SET updated_at=now() RETURNING id`,[envelope.tenantId],
+      );
+      const sourceId=source.rows[0]!.id;
+      const run=await client.query<{id:string}>(
+        `INSERT INTO gigalibs_analytics.source_sync_runs
+         (connection_id,tenant_id,status,rows_fetched,hub_sync_job_id,started_at,completed_at)
+         VALUES($1,$2,'SUCCEEDED',1,$3,$4,$4)
+         ON CONFLICT(connection_id,hub_sync_job_id) WHERE hub_sync_job_id IS NOT NULL
+         DO UPDATE SET completed_at=GREATEST(gigalibs_analytics.source_sync_runs.completed_at,EXCLUDED.completed_at)
+         RETURNING id`,[sourceId,envelope.tenantId,envelope.messageId,envelope.occurredAt],
+      );
+      await client.query(
+        `INSERT INTO gigalibs_analytics.raw_record_versions
+         (sync_run_id,connection_id,tenant_id,source_table_name,source_pk_hash,raw_payload,ingested_at)
+         VALUES($1,$2,$3,'inspection_readings',$4,$5::jsonb,$6)`,
+        [run.rows[0]!.id,sourceId,envelope.tenantId,
+          createHash('sha256').update(envelope.aggregateId).digest('hex'),
+          JSON.stringify(projected),envelope.occurredAt],
+      );
+      return {status:'stored' as const,sourceConnectionId:sourceId};
+    });
   }
 
   /**
    * Stores an authenticated Workforce snapshot as a MODULE_EVENTS raw record. It then follows Analytics' existing
    * no-code discovery/mapping/build path; no cross-schema read or special chart is introduced.
    */
-  async receiveCmmsDowntime(body: unknown): Promise<{ status: 'stored' | 'duplicate'; sourceConnectionId?: string }> {
+  async receiveCmmsDowntime(body: unknown): Promise<{ status: string; sourceConnectionId?: string; reasonCode?: string }> {
     const { envelope, payload } = parseCmmsDowntimeFact(body as Partial<RelayEnvelope>);
-    const projected = projectDowntimeFact({
-      assetId: String(payload.assetId),
-      downtimeId: String(payload.downtimeId),
-      startedAt: typeof payload.startedAt === 'string' ? payload.startedAt : undefined,
-      endedAt: typeof payload.endedAt === 'string' ? payload.endedAt : undefined,
-    });
-    return this.db.withTenantTransaction(envelope.tenantId, async (client) => {
-      const receipt = await client.query(
-        `INSERT INTO gigalibs_analytics.inbox_receipts (message_id, tenant_id, source, event_type)
-         VALUES ($1, $2, 'cmms', $3) ON CONFLICT (message_id) DO NOTHING`,
-        [envelope.messageId, envelope.tenantId, envelope.eventType],
-      );
-      if ((receipt.rowCount ?? 0) === 0) return { status: 'duplicate' as const };
-      const source = await client.query<{ id: string }>(
-        `INSERT INTO gigalibs_analytics.source_connections
-           (tenant_id, display_name, source_type, status, created_by, module_source_key)
-         VALUES ($1, 'CMMS asset downtime', 'MODULE_EVENTS', 'ACTIVE', 'cmms', 'cmms:downtime')
-         ON CONFLICT (tenant_id, module_source_key) WHERE module_source_key IS NOT NULL
-         DO UPDATE SET display_name = EXCLUDED.display_name, updated_at = now()
-         RETURNING id`,
-        [envelope.tenantId],
-      );
-      const sourceId = source.rows[0]!.id;
-      const run = await client.query<{ id: string }>(
-        `INSERT INTO gigalibs_analytics.source_sync_runs
-           (connection_id, tenant_id, status, rows_fetched, hub_sync_job_id, started_at, completed_at)
-         VALUES ($1, $2, 'SUCCEEDED', 1, $3, $4, $4)
-         ON CONFLICT (connection_id, hub_sync_job_id) WHERE hub_sync_job_id IS NOT NULL
-         DO UPDATE SET completed_at = GREATEST(gigalibs_analytics.source_sync_runs.completed_at, EXCLUDED.completed_at)
-         RETURNING id`,
-        [sourceId, envelope.tenantId, envelope.messageId, envelope.occurredAt],
-      );
-      await client.query(
-        `INSERT INTO gigalibs_analytics.raw_record_versions
-           (sync_run_id, connection_id, tenant_id, source_table_name, source_pk_hash, raw_payload, ingested_at)
-         VALUES ($1, $2, $3, 'downtime_facts', $4, $5::jsonb, $6)`,
-        [
-          run.rows[0]!.id,
-          sourceId,
-          envelope.tenantId,
-          createHash('sha256').update(String(payload.downtimeId)).digest('hex'),
-          JSON.stringify({ eventType: envelope.eventType, occurredAt: envelope.occurredAt, ...projected }),
-          envelope.occurredAt,
-        ],
-      );
-      return { status: 'stored' as const, sourceConnectionId: sourceId };
-    });
+    const fact = cmmsDowntimeToModuleFactIngest(envelope, payload as Record<string, unknown>);
+    return this.moduleFacts.ingest('cmms', envelope, fact);
   }
 
-  async receiveWorkforcePosition(body: unknown): Promise<{ status: 'stored' | 'duplicate'; sourceConnectionId?: string }> {
+  async receiveWorkforcePosition(body: unknown): Promise<{ status: string; sourceConnectionId?: string; reasonCode?: string }> {
     const { envelope, fact } = parseWorkforcePositionFact(body as Partial<RelayEnvelope>);
-    return this.db.withTenantTransaction(envelope.tenantId, async (client) => {
-      const receipt = await client.query(
-        `INSERT INTO gigalibs_analytics.inbox_receipts (message_id, tenant_id, source, event_type)
-         VALUES ($1, $2, 'workforce', $3) ON CONFLICT (message_id) DO NOTHING`,
-        [envelope.messageId, envelope.tenantId, envelope.eventType],
-      );
-      if ((receipt.rowCount ?? 0) === 0) return { status: 'duplicate' as const };
-      const source = await client.query<{ id: string }>(
-        `INSERT INTO gigalibs_analytics.source_connections
-           (tenant_id, display_name, source_type, status, created_by, module_source_key)
-         VALUES ($1, 'Workforce positions', 'MODULE_EVENTS', 'ACTIVE', 'workforce', 'workforce:positions')
-         ON CONFLICT (tenant_id, module_source_key) WHERE module_source_key IS NOT NULL
-         DO UPDATE SET display_name = EXCLUDED.display_name, updated_at = now()
-         RETURNING id`,
-        [envelope.tenantId],
-      );
-      const sourceId = source.rows[0]!.id;
-      const run = await client.query<{ id: string }>(
-        `INSERT INTO gigalibs_analytics.source_sync_runs
-           (connection_id, tenant_id, status, rows_fetched, hub_sync_job_id, started_at, completed_at)
-         VALUES ($1, $2, 'SUCCEEDED', 1, $3, $4, $4)
-         ON CONFLICT (connection_id, hub_sync_job_id) WHERE hub_sync_job_id IS NOT NULL
-         DO UPDATE SET completed_at = GREATEST(gigalibs_analytics.source_sync_runs.completed_at, EXCLUDED.completed_at)
-         RETURNING id`,
-        [sourceId, envelope.tenantId, envelope.messageId, envelope.occurredAt],
-      );
-      await client.query(
-        `INSERT INTO gigalibs_analytics.raw_record_versions
-           (sync_run_id, connection_id, tenant_id, source_table_name, source_pk_hash, raw_payload, ingested_at)
-         VALUES ($1, $2, $3, 'position_facts', $4, $5::jsonb, $6)`,
-        [
-          run.rows[0]!.id,
-          sourceId,
-          envelope.tenantId,
-          createHash('sha256').update(fact.entityId).digest('hex'),
-          JSON.stringify({ eventType: envelope.eventType, occurredAt: envelope.occurredAt, ...fact }),
-          envelope.occurredAt,
-        ],
-      );
-      return { status: 'stored' as const, sourceConnectionId: sourceId };
-    });
+    const ingest = workforcePositionToModuleFactIngest(envelope, fact);
+    return this.moduleFacts.ingest('workforce', envelope, ingest);
   }
 
   /**
@@ -495,19 +548,29 @@ export class AnalyticsInboxRetention extends OutboxRetentionSweeper {
 }
 
 @Module({
+  imports: [DatasetModule],
   controllers: [ConnectorHubInboxController],
   providers: [
     { provide: ANALYTICS_RELAY_CONFIG, useFactory: () => loadAnalyticsRelayConfig() },
     { provide: ANALYTICS_GEOSPATIAL_RELAY_CONFIG, useFactory: () => loadAnalyticsGeospatialRelayConfig() },
     { provide: ANALYTICS_WORKFORCE_RELAY_CONFIG, useFactory: () => loadAnalyticsWorkforceRelayConfig() },
     { provide: ANALYTICS_CMMS_RELAY_CONFIG, useFactory: () => loadAnalyticsCmmsRelayConfig() },
+    { provide: ANALYTICS_CONTROL_PLANE_RELAY_CONFIG, useFactory: () => loadAnalyticsControlPlaneRelayConfig() },
+    { provide: ANALYTICS_ROUNDS_RELAY_CONFIG, useFactory: () => loadAnalyticsRoundsRelayConfig() },
     { provide: ANALYTICS_RETENTION_CONFIG, useFactory: () => loadOutboxRetentionConfig(process.env, 'ANALYTICS') },
     ConnectorHubInboxGuard,
     GeospatialInboxGuard,
     WorkforceInboxGuard,
     CmmsInboxGuard,
+    ControlPlaneInboxGuard,
+    RoundsInboxGuard,
     AnalyticsRelayInboxGuard,
     ConnectorHubInboxService,
+    EntitlementSnapshotInboxService,
+    ModuleFactIngestorService,
+    ModuleSourceReconciliationService,
+    ModuleSourceReconciliationSweeper,
+    EntitlementSnapshotReconciliationService,
     AnalyticsInboxRetention,
   ],
 })

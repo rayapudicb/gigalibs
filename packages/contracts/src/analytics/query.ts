@@ -85,5 +85,15 @@ export const AnalyticsQueryResultV1Schema = z.object({
   truncated: z.boolean(),
   /** Where the answer came from: the raw rows or a pre-aggregated summary (WI-OI-103c). Same answer either way. */
   answeredFrom: z.enum(['rows', 'summary']).optional(),
+  /** WI-OI-131 B8: lineage for registry-backed module semantic models. */
+  moduleLineage: z
+    .object({
+      sourceKey: z.string(),
+      contractVersion: z.number().int().positive(),
+      moduleLifecycle: z.string().nullable(),
+      freshnessTargetSeconds: z.number().int().positive().optional(),
+    })
+    .strict()
+    .optional(),
 });
 export type AnalyticsQueryResultV1 = z.infer<typeof AnalyticsQueryResultV1Schema>;

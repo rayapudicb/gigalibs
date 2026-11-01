@@ -16,7 +16,9 @@ import { ExceptionService } from './exception.service.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
 import { ModuleWindowBaselineService } from './module-window-baselines.service.js';
 // biome-ignore lint/style/useImportType: NestJS needs the runtime constructor token for dependency injection.
+import { AnalyticsEntitlementRelayService } from './analytics/analytics-entitlement-relay.service.js';
 import { PartyProjectionRelayService, PARTY_PROJECTION_EVENT_TYPES } from './parties/party-projection-relay.service.js';
+import { TENANT_ENTITLEMENTS_CHANGED_V2 } from '@gigalibs/contracts';
 
 interface ClaimedOutboxEvent {
   id: string;
@@ -40,6 +42,7 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
     private readonly configurationPublisher: ConfigurationOutboxPublisher,
     private readonly moduleWindows: ModuleWindowBaselineService,
     @Optional() private readonly partyProjectionRelay?: PartyProjectionRelayService,
+    @Optional() private readonly analyticsEntitlementRelay?: AnalyticsEntitlementRelayService,
   ) {}
 
   onApplicationBootstrap() {
@@ -168,6 +171,15 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
         this.logger.log(
           `Applied module windows for tenant ${event.tenantId}: ${outcomes.map((o) => `${o.surfaceKey}=${o.status}`).join(', ') || 'none shipped'}`,
         );
+      } else if (event.eventType === TENANT_ENTITLEMENTS_CHANGED_V2) {
+        if (!this.analyticsEntitlementRelay) throw new Error('ANALYTICS_ENTITLEMENT_RELAY_NOT_CONFIGURED');
+        await this.analyticsEntitlementRelay.deliver(event);
+        const published = await prisma.controlOutboxEvent.updateMany({
+          where: { id: event.id, status: 'PROCESSING', attempts: event.attempts },
+          data: { status: 'PUBLISHED', publishedAt: new Date(), claimedAt: null, lastErrorCode: null },
+        });
+        if (published.count !== 1) throw new Error('OUTBOX_CLAIM_LOST');
+        this.logger.log(`Relayed entitlement snapshot v2 to Analytics for tenant ${event.tenantId}.`);
       } else if ((PARTY_PROJECTION_EVENT_TYPES as readonly string[]).includes(event.eventType)) {
         if (!this.partyProjectionRelay) throw new Error('PARTY_RELAY_NOT_CONFIGURED');
         await this.partyProjectionRelay.deliver(event);

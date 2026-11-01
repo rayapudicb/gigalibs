@@ -669,7 +669,7 @@ export interface CmmsWorkOrderV1 {
   readonly signed: boolean;
   readonly completionNotes: string | null;
   readonly estimatedHours: number | null;
-  readonly triggerSource: 'MANUAL' | 'PM_SCHEDULE' | 'METER_TRIGGER';
+  readonly triggerSource: 'MANUAL' | 'PM_SCHEDULE' | 'METER_TRIGGER' | 'ROUND_EXCEPTION';
   readonly pmScheduleId: string | null;
   readonly jobPlanId: string | null;
   readonly failureProblemId: string | null;

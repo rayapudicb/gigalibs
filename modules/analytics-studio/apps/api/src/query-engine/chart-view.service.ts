@@ -54,11 +54,17 @@ export class ChartViewService {
     // Pin formula measures to the versions the view was built with, so the chart stays stable until re-saved.
     const query = { ...view.query, measureVersions: { ...result.measureVersions, ...view.query.measureVersions } };
 
+    const contractPin = await this.db.queryWithTenant<{ contract_version: number | null }>(
+      principal.tenantId,
+      `SELECT contract_version FROM gigalibs_analytics.semantic_models WHERE id = $1`,
+      [query.semanticModelId],
+    );
+
     const inserted = await this.db.queryWithTenant<ChartViewRow>(
       principal.tenantId,
       `INSERT INTO gigalibs_analytics.chart_views
-         (tenant_id, semantic_model_id, name, description, query_spec, visual_spec, created_by)
-       VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7)
+         (tenant_id, semantic_model_id, name, description, query_spec, visual_spec, created_by, pinned_contract_version)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8)
        RETURNING id, name, description, query_spec, visual_spec, created_by, created_at`,
       [
         principal.tenantId,
@@ -68,6 +74,7 @@ export class ChartViewService {
         JSON.stringify(query),
         JSON.stringify(view.visual),
         principal.subject,
+        contractPin.rows[0]?.contract_version ?? null,
       ],
     );
     const row = inserted.rows[0]!;

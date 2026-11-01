@@ -1,0 +1,133 @@
+import {
+  MOBILE_MAX_ASSIGNMENTS,
+  type MobileAssignmentScopeV3,
+  type MobileSessionV3,
+  MobileSessionV3Schema,
+  type PlatformContextAssignmentScope,
+  determinePersona,
+  holdsPermission,
+} from '@gigalibs/contracts';
+import { type LegacyOrgScope, NO_TREE_IN_FORCE } from '../organization-scope.js';
+import { sha256Hex } from './mobile-credentials.js';
+
+// WI-OI-120cf: `mobile-session.v3` from the same session context the web reads (`AuthService.getSessionContext`).
+// Nothing here grants anything: each assignment keeps its own permissions and scope (never merged), and a role that
+// covers nothing (a unit scope with no tree in force) is left out. `modules` stays empty until the platform publishes
+// mobile module grants (capabilities, navigation order, presentation): the app then shows only what it compiles in
+// without a grant (Home, Profile), and no module is offered on a guess.
+
+export interface MobileSessionSource {
+  readonly user: { readonly id: string; readonly email: string; readonly name: string | null };
+  readonly tenant: {
+    readonly id: string;
+    readonly name: string;
+    readonly features: readonly string[];
+    readonly entitlements: readonly { readonly moduleKey: string; readonly version: string }[];
+  } | null;
+  readonly roles: readonly string[];
+  readonly platformRoles: readonly string[];
+  readonly assignments?: readonly { readonly permissions: readonly string[]; readonly scope: PlatformContextAssignmentScope }[];
+  readonly orgScope: LegacyOrgScope;
+  readonly spatialScope: { readonly mode: 'UNBOUNDED' } | { readonly mode: 'SCOPED_PLACES'; readonly placeIds: readonly string[] };
+}
+
+export interface MobileSessionBinding {
+  readonly membershipId: string;
+  /** The ids of the member's role assignments, in the order the context lists them after the member's own. */
+  readonly roleAssignmentIds: readonly string[];
+  /** The mobile session's revision: it grows at each workspace switch. */
+  readonly sessionRevision: number;
+  /** When this projection stops being valid: the server mobile session's expiry. */
+  readonly expiresAt: Date;
+}
+
+export class MobileSessionUnavailableError extends Error {}
+
+/** A revision that changes whenever `value` does; the app compares revisions for equality only. */
+export function contentRevision(value: unknown): number {
+  return Number.parseInt(sha256Hex(JSON.stringify(value)).slice(0, 12), 16);
+}
+
+function assignmentScope(scope: PlatformContextAssignmentScope): MobileAssignmentScopeV3 | null {
+  switch (scope.kind) {
+    case 'MEMBER':
+      return { kind: 'MEMBER' };
+    case 'TENANT':
+      return { kind: 'TENANT' };
+    case 'UNITS':
+      return scope.tree_version === NO_TREE_IN_FORCE ? null : { kind: 'UNITS', treeVersion: scope.tree_version, unitIds: [...scope.unit_ids] };
+    case 'PLACES':
+      return { kind: 'PLACES', placeIds: [...scope.place_ids] };
+  }
+}
+
+export function projectMobileSession(source: MobileSessionSource, binding: MobileSessionBinding): MobileSessionV3 {
+  const { tenant } = source;
+  if (!tenant) throw new MobileSessionUnavailableError('A tenant-bound session has no tenant.');
+  const assignments = source.assignments ?? [];
+  if (assignments.length !== binding.roleAssignmentIds.length + 1) {
+    throw new MobileSessionUnavailableError('The role assignments changed while the session was read.');
+  }
+  const projected = assignments.flatMap((assignment, index) => {
+    const scope = assignmentScope(assignment.scope);
+    if (!scope) return [];
+    const assignmentId = index === 0 ? `member:${binding.membershipId}` : binding.roleAssignmentIds[index - 1];
+    return [{ assignmentId: assignmentId as string, permissions: [...new Set(assignment.permissions)], scope }];
+  });
+  if (projected.length > MOBILE_MAX_ASSIGNMENTS) {
+    throw new MobileSessionUnavailableError(`The member holds more than ${MOBILE_MAX_ASSIGNMENTS} assignments.`);
+  }
+  const memberOrganizationScope =
+    source.orgScope.mode === 'FLAT_TENANT'
+      ? ({ mode: 'FLAT_TENANT' } as const)
+      : ({ mode: 'SCOPED_DEPARTMENTS', departmentIds: [...source.orgScope.departmentIds] } as const);
+  const memberSpatialScope =
+    source.spatialScope.mode === 'UNBOUNDED'
+      ? ({ mode: 'UNBOUNDED' } as const)
+      : ({ mode: 'SCOPED_PLACES', placeIds: [...source.spatialScope.placeIds] } as const);
+  const persona = determinePersona([...source.roles], [...source.platformRoles]);
+  const entitlements = [...new Set(tenant.entitlements.map((entitlement) => entitlement.moduleKey))];
+  const canExecuteRounds = projected.some((assignment) =>
+    holdsPermission(assignment.permissions,'operator-rounds.runs.execute'));
+  const canReadRoundsBoard = projected.some((assignment) =>
+    holdsPermission(assignment.permissions,'operator-rounds.board.read'));
+  const roundsEnabled = entitlements.includes('operator-rounds') &&
+    (canExecuteRounds || canReadRoundsBoard);
+  const modules = roundsEnabled ? [{
+    key:'operator-rounds',enabled:true,navigationOrder:370,
+    capabilities:[
+      ...(canExecuteRounds ? ['operator-rounds.routes.execute'] : []),
+      ...(canReadRoundsBoard ? ['operator-rounds.board.read'] : []),
+    ],
+    presentationRevision:'operator-rounds.v1',
+    requiredDeviceCapabilities:canExecuteRounds ? ['camera'] : [],
+  }] : [];
+
+  const parsed = MobileSessionV3Schema.safeParse({
+    contractVersion: 'mobile-session.v3',
+    sessionRevision: binding.sessionRevision,
+    authorizationRevision: contentRevision({
+      membershipId: binding.membershipId,
+      persona,
+      roles: source.roles,
+      platformRoles: source.platformRoles,
+      assignments: projected,
+      memberOrganizationScope,
+      memberSpatialScope,
+    }),
+    configurationRevision: contentRevision({ entitlements: tenant.entitlements, features: tenant.features }),
+    tenant: { id: tenant.id, displayName: tenant.name },
+    user: { id: source.user.id, displayName: source.user.name?.trim() || source.user.email },
+    membershipId: binding.membershipId,
+    persona,
+    entitlements,
+    memberOrganizationScope,
+    memberSpatialScope,
+    assignments: projected,
+    modules,
+    expiresAt: binding.expiresAt.toISOString(),
+  });
+  // A session the contract cannot carry (too many places or departments, say) is refused, never cut down.
+  if (!parsed.success) throw new MobileSessionUnavailableError(`The session does not fit mobile-session.v3: ${parsed.error.issues[0]?.message}`);
+  return parsed.data;
+}

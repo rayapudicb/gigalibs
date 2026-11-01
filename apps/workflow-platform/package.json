@@ -22,6 +22,7 @@
     "@gigalibs/gigaops-web": "workspace:*",
     "@gigalibs/i18n": "workspace:*",
     "@gigalibs/logger": "workspace:*",
+    "@gigalibs/operator-rounds-web": "workspace:*",
     "@gigalibs/maps-core": "workspace:*",
     "@gigalibs/process-safety-screening-web": "workspace:*",
     "@gigalibs/product-catalogue-web": "workspace:*",

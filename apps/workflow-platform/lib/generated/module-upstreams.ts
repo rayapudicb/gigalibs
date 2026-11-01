@@ -57,6 +57,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "iot-api",
     "basePath": ""
   },
+  "operator-rounds": {
+    "module": "operator-rounds",
+    "environmentKey": "OPERATOR_ROUNDS_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/operator-rounds"
+  },
   "process-safety-screening": {
     "module": "process-safety-screening",
     "environmentKey": "SPEED_API_URL",

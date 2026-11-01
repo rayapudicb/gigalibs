@@ -15,6 +15,8 @@ import { LineageModule } from './lineage/lineage.module.js';
 import { PlaceAnalyticsModule } from './places/place-analytics.module.js';
 import { AnalyticsRuntimeModule } from './runtime.module.js';
 import { AnalyticsOrganizationReplicaModule } from './organization/organization-replica.js';
+import { InspectionTrendController } from './rounds/inspection-trend.controller.js';
+import { InspectionTrendService } from './rounds/inspection-trend.service.js';
 
 @Module({
   imports: [
@@ -33,11 +35,13 @@ import { AnalyticsOrganizationReplicaModule } from './organization/organization-
     SetupController,
     MetricsController,
     ActionsController,
+    InspectionTrendController,
   ],
   providers: [
     SetupService,
     MetricsService,
     ActionsService,
+    InspectionTrendService,
   ],
   exports: [
     SetupService,

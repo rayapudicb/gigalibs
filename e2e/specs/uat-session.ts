@@ -24,7 +24,11 @@ export async function signInToUat(page: Page, origin: string, user: { email: str
   expect(login.status(), `Sign-in failed: ${await login.text()}`).toBe(200);
   const answer = (await login.json()) as { requiresTenantSelection?: boolean; requiresMfa?: boolean };
   if (answer.requiresMfa) throw new Error('This login asks for MFA; use a UAT tenant administrator without MFA for the walk-through.');
-  if (!answer.requiresTenantSelection) return;
+  await selectUatTenant(page, origin);
+}
+
+/** Pins the browser/API session to `E2E_UAT_TENANT` even when login did not ask for tenant selection. */
+export async function selectUatTenant(page: Page, origin: string): Promise<void> {
   const tenantsResponse = await page.request.get('/api/auth/tenants');
   expect(tenantsResponse.status(), await tenantsResponse.text()).toBe(200);
   const body: unknown = await tenantsResponse.json();

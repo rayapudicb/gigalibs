@@ -46,6 +46,45 @@
     ],
     "optionalEnvironment": []
   },
+  "operator-rounds": {
+    "hosting": "host",
+    "basePath": "/operator-rounds",
+    "package": "@gigalibs/operator-rounds-api",
+    "directory": "modules/operator-rounds",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Operator Inspection Rounds",
+    "workItem": "WI-OI-133",
+    "prefix": "OPERATOR_ROUNDS",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_operator_rounds",
+    "migrationVersion": 8,
+    "audience": "gigalibs-operator-rounds-api",
+    "appendOnlyTables": [
+      "audit_events"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ],
+    "optionalEnvironment": [
+      "OPERATOR_ROUNDS_MEDIA_ENDPOINT",
+      "OPERATOR_ROUNDS_MEDIA_PUBLIC_ENDPOINT",
+      "OPERATOR_ROUNDS_MEDIA_REGION",
+      "OPERATOR_ROUNDS_MEDIA_BUCKET",
+      "OPERATOR_ROUNDS_MEDIA_ACCESS_KEY",
+      "OPERATOR_ROUNDS_MEDIA_SECRET_KEY",
+      "OPERATOR_ROUNDS_RELAY_CMMS_URL",
+      "OPERATOR_ROUNDS_CMMS_INBOX_RELAY_PRIVATE_KEY_BASE64",
+      "OPERATOR_ROUNDS_RELAY_INTERVAL_MS",
+      "OPERATOR_ROUNDS_CMMS_INBOX_PATH",
+      "OPERATOR_ROUNDS_RELAY_WORKFORCE_URL",
+      "OPERATOR_ROUNDS_WORKFORCE_INBOX_RELAY_PRIVATE_KEY_BASE64",
+      "OPERATOR_ROUNDS_WORKFORCE_INBOX_PATH",
+      "OPERATOR_ROUNDS_RELAY_ANALYTICS_URL",
+      "OPERATOR_ROUNDS_ANALYTICS_INBOX_RELAY_PRIVATE_KEY_BASE64"
+    ]
+  },
   "process-safety-screening": {
     "hosting": "host",
     "basePath": "/process-safety-screening",

@@ -14,6 +14,7 @@ export interface ModuleMenuItem {
   readonly label: string;
   readonly href: string;
   readonly icon: LucideIcon;
+  readonly permissions?: readonly string[];
 }
 
 /** Platform Operators and Tenant Admins see every entry; other personas see the entries whose manifest lists them. */
@@ -30,6 +31,7 @@ const menus: Readonly<Record<string, readonly ModuleMenuItem[]>> = Object.fromEn
       label: item.label,
       href: item.path,
       icon: moduleIcons[item.icon],
+      ...(item.permissions ? { permissions: item.permissions } : {}),
     })),
   ]),
 );

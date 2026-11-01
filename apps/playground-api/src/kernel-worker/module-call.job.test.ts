@@ -11,6 +11,8 @@ const environment = {
   ANALYTICS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64'),
   CONNECTOR_HUB_API_URL: 'http://connector-hub-api:4100',
   CONNECTOR_HUB_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64'),
+  OPERATOR_ROUNDS_API_URL: 'http://module-host:4790',
+  OPERATOR_ROUNDS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64'),
 } as NodeJS.ProcessEnv;
 const REPORT = '00000000-0000-4000-8000-0000000000aa';
 
@@ -94,6 +96,24 @@ describe('module.call job', () => {
     expect(grants(['analytics:*'], 'analytics:reports:write')).toBe(true);
     expect(grants(['*'], 'connections:sync')).toBe(true);
     expect(grants(['analytics:read'], 'analytics:reports:write')).toBe(false);
+  });
+
+  it('schedules Rounds only as a currently entitled and permitted owner',async () => {
+    const fetchImpl=ok({status:'GENERATED',items:[]},200);
+    const allowed={getSubjectContext:async () => owner(['operator-rounds.assignments.manage'],[
+      {moduleKey:'operator-rounds',status:'ENABLED',version:'v1'}])};
+    const payload={operation:'operator-rounds.generate',routeId:REPORT};
+    const result=await moduleCallJob(allowed as never,environment,fetchImpl as never)
+      .handler(context(payload));
+    expect(result).toMatchObject({operation:'operator-rounds.generate',resultStatus:'GENERATED'});
+    const [url,init]=fetchImpl.mock.calls[0] as unknown as [string,RequestInit];
+    expect(url).toBe(`http://module-host:4790/operator-rounds/v1/routes/${REPORT}/generate-current`);
+    const token=new Headers(init.headers).get('authorization')!.replace('Bearer ','');
+    expect(verifyPlatformContextToken(token,publicKey.export({format:'pem',type:'spki'}).toString(),
+      'gigalibs-operator-rounds-api')).toMatchObject({entitlement:{module_key:'operator-rounds'}});
+    await expect(moduleCallJob({getSubjectContext:async () => owner([])} as never,
+      environment,fetchImpl as never).handler(context(payload)))
+      .rejects.toMatchObject({code:'PERMISSION_MISSING'});
   });
 
   // WI-OI-104e: a scheduled dataset build chains the summary build for the new version, as the same owner.

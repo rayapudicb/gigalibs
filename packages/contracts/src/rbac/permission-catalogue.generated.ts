@@ -47,6 +47,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "analytics:datasets:write",
+    "entries": [
+      "analytics-studio"
+    ]
+  },
+  {
     "code": "analytics:export",
     "entries": [
       "analytics-studio"
@@ -75,6 +81,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "analytics:read",
     "entries": [
       "analytics-studio",
+      "operator-rounds",
       "platform"
     ]
   },
@@ -1052,6 +1059,57 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "operator-rounds.assignments.manage",
+    "entries": [
+      "operator-rounds",
+      "platform"
+    ]
+  },
+  {
+    "code": "operator-rounds.board.read",
+    "entries": [
+      "operator-rounds",
+      "platform"
+    ]
+  },
+  {
+    "code": "operator-rounds.exceptions.read",
+    "entries": [
+      "operator-rounds"
+    ]
+  },
+  {
+    "code": "operator-rounds.exceptions.review",
+    "entries": [
+      "operator-rounds"
+    ]
+  },
+  {
+    "code": "operator-rounds.routes.manage",
+    "entries": [
+      "operator-rounds"
+    ]
+  },
+  {
+    "code": "operator-rounds.routes.publish",
+    "entries": [
+      "operator-rounds"
+    ]
+  },
+  {
+    "code": "operator-rounds.routes.read",
+    "entries": [
+      "operator-rounds"
+    ]
+  },
+  {
+    "code": "operator-rounds.runs.execute",
+    "entries": [
+      "operator-rounds",
+      "platform"
+    ]
+  },
+  {
     "code": "orders:allocate",
     "entries": [
       "universal-orders"
@@ -1121,6 +1179,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
       "business-partners",
       "financial-operations",
       "gigaops",
+      "operator-rounds",
       "platform",
       "process-safety-screening",
       "product-catalogue",

@@ -23,6 +23,8 @@ export default defineConfig({
       'modules/**/db/migrations/*.{test,spec}.ts',
       'packages/**/*.{test,spec}.{ts,tsx}',
       'apps/workflow-platform/**/*.{test,spec}.{ts,tsx}',
+      // WI-OI-120cf: the mobile pilot's local-network HTTPS proxy (plain Node, no build).
+      'infra/compose/mobile-lan/*.test.mjs',
     ],
     exclude: [
       '**/dist/**',

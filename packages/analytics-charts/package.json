@@ -10,11 +10,20 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./workbench": {
+      "import": "./dist/workbench/index.js",
+      "types": "./dist/workbench/index.d.ts"
     }
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. --config vitest.config.ts packages/analytics-charts",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
@@ -22,6 +31,11 @@
     "echarts": "^6.1.0"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.0"
   }
 }

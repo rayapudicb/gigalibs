@@ -169,3 +169,8 @@ export * from './dashboard.js';
 export * from './report.js';
 export * from './units.js';
 export * from './place-directory.js';
+export * from './module-source-contract.js';
+export * from './module-fact-ingest.js';
+export * from './module-source-reconciliation.js';
+export * from './module-compiled-catalog.js';
+export * from './module-sources.generated.js';

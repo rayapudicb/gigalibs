@@ -180,6 +180,32 @@ describe('Analytics Studio signed BFF (WI-OI-064a)', () => {
     });
   });
 
+  it('allows a scoped Rounds trend read only through Analytics authorization', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ days: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+    const request = () => new Request(
+      'https://platform.example.invalid/api/analytics/v1/rounds/trend?assetId=asset-a&checkpointId=point-a&unitCode=bar',
+      { method: 'GET' },
+    );
+    const routeContext = { params: Promise.resolve({ path: ['v1', 'rounds', 'trend'] }) };
+    vi.mocked(verifiedSession).mockResolvedValue({
+      context: { ...entitledContext, permissions: ['operator-rounds.routes.read'] },
+    } as never);
+    expect((await getAnalytics(request(), routeContext)).status).toBe(403);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.mocked(verifiedSession).mockResolvedValue({ context: entitledContext } as never);
+    expect((await getAnalytics(request(), routeContext)).status).toBe(200);
+    expect(String(fetchSpy.mock.calls[0]![0])).toBe(
+      'http://127.0.0.1:4400/v1/rounds/trend?assetId=asset-a&checkpointId=point-a&unitCode=bar',
+    );
+    expect((await call(postAnalytics, 'POST', ['v1', 'rounds', 'trend'], {
+      headers: { Host: 'platform.example.invalid', Origin: 'https://platform.example.invalid', 'Content-Type': 'application/json' },
+      body: '{}',
+    })).status).toBe(404);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('exposes place drill-down read-only and keeps rollup rebuilds internal', async () => {
     vi.mocked(verifiedSession).mockResolvedValue({
       context: { ...entitledContext, permissions: ['analytics:*'] },

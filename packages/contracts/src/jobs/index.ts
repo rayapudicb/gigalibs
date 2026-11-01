@@ -26,10 +26,16 @@ export const SCHEDULED_OPERATIONS = {
     runPermission: 'analytics:mappings:write',
     target: 'mapping',
   },
+  'operator-rounds.generate': {
+    moduleKey: 'operator-rounds',
+    readPermission: 'operator-rounds.assignments.manage',
+    runPermission: 'operator-rounds.assignments.manage',
+    target: 'route',
+  },
 } as const;
 
 export type ScheduledOperation = keyof typeof SCHEDULED_OPERATIONS;
-export const ScheduledOperationSchema = z.enum(['analytics.report-run', 'connector-hub.sync', 'analytics.dataset-build']);
+export const ScheduledOperationSchema = z.enum(['analytics.report-run', 'connector-hub.sync', 'analytics.dataset-build', 'operator-rounds.generate']);
 
 export const CreateKernelScheduleSchema = z
   .object({

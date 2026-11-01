@@ -46,7 +46,10 @@ describe('dataset build — organization units', () => {
 
   it.each(['CODE', 'ID'] as const)('stamps the unit matched by %s, shared when empty, UNMATCHED when unknown', async (match) => {
     const { db, inserted } = makeDb(match);
-    await new DatasetService(db as never).buildDatasetVersion({ tenantId: 'tenant-A', subject: 'user-1', entitlements: new Set(['analytics-studio']) } as never, { mappingId: 'map-1', mappingVersion: 1 });
+    await new DatasetService(db as never, { assertAnalyticsSourceAccess: async () => undefined } as never).buildDatasetVersion(
+      { tenantId: 'tenant-A', subject: 'user-1', entitlements: new Set(['analytics-studio']) } as never,
+      { mappingId: 'map-1', mappingVersion: 1 },
+    );
     const rows = payloads(inserted).sort((a, b) => Number(b.hours) - Number(a.hours));
     expect(rows.map((row) => [row.store, row.unit_id, row.hours])).toEqual([
       ['Store 101', 'unit-101', 8],
@@ -59,7 +62,12 @@ describe('dataset build — organization units', () => {
 describe('mapping — organization unit field', () => {
   const validate = async (mappings: unknown[]) => {
     const { SchemaDiscoveryService } = await import('../schema-discovery/schema-discovery.service.js');
-    return () => (new SchemaDiscoveryService({} as never) as unknown as { validateFieldMappings(value: unknown[]): void }).validateFieldMappings(mappings);
+    return () =>
+      (
+        new SchemaDiscoveryService({} as never, {} as never) as unknown as {
+          validateFieldMappings(value: unknown[]): void;
+        }
+      ).validateFieldMappings(mappings);
   };
   const unit = { sourceField: 'store', analyticalField: 'store', analyticalType: 'string', organizationUnit: { match: 'CODE' } };
 

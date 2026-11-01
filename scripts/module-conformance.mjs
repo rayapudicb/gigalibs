@@ -419,8 +419,11 @@ async function liveInside() {
 
   const requestKey = randomUUID();
   const createValues = { ...probeSpec.create };
+  if (probeSpec.requestKeyInBody === true) createValues.requestKey = requestKey;
   if (typeof createValues.code === 'string')
     createValues.code = `${createValues.code}-${tenants.a.replace(/[^a-z0-9-]/gi, '').slice(-12)}`;
+  if (probeSpec.uppercaseCode === true && typeof createValues.code === 'string')
+    createValues.code = createValues.code.toUpperCase();
   const createBody = JSON.stringify(createValues);
   const created = await call(base, token(tenants.a, both), { method: 'POST', idempotencyKey: requestKey, body: createBody });
   ok('L8', 'tenant A creates (201)', created.status === 201 && created.body?.id, `status ${created.status}`);
@@ -452,13 +455,15 @@ async function liveInside() {
   const stale = await call(`${base}/${id}`, token(tenants.a, both), {
     method: 'PATCH',
     headers: { 'If-Match': '99' },
-    body: JSON.stringify(probeSpec.update),
+    body: JSON.stringify(probeSpec.versionInBody === true
+      ? { ...probeSpec.update, version: 99 } : probeSpec.update),
   });
   ok('L13', 'a stale version is refused (409)', stale.status === 409 || stale.status === 412);
   const updated = await call(`${base}/${id}`, token(tenants.a, both), {
     method: 'PATCH',
     headers: { 'If-Match': String(created.body?.version ?? 1) },
-    body: JSON.stringify(probeSpec.update),
+    body: JSON.stringify(probeSpec.versionInBody === true
+      ? { ...probeSpec.update, version: created.body?.version ?? 1 } : probeSpec.update),
   });
   ok('L14', 'tenant A updates with the current version', updated.status === 200 && updated.body?.version === (created.body?.version ?? 0) + 1, `status ${updated.status}`);
   console.log(JSON.stringify({ checks, aggregateId: id, mutations: 2 }));

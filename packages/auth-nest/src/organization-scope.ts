@@ -10,6 +10,9 @@ type Reader = Pick<typeof prisma, '$queryRaw'>;
 /** The legacy `org_scope` field lists unit ids directly; past this many it fails closed (empty list). */
 export const LEGACY_DEPARTMENT_SCOPE_LIMIT = 1_000;
 
+/** The tree version a unit-scoped assignment names when no tree is in force: it covers nothing. */
+export const NO_TREE_IN_FORCE = 'none-in-force';
+
 export type LegacyOrgScope = { mode: 'FLAT_TENANT' } | { mode: 'SCOPED_DEPARTMENTS'; departmentIds: string[] };
 
 export interface TreeScope {

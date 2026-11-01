@@ -1,0 +1,18 @@
+{
+  "contractVersion": "mobile-permission-conformance.v1",
+  "source": "packages/contracts/src/rbac/permission-match.ts",
+  "vectors": [
+    { "granted": ["*"], "required": "cmms.work-orders.read", "expected": true },
+    { "granted": ["cmms:*"], "required": "cmms.work-orders.read", "expected": true },
+    { "granted": ["cmms.*"], "required": "cmms:work-orders:read", "expected": true },
+    { "granted": ["cmms:work-orders:read"], "required": "cmms.work-orders.read", "expected": true },
+    { "granted": ["cmms:work-orders"], "required": "cmms.work-orders.read", "expected": false },
+    { "granted": ["workforce:*"], "required": "cmms.work-orders.read", "expected": false },
+    { "granted": ["cmms:*:read"], "required": "cmms.work-orders.read", "expected": false },
+    { "granted": ["all"], "required": "cmms.work-orders.read", "expected": false },
+    { "granted": ["CMMS:read"], "required": "cmms:read", "expected": false },
+    { "granted": ["cmms:read"], "required": "cmms::read", "expected": false },
+    { "granted": ["cmms:read"], "required": "*", "expected": false },
+    { "granted": [], "required": "cmms:read", "expected": false }
+  ]
+}

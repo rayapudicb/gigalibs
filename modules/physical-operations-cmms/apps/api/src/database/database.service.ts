@@ -10,6 +10,7 @@ type CmmsDefinerFunction =
   | 'relay_settle_workforce_event'
   | 'relay_lease_analytics_downtime_events'
   | 'relay_settle_analytics_downtime_event'
+  | 'analytics_report_downtime_control_totals'
   | 'outbox_sweep';
 
 /**
@@ -32,6 +33,7 @@ export class DatabaseService extends ModuleDatabase<CmmsDefinerFunction> {
         'relay_settle_workforce_event',
         'relay_lease_analytics_downtime_events',
         'relay_settle_analytics_downtime_event',
+        'analytics_report_downtime_control_totals',
         'outbox_sweep',
       ],
       tenantBinding: 'set-local',

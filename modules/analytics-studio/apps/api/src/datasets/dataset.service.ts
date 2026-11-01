@@ -10,7 +10,10 @@ import {
 import * as crypto from 'crypto';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from '../auth/authorization.js';
+import { SourceAccessService } from '../auth/source-access.service.js';
 import { organizationReplica, UNMATCHED_UNIT } from '../organization/organization-scope.js';
+import type { ModuleAnalyticsSourceContractV1 } from '@gigalibs/contracts';
+import type { ModuleCompileManifestV1, compileModuleSourceContract } from './compile-module-source-contract.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,7 +82,10 @@ export interface SemanticModelSummary {
 export class DatasetService {
   private readonly logger = new Logger(DatasetService.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly sourceAccess: SourceAccessService,
+  ) {}
 
   /**
    * Build a new analytical dataset version from a PUBLISHED mapping.
@@ -114,7 +120,7 @@ export class DatasetService {
     const mappingResult = await this.db.queryWithTenant<any>(
       tenantId,
       `SELECT m.id, m.connection_id, m.source_table_name, m.lifecycle,
-              mv.field_mappings, mv.version_number, mv.content_hash
+              mv.field_mappings, mv.version_number, mv.content_hash, mv.module_compile_manifest
        FROM gigalibs_analytics.data_studio_mappings m
        JOIN gigalibs_analytics.studio_mapping_versions mv
          ON mv.mapping_id = m.id AND mv.version_number = $2
@@ -129,6 +135,7 @@ export class DatasetService {
     }
 
     const mapping = mappingResult.rows[0]!;
+    await this.sourceAccess.assertAnalyticsSourceAccess(principal, mapping.connection_id as string);
 
     if (mapping.lifecycle !== 'PUBLISHED') {
       throw new BadRequestException(
@@ -143,9 +150,11 @@ export class DatasetService {
       analyticalType: string;
       unit?: FieldUnitConversion;
       place?: { longitudeField: string } | { byCode: true };
+      organizationUnit?: { match: 'CODE' | 'ID' };
     }> = Array.isArray(mapping.field_mappings)
       ? mapping.field_mappings
       : JSON.parse(mapping.field_mappings);
+    const compileManifest = parseCompileManifest(mapping.module_compile_manifest);
 
     let refreshedModelIds: string[] = [];
     let ready = false;
@@ -185,6 +194,7 @@ export class DatasetService {
         mapping.connection_id,
         mapping.source_table_name,
         fieldMappings,
+        compileManifest?.reversalFields ?? [],
       );
 
       await this.db.queryWithTenant(
@@ -296,6 +306,121 @@ export class DatasetService {
       [mappingId],
     );
     return result.rows.map((r: any) => this.toDatasetSummary(r));
+  }
+
+  /** WI-OI-131 B8: rebuild without user principal (module fact pipeline). */
+  async buildModuleDataset(
+    tenantId: string,
+    mappingId: string,
+    mappingVersion: number,
+  ): Promise<{ id: string }> {
+    const principal: AnalyticsPrincipal = {
+      tenantId,
+      subject: 'module-measure-compiler',
+      sessionId: 'module-pipeline',
+      authVersion: 0,
+      permissions: ['analytics:mappings:write', 'analytics:datasets:write'],
+      roles: [],
+      persona: 'PLATFORM_OPERATOR',
+      orgScope: { mode: 'FLAT_TENANT' },
+      spatialScope: { mode: 'UNBOUNDED' },
+    };
+    const built = await this.buildDatasetVersion(principal, { mappingId, mappingVersion });
+    return { id: built.id };
+  }
+
+  async pointModelAtLatestDataset(tenantId: string, modelId: string, mappingId: string): Promise<void> {
+    const latest = await this.latestDatasetVersionId(tenantId, mappingId);
+    if (!latest) return;
+    await this.db.queryWithTenant(
+      tenantId,
+      `UPDATE gigalibs_analytics.semantic_models SET dataset_version_id = $2, updated_at = now() WHERE id = $1`,
+      [modelId, latest],
+    );
+  }
+
+  async createModuleSemanticModel(input: {
+    tenantId: string;
+    subject: string;
+    datasetVersionId: string;
+    contract: ModuleAnalyticsSourceContractV1;
+    compiled: ReturnType<typeof compileModuleSourceContract>;
+    moduleLifecycle: string | null;
+  }): Promise<{ id: string }> {
+    this.validateMeasures(input.compiled.measures);
+    return this.db.withTenantTransaction(input.tenantId, async (client) => {
+      const modelResult = await client.query<{ id: string }>(
+        `INSERT INTO gigalibs_analytics.semantic_models
+           (dataset_version_id, tenant_id, display_name, description, created_by,
+            module_source_key, contract_version, compiled_measure_manifest)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+         RETURNING id`,
+        [
+          input.datasetVersionId,
+          input.tenantId,
+          input.contract.title,
+          `Registry contract ${input.contract.sourceKey} v${input.contract.contractVersion}`,
+          input.subject,
+          input.contract.sourceKey,
+          input.contract.contractVersion,
+          JSON.stringify(input.compiled.manifest),
+        ],
+      );
+      const modelId = modelResult.rows[0]!.id;
+      for (const measure of input.compiled.measures) {
+        await client.query(
+          `INSERT INTO gigalibs_analytics.semantic_measures
+             (model_id, tenant_id, measure_name, aggregate_fn, field_reference, display_label, description)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [modelId, input.tenantId, measure.measureName, measure.aggregateFn, measure.fieldReference, measure.displayLabel, measure.description ?? null],
+        );
+      }
+      const measuresSnapshot = JSON.stringify(input.compiled.measures);
+      const contentHash = crypto.createHash('sha256').update(measuresSnapshot, 'utf8').digest('hex');
+      await client.query(
+        `INSERT INTO gigalibs_analytics.semantic_model_versions
+           (model_id, tenant_id, version_number, measures_snapshot, content_hash, saved_by)
+         VALUES ($1, $2, 1, $3, $4, $5)`,
+        [modelId, input.tenantId, measuresSnapshot, contentHash, input.subject],
+      );
+      return { id: modelId };
+    });
+  }
+
+  async syncModuleSemanticModel(input: {
+    tenantId: string;
+    modelId: string;
+    contract: ModuleAnalyticsSourceContractV1;
+    compiled: ReturnType<typeof compileModuleSourceContract>;
+  }): Promise<void> {
+    this.validateMeasures(input.compiled.measures);
+    await this.db.withTenantTransaction(input.tenantId, async (client) => {
+      await client.query(
+        `UPDATE gigalibs_analytics.semantic_models
+         SET contract_version = $2, compiled_measure_manifest = $3::jsonb, display_name = $4, updated_at = now()
+         WHERE id = $1`,
+        [input.modelId, input.contract.contractVersion, JSON.stringify(input.compiled.manifest), input.contract.title],
+      );
+      await client.query(`DELETE FROM gigalibs_analytics.semantic_measures WHERE model_id = $1`, [input.modelId]);
+      for (const measure of input.compiled.measures) {
+        await client.query(
+          `INSERT INTO gigalibs_analytics.semantic_measures
+             (model_id, tenant_id, measure_name, aggregate_fn, field_reference, display_label, description)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [input.modelId, input.tenantId, measure.measureName, measure.aggregateFn, measure.fieldReference, measure.displayLabel, measure.description ?? null],
+        );
+      }
+    });
+  }
+
+  async latestDatasetVersionId(tenantId: string, mappingId: string): Promise<string | null> {
+    const result = await this.db.queryWithTenant<{ id: string }>(
+      tenantId,
+      `SELECT id FROM gigalibs_analytics.analytical_dataset_versions
+       WHERE mapping_id = $1 ORDER BY version_number DESC LIMIT 1`,
+      [mappingId],
+    );
+    return result.rows[0]?.id ?? null;
   }
 
   // ── Semantic Model operations ─────────────────────────────────────────────
@@ -429,7 +554,9 @@ export class DatasetService {
       place?: { longitudeField: string } | { byCode: true };
       organizationUnit?: { match: 'CODE' | 'ID' };
     }>,
+    reversalFields: readonly string[] = [],
   ): Promise<{ recordCount: number; checksum: string; unplacedCount?: number }> {
+    const reversal = new Set(reversalFields);
     // Read most recent raw records for this connection + table (all of them)
     const rawResult = await this.db.queryWithTenant<{
       raw_payload: Record<string, unknown>;
@@ -467,6 +594,8 @@ export class DatasetService {
       : new Map<string, { id: string; name: string }>();
     const unitsById = new Map([...unitsByCode.values()].map((unit) => [unit.id, unit]));
     const analyticalRows = rawRows.map((r) => {
+      const moduleFact = (r.raw_payload._moduleFact ?? null) as { factKind?: string } | null;
+      const reversalMultiplier = moduleFact?.factKind === 'REVERSAL' ? -1 : 1;
       const payload: Record<string, unknown> = {};
       if (unitEntry) {
         const raw = readSourceField(r.raw_payload, unitEntry.sourceField);
@@ -490,6 +619,9 @@ export class DatasetService {
         if (mapping === placeEntry || mapping === unitEntry) continue;
         const rawValue = readSourceField(r.raw_payload, mapping.sourceField);
         let value = castToType(rawValue, mapping.analyticalType);
+        if (typeof value === 'number' && reversalMultiplier === -1 && reversal.has(mapping.analyticalField)) {
+          value = value * reversalMultiplier;
+        }
         if (mapping.unit && typeof value === 'number') {
           const from = mapping.unit.from ?? normalizeUnit(readSourceField(r.raw_payload, mapping.unit.fromField ?? ''));
           const converted = from ? convertUnit(value, from, mapping.unit.to) : null;
@@ -579,6 +711,19 @@ export class DatasetService {
 }
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
+
+function parseCompileManifest(raw: unknown): ModuleCompileManifestV1 | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const record = raw as Record<string, unknown>;
+  if (typeof record.sourceKey !== 'string' || !Number.isFinite(Number(record.contractVersion))) return null;
+  return {
+    sourceKey: record.sourceKey,
+    contractVersion: Number(record.contractVersion),
+    reversalFields: Array.isArray(record.reversalFields) ? record.reversalFields.map(String) : [],
+    measureUnits: typeof record.measureUnits === 'object' && record.measureUnits ? (record.measureUnits as Record<string, string>) : {},
+    freshnessTargetSeconds: Number(record.freshnessTargetSeconds ?? 3600),
+  };
+}
 
 function castToType(value: unknown, analyticalType: string): unknown {
   if (value === null || value === undefined) return null;

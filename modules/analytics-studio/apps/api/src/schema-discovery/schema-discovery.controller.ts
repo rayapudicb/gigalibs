@@ -35,6 +35,13 @@ export class SchemaDiscoveryController {
     return this.schemaDiscoveryService.listSources(principal);
   }
 
+  /** GET /v1/module-sources — registry-backed module sources after entitlement and permission checks (WI-OI-131 A5). */
+  @Get('module-sources')
+  @RequirePermissions('analytics:read')
+  async listModuleSources(@Principal() principal: AnalyticsPrincipal) {
+    return this.schemaDiscoveryService.listModuleSources(principal);
+  }
+
   /** POST /v1/connectors/:id/discover — trigger schema discovery for a table */
   @Post('connectors/:id/discover')
   @RequirePermissions('analytics:mappings:write')

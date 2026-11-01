@@ -3,14 +3,15 @@
 import type { Type } from '@nestjs/common';
 import { AppModule as Hosted0 } from '@gigalibs/business-partners-api';
 import { AppModule as Hosted1 } from '@gigalibs/financial-operations-api';
-import { AppModule as Hosted2 } from '@gigalibs/process-safety-screening-api';
-import { AppModule as Hosted3 } from '@gigalibs/product-catalogue-api';
-import { AppModule as Hosted4 } from '@gigalibs/project-operations-api';
-import { AppModule as Hosted5 } from '@gigalibs/universal-inventory-api';
-import { AppModule as Hosted6 } from '@gigalibs/universal-manufacturing-api';
-import { AppModule as Hosted7 } from '@gigalibs/universal-orders-api';
-import { AppModule as Hosted8 } from '@gigalibs/universal-procurement-api';
-import { AppModule as Hosted9 } from '@gigalibs/universal-returns-api';
+import { AppModule as Hosted2 } from '@gigalibs/operator-rounds-api';
+import { AppModule as Hosted3 } from '@gigalibs/process-safety-screening-api';
+import { AppModule as Hosted4 } from '@gigalibs/product-catalogue-api';
+import { AppModule as Hosted5 } from '@gigalibs/project-operations-api';
+import { AppModule as Hosted6 } from '@gigalibs/universal-inventory-api';
+import { AppModule as Hosted7 } from '@gigalibs/universal-manufacturing-api';
+import { AppModule as Hosted8 } from '@gigalibs/universal-orders-api';
+import { AppModule as Hosted9 } from '@gigalibs/universal-procurement-api';
+import { AppModule as Hosted10 } from '@gigalibs/universal-returns-api';
 
 export interface HostedModule {
   readonly name: string;
@@ -21,12 +22,13 @@ export interface HostedModule {
 export const hostedModules: readonly HostedModule[] = [
   { name: 'business-partners', path: 'business-partners', module: Hosted0 },
   { name: 'financial-operations', path: 'financial-operations', module: Hosted1 },
-  { name: 'process-safety-screening', path: 'process-safety-screening', module: Hosted2 },
-  { name: 'product-catalogue', path: 'product-catalogue', module: Hosted3 },
-  { name: 'project-operations', path: 'project-operations', module: Hosted4 },
-  { name: 'universal-inventory', path: 'universal-inventory', module: Hosted5 },
-  { name: 'universal-manufacturing', path: 'universal-manufacturing', module: Hosted6 },
-  { name: 'universal-orders', path: 'universal-orders', module: Hosted7 },
-  { name: 'universal-procurement', path: 'universal-procurement', module: Hosted8 },
-  { name: 'universal-returns', path: 'universal-returns', module: Hosted9 },
+  { name: 'operator-rounds', path: 'operator-rounds', module: Hosted2 },
+  { name: 'process-safety-screening', path: 'process-safety-screening', module: Hosted3 },
+  { name: 'product-catalogue', path: 'product-catalogue', module: Hosted4 },
+  { name: 'project-operations', path: 'project-operations', module: Hosted5 },
+  { name: 'universal-inventory', path: 'universal-inventory', module: Hosted6 },
+  { name: 'universal-manufacturing', path: 'universal-manufacturing', module: Hosted7 },
+  { name: 'universal-orders', path: 'universal-orders', module: Hosted8 },
+  { name: 'universal-procurement', path: 'universal-procurement', module: Hosted9 },
+  { name: 'universal-returns', path: 'universal-returns', module: Hosted10 },
 ];

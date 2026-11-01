@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { SourceAccessModule } from '../auth/source-access.module.js';
 import { QueryEngineService } from './query-engine.service.js';
 import { DashboardController } from './dashboard.controller.js';
 import { DashboardService } from './dashboard.service.js';
@@ -14,7 +15,7 @@ import { SummaryService } from './summary.service.js';
 import { SummaryController } from './summary.controller.js';
 
 @Module({
-  imports: [DatasetModule],
+  imports: [DatasetModule, SourceAccessModule],
   controllers: [
     SummaryController,
     QueryEngineController,

@@ -61,6 +61,9 @@ function catalog(options: { model?: boolean } = {}) {
         ],
       };
     }
+    if (sql.includes('compiled_measure_manifest')) {
+      return { rows: [{ compiled_measure_manifest: null }] };
+    }
     throw new Error(`unexpected SQL: ${sql}`);
   });
   return new ModelCatalogService({ queryWithTenant } as never);

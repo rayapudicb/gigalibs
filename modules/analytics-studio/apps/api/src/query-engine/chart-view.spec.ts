@@ -36,6 +36,9 @@ function service(options: { found?: boolean } = {}) {
   const calls: Array<{ sql: string; params: unknown[] }> = [];
   const queryWithTenant = vi.fn(async (_tenant: string, sql: string, params: unknown[] = []) => {
     calls.push({ sql, params });
+    if (sql.includes('contract_version FROM gigalibs_analytics.semantic_models')) {
+      return { rows: [{ contract_version: 1 }] };
+    }
     if (sql.includes('INSERT INTO gigalibs_analytics.chart_views')) {
       return {
         rows: [
