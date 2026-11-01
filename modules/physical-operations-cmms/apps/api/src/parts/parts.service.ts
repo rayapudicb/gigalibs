@@ -34,6 +34,7 @@ import {
   chosenOrder,
 } from '../common/command.js';
 import { DatabaseService } from '../database/database.service.js';
+import { fulfilReservations } from '../spares/part-reservations.js';
 
 // WI-OI-120be: the columns a chosen sort may use; nothing else reaches ORDER BY.
 const PART_SORT = { partNumber: 'p.part_number', name: 'p.name' } as const;
@@ -450,6 +451,8 @@ export class PartsService {
         binLocation: input.binLocation ?? null,
         reason: input.notes ?? `Issued to work order ${wo.wo_number}`,
       });
+      // WI-OI-136: the issue fulfils this work order's open reservations for the part (a replay already did).
+      if (!replay) await fulfilReservations(client, context, input.partId, workOrderId, input.quantity);
 
       const workOrderTco = await this.calculateWorkOrderTco(client, context.principal.tenantId, workOrderId, wo.wo_number);
       return { workOrderTco, movement };

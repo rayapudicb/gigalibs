@@ -125,6 +125,20 @@ const CALIBRATION_ROUTES: readonly (readonly [string, string, string])[] = [
   ['POST', 'asset-audits/{id}/sightings', 'cmms.audits.execute'],
   ['POST', 'asset-audits/{id}/finish', 'cmms.audits.execute'],
   ['GET', 'asset-audits/{id}/report', 'cmms.audits.read'],
+  // WI-OI-136 M-BOM, from SparesController.
+  ['GET', 'assets/{id}/diagrams', 'cmms.bom.read'],
+  ['POST', 'assets/{id}/diagrams', 'cmms.bom.manage'],
+  ['GET', 'assets/{id}/open-work-orders', 'cmms.work-orders.read'],
+  ['GET', 'diagrams/{id}', 'cmms.bom.read'],
+  ['PATCH', 'diagrams/{id}', 'cmms.bom.manage'],
+  ['PUT', 'diagrams/{id}/hotspots', 'cmms.bom.manage'],
+  ['POST', 'diagrams/{id}/revise', 'cmms.bom.manage'],
+  ['POST', 'diagrams/{id}/publish', 'cmms.bom.publish'],
+  ['GET', 'diagrams/{id}/image', 'cmms.bom.read'],
+  ['GET', 'diagrams/{id}/consumption', 'cmms.bom.read'],
+  ['POST', 'part-reservations', 'cmms.parts.reserve'],
+  ['POST', 'part-reservations/{id}/release', 'cmms.parts.reserve'],
+  ['GET', 'work-orders/{id}/part-reservations', 'cmms.parts.read'],
 ];
 
 /**

@@ -2314,6 +2314,78 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/assets/{id}/diagrams",
+        "pattern": "^v1/assets/[0-9a-fA-F-]{36}/diagrams$",
+        "methods": {
+          "GET": "cmms.bom.read",
+          "POST": "cmms.bom.manage"
+        }
+      },
+      {
+        "template": "v1/assets/{id}/open-work-orders",
+        "pattern": "^v1/assets/[0-9a-fA-F-]{36}/open-work-orders$",
+        "methods": {
+          "GET": "cmms.work-orders.read"
+        }
+      },
+      {
+        "template": "v1/diagrams/{id}",
+        "pattern": "^v1/diagrams/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.bom.read",
+          "PATCH": "cmms.bom.manage"
+        }
+      },
+      {
+        "template": "v1/diagrams/{id}/hotspots",
+        "pattern": "^v1/diagrams/[0-9a-fA-F-]{36}/hotspots$",
+        "methods": {
+          "PUT": "cmms.bom.manage"
+        }
+      },
+      {
+        "template": "v1/diagrams/{id}/revise",
+        "pattern": "^v1/diagrams/[0-9a-fA-F-]{36}/revise$",
+        "methods": {
+          "POST": "cmms.bom.manage"
+        }
+      },
+      {
+        "template": "v1/diagrams/{id}/publish",
+        "pattern": "^v1/diagrams/[0-9a-fA-F-]{36}/publish$",
+        "methods": {
+          "POST": "cmms.bom.publish"
+        }
+      },
+      {
+        "template": "v1/diagrams/{id}/image|consumption",
+        "pattern": "^v1/diagrams/[0-9a-fA-F-]{36}/(?:image|consumption)$",
+        "methods": {
+          "GET": "cmms.bom.read"
+        }
+      },
+      {
+        "template": "v1/part-reservations",
+        "pattern": "^v1/part-reservations$",
+        "methods": {
+          "POST": "cmms.parts.reserve"
+        }
+      },
+      {
+        "template": "v1/part-reservations/{id}/release",
+        "pattern": "^v1/part-reservations/[0-9a-fA-F-]{36}/release$",
+        "methods": {
+          "POST": "cmms.parts.reserve"
+        }
+      },
+      {
+        "template": "v1/work-orders/{id}/part-reservations",
+        "pattern": "^v1/work-orders/[0-9a-fA-F-]{36}/part-reservations$",
+        "methods": {
+          "GET": "cmms.parts.read"
+        }
+      },
+      {
         "template": "v1/parts/storerooms",
         "pattern": "^v1/parts/storerooms$",
         "methods": {

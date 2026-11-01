@@ -329,6 +329,25 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "cmms.bom.manage",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.bom.publish",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.bom.read",
+    "entries": [
+      "asset-maintenance",
+      "platform"
+    ]
+  },
+  {
     "code": "cmms.calibration.approve",
     "entries": [
       "asset-maintenance"
@@ -418,6 +437,13 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "cmms.parts.read",
     "entries": [
       "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.parts.reserve",
+    "entries": [
+      "asset-maintenance",
+      "platform"
     ]
   },
   {

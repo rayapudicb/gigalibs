@@ -25,3 +25,4 @@
 000026_round_exception_origin.up.sql
 000027_instrument_calibration.up.sql
 000028_asset_tagging_commissioning.up.sql
+000029_asset_diagrams_part_reservations.up.sql

@@ -12,6 +12,8 @@ import { AssetAuditsService } from './commissioning/asset-audits.service.js';
 import { AssetTagsController } from './commissioning/asset-tags.controller.js';
 import { CommissioningController } from './commissioning/commissioning.controller.js';
 import { CommissioningService } from './commissioning/commissioning.service.js';
+import { SparesController } from './spares/spares.controller.js';
+import { SparesService } from './spares/spares.service.js';
 import { CalibrationService } from './calibration/calibration.service.js';
 import { MetersController } from './meters/meters.controller.js';
 import { MetersService } from './meters/meters.service.js';
@@ -83,6 +85,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     CommissioningController,
     AssetTagsController,
     AssetAuditsController,
+    SparesController,
     PartsController,
     AnalyticsController,
     CmmsInboxController,
@@ -94,6 +97,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     CalibrationService,
     CommissioningService,
     AssetAuditsService,
+    SparesService,
     CmmsAuthorizationGuard,
     AssetsService,
     DowntimesService,

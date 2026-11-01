@@ -145,6 +145,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
         key: 'commissioning', label: 'Commissioning', href: '/cmms/commissioning', icon: moduleIcons['map-pin'],
         permissions: ['cmms.commissioning.read'] as const,
       } as (typeof items)[number]);
+      // WI-OI-136 M-BOM: Visual Spares follows Commissioning and is gated on cmms.bom.read.
+      items.splice(metersAt + 3, 0, {
+        key: 'spares', label: 'Visual Spares', href: '/cmms/spares', icon: moduleIcons.layers,
+        permissions: ['cmms.bom.read'] as const,
+      } as (typeof items)[number]);
       // WI-OI-131 C11: Reliability tab is permission-gated in the sidebar.
       return items.map((item) =>
         item.key === 'analytics'

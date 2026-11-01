@@ -28,6 +28,9 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   'POST commissioning/requests': '/api/v1/mobile/commissioning/requests',
   'POST commissioning/tags/resolve': '/api/v1/mobile/commissioning/tags/resolve',
   'POST commissioning/walks': '/api/v1/mobile/commissioning/walks',
+  // WI-OI-136 M-BOM.
+  'POST spares/resolve': '/api/v1/mobile/spares/resolve',
+  'POST spares/reservations': '/api/v1/mobile/spares/reservations',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -61,6 +64,12 @@ function mobileUpstreamPath(method: string, path: readonly string[]): string | u
       return `/api/v1/mobile/commissioning/walks/${path[2]}/${path[3]}`;
     if (method === 'GET' && path[3] === 'report') return `/api/v1/mobile/commissioning/walks/${path[2]}/report`;
   }
+  if (method === 'GET' && path.length === 4 && path[0] === 'spares' && path[1] === 'assets' && UUID.test(path[2] ?? '') &&
+      (path[3] === 'diagrams' || path[3] === 'work-orders'))
+    return `/api/v1/mobile/spares/assets/${path[2]}/${path[3]}`;
+  if (method === 'GET' && path[0] === 'spares' && path[1] === 'diagrams' && UUID.test(path[2] ?? '') &&
+      (path.length === 3 || (path.length === 4 && path[3] === 'image')))
+    return `/api/v1/mobile/spares/diagrams/${path[2]}${path.length === 4 ? '/image' : ''}`;
   return undefined;
 }
 

@@ -143,6 +143,21 @@ describe('mobile session v3 projection', () => {
     expect(projectMobileSession(withPermissions(['cmms.commissioning.read']),binding).modules).toEqual([]);
   });
 
+  it('offers Visual Spares to diagram readers, with reserving only when held (WI-OI-136)',() => {
+    const base = source();
+    const withPermissions = (permissions: string[]) => ({
+      ...base,
+      tenant:{...base.tenant!,entitlements:[...base.tenant!.entitlements,{moduleKey:'asset-maintenance',version:'2026-11-02'}]},
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,...permissions]} : assignment),
+    });
+    expect(projectMobileSession(withPermissions(['cmms.bom.read','cmms.parts.reserve']),binding).modules).toEqual([{
+      key:'spares',enabled:true,navigationOrder:400,capabilities:['cmms.bom.read','cmms.parts.reserve'],
+      presentationRevision:'spares.v1',requiredDeviceCapabilities:[],
+    }]);
+    expect(projectMobileSession(withPermissions(['cmms.parts.reserve']),binding).modules).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();

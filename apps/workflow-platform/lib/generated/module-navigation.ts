@@ -150,6 +150,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       ]
     },
     {
+      "key": "spares",
+      "label": "Visual Spares",
+      "path": "/cmms/spares",
+      "icon": "layers",
+      "permissions": [
+        "cmms.bom.read"
+      ]
+    },
+    {
       "key": "analytics",
       "label": "Reliability",
       "path": "/cmms/analytics",

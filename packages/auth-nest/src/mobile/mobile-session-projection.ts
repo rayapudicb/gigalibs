@@ -102,6 +102,10 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.audits.execute'))
       ? ['cmms.audits.execute'] : []),
   ] : [];
+  const sparesCapabilities = entitlements.includes('asset-maintenance') ? [
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.bom.read')) ? ['cmms.bom.read'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.parts.reserve')) ? ['cmms.parts.reserve'] : []),
+  ] : [];
   const modules = [
     ...(roundsEnabled ? [{
       key:'operator-rounds',enabled:true,navigationOrder:370,
@@ -116,6 +120,13 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
       key:'calibration',enabled:true,navigationOrder:380,
       capabilities:['cmms.calibration.execute'],
       presentationRevision:'calibration.v1',
+      requiredDeviceCapabilities:[],
+    }] : []),
+    // WI-OI-136 M-BOM: visual spares for members who read diagrams (reserving needs its own capability).
+    ...(sparesCapabilities.includes('cmms.bom.read') ? [{
+      key:'spares',enabled:true,navigationOrder:400,
+      capabilities:sparesCapabilities,
+      presentationRevision:'spares.v1',
       requiredDeviceCapabilities:[],
     }] : []),
     // WI-OI-135 M-TAG: commissioning proposals and floor walks, each by its own permission.

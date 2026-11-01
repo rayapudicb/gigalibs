@@ -75,6 +75,12 @@ spec:
         sessionPermissions: true
         props:
           section: commissioning
+      # WI-OI-136 M-BOM: exploded diagrams with live stock and part reservations.
+      - route: /cmms/spares
+        component: CmmsWorkspace
+        sessionPermissions: true
+        props:
+          section: spares
       - route: /cmms/inventory
         component: CmmsWorkspace
         props:
@@ -201,6 +207,7 @@ spec:
         - { key: meters, label: Meters & IoT, path: /cmms/meters, icon: gauge }
         - { key: calibration, label: Calibration, path: /cmms/calibration, icon: shield-check, permissions: [cmms.calibration.read] }
         - { key: commissioning, label: Commissioning, path: /cmms/commissioning, icon: map-pin, permissions: [cmms.commissioning.read] }
+        - { key: spares, label: Visual Spares, path: /cmms/spares, icon: layers, permissions: [cmms.bom.read] }
         - { key: analytics, label: Reliability, path: /cmms/analytics, icon: bar-chart, permissions: [cmms.analytics.read, analytics:read] }
         - { key: floor, label: Floor Kiosk, path: /cmms/floor, icon: radio }
       # WI-OI-120n (owner, 2026-10-06): module roles, copied into a workspace when CMMS is switched on and assigned on
@@ -213,15 +220,15 @@ spec:
           # UAT before it: the work-order screen and REST API still require it. Narrowing them to their own work orders
           # (cmms.work-orders.execute-own only, WI-OI-120t) comes with the work-order window.
           description: Carries out work orders, records meter readings and labour, and punches their own time.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, cmms.calibration.read, cmms.calibration.execute, cmms.commissioning.read, cmms.commissioning.submit, cmms.audits.read, cmms.audits.execute, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, cmms.calibration.read, cmms.calibration.execute, cmms.commissioning.read, cmms.commissioning.submit, cmms.audits.read, cmms.audits.execute, cmms.bom.read, cmms.parts.reserve, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
         - key: maintenance-planner
           name: Maintenance planner
           description: Plans, assigns and closes work; manages assets, preventive schedules and parts; manages people and approves time and absence for everyone in the workspace (not only the maintenance team) until roles are held per unit (ADR-0034). Linking logins stays with administrators.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.requests.write, cmms.assets.read, cmms.assets.write, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.pm.write, cmms.parts.read, cmms.parts.write, cmms.analytics.read, cmms.calibration.read, cmms.calibration.manage, cmms.commissioning.read, cmms.commissioning.approve, cmms.audits.read, maps:read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.time.read, workforce.time.punch, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.requests.write, cmms.assets.read, cmms.assets.write, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.pm.write, cmms.parts.read, cmms.parts.write, cmms.analytics.read, cmms.calibration.read, cmms.calibration.manage, cmms.commissioning.read, cmms.commissioning.approve, cmms.audits.read, cmms.bom.read, cmms.bom.manage, cmms.bom.publish, cmms.parts.reserve, maps:read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.time.read, workforce.time.punch, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
         - key: maintenance-viewer
           name: Maintenance viewer
           description: Reads assets, work orders, schedules, meters, parts and reliability figures without changing them, and raises and follows their own maintenance requests.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.pm.read, cmms.parts.read, cmms.analytics.read, cmms.calibration.read, cmms.commissioning.read, cmms.audits.read, maps.nodes.read]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.pm.read, cmms.parts.read, cmms.analytics.read, cmms.calibration.read, cmms.commissioning.read, cmms.audits.read, cmms.bom.read, maps.nodes.read]
         # WI-OI-134 M-CAL: approves calibrations and publishes instrument profiles (never their own: four eyes).
         - key: metrology-lead
           name: Metrology lead
@@ -322,6 +329,16 @@ spec:
       - { path: 'v1/asset-audits', GET: cmms.audits.read, POST: cmms.audits.execute }
       - { path: 'v1/asset-audits/{id}/sightings|finish', POST: cmms.audits.execute }
       - { path: 'v1/asset-audits/{id}/report', GET: cmms.audits.read }
+      - { path: 'v1/assets/{id}/diagrams', GET: cmms.bom.read, POST: cmms.bom.manage }
+      - { path: 'v1/assets/{id}/open-work-orders', GET: cmms.work-orders.read }
+      - { path: 'v1/diagrams/{id}', GET: cmms.bom.read, PATCH: cmms.bom.manage }
+      - { path: 'v1/diagrams/{id}/hotspots', PUT: cmms.bom.manage }
+      - { path: 'v1/diagrams/{id}/revise', POST: cmms.bom.manage }
+      - { path: 'v1/diagrams/{id}/publish', POST: cmms.bom.publish }
+      - { path: 'v1/diagrams/{id}/image|consumption', GET: cmms.bom.read }
+      - { path: 'v1/part-reservations', POST: cmms.parts.reserve }
+      - { path: 'v1/part-reservations/{id}/release', POST: cmms.parts.reserve }
+      - { path: 'v1/work-orders/{id}/part-reservations', GET: cmms.parts.read }
       - { path: 'v1/parts/storerooms', GET: cmms.parts.read, POST: cmms.parts.write }
       - { path: 'v1/parts/storerooms/{id}', PATCH: cmms.parts.write, DELETE: cmms.parts.write }
       - { path: 'v1/parts/balances', GET: cmms.parts.read, PUT: cmms.parts.write }
