@@ -242,22 +242,6 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
     "entitlementName": "Universal Business Partner",
     "routes": [
       {
-        "template": "v1/records",
-        "pattern": "^v1/records$",
-        "methods": {
-          "GET": "business-partners.records.read",
-          "POST": "business-partners.records.manage"
-        }
-      },
-      {
-        "template": "v1/records/{id}",
-        "pattern": "^v1/records/[0-9a-fA-F-]{36}$",
-        "methods": {
-          "GET": "business-partners.records.read",
-          "PATCH": "business-partners.records.manage"
-        }
-      },
-      {
         "template": "v1/partners/{id}/accounts",
         "pattern": "^v1/partners/[0-9a-fA-F-]{36}/accounts$",
         "methods": {
@@ -328,6 +312,36 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "pattern": "^v1/credit-check$",
         "methods": {
           "POST": "business-partners.credit.read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*$",
+        "methods": {
+          "GET": "business-partners.records.read",
+          "POST": "business-partners.records.read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "business-partners.records.read",
+          "PATCH": "business-partners.records.read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions/{key}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
+        "methods": {
+          "POST": "business-partners.records.read"
+        }
+      },
+      {
+        "template": "v1/lookups/{key}",
+        "pattern": "^v1/lookups/[a-z][a-z0-9-]*$",
+        "methods": {
+          "GET": "business-partners.records.read"
         }
       }
     ],

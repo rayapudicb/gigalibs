@@ -27,16 +27,22 @@ spec:
       - ar.credit.invoice-balance.v1
       - orders.credit.uninvoiced-balance.v1
       - procurement.credit.vendor-bill-balance.v1
-  # Pages (WI-OI-083b): the generic records screen from the core web SDK until the module needs its own screens.
+  # Pages: the Partners metadata window (dictionary/partners.window.json) over the SDK record routes. The generic
+  # records placeholder posted to v1/records, which the module stopped serving when its record dispatcher arrived.
   ui:
     basePath: /business-partners
-    package: '@gigalibs/web-sdk'
+    package: '@gigalibs/configuration-react'
     pages:
       - route: /business-partners
-        component: RecordsWorkspace
+        component: ModuleWindowWorkspace
+        sessionPermissions: true
         props:
-          gateway: business-partners
+          moduleKey: business-partners
+          entityKey: partners
+          surfaceKey: partners
+          basePath: /api/business-partners
           title: Universal Business Partner
+          description: Partners, accounts and credit. Partners are created in the platform's party records.
   api:
     application: apps/api
     port: 4790
@@ -96,9 +102,9 @@ spec:
     routeNoun: Universal Business Partner
     serviceName: Universal Business Partner
     entitlementName: Universal Business Partner
+    # The module SDK's record routes (v1/records/{entity}..., v1/lookups/{key}) for the Partners window.
+    records: true
     routes:
-      - { path: 'v1/records', GET: business-partners.records.read, POST: business-partners.records.manage }
-      - { path: 'v1/records/{id}', GET: business-partners.records.read, PATCH: business-partners.records.manage }
       - { path: 'v1/partners/{id}/accounts', GET: business-partners.accounts.read }
       - { path: 'v1/partners/{id}/customer-accounts', POST: business-partners.accounts.manage, PATCH: business-partners.accounts.manage }
       - { path: 'v1/partners/{id}/vendor-accounts', POST: business-partners.accounts.manage }

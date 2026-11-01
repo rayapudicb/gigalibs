@@ -8,7 +8,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('Rounds reference pickers read other modules as the user', () => {
   it('offers only people whose Workforce record is linked to a login, giving both references from one choice', async () => {
-    const fetch = vi.fn(async () => reply(200, { items: [
+    const fetch = vi.fn(async (_url: string) => reply(200, { items: [
       { id: '10000000-0000-4000-8000-000000000001', displayName: 'Asha Rao', platformUserId: 'cuser-asha' },
       { id: '10000000-0000-4000-8000-000000000002', displayName: 'Contract crew', platformUserId: null },
     ], total: 2 }));
@@ -29,7 +29,7 @@ describe('Rounds reference pickers read other modules as the user', () => {
   });
 
   it('reads units and places through the platform lookups, by search and by the stored id', async () => {
-    const fetch = vi.fn(async () => reply(200, [{ value: 'u-1', label: 'Boiler house (BH)' }]));
+    const fetch = vi.fn(async (_url: string) => reply(200, [{ value: 'u-1', label: 'Boiler house (BH)' }]));
     vi.stubGlobal('fetch', fetch);
     const units = lookupSource('organization-units');
     expect(await units.search('boil')).toEqual([{ value: 'u-1', label: 'Boiler house (BH)' }]);

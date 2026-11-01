@@ -560,3 +560,4 @@ export {
 } from './window/record-client.js';
 export { manifestState, manifestUrl, usePublishedManifest, type ManifestSurface, type PublishedManifestState } from './window/use-published-manifest.js';
 export * as metadataWindowModel from './window/window-model.js';
+export { ModuleWindowWorkspace, type ModuleWindowWorkspaceProps } from './window/ModuleWindowWorkspace.js';
