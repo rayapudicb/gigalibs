@@ -15,6 +15,11 @@ describe('Operator Rounds role navigation', () => {
   });
 
   it('offers all workspaces to a module administrator', () => {
-    expect(availableRoundsTabs(['operator-rounds:*'])).toEqual(['routes','board','exceptions']);
+    expect(availableRoundsTabs(['operator-rounds:*'])).toEqual(['routes','board','exceptions','skips']);
+  });
+
+  it('offers skip approvals only to a person who may authorize them', () => {
+    expect(availableRoundsTabs(['operator-rounds.board.read','operator-rounds.skips.approve'])).toEqual(['board','skips']);
+    expect(availableRoundsTabs(['operator-rounds.runs.execute'])).toEqual([]);
   });
 });

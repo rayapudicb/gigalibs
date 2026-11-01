@@ -80,6 +80,30 @@ describe('CMMS Rounds corrective-action inbox',() => {
     expect(workOrders.createWithClient).toHaveBeenCalledTimes(1);
   });
 
+  it('creates a defect work order from the operator description, with no reading',async () => {
+    const defectId = randomUUID();
+    const defect = {...envelope,messageId:randomUUID(),aggregateId:defectId,payload:{...envelope.payload,
+      exceptionId:defectId,requestKey:randomUUID(),origin:'DEFECT',readingId:null,reading:null,
+      defectDescription:'Oil leak under the gearbox',aggregateId:defectId}};
+    const dbClient = {query:vi.fn(async (sql:string) => {
+      if (sql.includes('INSERT INTO gigalibs_cmms.inbox_receipts')) return {rows:[{id:randomUUID()}],rowCount:1};
+      if (sql.includes('FROM gigalibs_cmms.assets')) return {rows:[{site_ref:placeRef}],rowCount:1};
+      if (sql.includes('FROM gigalibs_cmms.work_orders')) return {rows:[],rowCount:0};
+      return {rows:[],rowCount:1};
+    })};
+    const workOrders = {createWithClient:vi.fn(async (_client:unknown,_context:unknown,create:{title:string;description:string}) => {
+      expect(create.title).toBe('Round defect: Pump pressure');
+      expect(JSON.parse(create.description)).toEqual({source:'operator-rounds',origin:'DEFECT',exceptionId:defectId,
+        runId:envelope.payload.runId,routeId:envelope.payload.routeId,checkpointId:envelope.payload.checkpointId,
+        observedAt:envelope.payload.observedAt,defect:'Oil leak under the gearbox'});
+      return workOrderId;
+    })};
+    const database = {withTenantTransaction:async (_tenant:string,callback:(client:typeof dbClient)=>Promise<unknown>) => callback(dbClient)};
+    const inbox = new RoundsInboxService(database as never,workOrders as never);
+    expect(await inbox.receive(defect,JSON.stringify(defect))).toMatchObject({status:'PROCESSED',workOrderId});
+    expect(workOrders.createWithClient).toHaveBeenCalledTimes(1);
+  });
+
   it('refuses an asset outside the route place and malformed replay payloads',async () => {
     const dbClient = {query:vi.fn(async (sql:string) => sql.includes('FROM gigalibs_cmms.assets')
       ? {rows:[{site_ref:randomUUID()}]}:{rows:[{id:randomUUID()}]})};

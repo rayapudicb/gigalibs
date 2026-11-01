@@ -59,7 +59,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_operator_rounds",
-    "migrationVersion": 8,
+    "migrationVersion": 10,
     "audience": "gigalibs-operator-rounds-api",
     "appendOnlyTables": [
       "audit_events"

@@ -6,25 +6,31 @@ import { DatabaseService } from '../database.service.js';
 import { scopeEvaluator } from '../organization.js';
 
 interface ExceptionRow {
-  id:string; reading_id:string; severity:string; state:string; version:number;
+  id:string; reading_id:string|null; origin:'READING'|'DEFECT'; description:string|null;
+  defect_evidence_id:string|null; reported_by:string|null; observed_at:Date|null;
+  severity:string; state:string; version:number;
   cmms_work_order_ref:string|null; refusal_code:string|null; review_note:string|null;
   reviewed_by:string|null; created_at:Date; updated_at:Date;
   owning_unit_id:string|null; site_ref:string|null; route_id:string; route_code:string;
   checkpoint_id:string; checkpoint_label:string; asset_ref:string; actor_subject:string;
   numeric_value:string|null; choice_value:string|null; unit_code:string|null;
 }
-const SELECT = `SELECT e.id,e.reading_id,e.severity,e.state,e.version,e.cmms_work_order_ref,
+// A threshold exception reaches its run and checkpoint through its reading; a defect names them itself.
+const SELECT = `SELECT e.id,e.reading_id,e.origin,e.description,e.evidence_id AS defect_evidence_id,e.reported_by,
+  e.observed_at,e.severity,e.state,e.version,e.cmms_work_order_ref,
   e.refusal_code,e.review_note,e.reviewed_by,e.created_at,e.updated_at,
   a.owning_unit_id,a.site_ref,a.route_id,rt.route_code,c.id AS checkpoint_id,
   c.label AS checkpoint_label,c.asset_ref,rr.actor_subject,rd.numeric_value,
   rd.choice_value,c.unit_code
-  FROM ${SCHEMA}.exceptions e JOIN ${SCHEMA}.readings rd
+  FROM ${SCHEMA}.exceptions e LEFT JOIN ${SCHEMA}.readings rd
     ON rd.tenant_id=e.tenant_id AND rd.id=e.reading_id
-  JOIN ${SCHEMA}.round_runs rr ON rr.tenant_id=rd.tenant_id AND rr.id=rd.run_id
+  JOIN ${SCHEMA}.round_runs rr ON rr.tenant_id=e.tenant_id AND rr.id=coalesce(rd.run_id,e.run_id)
   JOIN ${SCHEMA}.assignments a ON a.tenant_id=rr.tenant_id AND a.id=rr.assignment_id
   JOIN ${SCHEMA}.route_templates rt ON rt.tenant_id=a.tenant_id AND rt.id=a.route_id
-  JOIN ${SCHEMA}.checkpoints c ON c.tenant_id=rd.tenant_id AND c.id=rd.checkpoint_id`;
-const view = (row: ExceptionRow) => ({ id:row.id,readingId:row.reading_id,
+  JOIN ${SCHEMA}.checkpoints c ON c.tenant_id=e.tenant_id AND c.id=coalesce(rd.checkpoint_id,e.checkpoint_id)`;
+const view = (row: ExceptionRow) => ({ id:row.id,readingId:row.reading_id,origin:row.origin,
+  description:row.description,evidenceId:row.defect_evidence_id,reportedBy:row.reported_by,
+  observedAt:row.observed_at?.toISOString() ?? null,
   severity:row.severity,state:row.state,version:Number(row.version),
   cmmsWorkOrderRef:row.cmms_work_order_ref,refusalCode:row.refusal_code,
   reviewNote:row.review_note,reviewedBy:row.reviewed_by,

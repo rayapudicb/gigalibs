@@ -1,6 +1,6 @@
 import {
-  AssignRoundV1, CreateRoundRouteV1, GenerateRoundAssignmentsV1, ReplaceRoundCheckpointsV1,
-  ReplaceRoundRosterV1, UpdateRoundRouteV1,
+  AssignRoundV1, CreateRoundRouteV1, FinalizeRoundCheckpointsV1, GenerateRoundAssignmentsV1, ReplaceRoundCheckpointsV1,
+  ReplaceRoundRosterV1, StageRoundCheckpointBatchV1, UpdateRoundRouteV1,
 } from '@gigalibs/contracts';
 import {
   CommandContext, CurrentPrincipal, type ModuleCommandContext, type ModulePrincipal,
@@ -65,6 +65,25 @@ export class RoutesController {
     errors.assertUuid(id, 'routeId');
     const parsed = errors.parseInput(ReplaceRoundCheckpointsV1, body);
     return this.routes.replaceCheckpoints(context, id, parsed.routeVersion, parsed.checkpoints);
+  }
+
+  // A large draft travels as bounded batches (each under the module host's body limit), then one atomic finalize.
+  @Post(':id/checkpoint-batches')
+  @RequirePermissions('operator-rounds.routes.manage')
+  async stageCheckpoints(@CommandContext() context: ModuleCommandContext, @Param('id') id: string,
+    @Body() body: unknown, @Res({ passthrough: true }) response: ReplayResponse) {
+    errors.assertUuid(id, 'routeId');
+    const result = await this.routes.stageCheckpointBatch(context, id, errors.parseInput(StageRoundCheckpointBatchV1, body));
+    response.status(result.replayed ? 200 : 201);
+    if (result.replayed) response.setHeader('Idempotency-Replayed', 'true');
+    return result;
+  }
+
+  @Post(':id/checkpoints/finalize')
+  @RequirePermissions('operator-rounds.routes.manage')
+  finalizeCheckpoints(@CommandContext() context: ModuleCommandContext, @Param('id') id: string, @Body() body: unknown) {
+    errors.assertUuid(id, 'routeId');
+    return this.routes.finalizeCheckpoints(context, id, errors.parseInput(FinalizeRoundCheckpointsV1, body));
   }
 
   @Post(':id/publish')

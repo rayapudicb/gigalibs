@@ -80,6 +80,26 @@ export const ReplaceRoundCheckpointsV1 = z.object({
   checkpoints: z.array(RoundCheckpointDraftV1).min(1).max(1000),
 }).strict();
 
+/**
+ * One bounded batch of a draft route's checkpoints. A large route travels as several batches (each body stays under the
+ * module host's request limit) and replaces the saved checkpoints only when FinalizeRoundCheckpointsV1 succeeds.
+ */
+export const StageRoundCheckpointBatchV1 = z.object({
+  routeVersion: z.number().int().positive(),
+  uploadId: z.uuid(),
+  batchIndex: z.number().int().min(0).max(999),
+  batchCount: z.number().int().min(1).max(1000),
+  checkpoints: z.array(RoundCheckpointDraftV1).min(1).max(1000),
+}).strict().refine((value) => value.batchIndex < value.batchCount, 'batchIndex must be below batchCount.');
+
+/** Atomically replaces the draft's checkpoints with every staged batch of one upload. */
+export const FinalizeRoundCheckpointsV1 = z.object({
+  routeVersion: z.number().int().positive(),
+  uploadId: z.uuid(),
+  batchCount: z.number().int().min(1).max(1000),
+  checkpointCount: z.number().int().min(1).max(1000),
+}).strict();
+
 export const AssignRoundV1 = z.object({
   requestKey: z.uuid(),
   workforceResourceRef: z.uuid(),
@@ -136,9 +156,53 @@ export const CompleteRoundRunV1 = z.object({
   expectedRunVersion: z.number().int().positive(),
 }).strict();
 
+export const RoundSkipReasonV1 = z.enum(['INACCESSIBLE', 'UNSAFE', 'ASSET_OUT_OF_SERVICE', 'TAG_DAMAGED', 'OTHER']);
+
+/**
+ * An ad-hoc defect seen during a run (product spec 01 §2): no reading, the operator's description and an optional photo
+ * bound to this assignment and checkpoint. It does not change the run's route path or version. With requestWorkOrder it
+ * asks CMMS for one corrective work order; without, it waits for supervisor review.
+ */
+export const ReportRoundDefectV1 = z.object({
+  clientOperationId: z.uuid(),
+  runId: z.uuid(),
+  checkpointId: z.uuid(),
+  routeRevision: z.number().int().positive(),
+  observedAt: z.iso.datetime({ offset: true }),
+  severity: z.enum(['AMBER', 'RED']),
+  description: z.string().trim().min(1).max(2000),
+  requestWorkOrder: z.boolean(),
+  evidenceId: z.uuid().nullable(),
+}).strict();
+
+/**
+ * Passing the expected checkpoint without a reading. It is a step of the route path (the route's ALWAYS branch or the
+ * next position) and stays REQUESTED until a different person with operator-rounds.skips.approve decides it.
+ */
+export const RequestRoundSkipV1 = z.object({
+  clientOperationId: z.uuid(),
+  runId: z.uuid(),
+  checkpointId: z.uuid(),
+  routeRevision: z.number().int().positive(),
+  expectedRunVersion: z.number().int().positive(),
+  capturedAt: z.iso.datetime({ offset: true }),
+  reasonCode: RoundSkipReasonV1,
+  note: z.string().trim().min(1).max(1000).nullable(),
+}).strict().refine((value) => value.reasonCode !== 'OTHER' || value.note !== null, 'Describe the reason for OTHER.');
+
+export const DecideRoundSkipV1 = z.object({
+  version: z.number().int().positive(),
+  decision: z.enum(['APPROVED', 'REJECTED']),
+  note: z.string().trim().min(1).max(2000),
+}).strict();
+
+export const RoundSyncCommandTypeV1 = z.enum(['START', 'READING', 'DEFECT', 'SKIP', 'COMPLETE']);
+
 export const RoundSyncCommandV1 = z.discriminatedUnion('type', [
   z.object({ type: z.literal('START'), payload: StartRoundRunV1 }).strict(),
   z.object({ type: z.literal('READING'), payload: CaptureRoundReadingV1 }).strict(),
+  z.object({ type: z.literal('DEFECT'), payload: ReportRoundDefectV1 }).strict(),
+  z.object({ type: z.literal('SKIP'), payload: RequestRoundSkipV1 }).strict(),
   z.object({ type: z.literal('COMPLETE'), payload: CompleteRoundRunV1 }).strict(),
 ]);
 
@@ -148,9 +212,9 @@ export const RoundSyncBatchV1 = z.object({
 
 /** One result per submitted command, in order. A failed command stops dependent later commands. */
 export const RoundSyncResultV1 = z.discriminatedUnion('accepted', [
-  z.object({ accepted: z.literal(true), type: z.enum(['START','READING','COMPLETE']),
+  z.object({ accepted: z.literal(true), type: RoundSyncCommandTypeV1,
     operationId: z.uuid(), replayed: z.boolean(), result: z.record(z.string(),z.unknown()) }).strict(),
-  z.object({ accepted: z.literal(false), type: z.enum(['START','READING','COMPLETE']),
+  z.object({ accepted: z.literal(false), type: RoundSyncCommandTypeV1,
     operationId: z.uuid(), state: z.enum(['CONFLICT','REJECTED','NOT_APPLIED']),
     code: z.enum(['VERSION_CONFLICT','WORKFORCE_CHANGED','INVALID_COMMAND','NOT_FOUND','EARLIER_COMMAND_FAILED']),
     retryable: z.boolean() }).strict(),
@@ -251,7 +315,9 @@ export type RetryRoundCorrectiveActionV1 = z.infer<typeof RetryRoundCorrectiveAc
 export const RoundCorrectiveActionV1 = z.object({
   requestKey: z.uuid(),
   exceptionId: z.uuid(),
-  readingId: z.uuid(),
+  // Commands relayed before defects existed carry no origin: they are threshold exceptions.
+  origin: z.enum(['READING', 'DEFECT']).default('READING'),
+  readingId: z.uuid().nullable(),
   runId: z.uuid(),
   routeId: z.uuid(),
   checkpointId: z.uuid(),
@@ -264,8 +330,14 @@ export const RoundCorrectiveActionV1 = z.object({
     numericValue: decimal.nullable(),
     choiceValue: z.string().min(1).max(64).nullable(),
     unitCode: z.string().min(1).max(32).nullable(),
-  }).strict(),
-}).strict();
+  }).strict().nullable(),
+  defectDescription: z.string().trim().min(1).max(2000).nullable().default(null),
+}).strict().superRefine((value, issue) => {
+  const reading = value.readingId !== null && value.reading !== null && value.defectDescription === null;
+  const defect = value.readingId === null && value.reading === null && value.defectDescription !== null;
+  if (value.origin === 'READING' ? !reading : !defect)
+    issue.addIssue({ code: 'custom', message: 'A corrective action carries a reading or a defect description, as its origin says.' });
+});
 export type RoundCorrectiveActionV1 = z.infer<typeof RoundCorrectiveActionV1>;
 
 /** Signed Rounds → CMMS context query for checkpoints already authorized by the Rounds assignment. */
@@ -323,6 +395,11 @@ export type CreateRoundRouteV1 = z.infer<typeof CreateRoundRouteV1>;
 export type RoundScheduleV1 = z.infer<typeof RoundScheduleV1>;
 export type AssignRoundV1 = z.infer<typeof AssignRoundV1>;
 export type ReplaceRoundRosterV1 = z.infer<typeof ReplaceRoundRosterV1>;
+export type StageRoundCheckpointBatchV1 = z.infer<typeof StageRoundCheckpointBatchV1>;
+export type ReportRoundDefectV1 = z.infer<typeof ReportRoundDefectV1>;
+export type RequestRoundSkipV1 = z.infer<typeof RequestRoundSkipV1>;
+export type DecideRoundSkipV1 = z.infer<typeof DecideRoundSkipV1>;
+export type FinalizeRoundCheckpointsV1 = z.infer<typeof FinalizeRoundCheckpointsV1>;
 export type RoundRosterEntryV1 = z.infer<typeof RoundRosterEntryV1>;
 export type GenerateRoundAssignmentsV1 = z.infer<typeof GenerateRoundAssignmentsV1>;
 export type StartRoundRunV1 = z.infer<typeof StartRoundRunV1>;

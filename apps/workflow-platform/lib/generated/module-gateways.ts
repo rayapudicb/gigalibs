@@ -1624,6 +1624,20 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/routes/{id}/checkpoint-batches",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/checkpoint-batches$",
+        "methods": {
+          "POST": "operator-rounds.routes.manage"
+        }
+      },
+      {
+        "template": "v1/routes/{id}/checkpoints/finalize",
+        "pattern": "^v1/routes/[0-9a-fA-F-]{36}/checkpoints/finalize$",
+        "methods": {
+          "POST": "operator-rounds.routes.manage"
+        }
+      },
+      {
         "template": "v1/routes/{id}/publish",
         "pattern": "^v1/routes/[0-9a-fA-F-]{36}/publish$",
         "methods": {
@@ -1720,6 +1734,20 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "pattern": "^v1/exceptions/[0-9a-fA-F-]{36}/retry$",
         "methods": {
           "POST": "operator-rounds.exceptions.review"
+        }
+      },
+      {
+        "template": "v1/skips",
+        "pattern": "^v1/skips$",
+        "methods": {
+          "GET": "operator-rounds.skips.approve"
+        }
+      },
+      {
+        "template": "v1/skips/{id}/decision",
+        "pattern": "^v1/skips/[0-9a-fA-F-]{36}/decision$",
+        "methods": {
+          "POST": "operator-rounds.skips.approve"
         }
       },
       {

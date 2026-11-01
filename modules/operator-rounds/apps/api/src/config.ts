@@ -12,7 +12,7 @@ export const SCHEMA = 'gigalibs_operator_rounds';
 /** Outbox topic of this module's facts. */
 export const TOPIC = 'operator-rounds.facts.v1';
 /** Last migration in `db/runtime-manifest.txt`; readiness requires the database to be exactly here. */
-export const SCHEMA_CONTRACT_VERSION = 8;
+export const SCHEMA_CONTRACT_VERSION = 10;
 
 export const RUNTIME_CONFIG = Symbol('OPERATOR_ROUNDS_RUNTIME_CONFIG');
 

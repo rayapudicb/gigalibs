@@ -1110,6 +1110,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "operator-rounds.skips.approve",
+    "entries": [
+      "operator-rounds"
+    ]
+  },
+  {
     "code": "orders:allocate",
     "entries": [
       "universal-orders"

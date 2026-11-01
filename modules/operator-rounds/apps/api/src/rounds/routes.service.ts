@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
-import type { CreateRoundRouteV1, RoundCheckpointDraftV1 } from '@gigalibs/contracts';
+import {
+  type CreateRoundRouteV1, type FinalizeRoundCheckpointsV1, RoundCheckpointDraftV1, type StageRoundCheckpointBatchV1,
+} from '@gigalibs/contracts';
 import {
   type ModuleCommandContext, type ModulePrincipal, recordMutation,
 } from '@gigalibs/module-sdk';
@@ -42,6 +44,19 @@ export function routeView(row: RouteRow) {
     publishedAt: row.published_at?.toISOString() ?? null,
     createdAt: row.created_at.toISOString(), updatedAt: row.updated_at.toISOString(),
   };
+}
+
+/** A route's checkpoint ceiling (the contract's maximum), checked across the batches of one upload. */
+const MAX_ROUTE_CHECKPOINTS = 1000;
+/** Unfinished uploads one route may hold at once; staging prunes old versions and uploads older than a day. */
+const MAX_OPEN_UPLOADS = 20;
+
+interface StagedBatchRow {
+  batch_index: number;
+  batch_count: number;
+  route_version: number;
+  checkpoints: unknown[];
+  uploaded_by: string;
 }
 
 function checksum(value: unknown): string {
@@ -162,35 +177,138 @@ export class RoutesService {
     validateCheckpointSet(checkpoints);
     const { tenantId } = context.principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
-      const scope = await scopeEvaluator(client, context.principal);
-      const old = await this.route(client, tenantId, routeId, true);
-      await scope.assert('operator-rounds.routes.manage', old);
-      if (old.state !== 'DRAFT' || old.version !== expectedVersion)
-        throw new ConflictException('Route is published or its version changed.');
-      await client.query(`DELETE FROM ${SCHEMA}.checkpoints WHERE tenant_id=$1 AND route_id=$2`, [tenantId,routeId]);
-      for (const point of checkpoints) {
-        await client.query(
-          `INSERT INTO ${SCHEMA}.checkpoints
-            (id,tenant_id,route_id,position,label,asset_ref,meter_ref,tag_code,proof_mode,reading_kind,
-             unit_code,nominal,amber_low,amber_high,red_low,red_high,choices,branch_rule,instructions,photo_on_exception)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
-          [point.id ?? randomUUID(),tenantId,routeId,point.position,point.label,point.assetRef,point.meterRef,
-           point.tagCode,point.proofMode,point.readingKind,point.unitCode,point.nominal,point.amberLow,
-           point.amberHigh,point.redLow,point.redHigh,JSON.stringify(point.choices),JSON.stringify(point.branchRules),
-           point.instructions,point.photoOnException],
-        );
-      }
-      const updated = await client.query<RouteRow>(
-        `UPDATE ${SCHEMA}.route_templates SET version=version+1,updated_at=now()
-          WHERE tenant_id=$1 AND id=$2 RETURNING ${ROUTE_COLUMNS}`, [tenantId,routeId],
-      );
-      const row = updated.rows[0]!;
-      await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
-        action: 'ROUTE_CHECKPOINTS_REPLACED', aggregateType: 'route', aggregateId: routeId,
-        aggregateVersion: row.version, payload: { count: checkpoints.length, revision: row.revision },
-      });
-      return { ...routeView(row), checkpointCount: checkpoints.length };
+      await this.lockDraft(client, context, routeId, expectedVersion);
+      return this.writeCheckpoints(client, context, routeId, checkpoints, {});
     });
+  }
+
+  /**
+   * Stores one bounded batch of a draft's checkpoints under the author's upload. Nothing visible changes until
+   * finalize; a repeated batch with the same content is a replay, a different one is refused.
+   */
+  async stageCheckpointBatch(context: ModuleCommandContext, routeId: string, input: StageRoundCheckpointBatchV1) {
+    const { tenantId, subject } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      await this.lockDraft(client, context, routeId, input.routeVersion);
+      await client.query(
+        `DELETE FROM ${SCHEMA}.checkpoint_upload_batches WHERE tenant_id=$1 AND route_id=$2
+           AND (route_version<>$3 OR created_at < now() - interval '1 day')`,
+        [tenantId, routeId, input.routeVersion],
+      );
+      const upload = await client.query<{ uploaded_by: string | null; batch_count: number | null; staged: string; uploads: string }>(
+        `SELECT min(uploaded_by) FILTER (WHERE upload_id=$3) AS uploaded_by,
+                min(batch_count) FILTER (WHERE upload_id=$3) AS batch_count,
+                coalesce(sum(jsonb_array_length(checkpoints)) FILTER (WHERE upload_id=$3 AND batch_index<>$4),0) AS staged,
+                count(DISTINCT upload_id) FILTER (WHERE upload_id<>$3) AS uploads
+           FROM ${SCHEMA}.checkpoint_upload_batches WHERE tenant_id=$1 AND route_id=$2`,
+        [tenantId, routeId, input.uploadId, input.batchIndex],
+      );
+      const held = upload.rows[0]!;
+      if (held.uploaded_by !== null && held.uploaded_by !== subject)
+        throw new ForbiddenException('This checkpoint upload belongs to another author.');
+      if (held.batch_count !== null && Number(held.batch_count) !== input.batchCount)
+        throw new ConflictException('This upload was started with a different number of batches.');
+      if (held.uploaded_by === null && Number(held.uploads) >= MAX_OPEN_UPLOADS)
+        throw new ConflictException('Too many unfinished checkpoint uploads for this route; finish one or wait a day.');
+      if (Number(held.staged) + input.checkpoints.length > MAX_ROUTE_CHECKPOINTS)
+        throw new BadRequestException(`A route holds at most ${MAX_ROUTE_CHECKPOINTS} checkpoints.`);
+      const hash = checksum(input.checkpoints);
+      const inserted = await client.query(
+        `INSERT INTO ${SCHEMA}.checkpoint_upload_batches
+          (tenant_id,route_id,upload_id,route_version,batch_index,batch_count,checkpoints,payload_sha256,uploaded_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (tenant_id,route_id,upload_id,batch_index) DO NOTHING
+         RETURNING batch_index`,
+        [tenantId, routeId, input.uploadId, input.routeVersion, input.batchIndex, input.batchCount,
+         JSON.stringify(input.checkpoints), hash, subject],
+      );
+      let replayed = false;
+      if (!inserted.rows[0]) {
+        const existing = await client.query<{ payload_sha256: string }>(
+          `SELECT payload_sha256 FROM ${SCHEMA}.checkpoint_upload_batches
+            WHERE tenant_id=$1 AND route_id=$2 AND upload_id=$3 AND batch_index=$4`,
+          [tenantId, routeId, input.uploadId, input.batchIndex],
+        );
+        if (existing.rows[0]?.payload_sha256 !== hash)
+          throw new ConflictException('This batch was already staged with different content.');
+        replayed = true;
+      }
+      return {
+        uploadId: input.uploadId, batchIndex: input.batchIndex, batchCount: input.batchCount,
+        received: input.checkpoints.length, replayed,
+      };
+    });
+  }
+
+  /** Replaces the draft's checkpoints with one complete upload, atomically, then removes the staged batches. */
+  async finalizeCheckpoints(context: ModuleCommandContext, routeId: string, input: FinalizeRoundCheckpointsV1) {
+    const { tenantId, subject } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      await this.lockDraft(client, context, routeId, input.routeVersion);
+      const batches = await client.query<StagedBatchRow>(
+        `SELECT batch_index,batch_count,route_version,checkpoints,uploaded_by FROM ${SCHEMA}.checkpoint_upload_batches
+          WHERE tenant_id=$1 AND route_id=$2 AND upload_id=$3 ORDER BY batch_index FOR UPDATE`,
+        [tenantId, routeId, input.uploadId],
+      );
+      if (batches.rows.length === 0) throw new ConflictException('No staged checkpoints for this upload; save the draft again.');
+      if (batches.rows.some((batch) => batch.uploaded_by !== subject))
+        throw new ForbiddenException('This checkpoint upload belongs to another author.');
+      const complete = batches.rows.length === input.batchCount && batches.rows.every((batch, index) =>
+        Number(batch.batch_index) === index && Number(batch.batch_count) === input.batchCount &&
+        Number(batch.route_version) === input.routeVersion);
+      if (!complete) throw new ConflictException('The checkpoint upload is incomplete; send every batch again.');
+      const checkpoints = batches.rows.flatMap((batch) => batch.checkpoints).map((point) => {
+        const parsed = RoundCheckpointDraftV1.safeParse(point);
+        if (!parsed.success) throw new BadRequestException('A staged checkpoint is no longer valid; save the draft again.');
+        return parsed.data;
+      });
+      if (checkpoints.length !== input.checkpointCount)
+        throw new ConflictException('The staged checkpoint count does not match; send every batch again.');
+      validateCheckpointSet(checkpoints);
+      const view = await this.writeCheckpoints(client, context, routeId, checkpoints,
+        { uploadId: input.uploadId, batches: input.batchCount });
+      await client.query(
+        `DELETE FROM ${SCHEMA}.checkpoint_upload_batches WHERE tenant_id=$1 AND route_id=$2 AND upload_id=$3`,
+        [tenantId, routeId, input.uploadId],
+      );
+      return view;
+    });
+  }
+
+  private async lockDraft(client: PoolClient, context: ModuleCommandContext, routeId: string, expectedVersion: number) {
+    const scope = await scopeEvaluator(client, context.principal);
+    const old = await this.route(client, context.principal.tenantId, routeId, true);
+    await scope.assert('operator-rounds.routes.manage', old);
+    if (old.state !== 'DRAFT' || old.version !== expectedVersion)
+      throw new ConflictException('Route is published or its version changed.');
+    return old;
+  }
+
+  private async writeCheckpoints(client: PoolClient, context: ModuleCommandContext, routeId: string,
+    checkpoints: readonly RoundCheckpointDraftV1[], provenance: Record<string, unknown>) {
+    const { tenantId } = context.principal;
+    await client.query(`DELETE FROM ${SCHEMA}.checkpoints WHERE tenant_id=$1 AND route_id=$2`, [tenantId,routeId]);
+    for (const point of checkpoints) {
+      await client.query(
+        `INSERT INTO ${SCHEMA}.checkpoints
+          (id,tenant_id,route_id,position,label,asset_ref,meter_ref,tag_code,proof_mode,reading_kind,
+           unit_code,nominal,amber_low,amber_high,red_low,red_high,choices,branch_rule,instructions,photo_on_exception)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+        [point.id ?? randomUUID(),tenantId,routeId,point.position,point.label,point.assetRef,point.meterRef,
+         point.tagCode,point.proofMode,point.readingKind,point.unitCode,point.nominal,point.amberLow,
+         point.amberHigh,point.redLow,point.redHigh,JSON.stringify(point.choices),JSON.stringify(point.branchRules),
+         point.instructions,point.photoOnException],
+      );
+    }
+    const updated = await client.query<RouteRow>(
+      `UPDATE ${SCHEMA}.route_templates SET version=version+1,updated_at=now()
+        WHERE tenant_id=$1 AND id=$2 RETURNING ${ROUTE_COLUMNS}`, [tenantId,routeId],
+    );
+    const row = updated.rows[0]!;
+    await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
+      action: 'ROUTE_CHECKPOINTS_REPLACED', aggregateType: 'route', aggregateId: routeId,
+      aggregateVersion: row.version, payload: { count: checkpoints.length, revision: row.revision, ...provenance },
+    });
+    return { ...routeView(row), checkpointCount: checkpoints.length };
   }
 
   async publish(context: ModuleCommandContext, routeId: string, expectedVersion: number) {

@@ -8,3 +8,5 @@
 000006_round_schedule_rosters.up.sql
 000007_round_evidence_binding.up.sql
 000008_round_history_index.up.sql
+000009_checkpoint_upload_batches.up.sql
+000010_round_defects_and_skips.up.sql

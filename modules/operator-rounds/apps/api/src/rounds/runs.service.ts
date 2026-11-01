@@ -1,5 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
-import type { CaptureRoundReadingV1, CompleteRoundRunV1, RoundCheckpointDraftV1, RoundSyncCommandV1, RoundSyncResponseV1, StartRoundRunV1 } from '@gigalibs/contracts';
+import type {
+  CaptureRoundReadingV1, CompleteRoundRunV1, ReportRoundDefectV1, RequestRoundSkipV1, RoundCheckpointDraftV1,
+  RoundSyncCommandV1, RoundSyncResponseV1, StartRoundRunV1,
+} from '@gigalibs/contracts';
 import { type ModuleCommandContext, type ModulePrincipal, recordMutation } from '@gigalibs/module-sdk';
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import type { PoolClient } from 'pg';
@@ -69,10 +72,41 @@ export async function assertRoundEvidenceAvailable(client: PoolClient, tenantId:
       media.assignment_id !== assignmentId || media.checkpoint_id !== checkpointId)
     throw new BadRequestException('Evidence is not committed for this assignment and checkpoint.');
   const used = (await client.query<{id:string}>(
-    `SELECT id FROM ${SCHEMA}.readings WHERE tenant_id=$1 AND evidence_id=$2 LIMIT 1`,
+    `SELECT id FROM ${SCHEMA}.readings WHERE tenant_id=$1 AND evidence_id=$2
+     UNION ALL SELECT id FROM ${SCHEMA}.exceptions WHERE tenant_id=$1 AND evidence_id=$2 LIMIT 1`,
     [tenantId,evidenceId],
   )).rows[0];
-  if (used) throw new ConflictException('Evidence is already attached to a reading.');
+  if (used) throw new ConflictException('Evidence is already attached to a reading or defect.');
+}
+
+/** A run's route path: accepted readings and requested skips, in the order the server received them. */
+interface StepRow { position:number; status:string; numeric_value:string|null; choice_value:string|null }
+async function routeSteps(client: PoolClient, tenantId: string, runId: string, latestOnly = false): Promise<StepRow[]> {
+  return (await client.query<StepRow>(
+    `SELECT position,status,numeric_value,choice_value FROM (
+       SELECT c.position,rd.status,rd.numeric_value::text AS numeric_value,rd.choice_value,rd.received_at,rd.id::text AS step_id
+         FROM ${SCHEMA}.readings rd JOIN ${SCHEMA}.checkpoints c ON c.tenant_id=rd.tenant_id AND c.id=rd.checkpoint_id
+        WHERE rd.tenant_id=$1 AND rd.run_id=$2
+       UNION ALL
+       SELECT c.position,'SKIPPED',NULL,NULL,sk.received_at,sk.id::text
+         FROM ${SCHEMA}.checkpoint_skips sk JOIN ${SCHEMA}.checkpoints c ON c.tenant_id=sk.tenant_id AND c.id=sk.checkpoint_id
+        WHERE sk.tenant_id=$1 AND sk.run_id=$2
+     ) steps ORDER BY received_at ${latestOnly ? 'DESC' : 'ASC'},step_id ${latestOnly ? 'DESC LIMIT 1' : 'ASC'}`,
+    [tenantId,runId],
+  )).rows;
+}
+
+/** The checkpoint a step must be at: the first position, or where the previous step's branch leads. */
+function expectedPosition(points: readonly Pick<PointRow,'position'|'branch_rule'>[], previous: StepRow | undefined): number | null {
+  return previous
+    ? nextPosition(points,Number(previous.position),previous.choice_value ?? previous.numeric_value ?? '',previous.status)
+    : Number(points[0]?.position);
+}
+
+function assertOfflineWindow(at: string, label: string): void {
+  const time = new Date(at).getTime();
+  if (time > Date.now() + 5 * 60_000 || time < Date.now() - 7 * 24 * 60 * 60_000)
+    throw new BadRequestException(`${label} is outside the offline window.`);
 }
 
 @Injectable()
@@ -105,7 +139,9 @@ export class RunsService {
         // Each accepted command commits before the next starts. Its persisted receipt handles replay.
         const result = command.type === 'START' ? await this.start(context,command.payload)
           : command.type === 'READING' ? await this.capture(context,command.payload)
-            : await this.complete(context,command.payload);
+            : command.type === 'DEFECT' ? await this.defect(context,command.payload)
+              : command.type === 'SKIP' ? await this.skip(context,command.payload)
+                : await this.complete(context,command.payload);
         results.push({ accepted:true,type:command.type,operationId,replayed:result.replayed,
           result:result as Record<string,unknown> });
       } catch (error) {
@@ -193,25 +229,15 @@ export class RunsService {
       if (run.state !== 'IN_PROGRESS') throw new ConflictException('Run is no longer in progress.');
       if (run.route_revision !== input.routeRevision || Number(run.version) !== input.expectedRunVersion)
         throw new ConflictException('The route or run version changed; reconcile before resending.');
-      const capturedAt = new Date(input.capturedAt).getTime();
-      if (capturedAt > Date.now() + 5 * 60_000 || capturedAt < Date.now() - 7 * 24 * 60 * 60_000)
-        throw new BadRequestException('Capture time is outside the offline window.');
+      assertOfflineWindow(input.capturedAt,'Capture time');
       const points = (await client.query<PointRow>(
         `SELECT * FROM ${SCHEMA}.checkpoints WHERE tenant_id=$1 AND route_id=$2 ORDER BY position`,
         [tenantId,run.route_id],
       )).rows;
       const point = points.find((entry) => entry.id === input.checkpointId);
       if (!point) throw new NotFoundException('Checkpoint not found in this route.');
-      const previous = (await client.query<{ position:number; status:string; numeric_value:string|null; choice_value:string|null }>(
-        `SELECT c.position,rd.status,rd.numeric_value,rd.choice_value FROM ${SCHEMA}.readings rd
-         JOIN ${SCHEMA}.checkpoints c ON c.tenant_id=rd.tenant_id AND c.id=rd.checkpoint_id
-         WHERE rd.tenant_id=$1 AND rd.run_id=$2 ORDER BY rd.received_at DESC,rd.id DESC LIMIT 1`,
-        [tenantId,run.id],
-      )).rows[0];
-      const expected = previous
-        ? nextPosition(points,Number(previous.position),previous.choice_value ?? previous.numeric_value ?? '',previous.status)
-        : Number(points[0]?.position);
-      if (expected !== Number(point.position)) throw new ConflictException('Checkpoint is out of route order.');
+      const [previous] = await routeSteps(client,tenantId,run.id,true);
+      if (expectedPosition(points,previous) !== Number(point.position)) throw new ConflictException('Checkpoint is out of route order.');
       if (point.proof_mode !== 'EITHER' && point.proof_mode !== input.proofMethod)
         throw new BadRequestException('This checkpoint requires another scan method.');
       let status: 'NORMAL' | 'AMBER' | 'RED';
@@ -272,6 +298,109 @@ export class RunsService {
     });
   }
 
+  /** Records an ad-hoc defect on any checkpoint of the run's route; the route path and run version do not change. */
+  async defect(context: ModuleCommandContext, input: ReportRoundDefectV1) {
+    const { tenantId, subject } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const scope = await scopeEvaluator(client, context.principal);
+      const hash = digest(input);
+      const replay = await this.receipt(client,tenantId,input.clientOperationId,hash,subject);
+      if (replay) return { ...replay, replayed:true };
+      const run = await this.run(client,tenantId,input.runId,true);
+      const assignment = await this.assignment(client,tenantId,run.assignment_id,false);
+      await this.assertOperator(context.principal,run,assignment,scope);
+      if (run.state !== 'IN_PROGRESS') throw new ConflictException('Run is no longer in progress.');
+      if (run.route_revision !== input.routeRevision)
+        throw new ConflictException('The route changed; reconcile before resending.');
+      assertOfflineWindow(input.observedAt,'Observation time');
+      const point = (await client.query<PointRow>(
+        `SELECT * FROM ${SCHEMA}.checkpoints WHERE tenant_id=$1 AND route_id=$2 AND id=$3`,
+        [tenantId,run.route_id,input.checkpointId],
+      )).rows[0];
+      if (!point) throw new NotFoundException('Checkpoint not found in this route.');
+      if (input.evidenceId) await assertRoundEvidenceAvailable(client,tenantId,input.evidenceId,
+        subject,assignment.id,point.id);
+      const exceptionId = randomUUID();
+      const cmmsRequestKey = input.requestWorkOrder ? randomUUID() : null;
+      const state = input.requestWorkOrder ? 'ACTION_PENDING' : 'OPEN';
+      await client.query(
+        `INSERT INTO ${SCHEMA}.exceptions
+          (id,tenant_id,origin,severity,state,cmms_request_key,run_id,checkpoint_id,description,evidence_id,
+           client_operation_id,reported_by,observed_at)
+         VALUES ($1,$2,'DEFECT',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [exceptionId,tenantId,input.severity,state,cmmsRequestKey,run.id,point.id,input.description,
+         input.evidenceId,input.clientOperationId,subject,input.observedAt],
+      );
+      if (cmmsRequestKey) await recordMutation(client,{schema:SCHEMA,topic:'operator-rounds.cmms.v1'},context,{
+        action:'ROUND_CORRECTIVE_ACTION_REQUESTED',aggregateType:'exception',
+        aggregateId:exceptionId,aggregateVersion:1,
+        payload:{requestKey:cmmsRequestKey,exceptionId,origin:'DEFECT',readingId:null,runId:run.id,
+          routeId:run.route_id,checkpointId:point.id,assetId:point.asset_ref,placeRef:assignment.site_ref,
+          severity:input.severity,checkpointLabel:point.label,observedAt:input.observedAt,
+          reading:null,defectDescription:input.description},
+      });
+      await recordMutation(client,{schema:SCHEMA,topic:TOPIC},context,{
+        action:'DEFECT_REPORTED',aggregateType:'exception',aggregateId:exceptionId,aggregateVersion:1,
+        payload:{runId:run.id,assignmentId:assignment.id,routeId:run.route_id,checkpointId:point.id,
+          assetRef:point.asset_ref,owningUnitId:assignment.owning_unit_id,placeRef:assignment.site_ref,
+          severity:input.severity,requestWorkOrder:input.requestWorkOrder,evidenceId:input.evidenceId,
+          observedAt:input.observedAt},
+      });
+      // The receipt lookup adds its own `state` (ACCEPTED); the exception's state travels as exceptionState.
+      const result = { type:'DEFECT', accepted:true, replayed:false, clientOperationId:input.clientOperationId,
+        exceptionId,exceptionState:state,runVersion:Number(run.version) };
+      await this.saveReceipt(client,tenantId,input.clientOperationId,subject,hash,result);
+      return result;
+    });
+  }
+
+  /** Passes the expected checkpoint without a reading, pending a different authorized person's decision. */
+  async skip(context: ModuleCommandContext, input: RequestRoundSkipV1) {
+    const { tenantId, subject } = context.principal;
+    return this.database.withTenantTransaction(tenantId, async (client) => {
+      const scope = await scopeEvaluator(client, context.principal);
+      const hash = digest(input);
+      const replay = await this.receipt(client,tenantId,input.clientOperationId,hash,subject);
+      if (replay) return { ...replay, replayed:true };
+      const run = await this.run(client,tenantId,input.runId,true);
+      const assignment = await this.assignment(client,tenantId,run.assignment_id,false);
+      await this.assertOperator(context.principal,run,assignment,scope);
+      if (run.state !== 'IN_PROGRESS') throw new ConflictException('Run is no longer in progress.');
+      if (run.route_revision !== input.routeRevision || Number(run.version) !== input.expectedRunVersion)
+        throw new ConflictException('The route or run version changed; reconcile before resending.');
+      assertOfflineWindow(input.capturedAt,'Skip time');
+      const points = (await client.query<PointRow>(
+        `SELECT * FROM ${SCHEMA}.checkpoints WHERE tenant_id=$1 AND route_id=$2 ORDER BY position`,
+        [tenantId,run.route_id],
+      )).rows;
+      const point = points.find((entry) => entry.id === input.checkpointId);
+      if (!point) throw new NotFoundException('Checkpoint not found in this route.');
+      const [previous] = await routeSteps(client,tenantId,run.id,true);
+      if (expectedPosition(points,previous) !== Number(point.position)) throw new ConflictException('Checkpoint is out of route order.');
+      const skipId = randomUUID();
+      await client.query(
+        `INSERT INTO ${SCHEMA}.checkpoint_skips
+          (id,tenant_id,run_id,checkpoint_id,client_operation_id,captured_at,reason_code,note,requested_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [skipId,tenantId,run.id,point.id,input.clientOperationId,input.capturedAt,input.reasonCode,input.note,subject],
+      );
+      const updated = (await client.query<RunRow>(
+        `UPDATE ${SCHEMA}.round_runs SET version=version+1 WHERE tenant_id=$1 AND id=$2 RETURNING *`,
+        [tenantId,run.id],
+      )).rows[0]!;
+      await recordMutation(client,{schema:SCHEMA,topic:TOPIC},context,{
+        action:'SKIP_REQUESTED',aggregateType:'skip',aggregateId:skipId,aggregateVersion:1,
+        payload:{runId:run.id,assignmentId:assignment.id,routeId:run.route_id,checkpointId:point.id,
+          assetRef:point.asset_ref,owningUnitId:assignment.owning_unit_id,placeRef:assignment.site_ref,
+          reasonCode:input.reasonCode,capturedAt:input.capturedAt},
+      });
+      const result = { type:'SKIP', accepted:true, replayed:false, clientOperationId:input.clientOperationId,
+        skipId,skipState:'REQUESTED',runVersion:Number(updated.version) };
+      await this.saveReceipt(client,tenantId,input.clientOperationId,subject,hash,result);
+      return result;
+    });
+  }
+
   async complete(context: ModuleCommandContext, input: CompleteRoundRunV1) {
     const { tenantId, subject } = context.principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
@@ -288,19 +417,17 @@ export class RunsService {
         `SELECT position,branch_rule FROM ${SCHEMA}.checkpoints WHERE tenant_id=$1 AND route_id=$2 ORDER BY position`,
         [tenantId,run.route_id],
       )).rows;
-      const readings = (await client.query<{ position:number; status:string; numeric_value:string|null; choice_value:string|null }>(
-        `SELECT c.position,rd.status,rd.numeric_value,rd.choice_value FROM ${SCHEMA}.readings rd
-         JOIN ${SCHEMA}.checkpoints c ON c.tenant_id=rd.tenant_id AND c.id=rd.checkpoint_id
-         WHERE rd.tenant_id=$1 AND rd.run_id=$2 ORDER BY rd.received_at,rd.id`,
-        [tenantId,run.id],
-      )).rows;
-      if (readings.length === 0) throw new ConflictException('Run has no accepted readings.');
+      // A skip awaiting its supervisor decision still completes the path: the operator may have no signal, and the
+      // decision is reported on the board, not by holding the run open.
+      const steps = await routeSteps(client,tenantId,run.id);
+      if (steps.length === 0) throw new ConflictException('Run has no accepted readings.');
       let next: number | null = Number(points[0]?.position);
-      for (const reading of readings) {
-        if (next !== Number(reading.position)) throw new ConflictException('Run has an incomplete route path.');
-        next = nextPosition(points,Number(reading.position),reading.choice_value ?? reading.numeric_value ?? '',reading.status);
+      for (const step of steps) {
+        if (next !== Number(step.position)) throw new ConflictException('Run has an incomplete route path.');
+        next = nextPosition(points,Number(step.position),step.choice_value ?? step.numeric_value ?? '',step.status);
       }
       if (next !== null) throw new ConflictException('Route still has required checkpoints.');
+      const skipCount = steps.filter((step) => step.status === 'SKIPPED').length;
       const updated = (await client.query<RunRow>(
         `UPDATE ${SCHEMA}.round_runs SET state='COMPLETE',version=version+1,completed_at=now()
          WHERE tenant_id=$1 AND id=$2 RETURNING *`,[tenantId,run.id],
@@ -312,7 +439,7 @@ export class RunsService {
       await recordMutation(client,{schema:SCHEMA,topic:TOPIC},context,{
         action:'RUN_COMPLETED',aggregateType:'run',aggregateId:run.id,
         aggregateVersion:Number(updated.version),payload:{assignmentId:assignment.id,routeId:run.route_id,
-          routeRevision:run.route_revision,readingCount:readings.length},
+          routeRevision:run.route_revision,readingCount:steps.length - skipCount,skipCount},
       });
       const result = { type:'COMPLETE',accepted:true,replayed:false,
         clientOperationId:input.clientOperationId,run:runView(updated) };

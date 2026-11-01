@@ -115,7 +115,7 @@ spec:
         - key: rounds-supervisor
           name: Rounds Supervisor
           description: Assigns rounds and reviews progress and exceptions.
-          permissions: [operator-rounds.routes.read, operator-rounds.assignments.manage, operator-rounds.board.read, operator-rounds.exceptions.read, operator-rounds.exceptions.review, operator-rounds.runs.execute]
+          permissions: [operator-rounds.routes.read, operator-rounds.assignments.manage, operator-rounds.board.read, operator-rounds.exceptions.read, operator-rounds.exceptions.review, operator-rounds.runs.execute, operator-rounds.skips.approve]
         - key: rounds-engineer
           name: Rounds Reliability Engineer
           description: Builds and publishes routes and thresholds.
@@ -135,6 +135,8 @@ spec:
       - { path: 'v1/routes', GET: operator-rounds.routes.read, POST: operator-rounds.routes.manage }
       - { path: 'v1/routes/{id}', GET: operator-rounds.routes.read, PATCH: operator-rounds.routes.manage }
       - { path: 'v1/routes/{id}/checkpoints', POST: operator-rounds.routes.manage }
+      - { path: 'v1/routes/{id}/checkpoint-batches', POST: operator-rounds.routes.manage }
+      - { path: 'v1/routes/{id}/checkpoints/finalize', POST: operator-rounds.routes.manage }
       - { path: 'v1/routes/{id}/publish', POST: operator-rounds.routes.publish }
       - { path: 'v1/routes/{id}/assignments', POST: operator-rounds.assignments.manage }
       - { path: 'v1/routes/{id}/roster', GET: operator-rounds.assignments.manage, POST: operator-rounds.assignments.manage }
@@ -149,5 +151,7 @@ spec:
       - { path: 'v1/exceptions', GET: operator-rounds.exceptions.read }
       - { path: 'v1/exceptions/{id}', PATCH: operator-rounds.exceptions.review }
       - { path: 'v1/exceptions/{id}/retry', POST: operator-rounds.exceptions.review }
+      - { path: 'v1/skips', GET: operator-rounds.skips.approve }
+      - { path: 'v1/skips/{id}/decision', POST: operator-rounds.skips.approve }
       - { path: 'v1/organization/versions/{id}/units', POST: 'organization:activate' }
       - { path: 'v1/organization/versions/{id}/complete', POST: 'organization:activate' }

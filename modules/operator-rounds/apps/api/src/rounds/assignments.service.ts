@@ -15,9 +15,28 @@ interface AssignmentRow {
   scheduled_start: Date; due_at: Date; state: string; version: number; request_sha256: string;
   route_code?: string; route_title?: string; checkpoint_count?: number; reading_count?: number; exception_count?: number;
   grace_minutes?: number;
+  skip_requested_count?: number; skip_approved_count?: number; skip_rejected_count?: number;
 }
 const COLUMNS = `id,route_id,route_revision,workforce_resource_ref,operator_subject,owning_unit_id,site_ref,
   scheduled_start,due_at,state,version,request_sha256`;
+/** Board and operator-list progress: readings, exceptions (threshold and defect) and skips by decision. */
+const PROGRESS = `(SELECT count(*) FROM ${SCHEMA}.checkpoints c WHERE c.tenant_id=a.tenant_id AND c.route_id=a.route_id)::int AS checkpoint_count,
+          (SELECT count(*) FROM ${SCHEMA}.readings rd JOIN ${SCHEMA}.round_runs rr
+             ON rr.tenant_id=rd.tenant_id AND rr.id=rd.run_id
+             WHERE rr.tenant_id=a.tenant_id AND rr.assignment_id=a.id)::int AS reading_count,
+          (SELECT count(*) FROM ${SCHEMA}.exceptions e LEFT JOIN ${SCHEMA}.readings rd
+             ON rd.tenant_id=e.tenant_id AND rd.id=e.reading_id JOIN ${SCHEMA}.round_runs rr
+             ON rr.tenant_id=e.tenant_id AND rr.id=coalesce(rd.run_id,e.run_id)
+             WHERE rr.tenant_id=a.tenant_id AND rr.assignment_id=a.id)::int AS exception_count,
+          sk.skip_requested_count,sk.skip_approved_count,sk.skip_rejected_count
+         FROM ${SCHEMA}.assignments a JOIN ${SCHEMA}.route_templates r
+           ON r.tenant_id=a.tenant_id AND r.id=a.route_id
+         LEFT JOIN LATERAL (
+           SELECT count(*) FILTER (WHERE s.state='REQUESTED')::int AS skip_requested_count,
+                  count(*) FILTER (WHERE s.state='APPROVED')::int AS skip_approved_count,
+                  count(*) FILTER (WHERE s.state='REJECTED')::int AS skip_rejected_count
+             FROM ${SCHEMA}.checkpoint_skips s JOIN ${SCHEMA}.round_runs sr ON sr.tenant_id=s.tenant_id AND sr.id=s.run_id
+            WHERE sr.tenant_id=a.tenant_id AND sr.assignment_id=a.id) sk ON true`;
 const checksum = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export function isRoundAssignmentOverdue(state:string,dueAt:Date,graceMinutes:number,now=new Date()):boolean {
   return (state==='ASSIGNED' || state==='STARTED') &&
@@ -31,7 +50,9 @@ const view = (row: AssignmentRow) => ({
   state: row.state, version: Number(row.version),
   ...(row.route_code === undefined ? {} : { routeCode: row.route_code, routeTitle: row.route_title,
     checkpointCount: Number(row.checkpoint_count), readingCount: Number(row.reading_count),
-    exceptionCount: Number(row.exception_count) }),
+    exceptionCount: Number(row.exception_count),
+    skips: { requested: Number(row.skip_requested_count ?? 0), approved: Number(row.skip_approved_count ?? 0),
+      rejected: Number(row.skip_rejected_count ?? 0) } }),
   ...(row.grace_minutes === undefined ? {} : {
     overdue:isRoundAssignmentOverdue(row.state,row.due_at,Number(row.grace_minutes)),
   }),
@@ -138,16 +159,7 @@ export class AssignmentsService {
       const rows = await client.query<AssignmentRow>(
         `SELECT a.${COLUMNS.replaceAll(',', ',a.')},r.route_code,r.title AS route_title,
           COALESCE((r.schedule->>'graceMinutes')::int,0) AS grace_minutes,
-          (SELECT count(*) FROM ${SCHEMA}.checkpoints c WHERE c.tenant_id=a.tenant_id AND c.route_id=a.route_id)::int AS checkpoint_count,
-          (SELECT count(*) FROM ${SCHEMA}.readings rd JOIN ${SCHEMA}.round_runs rr
-             ON rr.tenant_id=rd.tenant_id AND rr.id=rd.run_id
-             WHERE rr.tenant_id=a.tenant_id AND rr.assignment_id=a.id)::int AS reading_count,
-          (SELECT count(*) FROM ${SCHEMA}.exceptions e JOIN ${SCHEMA}.readings rd
-             ON rd.tenant_id=e.tenant_id AND rd.id=e.reading_id JOIN ${SCHEMA}.round_runs rr
-             ON rr.tenant_id=rd.tenant_id AND rr.id=rd.run_id
-             WHERE rr.tenant_id=a.tenant_id AND rr.assignment_id=a.id)::int AS exception_count
-         FROM ${SCHEMA}.assignments a JOIN ${SCHEMA}.route_templates r
-           ON r.tenant_id=a.tenant_id AND r.id=a.route_id
+${PROGRESS}
          WHERE a.tenant_id=$1 AND a.operator_subject=$2 AND a.state IN ('ASSIGNED','STARTED')
          ORDER BY a.scheduled_start,a.id LIMIT $3`,
         [principal.tenantId,principal.subject,Math.min(limit * 5,500)],
@@ -162,16 +174,7 @@ export class AssignmentsService {
       const rows = await client.query<AssignmentRow>(
         `SELECT a.${COLUMNS.replaceAll(',', ',a.')},r.route_code,r.title AS route_title,
           COALESCE((r.schedule->>'graceMinutes')::int,0) AS grace_minutes,
-          (SELECT count(*) FROM ${SCHEMA}.checkpoints c WHERE c.tenant_id=a.tenant_id AND c.route_id=a.route_id)::int AS checkpoint_count,
-          (SELECT count(*) FROM ${SCHEMA}.readings rd JOIN ${SCHEMA}.round_runs rr
-             ON rr.tenant_id=rd.tenant_id AND rr.id=rd.run_id
-             WHERE rr.tenant_id=a.tenant_id AND rr.assignment_id=a.id)::int AS reading_count,
-          (SELECT count(*) FROM ${SCHEMA}.exceptions e JOIN ${SCHEMA}.readings rd
-             ON rd.tenant_id=e.tenant_id AND rd.id=e.reading_id JOIN ${SCHEMA}.round_runs rr
-             ON rr.tenant_id=rd.tenant_id AND rr.id=rd.run_id
-             WHERE rr.tenant_id=a.tenant_id AND rr.assignment_id=a.id)::int AS exception_count
-         FROM ${SCHEMA}.assignments a JOIN ${SCHEMA}.route_templates r
-           ON r.tenant_id=a.tenant_id AND r.id=a.route_id
+${PROGRESS}
          WHERE a.tenant_id=$1 AND a.state IN ('ASSIGNED','STARTED','COMPLETED','MISSED')
          ORDER BY a.due_at DESC,a.id LIMIT $2`,
         [principal.tenantId,Math.min(limit * 5,500)],

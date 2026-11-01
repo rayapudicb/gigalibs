@@ -3,6 +3,10 @@
 import type { RoundCheckpointDraftV1, RoundScheduleV1 } from '@gigalibs/contracts';
 import { Alert, Button, Container, Heading, Input, Label, Text } from '@medusajs/ui';
 import { type DragEvent, type FormEvent, useCallback, useEffect, useState } from 'react';
+import { checkpointBatches } from './checkpoint-batches';
+import {
+  assetSource, lookupSource, meterSource, operatorSource, ReferencePicker,
+} from './reference-pickers';
 import { availableRoundsTabs, canUseRoundsPermission, type RoundsWorkspaceTab } from './rounds-navigation';
 import { RouteJourneyPreview } from './route-journey-preview';
 import { reorderRoundCheckpoints } from './route-order';
@@ -20,12 +24,21 @@ interface BoardItem {
   id:string; routeCode:string; routeTitle:string; operatorSubject:string;
   scheduledStart:string; dueAt:string; state:string; checkpointCount:number;
   readingCount:number; exceptionCount:number; overdue?:boolean;
+  skips?:{requested:number;approved:number;rejected:number};
 }
 interface ExceptionItem {
-  id:string; routeCode:string; checkpointLabel:string; assetRef:string;
+  id:string; origin?:'READING'|'DEFECT'; description?:string|null; reportedBy?:string|null;
+  routeCode:string; checkpointLabel:string; assetRef:string;
   severity:string; state:string; version:number; reviewNote:string|null;
   cmmsWorkOrderRef:string|null; refusalCode:string|null; createdAt:string;
 }
+interface SkipItem {
+  id:string; routeCode:string; checkpointLabel:string; assetRef:string; reasonCode:string; note:string|null;
+  requestedBy:string; capturedAt:string; state:'REQUESTED'|'APPROVED'|'REJECTED'; decidedBy:string|null;
+  decisionNote:string|null; version:number;
+}
+const SKIP_REASONS:Record<string,string> = {INACCESSIBLE:'Inaccessible',UNSAFE:'Unsafe to approach',
+  ASSET_OUT_OF_SERVICE:'Asset out of service',TAG_DAMAGED:'Tag damaged or missing',OTHER:'Other'};
 interface RosterEntry { workforceResourceRef:string;operatorSubject:string }
 interface Roster { version:number;entries:RosterEntry[];updatedBy:string|null;updatedAt:string|null }
 interface GenerationResult { localDate:string;scheduledStart:string|null;dueAt:string|null;
@@ -47,6 +60,8 @@ async function call<T>(path:string,init:RequestInit = {}):Promise<T> {
   return body as T;
 }
 const json = (value:unknown) => JSON.stringify(value);
+const unitLookup = lookupSource('organization-units');
+const placeLookup = lookupSource('workspace-sites');
 const text = (value:string|null|undefined) => value ?? '';
 const nullable = (value:string) => value.trim() || null;
 const datetime = (value:string) => value ? new Date(value).toLocaleString() : '—';
@@ -64,6 +79,9 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
   const [points,setPoints] = useState<RoundCheckpointDraftV1[]>([]);
   const [board,setBoard] = useState<BoardItem[]>([]);
   const [exceptions,setExceptions] = useState<ExceptionItem[]>([]);
+  const [skips,setSkips] = useState<SkipItem[]>([]);
+  const [skipAction,setSkipAction] = useState<{id:string;decision:'APPROVED'|'REJECTED'}|null>(null);
+  const [skipNote,setSkipNote] = useState('');
   const [tab,setTab] = useState<RoundsWorkspaceTab>(visibleTabs[0] ?? 'routes');
   const activeTab = visibleTabs.includes(tab) ? tab : visibleTabs[0] ?? null;
   const [error,setError] = useState<string|null>(null);
@@ -95,12 +113,13 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
   const [exceptionNote,setExceptionNote] = useState('');
 
   const load = useCallback(async () => {
-    const [r,b,e] = await Promise.all([
+    const [r,b,e,k] = await Promise.all([
       can('operator-rounds.routes.read') ? call<{items:Route[]}>('/routes') : Promise.resolve({items:[]}),
       can('operator-rounds.board.read') ? call<{items:BoardItem[]}>('/assignments/board') : Promise.resolve({items:[]}),
       can('operator-rounds.exceptions.read') ? call<{items:ExceptionItem[]}>('/exceptions') : Promise.resolve({items:[]}),
+      can('operator-rounds.skips.approve') ? call<{items:SkipItem[]}>('/skips') : Promise.resolve({items:[]}),
     ]);
-    setRoutes(r.items); setBoard(b.items); setExceptions(e.items);
+    setRoutes(r.items); setBoard(b.items); setExceptions(e.items); setSkips(k.items);
   // permissions are fixed by the server-rendered session for this mount.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
@@ -163,8 +182,18 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
   async function savePoints() {
     if (!selected) return;
     await action(async () => {
-      await call(`/routes/${selected.id}/checkpoints`,{method:'POST',body:json({routeVersion:selected.version,
-        checkpoints:points.map((point,index) => ({...point,position:index+1}))})});
+      // Bounded batches, then one atomic finalize: a 1,000-checkpoint draft never sends one oversized request, and the
+      // saved checkpoints change only when every batch arrived.
+      const ordered = points.map((point,index) => ({...point,position:index+1}));
+      const batches = checkpointBatches(ordered);
+      const uploadId = crypto.randomUUID();
+      for (const [batchIndex,checkpoints] of batches.entries()) {
+        if (batches.length > 1) setNotice(`Saving checkpoints: batch ${batchIndex+1} of ${batches.length}…`);
+        await call(`/routes/${selected.id}/checkpoint-batches`,{method:'POST',body:json({routeVersion:selected.version,
+          uploadId,batchIndex,batchCount:batches.length,checkpoints})});
+      }
+      await call(`/routes/${selected.id}/checkpoints/finalize`,{method:'POST',body:json({routeVersion:selected.version,
+        uploadId,batchCount:batches.length,checkpointCount:ordered.length})});
       await open(selected.id);setNotice('Checkpoints saved to this draft revision.');
     });
   }
@@ -234,6 +263,16 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
       setExceptionAction(null);setExceptionNote('');
     });
   }
+  async function submitSkip(event:FormEvent,item:SkipItem) {
+    event.preventDefault();
+    if (skipAction?.id!==item.id || !skipNote.trim()) return;
+    await action(async () => {
+      await call(`/skips/${item.id}/decision`,{method:'POST',
+        body:json({version:item.version,decision:skipAction.decision,note:skipNote.trim()})});
+      setNotice(skipAction.decision==='APPROVED' ? 'Skip approved.' : 'Skip rejected; the checkpoint is reported as a conformance gap.');
+      setSkipAction(null);setSkipNote('');
+    });
+  }
   function beginException(item:ExceptionItem,kind:'ACKNOWLEDGED'|'RESOLVED'|'RETRY') {
     setExceptionAction({id:item.id,kind});setExceptionNote('');setError(null);
   }
@@ -265,7 +304,7 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Rounds workspace">
         {visibleTabs.map((item) =>
           <Button key={item} type="button" variant={activeTab === item ? 'primary' : 'secondary'}
-            onClick={() => setTab(item)}>{item === 'routes' ? 'Routes' : item === 'board' ? 'Live board' : 'Exceptions'}</Button>)}
+            onClick={() => setTab(item)}>{item === 'routes' ? 'Routes' : item === 'board' ? 'Live board' : item === 'exceptions' ? 'Exceptions' : 'Skip approvals'}</Button>)}
       </div>
       {visibleTabs.length === 0 && <Alert variant="error">Rounds access is not assigned to this account.</Alert>}
       {error && <Alert variant="error">{error}</Alert>}
@@ -294,8 +333,10 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
         {selected && <Text size="small">{selected.state} · version {selected.version}</Text>}
         {(!selected || selected.state === 'DRAFT') && can('operator-rounds.routes.manage') && <div className="grid gap-3 md:grid-cols-2">
           {selected && <div className="flex flex-col gap-1"><Label htmlFor="edit-title">Title</Label><Input id="edit-title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)}/></div>}
-          <div className="flex flex-col gap-1"><Label htmlFor="unit">Owning unit ID</Label><Input id="unit" value={unit} onChange={(e) => setUnit(e.target.value)}/></div>
-          <div className="flex flex-col gap-1"><Label htmlFor="place">Place ID</Label><Input id="place" value={place} onChange={(e) => setPlace(e.target.value)}/></div>
+          <ReferencePicker id="unit" label="Owning unit" value={unit} search={unitLookup.search} resolve={unitLookup.resolve}
+            manualLabel="Organization unit ID" placeholder="Search units by name or code" onChange={(option) => setUnit(option?.value ?? '')}/>
+          <ReferencePicker id="place" label="Place" value={place} search={placeLookup.search} resolve={placeLookup.resolve}
+            manualLabel="Place ID" placeholder="Search sites and places" onChange={(option) => setPlace(option?.value ?? '')}/>
           <div className="flex flex-col gap-1"><Label htmlFor="cadence">Cadence</Label><select id="cadence" className="rounded border p-2" value={cadence} onChange={(e) => setCadence(e.target.value as RoundScheduleV1['cadence'])}><option value="DAILY">Daily</option><option value="PER_SHIFT">Per shift</option><option value="WEEKLY">Weekly</option></select></div>
           <div className="flex flex-col gap-1"><Label htmlFor="zone">IANA time zone</Label><Input id="zone" value={timeZone} onChange={(e) => setTimeZone(e.target.value)}/></div>
           {cadence !== 'PER_SHIFT' && <div className="flex flex-col gap-1"><Label htmlFor="time">Local time</Label><Input id="time" type="time" value={localTime} onChange={(e) => setLocalTime(e.target.value)}/></div>}
@@ -315,8 +356,16 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
             <div className="flex items-center justify-between"><strong>Checkpoint {index+1}</strong><Button size="small" variant="secondary" type="button" onClick={() => setPoints((old) => old.filter((_,i) => i !== index).map((item,i) => ({...item,position:i+1})))}>Remove</Button></div>
             <div className="grid gap-2 md:grid-cols-2">
               <Field label="Label" value={point.label} onChange={(value) => editPoint(index,{label:value})}/>
-              <Field label="CMMS asset reference" value={point.assetRef} onChange={(value) => editPoint(index,{assetRef:value})}/>
-              <Field label="CMMS meter reference" value={text(point.meterRef)} onChange={(value) => editPoint(index,{meterRef:nullable(value)})}/>
+              <ReferencePicker id={`asset-${index}`} label="CMMS asset" value={point.assetRef} search={assetSource.search}
+                resolve={assetSource.resolve} manualLabel="CMMS asset ID" placeholder="Search assets by tag or name"
+                onChange={(option) => editPoint(index,{assetRef:option?.value ?? '',meterRef:option ? point.meterRef : null,
+                  // The asset tag is offered as the checkpoint tag only when none was typed yet.
+                  tagCode:point.tagCode || option?.data?.assetTag || ''})}/>
+              {point.assetRef ? <ReferencePicker key={point.assetRef} id={`meter-${index}`} label="CMMS meter (optional)"
+                value={text(point.meterRef)} search={meterSource(point.assetRef).search} resolve={meterSource(point.assetRef).resolve}
+                manualLabel="CMMS meter ID" placeholder="Search this asset's meters"
+                onChange={(option) => editPoint(index,{meterRef:option?.value ?? null,
+                  unitCode:point.unitCode ?? (option?.data?.unit || null)})}/> : <span/>}
               <Field label="Physical tag code" value={point.tagCode} onChange={(value) => editPoint(index,{tagCode:value})}/>
               <div className="flex flex-col gap-1"><Label>Scan method</Label><select className="rounded border p-2" value={point.proofMode} onChange={(e) => editPoint(index,{proofMode:e.target.value as RoundCheckpointDraftV1['proofMode']})}><option value="EITHER">NFC or barcode</option><option value="NFC">NFC</option><option value="BARCODE">Barcode</option></select></div>
               <div className="flex flex-col gap-1"><Label>Reading type</Label><select className="rounded border p-2" value={point.readingKind} onChange={(e) => {
@@ -373,8 +422,10 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
           <RoundInspectionTrend key={selected.id} checkpoints={selected.checkpoints ?? []}/>}
         {selected?.state === 'PUBLISHED' && can('operator-rounds.assignments.manage') && <form className="grid gap-2 md:grid-cols-2" onSubmit={assign}>
           <Heading level="h3">Assign published route</Heading><span/>
-          <Field label="Operator user ID" value={assignmentSubject} onChange={setAssignmentSubject}/>
-          <Field label="Workforce resource ID" value={workforceResource} onChange={setWorkforceResource}/>
+          <ReferencePicker id="assign-operator" label="Operator" value={workforceResource} search={operatorSource.search}
+            resolve={operatorSource.resolve} manualLabel="Workforce resource ID" placeholder="Search people with a login"
+            onChange={(option) => {setWorkforceResource(option?.value ?? '');setAssignmentSubject(option?.data?.operatorSubject ?? '');}}/>
+          {workforceResource && !assignmentSubject ? <Field label="Operator user ID" value={assignmentSubject} onChange={setAssignmentSubject}/> : <span/>}
           <div className="flex flex-col gap-1"><Label htmlFor="assign-start">Scheduled start</Label><Input id="assign-start" type="datetime-local" value={assignmentStart} onChange={(e) => setAssignmentStart(e.target.value)} required/></div>
           <div className="flex flex-col gap-1"><Label htmlFor="assign-due">Due at</Label><Input id="assign-due" type="datetime-local" value={assignmentDue} onChange={(e) => setAssignmentDue(e.target.value)} required/></div>
           <Button type="submit" disabled={busy}>Create assignment</Button>
@@ -389,8 +440,11 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
               onClick={() => {setRoster((current) => ({...current,entries:current.entries.filter((item) => item.workforceResourceRef!==entry.workforceResourceRef)}));setRosterDirty(true);}}>Remove</Button>
           </div>)}
           <div className="grid gap-2 md:grid-cols-2">
-            <Field label="Operator user ID" value={rosterSubject} onChange={setRosterSubject}/>
-            <Field label="Workforce resource ID" value={rosterResource} onChange={setRosterResource}/>
+            <ReferencePicker key={`roster-${roster.entries.length}`} id="roster-operator" label="Operator" value={rosterResource}
+              search={operatorSource.search} resolve={operatorSource.resolve} manualLabel="Workforce resource ID"
+              placeholder="Search people with a login"
+              onChange={(option) => {setRosterResource(option?.value ?? '');setRosterSubject(option?.data?.operatorSubject ?? '');}}/>
+            {rosterResource && !rosterSubject ? <Field label="Operator user ID" value={rosterSubject} onChange={setRosterSubject}/> : <span/>}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="secondary" disabled={busy || roster.entries.length>=10} onClick={addRosterEntry}>Add operator</Button>
@@ -417,19 +471,21 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
       <Heading level="h2">Live inspections</Heading>
       <Text size="small">Accepted server readings update this board every 15 seconds.</Text>
       {!can('operator-rounds.board.read') ? <Text>Board permission is required.</Text> : board.length === 0 ? <Text>No assignments yet.</Text> :
-        <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th>Route</th><th>Operator</th><th>Status</th><th>Readings</th><th>Exceptions</th><th>Due</th></tr></thead><tbody>{board.map((item) =>
+        <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th>Route</th><th>Operator</th><th>Status</th><th>Readings</th><th>Exceptions</th><th>Skips</th><th>Due</th></tr></thead><tbody>{board.map((item) =>
           <tr key={item.id} className="border-t"><td>{item.routeTitle} ({item.routeCode})</td><td>{item.operatorSubject}</td><td>{item.overdue ? 'OVERDUE' : item.state}</td><td>
             {item.readingCount} accepted
-          </td><td>{item.exceptionCount}</td><td>{datetime(item.dueAt)}</td></tr>)}</tbody></table></div>}
+          </td><td>{item.exceptionCount}</td><td>{item.skips ? skipSummary(item.skips) : '—'}</td><td>{datetime(item.dueAt)}</td></tr>)}</tbody></table></div>}
     </Container>}
 
     {activeTab === 'exceptions' && <Container className="flex flex-col gap-3">
       <Heading level="h2">Exception review</Heading>
       {!can('operator-rounds.exceptions.read') ? <Text>Exception permission is required.</Text> : exceptions.length === 0 ? <Text>No exceptions.</Text> :
         <div className="flex flex-col gap-3">{exceptions.map((item) => <div key={item.id} className="rounded border border-ui-border-base p-3">
-          <div className="flex flex-wrap justify-between gap-2"><strong>{item.severity} · {item.routeCode} · {item.checkpointLabel}</strong><span>{item.state}</span></div>
+          <div className="flex flex-wrap justify-between gap-2"><strong>{item.origin === 'DEFECT' ? 'Defect' : item.severity} · {item.routeCode} · {item.checkpointLabel}</strong><span>{item.state}</span></div>
+          {item.origin === 'DEFECT' && <Text size="small">{item.severity} defect reported by {item.reportedBy}: {item.description}</Text>}
           <Text size="small">Asset {item.assetRef} · {datetime(item.createdAt)}</Text>
-          <Text size="small">CMMS work order: {item.cmmsWorkOrderRef ?? (item.refusalCode ? `Refused: ${item.refusalCode}` : 'Pending reconciliation')}</Text>
+          <Text size="small">CMMS work order: {item.cmmsWorkOrderRef ?? (item.refusalCode ? `Refused: ${item.refusalCode}`
+            : item.origin === 'DEFECT' && item.state === 'OPEN' ? 'Not requested; supervisor review' : 'Pending reconciliation')}</Text>
           {item.reviewNote && <Text size="small">Review: {item.reviewNote}</Text>}
           {can('operator-rounds.exceptions.review') && item.state !== 'RESOLVED' && <div className="mt-2 flex flex-wrap gap-2"><Button type="button" size="small" variant="secondary" disabled={busy} onClick={() => beginException(item,'ACKNOWLEDGED')}>Add review</Button><Button type="button" size="small" disabled={busy || item.state === 'ACTION_PENDING'} onClick={() => beginException(item,'RESOLVED')}>Resolve</Button>{item.state === 'ACTION_REJECTED' && <Button type="button" size="small" disabled={busy} onClick={() => beginException(item,'RETRY')}>Retry CMMS action</Button>}</div>}
           {exceptionAction?.id===item.id && <form className="mt-3 flex flex-col gap-2 rounded border border-ui-border-base p-3" onSubmit={(event) => void submitException(event,item)}>
@@ -443,7 +499,35 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
           </form>}
         </div>)}</div>}
     </Container>}
+
+    {activeTab === 'skips' && <Container className="flex flex-col gap-3">
+      <Heading level="h2">Skip approvals</Heading>
+      <Text size="small">An operator passed these checkpoints without a reading. A different authorized person approves or rejects each one; a rejected skip stays on the run as a conformance gap.</Text>
+      {skips.length === 0 ? <Text>No skip requests.</Text> :
+        <div className="flex flex-col gap-3">{skips.map((item) => <div key={item.id} className="rounded border border-ui-border-base p-3">
+          <div className="flex flex-wrap justify-between gap-2"><strong>{item.routeCode} · {item.checkpointLabel}</strong><span>{item.state}</span></div>
+          <Text size="small">{SKIP_REASONS[item.reasonCode] ?? item.reasonCode}{item.note ? `: ${item.note}` : ''}</Text>
+          <Text size="small">Requested by {item.requestedBy} · {datetime(item.capturedAt)} · Asset {item.assetRef}</Text>
+          {item.decidedBy && <Text size="small">Decided by {item.decidedBy}: {item.decisionNote}</Text>}
+          {item.state === 'REQUESTED' && <div className="mt-2 flex flex-wrap gap-2">
+            <Button type="button" size="small" variant="secondary" disabled={busy} onClick={() => {setSkipAction({id:item.id,decision:'APPROVED'});setSkipNote('');}}>Approve</Button>
+            <Button type="button" size="small" variant="secondary" disabled={busy} onClick={() => {setSkipAction({id:item.id,decision:'REJECTED'});setSkipNote('');}}>Reject</Button></div>}
+          {skipAction?.id===item.id && <form className="mt-3 flex flex-col gap-2 rounded border border-ui-border-base p-3" onSubmit={(event) => void submitSkip(event,item)}>
+            <Heading level="h3">{skipAction.decision==='APPROVED' ? 'Approve skip' : 'Reject skip'}</Heading>
+            <Label htmlFor={`skip-note-${item.id}`}>Decision note</Label>
+            <Input id={`skip-note-${item.id}`} value={skipNote} maxLength={2000} required onChange={(event) => setSkipNote(event.target.value)}/>
+            <div className="flex gap-2"><Button type="submit" size="small" disabled={busy || !skipNote.trim()}>Confirm {skipAction.decision==='APPROVED' ? 'approval' : 'rejection'}</Button>
+              <Button type="button" size="small" variant="secondary" disabled={busy} onClick={() => {setSkipAction(null);setSkipNote('');}}>Cancel</Button></div>
+          </form>}
+        </div>)}</div>}
+    </Container>}
   </div>;
+}
+
+function skipSummary(skips:{requested:number;approved:number;rejected:number}):string {
+  const parts = [skips.requested ? `${skips.requested} pending` : '', skips.approved ? `${skips.approved} approved` : '',
+    skips.rejected ? `${skips.rejected} rejected` : ''].filter(Boolean);
+  return parts.length ? parts.join(' · ') : 'None';
 }
 
 function Field({label,value,onChange}:{readonly label:string;readonly value:string;readonly onChange:(value:string) => void}) {

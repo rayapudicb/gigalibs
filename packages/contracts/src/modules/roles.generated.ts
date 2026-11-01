@@ -534,7 +534,8 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "operator-rounds.board.read",
       "operator-rounds.exceptions.read",
       "operator-rounds.exceptions.review",
-      "operator-rounds.runs.execute"
+      "operator-rounds.runs.execute",
+      "operator-rounds.skips.approve"
     ]
   },
   {

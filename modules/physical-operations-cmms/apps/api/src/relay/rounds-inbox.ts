@@ -68,10 +68,17 @@ export class RoundsInboxService {
     if (!parsed.success || parsed.data.exceptionId !== envelope.data.aggregateId)
       throw new BadRequestException('Invalid Rounds corrective-action payload.');
     const command = parsed.data;
-    const title = `Round exception: ${command.checkpointLabel}`;
-    const description = JSON.stringify({ source:'operator-rounds', exceptionId:command.exceptionId,
-      readingId:command.readingId, runId:command.runId, routeId:command.routeId,
-      checkpointId:command.checkpointId, observedAt:command.observedAt, reading:command.reading });
+    // A threshold exception keeps the exact description it always had, so a replayed request still matches its work
+    // order; a defect carries the operator's words instead of a reading.
+    const defect = command.origin === 'DEFECT';
+    const title = `${defect ? 'Round defect' : 'Round exception'}: ${command.checkpointLabel}`;
+    const description = defect
+      ? JSON.stringify({ source:'operator-rounds', origin:'DEFECT', exceptionId:command.exceptionId,
+        runId:command.runId, routeId:command.routeId, checkpointId:command.checkpointId,
+        observedAt:command.observedAt, defect:command.defectDescription })
+      : JSON.stringify({ source:'operator-rounds', exceptionId:command.exceptionId,
+        readingId:command.readingId, runId:command.runId, routeId:command.routeId,
+        checkpointId:command.checkpointId, observedAt:command.observedAt, reading:command.reading });
     const create = CreateCmmsWorkOrderV1Schema.parse({ requestKey:command.requestKey,
       type:'REACTIVE', priority:command.severity === 'RED' ? 'HIGH' : 'MEDIUM',
       title, description, assetId:command.assetId });
