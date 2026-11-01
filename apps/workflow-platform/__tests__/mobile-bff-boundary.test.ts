@@ -129,6 +129,22 @@ describe('mobile v1 BFF front door', () => {
     expect(upstreamFetch).toHaveBeenCalledTimes(4);
   });
 
+  it('forwards the commissioning routes, UUID-bound where a walk is named (WI-OI-135)', async () => {
+    const id = '10000000-0000-4000-8000-000000000001';
+    upstreamFetch.mockImplementation(async () => new Response('{}', { status: 200 }));
+    const auth = { headers: { Authorization: 'Bearer mobile-token' } };
+    const post = (path: string) => POST(mobileRequest(path, { ...auth, method: 'POST', body: '{}' }), context(path.split('/')));
+    expect((await GET(mobileRequest('commissioning/context', auth), context(['commissioning', 'context']))).status).toBe(200);
+    for (const path of ['commissioning/requests', 'commissioning/tags/resolve', 'commissioning/walks',
+      `commissioning/walks/${id}/sightings`, `commissioning/walks/${id}/finish`]) expect((await post(path)).status).toBe(200);
+    expect((await GET(mobileRequest(`commissioning/walks/${id}/report`, auth),
+      context(['commissioning', 'walks', id, 'report']))).status).toBe(200);
+    expect(upstreamFetch).toHaveBeenCalledTimes(7);
+    expect((await post('commissioning/walks/nope/finish')).status).toBe(404);
+    expect((await GET(mobileRequest(`commissioning/walks/${id}/finish`), context(['commissioning', 'walks', id, 'finish']))).status).toBe(404);
+    expect(upstreamFetch).toHaveBeenCalledTimes(7);
+  });
+
   it('forwards only the listed Rounds supervisor board read', async () => {
     upstreamFetch.mockResolvedValueOnce(new Response('{"items":[]}', {status:200}));
     const response=await GET(mobileRequest('rounds/board'),context(['rounds','board']));

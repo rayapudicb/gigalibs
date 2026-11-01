@@ -7,6 +7,7 @@ import { MfaAssistedRecoveryService } from './mfa-assisted-recovery.service.js';
 import { MobileAuthController } from './mobile/mobile-auth.controller.js';
 import { MobileAuthService } from './mobile/mobile-auth.service.js';
 import { MobileCalibrationController } from './mobile/mobile-calibration.controller.js';
+import { MobileCommissioningController } from './mobile/mobile-commissioning.controller.js';
 import { MobileRoundsController } from './mobile/mobile-rounds.controller.js';
 import { OidcService } from './oidc.service.js';
 
@@ -15,7 +16,7 @@ export interface AuthModuleOptions {
 }
 
 @Module({
-  controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController],
+  controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController],
   providers: [Reflector, AuthService, OidcService, MfaAssistedRecoveryService, MobileAuthService, JwtAuthGuard],
   exports: [AuthService, OidcService, MfaAssistedRecoveryService, JwtAuthGuard],
 })
@@ -39,7 +40,7 @@ export class AuthModule {
 
     return {
       module: AuthModule,
-      controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController],
+      controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController],
       providers: providers as any,
       exports: [AuthService, OidcService, MfaAssistedRecoveryService, JwtAuthGuard],
     };

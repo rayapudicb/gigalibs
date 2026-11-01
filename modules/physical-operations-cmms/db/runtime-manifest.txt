@@ -24,3 +24,4 @@
 000025_cmms_downtime_analytics_backfill.up.sql
 000026_round_exception_origin.up.sql
 000027_instrument_calibration.up.sql
+000028_asset_tagging_commissioning.up.sql

@@ -96,6 +96,12 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
   // WI-OI-134 M-CAL: calibration is a CMMS (asset-maintenance) journey for members who may execute calibrations.
   const calibrationEnabled = entitlements.includes('asset-maintenance') && projected.some((assignment) =>
     holdsPermission(assignment.permissions,'cmms.calibration.execute'));
+  const commissioningCapabilities = entitlements.includes('asset-maintenance') ? [
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.commissioning.submit'))
+      ? ['cmms.commissioning.submit'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.audits.execute'))
+      ? ['cmms.audits.execute'] : []),
+  ] : [];
   const modules = [
     ...(roundsEnabled ? [{
       key:'operator-rounds',enabled:true,navigationOrder:370,
@@ -111,6 +117,13 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
       capabilities:['cmms.calibration.execute'],
       presentationRevision:'calibration.v1',
       requiredDeviceCapabilities:[],
+    }] : []),
+    // WI-OI-135 M-TAG: commissioning proposals and floor walks, each by its own permission.
+    ...(commissioningCapabilities.length ? [{
+      key:'commissioning',enabled:true,navigationOrder:390,
+      capabilities:commissioningCapabilities,
+      presentationRevision:'commissioning.v1',
+      requiredDeviceCapabilities:['camera'],
     }] : []),
   ];
 

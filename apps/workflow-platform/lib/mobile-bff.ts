@@ -23,6 +23,11 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   // WI-OI-134 M-CAL.
   'GET calibration/instruments': '/api/v1/mobile/calibration/instruments',
   'POST calibration/records': '/api/v1/mobile/calibration/records',
+  // WI-OI-135 M-TAG.
+  'GET commissioning/context': '/api/v1/mobile/commissioning/context',
+  'POST commissioning/requests': '/api/v1/mobile/commissioning/requests',
+  'POST commissioning/tags/resolve': '/api/v1/mobile/commissioning/tags/resolve',
+  'POST commissioning/walks': '/api/v1/mobile/commissioning/walks',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -51,6 +56,11 @@ function mobileUpstreamPath(method: string, path: readonly string[]): string | u
   if (method === 'GET' && path.length === 3 && path[0] === 'calibration' &&
       path[1] === 'records' && UUID.test(path[2] ?? ''))
     return `/api/v1/mobile/calibration/records/${path[2]}`;
+  if (path.length === 4 && path[0] === 'commissioning' && path[1] === 'walks' && UUID.test(path[2] ?? '')) {
+    if (method === 'POST' && (path[3] === 'sightings' || path[3] === 'finish'))
+      return `/api/v1/mobile/commissioning/walks/${path[2]}/${path[3]}`;
+    if (method === 'GET' && path[3] === 'report') return `/api/v1/mobile/commissioning/walks/${path[2]}/report`;
+  }
   return undefined;
 }
 

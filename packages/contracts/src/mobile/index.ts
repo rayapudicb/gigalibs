@@ -264,6 +264,10 @@ export const MOBILE_PROBLEMS = {
     status: 409,
     title: 'The calibration profile or a standard changed. Download the instrument again and repeat the calibration.',
   },
+  MOBILE_COMMISSIONING_CONFLICT: {
+    status: 409,
+    title: 'The tag is already bound, the walk is finished, or this capture was already used. Check and try again.',
+  },
   MOBILE_SELECTION_EXPIRED: { status: 410, title: 'That choice has expired. Load the workspaces again.' },
   MOBILE_CONTRACT_UNSUPPORTED: { status: 426, title: 'This app version or profile is not supported.' },
   MOBILE_UNAVAILABLE: { status: 503, title: 'The service is unavailable. Try again shortly.' },

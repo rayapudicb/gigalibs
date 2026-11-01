@@ -6,6 +6,7 @@ import {
   UpdateCmmsAssetV1Schema,
   type CmmsAssetV1,
   type CmmsPageV1,
+  type CreateCmmsAssetV1,
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
 import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js';
@@ -90,6 +91,12 @@ export class AssetsService {
 
   async create(context: CmmsCommandContext, raw: unknown): Promise<CmmsAssetV1> {
     const input = parseInput(CreateCmmsAssetV1Schema, raw);
+    return this.database.withTenantTransaction(context.principal.tenantId, (client) =>
+      this.createWithClient(client, context, input));
+  }
+
+  /** WI-OI-135: creates an asset inside the caller's transaction (commissioning approval), with the same checks. */
+  async createWithClient(client: PoolClient, context: CmmsCommandContext, input: CreateCmmsAssetV1): Promise<CmmsAssetV1> {
     const departmentId = input.departmentId ?? null;
     const siteRef = input.siteRef ?? null;
     assertWritableScope(context.principal, { departmentId, siteRef });
@@ -97,55 +104,53 @@ export class AssetsService {
     if (spaceId) assertUuid(spaceId, 'spaceId');
     const classificationId = input.classificationId === undefined ? null : input.classificationId;
     if (classificationId) assertUuid(classificationId, 'classificationId');
-    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      if (spaceId) await this.assertVisibleSpace(client, context.principal, spaceId);
-      if (input.parentAssetId) await this.visibleAsset(client, context.principal, input.parentAssetId, false);
-      try {
-        const result = await client.query<{ id: string }>(
-          `INSERT INTO gigalibs_cmms.assets
-             (tenant_id, asset_tag, name, description, category, status, criticality, manufacturer, model,
-              serial_number, parent_asset_id, site_ref, department_id, space_id, classification_id, acquisition_cost, currency_code,
-              purchase_date, warranty_expiry, specs, created_by, updated_by, correlation_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::jsonb, $21, $21, $22)
-           RETURNING id`,
-          [
-            context.principal.tenantId,
-            input.assetTag,
-            input.name,
-            input.description ?? null,
-            input.category ?? null,
-            input.status ?? 'OPERATIONAL',
-            input.criticality ?? 'MEDIUM',
-            input.manufacturer ?? null,
-            input.model ?? null,
-            input.serialNumber ?? null,
-            input.parentAssetId ?? null,
-            siteRef,
-            departmentId,
-            spaceId,
-            classificationId,
-            input.acquisitionCost ?? null,
-            input.currencyCode ?? null,
-            input.purchaseDate ?? null,
-            input.warrantyExpiry ?? null,
-            JSON.stringify(input.specs ?? {}),
-            context.principal.subject,
-            context.correlationId,
-          ],
-        );
-        const id = result.rows[0]!.id;
-        await recordMutation(client, context, {
-          action: 'CMMS_ASSET_CREATED',
-          aggregateType: 'CMMS_ASSET',
-          aggregateId: id,
-          aggregateVersion: 1,
-          payload: { assetTag: input.assetTag, siteRef, status: input.status ?? 'OPERATIONAL' },
-        });
-        return this.visibleAsset(client, context.principal, id, true);
-      } catch (error) {
-        translateConstraint(error, { unique: `An asset with tag ${input.assetTag} already exists.` });
-      }
-    });
+    if (spaceId) await this.assertVisibleSpace(client, context.principal, spaceId);
+    if (input.parentAssetId) await this.visibleAsset(client, context.principal, input.parentAssetId, false);
+    try {
+      const result = await client.query<{ id: string }>(
+        `INSERT INTO gigalibs_cmms.assets
+           (tenant_id, asset_tag, name, description, category, status, criticality, manufacturer, model,
+            serial_number, parent_asset_id, site_ref, department_id, space_id, classification_id, acquisition_cost, currency_code,
+            purchase_date, warranty_expiry, specs, created_by, updated_by, correlation_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::jsonb, $21, $21, $22)
+         RETURNING id`,
+        [
+          context.principal.tenantId,
+          input.assetTag,
+          input.name,
+          input.description ?? null,
+          input.category ?? null,
+          input.status ?? 'OPERATIONAL',
+          input.criticality ?? 'MEDIUM',
+          input.manufacturer ?? null,
+          input.model ?? null,
+          input.serialNumber ?? null,
+          input.parentAssetId ?? null,
+          siteRef,
+          departmentId,
+          spaceId,
+          classificationId,
+          input.acquisitionCost ?? null,
+          input.currencyCode ?? null,
+          input.purchaseDate ?? null,
+          input.warrantyExpiry ?? null,
+          JSON.stringify(input.specs ?? {}),
+          context.principal.subject,
+          context.correlationId,
+        ],
+      );
+      const id = result.rows[0]!.id;
+      await recordMutation(client, context, {
+        action: 'CMMS_ASSET_CREATED',
+        aggregateType: 'CMMS_ASSET',
+        aggregateId: id,
+        aggregateVersion: 1,
+        payload: { assetTag: input.assetTag, siteRef, status: input.status ?? 'OPERATIONAL' },
+      });
+      return this.visibleAsset(client, context.principal, id, true);
+    } catch (error) {
+      translateConstraint(error, { unique: `An asset with tag ${input.assetTag} already exists.` });
+    }
   }
 
   async update(context: CmmsCommandContext, assetId: string, raw: unknown): Promise<CmmsAssetV1> {

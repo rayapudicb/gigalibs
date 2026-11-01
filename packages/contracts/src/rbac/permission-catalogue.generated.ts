@@ -316,6 +316,19 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "cmms.audits.execute",
+    "entries": [
+      "asset-maintenance",
+      "platform"
+    ]
+  },
+  {
+    "code": "cmms.audits.read",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
     "code": "cmms.calibration.approve",
     "entries": [
       "asset-maintenance"
@@ -344,6 +357,25 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "cmms.calibration.read",
     "entries": [
       "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.commissioning.approve",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.commissioning.read",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.commissioning.submit",
+    "entries": [
+      "asset-maintenance",
+      "platform"
     ]
   },
   {

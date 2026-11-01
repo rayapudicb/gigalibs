@@ -2241,6 +2241,79 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/commissioning/context",
+        "pattern": "^v1/commissioning/context$",
+        "methods": {
+          "GET": "cmms.commissioning.read"
+        }
+      },
+      {
+        "template": "v1/commissioning/requests",
+        "pattern": "^v1/commissioning/requests$",
+        "methods": {
+          "GET": "cmms.commissioning.read",
+          "POST": "cmms.commissioning.submit"
+        }
+      },
+      {
+        "template": "v1/commissioning/requests/{id}",
+        "pattern": "^v1/commissioning/requests/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.commissioning.read"
+        }
+      },
+      {
+        "template": "v1/commissioning/requests/{id}/decision",
+        "pattern": "^v1/commissioning/requests/[0-9a-fA-F-]{36}/decision$",
+        "methods": {
+          "POST": "cmms.commissioning.approve"
+        }
+      },
+      {
+        "template": "v1/asset-tags/resolve",
+        "pattern": "^v1/asset-tags/resolve$",
+        "methods": {
+          "GET": "cmms.assets.read"
+        }
+      },
+      {
+        "template": "v1/asset-tags/{id}/retire",
+        "pattern": "^v1/asset-tags/[0-9a-fA-F-]{36}/retire$",
+        "methods": {
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/assets/{id}/tags",
+        "pattern": "^v1/assets/[0-9a-fA-F-]{36}/tags$",
+        "methods": {
+          "GET": "cmms.assets.read",
+          "POST": "cmms.assets.write"
+        }
+      },
+      {
+        "template": "v1/asset-audits",
+        "pattern": "^v1/asset-audits$",
+        "methods": {
+          "GET": "cmms.audits.read",
+          "POST": "cmms.audits.execute"
+        }
+      },
+      {
+        "template": "v1/asset-audits/{id}/sightings|finish",
+        "pattern": "^v1/asset-audits/[0-9a-fA-F-]{36}/(?:sightings|finish)$",
+        "methods": {
+          "POST": "cmms.audits.execute"
+        }
+      },
+      {
+        "template": "v1/asset-audits/{id}/report",
+        "pattern": "^v1/asset-audits/[0-9a-fA-F-]{36}/report$",
+        "methods": {
+          "GET": "cmms.audits.read"
+        }
+      },
+      {
         "template": "v1/parts/storerooms",
         "pattern": "^v1/parts/storerooms$",
         "methods": {

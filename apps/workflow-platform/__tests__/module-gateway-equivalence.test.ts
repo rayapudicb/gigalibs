@@ -110,6 +110,21 @@ const CALIBRATION_ROUTES: readonly (readonly [string, string, string])[] = [
   ['GET', 'calibration/records/{id}', 'cmms.calibration.read'],
   ['POST', 'calibration/records/{id}/decision', 'cmms.calibration.approve'],
   ['GET', 'calibration/records/{id}/certificate', 'cmms.calibration.read'],
+  // WI-OI-135 M-TAG, from CommissioningController, AssetTagsController and AssetAuditsController.
+  ['GET', 'commissioning/context', 'cmms.commissioning.read'],
+  ['GET', 'commissioning/requests', 'cmms.commissioning.read'],
+  ['POST', 'commissioning/requests', 'cmms.commissioning.submit'],
+  ['GET', 'commissioning/requests/{id}', 'cmms.commissioning.read'],
+  ['POST', 'commissioning/requests/{id}/decision', 'cmms.commissioning.approve'],
+  ['GET', 'asset-tags/resolve', 'cmms.assets.read'],
+  ['POST', 'asset-tags/{id}/retire', 'cmms.assets.write'],
+  ['GET', 'assets/{id}/tags', 'cmms.assets.read'],
+  ['POST', 'assets/{id}/tags', 'cmms.assets.write'],
+  ['GET', 'asset-audits', 'cmms.audits.read'],
+  ['POST', 'asset-audits', 'cmms.audits.execute'],
+  ['POST', 'asset-audits/{id}/sightings', 'cmms.audits.execute'],
+  ['POST', 'asset-audits/{id}/finish', 'cmms.audits.execute'],
+  ['GET', 'asset-audits/{id}/report', 'cmms.audits.read'],
 ];
 
 /**

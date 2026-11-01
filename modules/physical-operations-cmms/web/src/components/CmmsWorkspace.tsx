@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { type CmmsApiError, cmmsApi } from '../api';
 import { CmmsAssets } from './CmmsAssets';
 import { CmmsCalibration } from './CmmsCalibration';
+import { CmmsCommissioning } from './CmmsCommissioning';
 import { CmmsMeters } from './CmmsMeters';
 import { CmmsParts } from './CmmsParts';
 import { CmmsSchedules } from './CmmsSchedules';
@@ -35,6 +36,7 @@ export type CmmsSection =
   | 'schedules'
   | 'meters'
   | 'calibration'
+  | 'commissioning'
   | 'inventory'
   | 'requests'
   | 'classifications';
@@ -86,6 +88,12 @@ const SECTIONS: ReadonlyArray<{
     label: 'Calibration',
     href: '/cmms/calibration',
     description: 'Instrument calibration against master standards, approval and certificates.',
+  },
+  {
+    key: 'commissioning',
+    label: 'Commissioning',
+    href: '/cmms/commissioning',
+    description: 'Review assets proposed from the floor, physical tags and floor-walk audits.',
   },
   {
     key: 'inventory',
@@ -144,6 +152,7 @@ export function CmmsWorkspace({ section, permissions = [] }: { section: CmmsSect
         {section === 'schedules' ? <CmmsSchedules /> : null}
         {section === 'meters' ? <CmmsMeters /> : null}
         {section === 'calibration' ? <CmmsCalibration permissions={permissions} /> : null}
+        {section === 'commissioning' ? <CmmsCommissioning permissions={permissions} /> : null}
         {section === 'inventory' ? <CmmsParts /> : null}
         {section === 'requests' ? <CmmsWindow surface="cmms-requests" permissions={permissions} /> : null}
         {section === 'classifications' ? <CmmsWindow surface="cmms-classifications" permissions={permissions} /> : null}

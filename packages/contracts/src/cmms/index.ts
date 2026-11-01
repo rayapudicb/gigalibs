@@ -1324,3 +1324,5 @@ export interface CmmsMaintenanceRequestV1 {
 
 
 export * from './calibration.js';
+
+export * from './commissioning.js';

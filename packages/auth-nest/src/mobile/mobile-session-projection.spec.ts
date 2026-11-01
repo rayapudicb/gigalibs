@@ -126,6 +126,23 @@ describe('mobile session v3 projection', () => {
     expect(projectMobileSession(readOnly,binding).modules).toEqual([]);
   });
 
+  it('offers Commissioning with the capabilities the member holds (WI-OI-135)',() => {
+    const base = source();
+    const withPermissions = (permissions: string[]) => ({
+      ...base,
+      tenant:{...base.tenant!,entitlements:[...base.tenant!.entitlements,{moduleKey:'asset-maintenance',version:'2026-11-01'}]},
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,...permissions]} : assignment),
+    });
+    expect(projectMobileSession(withPermissions(['cmms.commissioning.submit','cmms.audits.execute']),binding).modules).toEqual([{
+      key:'commissioning',enabled:true,navigationOrder:390,capabilities:['cmms.commissioning.submit','cmms.audits.execute'],
+      presentationRevision:'commissioning.v1',requiredDeviceCapabilities:['camera'],
+    }]);
+    expect(projectMobileSession(withPermissions(['cmms.audits.execute']),binding).modules)
+      .toMatchObject([{key:'commissioning',capabilities:['cmms.audits.execute']}]);
+    expect(projectMobileSession(withPermissions(['cmms.commissioning.read']),binding).modules).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();

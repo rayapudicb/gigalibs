@@ -141,6 +141,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       ]
     },
     {
+      "key": "commissioning",
+      "label": "Commissioning",
+      "path": "/cmms/commissioning",
+      "icon": "map-pin",
+      "permissions": [
+        "cmms.commissioning.read"
+      ]
+    },
+    {
       "key": "analytics",
       "label": "Reliability",
       "path": "/cmms/analytics",
