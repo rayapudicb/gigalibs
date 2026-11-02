@@ -199,8 +199,9 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     ],
   };
 
-  // WI-OI-145 (owner, 2026-11-02): every module with more than one screen lists them in the sidebar, one route each;
-  // their in-page module menus are gone. Settings entries list theirs in the Settings sidebar.
+  // WI-OI-145 (owner, 2026-11-02): every module with more than one screen lists them in the sidebar and in the shell's
+  // module tab bar, one route each (a screen's views are tabs only inside one component). Settings entries list theirs
+  // in the Settings sidebar.
   Object.assign(INTENDED_MENU_CHANGES, {
     'tenant-access': [
       m('team', 'Team & access', '/settings', 'key-round'),
@@ -225,20 +226,27 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       m('items', 'Items', '/inventory/items', 'boxes'),
       m('lots', 'Lots', '/inventory/lots', 'layers'),
       m('receipts', 'Receipts', '/inventory/receipts', 'inbox'),
-      m('stock', 'Stock', '/inventory/stock', 'database'),
+      m('balances', 'Balances', '/inventory/balances', 'database'),
       m('reservations', 'Reservations', '/inventory/reservations', 'lock'),
+      m('ledger', 'Stock ledger', '/inventory/ledger', 'file-text'),
+      m('movement-costs', 'Movement costs', '/inventory/movement-costs', 'coins'),
+      m('posted-receipt-costs', 'Posted receipt costs', '/inventory/posted-receipt-costs', 'file-check'),
+      m('warehouse-map', 'Warehouse map', '/inventory/warehouse-map', 'map-pin'),
       m('transfers', 'Transfers', '/inventory/transfers', 'arrow-left-right'),
       m('replenishment', 'Replenishment', '/inventory/replenishment', 'gauge'),
       m('availability', 'Availability', '/inventory/availability', 'check-circle'),
-      m('valuation', 'Valuation', '/inventory/valuation', 'coins'),
+      m('valuation', 'Valuation setup', '/inventory/valuation', 'scale'),
+      m('barcode', 'Barcode lookup', '/inventory/barcode', 'scan-line'),
     ],
     'product-catalogue': [
       m('products', 'Products', '/products', 'boxes'),
+      m('units', 'Units', '/products/units', 'scale'),
       m('categories', 'Categories', '/products/categories', 'layers'),
       m('attributes', 'Attributes', '/products/attributes', 'database'),
-      m('units', 'Units', '/products/units', 'scale'),
       m('catalogues', 'Catalogues', '/products/catalogues', 'file-text'),
+      m('catalogue-versions', 'Catalogue versions', '/products/catalogue-versions', 'file-check'),
       m('price-lists', 'Price lists', '/products/price-lists', 'coins'),
+      m('price-list-versions', 'Price-list versions', '/products/price-list-versions', 'file-check'),
       m('price-resolver', 'Price resolver', '/products/price-resolver', 'check-circle'),
       m('import-export', 'Import & export', '/products/import-export', 'arrow-left-right'),
     ],
@@ -258,10 +266,12 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     ],
     'financial-operations': [
       m('journal-entries', 'Journal entries', '/finance', 'file-text'),
+      m('posted-journals', 'Posted journals', '/finance/posted-journals', 'file-check'),
       m('accounts', 'Chart of accounts', '/finance/accounts', 'layers'),
       m('periods', 'Periods', '/finance/periods', 'calendar'),
       m('books', 'Books', '/finance/books', 'database'),
       m('reports', 'Reports', '/finance/reports', 'bar-chart'),
+      m('set-up', 'Set up a book', '/finance/set-up', 'settings', ['finance:books:manage']),
     ],
     'safety-operations': [
       m('stop-work', 'Stop work', '/safety-operations', 'shield-alert', ['safety-operations.hazards.report']),

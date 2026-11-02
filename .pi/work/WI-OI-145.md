@@ -118,3 +118,30 @@ deployment profile; inventory-finance relay and reconciliation. 14 optional data
 `PROOF_DATABASE_URL`. Log: `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-11-02T11-00-33-300Z.log`.
 Deploy scope: the **web** image (shell, module web packages, configuration-react, web-sdk). No migration, no API,
 module-host or mobile change; the catalogue's labels, groups and menus are read by the web only.
+
+**Deploy hand-over (2026-11-02)**: committed `268384f8` on `feat/frontline-suite` (one commit, owner "go"). Live UAT
+5180 runs `f909162775d2-90ed1ca00bee` from the release worktree `gigalibs-release-5180b`
+(`release/uat-5180-wi131-wi133` at `f9091627`, the parent of `268384f8`). Read-only backup of the running release:
+`infra/compose/backups/gigalibs_backup_20261102_110653Z.dump` (release worktree). Owner command: the session script
+`deploy-wi145.sh` (fast-forward to `268384f8`, refresh source identity, build chain, `up-convergence-full-uat.sh`, health
+check). After the deploy the session verifies read-only (`docker ps` tags, web logs, a screen walk).
+
+## Owner correction (2026-11-02, after the 268384f8 deploy)
+
+Owner: every module gets the horizontal underline screen tabs (like the former Inventory bar) and keeps the expanding
+sidebar; no page heading or description ("consuming real estate and duplicate wording"); the breadcrumb small; no
+rounded buttons anywhere. Changes:
+
+- Shell `ModuleTabBar` under the top bar on every page: the module's manifest menu filtered by permission
+  (`lib/module-tabs.ts`), underline style, wraps like the former Inventory bar; one tab for one-screen modules and shell
+  pages; the screen's buttons in the bar's right end (slot `module-page-actions`).
+- `ModulePage`: title screen-reader-only, no description, actions portalled into the bar. `PageTabs`: the same
+  underline style (no Medusa pill tabs). Window list titles and `ModuleWindowWorkspace` headings screen-reader-only.
+- Breadcrumb in `text-xs`.
+- Views I had merged become their own tabs again: Inventory 15 (Warehouses … Barcode lookup), Products 10 (with
+  Catalogue versions, Price-list versions), General ledger 7 (with Posted journals, Set up a book gated on
+  `finance:books:manage`); `/inventory/stock` removed by the generator.
+- Tests: navigation equivalence (flattened menus), new `module-tabs.test.ts` (4); e2e ledger routes and P2P tab links.
+- Gate: `pnpm verify` PASS (582 test files, 4,241 tests; every audit incl. ui-shell), `next build`; local production
+  build screenshots: Products › Attributes, Inventory, Calibration (module tabs + view tabs, one style), Safety (action in
+  the bar), Settings, Home. Log `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-11-02T12-04-42-394Z.log`.

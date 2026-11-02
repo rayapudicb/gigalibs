@@ -92,6 +92,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "boxes"
     },
     {
+      "key": "units",
+      "label": "Units",
+      "path": "/products/units",
+      "icon": "scale"
+    },
+    {
       "key": "categories",
       "label": "Categories",
       "path": "/products/categories",
@@ -104,22 +110,28 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "database"
     },
     {
-      "key": "units",
-      "label": "Units",
-      "path": "/products/units",
-      "icon": "scale"
-    },
-    {
       "key": "catalogues",
       "label": "Catalogues",
       "path": "/products/catalogues",
       "icon": "file-text"
     },
     {
+      "key": "catalogue-versions",
+      "label": "Catalogue versions",
+      "path": "/products/catalogue-versions",
+      "icon": "file-check"
+    },
+    {
       "key": "price-lists",
       "label": "Price lists",
       "path": "/products/price-lists",
       "icon": "coins"
+    },
+    {
+      "key": "price-list-versions",
+      "label": "Price-list versions",
+      "path": "/products/price-list-versions",
+      "icon": "file-check"
     },
     {
       "key": "price-resolver",
@@ -160,9 +172,9 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "inbox"
     },
     {
-      "key": "stock",
-      "label": "Stock",
-      "path": "/inventory/stock",
+      "key": "balances",
+      "label": "Balances",
+      "path": "/inventory/balances",
       "icon": "database"
     },
     {
@@ -170,6 +182,30 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Reservations",
       "path": "/inventory/reservations",
       "icon": "lock"
+    },
+    {
+      "key": "ledger",
+      "label": "Stock ledger",
+      "path": "/inventory/ledger",
+      "icon": "file-text"
+    },
+    {
+      "key": "movement-costs",
+      "label": "Movement costs",
+      "path": "/inventory/movement-costs",
+      "icon": "coins"
+    },
+    {
+      "key": "posted-receipt-costs",
+      "label": "Posted receipt costs",
+      "path": "/inventory/posted-receipt-costs",
+      "icon": "file-check"
+    },
+    {
+      "key": "warehouse-map",
+      "label": "Warehouse map",
+      "path": "/inventory/warehouse-map",
+      "icon": "map-pin"
     },
     {
       "key": "transfers",
@@ -191,9 +227,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
     },
     {
       "key": "valuation",
-      "label": "Valuation",
+      "label": "Valuation setup",
       "path": "/inventory/valuation",
-      "icon": "coins"
+      "icon": "scale"
+    },
+    {
+      "key": "barcode",
+      "label": "Barcode lookup",
+      "path": "/inventory/barcode",
+      "icon": "scan-line"
     }
   ],
   "universal-procurement": [
@@ -268,6 +310,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "file-text"
     },
     {
+      "key": "posted-journals",
+      "label": "Posted journals",
+      "path": "/finance/posted-journals",
+      "icon": "file-check"
+    },
+    {
       "key": "accounts",
       "label": "Chart of accounts",
       "path": "/finance/accounts",
@@ -290,6 +338,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Reports",
       "path": "/finance/reports",
       "icon": "bar-chart"
+    },
+    {
+      "key": "set-up",
+      "label": "Set up a book",
+      "path": "/finance/set-up",
+      "icon": "settings",
+      "permissions": [
+        "finance:books:manage"
+      ]
     }
   ],
   "platform-control": [

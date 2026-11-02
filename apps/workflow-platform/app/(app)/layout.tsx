@@ -7,6 +7,7 @@ import { GeospatialPlacesProvider } from '@/components/geospatial/GeospatialPlac
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { ModuleAccessGate } from '@/components/navigation/ModuleAccessGate';
 import { ModuleHeaderAndDrawer } from '@/components/navigation/ModuleHeaderAndDrawer';
+import { ModuleTabBar } from '@/components/navigation/ModuleTabBar';
 import { canUseTenantModule, hasPermission } from '@/lib/module-access';
 import { uatPreviewEnabled } from '@/lib/uat-module-status';
 import { verifiedSession } from '@/lib/verified-session';
@@ -97,6 +98,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <UserNav session={session.context} />
               </div>
             </header>
+            {/* WI-OI-145: the module's screens as one horizontal bar, the same on every module, with the screen's buttons. */}
+            <ModuleTabBar permissions={session.context.permissions} />
 
             <main
               className="flex-1 overflow-y-auto pb-24 print:overflow-visible print:h-auto print:p-0 print:pb-0"
@@ -105,7 +108,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <CurrencyLocaleProvider enabled={currencyEnabled}>
                 <GeospatialPlacesProvider>
                   {/* WI-OI-145 (S2): the one page frame. Every screen gets this padding and width; none adds its own. */}
-                  <div className="mx-auto w-full max-w-[1600px] px-6 py-6 print:max-w-none print:p-0" data-page-frame>
+                  <div className="mx-auto w-full max-w-[1600px] px-6 py-5 print:max-w-none print:p-0" data-page-frame>
                     <ModuleAccessGate access={access}>{children}</ModuleAccessGate>
                   </div>
                 </GeospatialPlacesProvider>

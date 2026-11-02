@@ -1,7 +1,6 @@
 'use client';
 
-import { holdsPermission } from '@gigalibs/contracts';
-import { ModulePage, PageTabs } from '@gigalibs/web-sdk';
+import { ModulePage } from '@gigalibs/web-sdk';
 import { createRecordClient, MetadataWindow, type RecordClient, usePublishedManifest } from '@gigalibs/configuration-react';
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -21,39 +20,17 @@ const primary =
   'rounded-md bg-ui-button-inverted px-3 py-1.5 text-sm font-medium text-ui-fg-on-inverted hover:bg-ui-button-inverted-hover disabled:opacity-50';
 const box = 'rounded-lg border border-ui-border-base bg-ui-bg-base p-4';
 
-function holds(permissions: readonly string[], permission: string): boolean {
-  return holdsPermission(permissions, permission);
-}
+/** The general ledger's screens: one tab in the module tab bar, one sidebar entry and one route each (WI-OI-145). */
+export type FinanceSection = 'journal-entries' | 'posted-journals' | 'accounts' | 'periods' | 'books' | 'reports' | 'set-up';
 
-/** The general ledger's screens, one per sidebar entry and route (WI-OI-145); related views are page tabs. */
-export type FinanceSection = 'journal-entries' | 'accounts' | 'periods' | 'books' | 'reports';
-
-export const FINANCE_SECTIONS: Readonly<
-  Record<FinanceSection, { readonly title: string; readonly description: string; readonly views: readonly { key: Tab; label: string }[] }>
-> = {
-  'journal-entries': {
-    title: 'Journal entries',
-    description: 'A manual journal is drafted, submitted and approved by a second person before it posts.',
-    views: [
-      { key: 'finance-journal-drafts', label: 'Drafts' },
-      { key: 'finance-journals', label: 'Posted' },
-    ],
-  },
-  accounts: { title: 'Chart of accounts', description: 'The accounts each book posts to.', views: [{ key: 'finance-accounts', label: 'Accounts' }] },
-  periods: { title: 'Periods', description: 'Accounting periods and whether each is open for posting.', views: [{ key: 'finance-periods', label: 'Periods' }] },
-  books: {
-    title: 'Books',
-    description: 'Each legal entity\'s book, fiscal year and currency.',
-    views: [
-      { key: 'finance-books', label: 'Books' },
-      { key: 'setup', label: 'Set up a book' },
-    ],
-  },
-  reports: {
-    title: 'Reports',
-    description: 'Trial balance, income statement and balance sheet.',
-    views: [{ key: 'reports', label: 'Reports' }],
-  },
+export const FINANCE_SECTIONS: Readonly<Record<FinanceSection, { readonly title: string; readonly view: Tab }>> = {
+  'journal-entries': { title: 'Journal entries', view: 'finance-journal-drafts' },
+  'posted-journals': { title: 'Posted journals', view: 'finance-journals' },
+  accounts: { title: 'Chart of accounts', view: 'finance-accounts' },
+  periods: { title: 'Periods', view: 'finance-periods' },
+  books: { title: 'Books', view: 'finance-books' },
+  reports: { title: 'Reports', view: 'reports' },
+  'set-up': { title: 'Set up a book', view: 'setup' },
 };
 
 export interface FinancialOperationsWorkspaceProps {
@@ -65,13 +42,10 @@ export interface FinancialOperationsWorkspaceProps {
 
 export function FinancialOperationsWorkspace({ permissions = [], section = 'journal-entries' }: FinancialOperationsWorkspaceProps = {}) {
   const screen = FINANCE_SECTIONS[section];
-  const canSetUp = holds(permissions, 'finance:books:manage');
-  const views = screen.views.filter((view) => view.key !== 'setup' || canSetUp);
-  const [tab, setTab] = useState<Tab>(views[0]!.key);
+  const tab = screen.view;
   const client = useMemo(() => createRecordClient({ basePath: BASE_PATH }), []);
   return (
-    <ModulePage title={screen.title} description={screen.description}>
-      {views.length > 1 ? <PageTabs tabs={views} value={tab} onChange={setTab} label={screen.title} /> : null}
+    <ModulePage title={screen.title}>
       {tab === 'setup' ? <SetUpBook /> : tab === 'reports' ? <Reports /> : <FinanceWindow key={tab} surface={tab} client={client} permissions={permissions} />}
     </ModulePage>
   );

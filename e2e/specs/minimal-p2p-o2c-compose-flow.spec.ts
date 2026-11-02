@@ -239,10 +239,10 @@ test.describe('Minimal P2P and O2C on local compose', () => {
     const approved = await json<{ status: string }>(page, origin, `${PROC}/bills/${bill.id}/approve`, { method: 'POST' });
     expect(approved.status).toBe('APPROVED');
 
-    // WI-OI-145: each Procurement screen is a sidebar route with its own page header.
+    // WI-OI-145: each Procurement screen is a route in the sidebar and the module tab bar.
     await page.goto('/procurement');
     await expect(page.getByRole('heading', { name: 'Requisitions', level: 1 })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Purchase orders' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Module screens' }).getByRole('link', { name: 'Purchase orders' })).toBeVisible();
   });
 
   test('O2C: quote through customer invoice via module API', async ({ page, baseURL }) => {
@@ -326,9 +326,9 @@ test.describe('Minimal P2P and O2C on local compose', () => {
     expect(invoice.status).toBe('ISSUED');
     expect(invoice.lines[0]?.invoicedQuantity).toBe('3.000000');
 
-    // WI-OI-145: each Orders screen is a sidebar route with its own page header.
+    // WI-OI-145: each Orders screen is a route in the sidebar and the module tab bar.
     await page.goto('/orders');
     await expect(page.getByRole('heading', { name: 'Quotes', level: 1 })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Sales orders' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Module screens' }).getByRole('link', { name: 'Sales orders' })).toBeVisible();
   });
 });

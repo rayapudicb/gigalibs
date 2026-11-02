@@ -1,37 +1,36 @@
 'use client';
 
-import { Button, Heading, Tabs, Text } from '@medusajs/ui';
-import type { ReactNode } from 'react';
+import { Button, Text } from '@medusajs/ui';
+import { type ReactNode, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-// WI-OI-145 (S4): the page frame every module screen uses, after Medusa Admin: a header with the screen's title (the
-// same words as its sidebar entry), an optional one-line description and its actions on the right; one style of in-page
-// tabs; one empty state and one error state. The shell's layout gives every page its padding and width, so a page
-// never adds its own.
+// WI-OI-145 (owner, 2026-11-02): screens have no heading of their own. The shell's top bar names the screen in its
+// breadcrumb and the module tab bar under it lists the module's screens; a screen's buttons go to the right end of that
+// bar, so they take no extra height. In-page views use the same underline tabs as the module tab bar. The shell's layout
+// gives every page its padding and width, so a page never adds its own.
+
+/** The shell's slot for a screen's buttons (apps/workflow-platform ModuleTabBar). */
+const ACTIONS_SLOT_ID = 'module-page-actions';
 
 export interface ModulePageProps {
-  /** The screen's name, exactly as its sidebar entry reads. */
+  /** The screen's name, exactly as its tab and sidebar entry read; announced to assistive technology only. */
   readonly title: string;
-  /** One sentence saying what the screen is for. */
+  /** Kept for callers; not shown (owner, 2026-11-02: no description lines). */
   readonly description?: ReactNode;
-  /** Buttons for the screen, at most one of them primary. */
+  /** Buttons for the screen, at most one of them primary; shown at the right end of the module tab bar. */
   readonly actions?: ReactNode;
   readonly children?: ReactNode;
 }
 
-export function ModulePage({ title, description, actions, children }: ModulePageProps) {
+export function ModulePage({ title, actions, children }: ModulePageProps) {
+  const [slot, setSlot] = useState<HTMLElement | null | undefined>(undefined);
+  useEffect(() => setSlot(document.getElementById(ACTIONS_SLOT_ID)), []);
   return (
     <div className="flex flex-col gap-4" data-module-page="">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <Heading level="h1">{title}</Heading>
-          {description ? (
-            <Text size="small" className="mt-1 max-w-3xl text-ui-fg-subtle">
-              {description}
-            </Text>
-          ) : null}
-        </div>
-        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
-      </header>
+      <h1 className="sr-only">{title}</h1>
+      {actions && slot ? createPortal(<div className="flex flex-wrap items-center gap-2">{actions}</div>, slot) : null}
+      {/* Outside the shell (no slot), the buttons sit above the content. */}
+      {actions && slot === null ? <div className="flex flex-wrap items-center justify-end gap-2">{actions}</div> : null}
       {children}
     </div>
   );
@@ -51,19 +50,29 @@ export interface PageTabsProps<K extends string> {
   readonly label: string;
 }
 
-/** Views inside one screen (never a module's own navigation, which is the sidebar). */
+/** Views inside one screen, in the same underline style as the module tab bar (never rounded buttons). */
 export function PageTabs<K extends string>({ tabs, value, onChange, label }: PageTabsProps<K>) {
   return (
-    <Tabs value={value} onValueChange={(next) => onChange(next as K)}>
-      <Tabs.List aria-label={label} className="flex-wrap">
-        {tabs.map((tab) => (
-          <Tabs.Trigger key={tab.key} value={tab.key}>
+    <div role="tablist" aria-label={label} className="flex flex-wrap border-b border-ui-border-base">
+      {tabs.map((tab) => {
+        const selected = tab.key === value;
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            onClick={() => onChange(tab.key)}
+            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm transition-colors ${
+              selected ? 'border-ui-fg-interactive font-medium text-ui-fg-base' : 'border-transparent text-ui-fg-subtle hover:text-ui-fg-base'
+            }`}
+          >
             {tab.label}
             {tab.count !== undefined ? <span className="ml-1.5 tabular-nums text-ui-fg-muted">{tab.count}</span> : null}
-          </Tabs.Trigger>
-        ))}
-      </Tabs.List>
-    </Tabs>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

@@ -37,6 +37,11 @@ spec:
         props:
           section: products
         sessionPermissions: true
+      - route: /products/units
+        component: ProductCatalogueWorkspace
+        props:
+          section: units
+        sessionPermissions: true
       - route: /products/categories
         component: ProductCatalogueWorkspace
         props:
@@ -47,20 +52,25 @@ spec:
         props:
           section: attributes
         sessionPermissions: true
-      - route: /products/units
-        component: ProductCatalogueWorkspace
-        props:
-          section: units
-        sessionPermissions: true
       - route: /products/catalogues
         component: ProductCatalogueWorkspace
         props:
           section: catalogues
         sessionPermissions: true
+      - route: /products/catalogue-versions
+        component: ProductCatalogueWorkspace
+        props:
+          section: catalogue-versions
+        sessionPermissions: true
       - route: /products/price-lists
         component: ProductCatalogueWorkspace
         props:
           section: price-lists
+        sessionPermissions: true
+      - route: /products/price-list-versions
+        component: ProductCatalogueWorkspace
+        props:
+          section: price-list-versions
         sessionPermissions: true
       - route: /products/price-resolver
         component: ProductCatalogueWorkspace
@@ -130,6 +140,10 @@ spec:
           label: Products
           path: /products
           icon: boxes
+        - key: units
+          label: Units
+          path: /products/units
+          icon: scale
         - key: categories
           label: Categories
           path: /products/categories
@@ -138,18 +152,22 @@ spec:
           label: Attributes
           path: /products/attributes
           icon: database
-        - key: units
-          label: Units
-          path: /products/units
-          icon: scale
         - key: catalogues
           label: Catalogues
           path: /products/catalogues
           icon: file-text
+        - key: catalogue-versions
+          label: Catalogue versions
+          path: /products/catalogue-versions
+          icon: file-check
         - key: price-lists
           label: Price lists
           path: /products/price-lists
           icon: coins
+        - key: price-list-versions
+          label: Price-list versions
+          path: /products/price-list-versions
+          icon: file-check
         - key: price-resolver
           label: Price resolver
           path: /products/price-resolver

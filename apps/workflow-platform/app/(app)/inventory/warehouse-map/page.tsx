@@ -4,5 +4,5 @@ import { UniversalInventoryWorkspace } from '@gigalibs/universal-inventory-web';
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <UniversalInventoryWorkspace section={"stock"} permissions={session.context?.permissions ?? []} />;
+  return <UniversalInventoryWorkspace section={"warehouse-map"} permissions={session.context?.permissions ?? []} />;
 }

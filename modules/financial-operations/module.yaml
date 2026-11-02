@@ -53,6 +53,11 @@ spec:
         props:
           section: journal-entries
         sessionPermissions: true
+      - route: /finance/posted-journals
+        component: FinancialOperationsWorkspace
+        props:
+          section: posted-journals
+        sessionPermissions: true
       - route: /finance/accounts
         component: FinancialOperationsWorkspace
         props:
@@ -72,6 +77,11 @@ spec:
         component: FinancialOperationsWorkspace
         props:
           section: reports
+        sessionPermissions: true
+      - route: /finance/set-up
+        component: FinancialOperationsWorkspace
+        props:
+          section: set-up
         sessionPermissions: true
   api:
     application: apps/api
@@ -155,6 +165,10 @@ spec:
           label: Journal entries
           path: /finance
           icon: file-text
+        - key: posted-journals
+          label: Posted journals
+          path: /finance/posted-journals
+          icon: file-check
         - key: accounts
           label: Chart of accounts
           path: /finance/accounts
@@ -171,6 +185,11 @@ spec:
           label: Reports
           path: /finance/reports
           icon: bar-chart
+        - key: set-up
+          label: Set up a book
+          path: /finance/set-up
+          icon: settings
+          permissions: [finance:books:manage]
       roles:
         - key: chief-accountant
           name: Chief Accountant

@@ -1,7 +1,7 @@
 'use client';
 
 import { holdsPermission } from '@gigalibs/contracts';
-import { EmptyState, ModulePage, PageTabs } from '@gigalibs/web-sdk';
+import { EmptyState, ModulePage } from '@gigalibs/web-sdk';
 import { createRecordClient, type LookupOption, MetadataWindow, type RecordClient, usePublishedManifest } from '@gigalibs/configuration-react';
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -32,58 +32,30 @@ const primary =
 const secondary =
   'rounded-md border border-ui-border-base bg-ui-button-neutral px-3 py-1.5 text-sm text-ui-fg-base hover:bg-ui-button-neutral-hover disabled:opacity-50';
 
-/** Product Catalogue's screens, one per sidebar entry (WI-OI-145); a screen's related views are its page tabs. */
+/** Product Catalogue's screens: one tab in the module tab bar, one sidebar entry and one route each (WI-OI-145). */
 export type ProductCatalogueSection =
   | 'products'
+  | 'units'
   | 'categories'
   | 'attributes'
-  | 'units'
   | 'catalogues'
+  | 'catalogue-versions'
   | 'price-lists'
+  | 'price-list-versions'
   | 'price-resolver'
   | 'import-export';
 
-export const PRODUCT_CATALOGUE_SECTIONS: Readonly<
-  Record<ProductCatalogueSection, { readonly title: string; readonly description: string; readonly views: readonly { key: Tab; label: string }[] }>
-> = {
-  products: {
-    title: 'Products',
-    description: 'What your organization makes, buys and sells; other modules use products by reference.',
-    views: [{ key: 'catalogue-products', label: 'Products' }],
-  },
-  categories: { title: 'Categories', description: 'How products are grouped.', views: [{ key: 'catalogue-categories', label: 'Categories' }] },
-  attributes: {
-    title: 'Attributes',
-    description: 'The properties products carry, such as size or material.',
-    views: [{ key: 'catalogue-attributes', label: 'Attributes' }],
-  },
-  units: { title: 'Units', description: 'Units of measure and their conversions.', views: [{ key: 'catalogue-units', label: 'Units' }] },
-  catalogues: {
-    title: 'Catalogues',
-    description: 'Catalogues and their published versions.',
-    views: [
-      { key: 'catalogue-catalogues', label: 'Catalogues' },
-      { key: 'catalogue-catalogue-versions', label: 'Versions' },
-    ],
-  },
-  'price-lists': {
-    title: 'Price lists',
-    description: 'Price lists and their published versions.',
-    views: [
-      { key: 'catalogue-price-lists', label: 'Price lists' },
-      { key: 'catalogue-price-list-versions', label: 'Versions' },
-    ],
-  },
-  'price-resolver': {
-    title: 'Price resolver',
-    description: 'The price a product gets for a quantity, currency and date.',
-    views: [{ key: 'resolve', label: 'Price resolver' }],
-  },
-  'import-export': {
-    title: 'Import & export',
-    description: 'Bring products in from a file or take them out as one.',
-    views: [{ key: 'transfer', label: 'Import & export' }],
-  },
+export const PRODUCT_CATALOGUE_SECTIONS: Readonly<Record<ProductCatalogueSection, { readonly title: string; readonly view: Tab }>> = {
+  products: { title: 'Products', view: 'catalogue-products' },
+  units: { title: 'Units', view: 'catalogue-units' },
+  categories: { title: 'Categories', view: 'catalogue-categories' },
+  attributes: { title: 'Attributes', view: 'catalogue-attributes' },
+  catalogues: { title: 'Catalogues', view: 'catalogue-catalogues' },
+  'catalogue-versions': { title: 'Catalogue versions', view: 'catalogue-catalogue-versions' },
+  'price-lists': { title: 'Price lists', view: 'catalogue-price-lists' },
+  'price-list-versions': { title: 'Price-list versions', view: 'catalogue-price-list-versions' },
+  'price-resolver': { title: 'Price resolver', view: 'resolve' },
+  'import-export': { title: 'Import & export', view: 'transfer' },
 };
 
 export interface ProductCatalogueWorkspaceProps {
@@ -99,12 +71,11 @@ function holds(permissions: readonly string[], permission: string): boolean {
 
 export function ProductCatalogueWorkspace({ permissions = [], section = 'products' }: ProductCatalogueWorkspaceProps = {}) {
   const screen = PRODUCT_CATALOGUE_SECTIONS[section];
-  const [tab, setTab] = useState<Tab>(screen.views[0]!.key);
+  const tab = screen.view;
   const client = useMemo(() => createRecordClient({ basePath: BASE_PATH }), []);
   const canTransfer = holds(permissions, 'products:import') || holds(permissions, 'products:export');
   return (
-    <ModulePage title={screen.title} description={screen.description}>
-      {screen.views.length > 1 ? <PageTabs tabs={screen.views} value={tab} onChange={setTab} label={screen.title} /> : null}
+    <ModulePage title={screen.title}>
       {tab === 'resolve' ? (
         <PriceResolver client={client} />
       ) : tab === 'transfer' ? (

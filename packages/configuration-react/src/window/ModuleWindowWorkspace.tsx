@@ -28,18 +28,14 @@ export function ModuleWindowWorkspace({
   surfaceKey,
   basePath,
   title,
-  description,
   permissions = [],
 }: ModuleWindowWorkspaceProps) {
   const client = useMemo(() => createRecordClient({ basePath }), [basePath]);
   const state = usePublishedManifest({ moduleKey, entityKey, surfaceKey });
   return (
-    // WI-OI-145: the shell frame gives the padding; the header matches @gigalibs/web-sdk's ModulePage.
+    // WI-OI-145 (owner, 2026-11-02): no heading on screen; the shell's breadcrumb and module tab bar name it.
     <div className="flex flex-col gap-4">
-      <header className="min-w-0">
-        <h1 className="h1-core font-sans font-medium text-ui-fg-base">{title}</h1>
-        {description ? <p className="txt-small mt-1 max-w-3xl text-ui-fg-subtle">{description}</p> : null}
-      </header>
+      <h1 className="sr-only">{title}</h1>
       {state.status === 'loading' ? (
         <p className="text-sm text-ui-fg-muted">Loading the window…</p>
       ) : state.status !== 'ready' ? (

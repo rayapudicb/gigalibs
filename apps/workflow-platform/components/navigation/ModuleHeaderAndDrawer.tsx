@@ -36,7 +36,7 @@ export function ModuleHeaderAndDrawer() {
       {/* WI-OI-145 (S2): the trail Group › Module › Screen from the catalogue and manifest menus, and help as an icon. */}
       <div className="flex min-w-0 items-center gap-2">
         <nav aria-label="Breadcrumb" className="min-w-0">
-          <ol className="flex min-w-0 items-center gap-1.5 text-sm">
+          <ol className="flex min-w-0 items-center gap-1.5 text-xs">
             {trail.map((crumb, index) => {
               const last = index === trail.length - 1;
               return (

@@ -54,15 +54,35 @@ spec:
         props:
           section: receipts
         sessionPermissions: true
-      - route: /inventory/stock
+      - route: /inventory/balances
         component: UniversalInventoryWorkspace
         props:
-          section: stock
+          section: balances
         sessionPermissions: true
       - route: /inventory/reservations
         component: UniversalInventoryWorkspace
         props:
           section: reservations
+        sessionPermissions: true
+      - route: /inventory/ledger
+        component: UniversalInventoryWorkspace
+        props:
+          section: ledger
+        sessionPermissions: true
+      - route: /inventory/movement-costs
+        component: UniversalInventoryWorkspace
+        props:
+          section: movement-costs
+        sessionPermissions: true
+      - route: /inventory/posted-receipt-costs
+        component: UniversalInventoryWorkspace
+        props:
+          section: posted-receipt-costs
+        sessionPermissions: true
+      - route: /inventory/warehouse-map
+        component: UniversalInventoryWorkspace
+        props:
+          section: warehouse-map
         sessionPermissions: true
       - route: /inventory/transfers
         component: UniversalInventoryWorkspace
@@ -83,6 +103,11 @@ spec:
         component: UniversalInventoryWorkspace
         props:
           section: valuation
+        sessionPermissions: true
+      - route: /inventory/barcode
+        component: UniversalInventoryWorkspace
+        props:
+          section: barcode
         sessionPermissions: true
   conformance:
     collection: v1/records/inventory.warehouses
@@ -180,14 +205,30 @@ spec:
           label: Receipts
           path: /inventory/receipts
           icon: inbox
-        - key: stock
-          label: Stock
-          path: /inventory/stock
+        - key: balances
+          label: Balances
+          path: /inventory/balances
           icon: database
         - key: reservations
           label: Reservations
           path: /inventory/reservations
           icon: lock
+        - key: ledger
+          label: Stock ledger
+          path: /inventory/ledger
+          icon: file-text
+        - key: movement-costs
+          label: Movement costs
+          path: /inventory/movement-costs
+          icon: coins
+        - key: posted-receipt-costs
+          label: Posted receipt costs
+          path: /inventory/posted-receipt-costs
+          icon: file-check
+        - key: warehouse-map
+          label: Warehouse map
+          path: /inventory/warehouse-map
+          icon: map-pin
         - key: transfers
           label: Transfers
           path: /inventory/transfers
@@ -201,9 +242,13 @@ spec:
           path: /inventory/availability
           icon: check-circle
         - key: valuation
-          label: Valuation
+          label: Valuation setup
           path: /inventory/valuation
-          icon: coins
+          icon: scale
+        - key: barcode
+          label: Barcode lookup
+          path: /inventory/barcode
+          icon: scan-line
       roles:
         - key: inventory-operator
           name: Inventory Operator

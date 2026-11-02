@@ -6,7 +6,7 @@ import {
   usePublishedManifest,
 } from '@gigalibs/configuration-react';
 import type { BarcodeResolutionResultV1 } from '@gigalibs/contracts';
-import { ModulePage, PageTabs } from '@gigalibs/web-sdk';
+import { ModulePage } from '@gigalibs/web-sdk';
 import { Button } from '@medusajs/ui';
 import { type FormEvent, useMemo, useState } from 'react';
 import { AtpLivePanel } from './AtpLivePanel.js';
@@ -45,77 +45,40 @@ type View =
   | 'transfers'
   | 'replenishment';
 
-/** Inventory's screens, one per sidebar entry (WI-OI-145); related views of one screen are its page tabs. */
+/** Inventory's screens: one tab in the module tab bar, one sidebar entry and one route each (WI-OI-145). */
 export type InventorySection =
   | 'warehouses'
   | 'items'
   | 'lots'
   | 'receipts'
-  | 'stock'
+  | 'balances'
   | 'reservations'
+  | 'ledger'
+  | 'movement-costs'
+  | 'posted-receipt-costs'
+  | 'warehouse-map'
   | 'transfers'
   | 'replenishment'
   | 'availability'
-  | 'valuation';
+  | 'valuation'
+  | 'barcode';
 
-export const INVENTORY_SECTIONS: Readonly<
-  Record<InventorySection, { readonly title: string; readonly description: string; readonly views: readonly { key: View; label: string }[] }>
-> = {
-  warehouses: {
-    title: 'Warehouses',
-    description: 'Your warehouses and their bins, as a list or on the map.',
-    views: [
-      { key: 'inventory-warehouses', label: 'List' },
-      { key: 'warehouse-map', label: 'Map' },
-    ],
-  },
-  items: {
-    title: 'Items',
-    description: 'Stocked items and how each is tracked; look an item up by its barcode.',
-    views: [
-      { key: 'inventory-items', label: 'Items' },
-      { key: 'barcode', label: 'Barcode lookup' },
-    ],
-  },
-  lots: { title: 'Lots', description: 'Lots and batches with their expiry.', views: [{ key: 'inventory-lots', label: 'Lots' }] },
-  receipts: {
-    title: 'Receipts',
-    description: 'Goods received into your warehouses.',
-    views: [{ key: 'inventory-receipts', label: 'Receipts' }],
-  },
-  stock: {
-    title: 'Stock',
-    description: 'What is on hand now, and every movement that changed it.',
-    views: [
-      { key: 'inventory-balances', label: 'Balances' },
-      { key: 'inventory-ledger', label: 'Ledger' },
-    ],
-  },
-  reservations: {
-    title: 'Reservations',
-    description: 'Stock held for orders and work.',
-    views: [{ key: 'inventory-reservations', label: 'Reservations' }],
-  },
-  transfers: { title: 'Transfers', description: 'Moves between warehouses, by stage.', views: [{ key: 'transfers', label: 'Transfers' }] },
-  replenishment: {
-    title: 'Replenishment',
-    description: 'Items below their reorder point and the purchase drafts proposed for them.',
-    views: [{ key: 'replenishment', label: 'Replenishment' }],
-  },
-  availability: {
-    title: 'Availability',
-    description: 'Available to promise: on hand less reserved, per item and warehouse.',
-    views: [{ key: 'atp', label: 'Availability' }],
-  },
-  valuation: {
-    title: 'Valuation',
-    description: 'How stock is valued, the cost of each movement and the costs posted from receipts.',
-    views: [
-      { key: 'valuation-settings', label: 'Settings' },
-      { key: 'inventory-cost-layers', label: 'Movement costs' },
-      { key: 'inventory-posted-receipt-costs', label: 'Posted receipt costs' },
-    ],
-  },
+export const INVENTORY_SECTIONS: Readonly<Record<InventorySection, { readonly title: string; readonly view: View }>> = {
+  warehouses: { title: 'Warehouses', view: 'inventory-warehouses' },
+  items: { title: 'Items', view: 'inventory-items' },
+  lots: { title: 'Lots', view: 'inventory-lots' },
+  receipts: { title: 'Receipts', view: 'inventory-receipts' },
+  balances: { title: 'Balances', view: 'inventory-balances' },
+  reservations: { title: 'Reservations', view: 'inventory-reservations' },
+  ledger: { title: 'Stock ledger', view: 'inventory-ledger' },
+  'movement-costs': { title: 'Movement costs', view: 'inventory-cost-layers' },
+  'posted-receipt-costs': { title: 'Posted receipt costs', view: 'inventory-posted-receipt-costs' },
+  'warehouse-map': { title: 'Warehouse map', view: 'warehouse-map' },
+  transfers: { title: 'Transfers', view: 'transfers' },
+  replenishment: { title: 'Replenishment', view: 'replenishment' },
+  availability: { title: 'Availability', view: 'atp' },
+  valuation: { title: 'Valuation setup', view: 'valuation-settings' },
+  barcode: { title: 'Barcode lookup', view: 'barcode' },
 };
 
 export interface UniversalInventoryWorkspaceProps {
@@ -130,7 +93,7 @@ export function UniversalInventoryWorkspace({
   section = 'warehouses',
 }: UniversalInventoryWorkspaceProps = {}) {
   const screen = INVENTORY_SECTIONS[section];
-  const [tab, setTab] = useState<View>(screen.views[0]!.key);
+  const tab = screen.view;
   const [scannerOpen, setScannerOpen] = useState(false);
   const client = useMemo(
     () => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: LOOKUP_BASE_PATHS }),
@@ -144,16 +107,12 @@ export function UniversalInventoryWorkspace({
   return (
     <ModulePage
       title={screen.title}
-      description={screen.description}
       actions={
         <Button size="small" variant="secondary" onClick={() => setScannerOpen(true)}>
           Open scanner
         </Button>
       }
     >
-      {screen.views.length > 1 ? (
-        <PageTabs tabs={screen.views} value={tab} onChange={setTab} label={screen.title} />
-      ) : null}
       {tab === 'barcode' ? (
         <BarcodeLookup />
       ) : tab === 'warehouse-map' ? (
