@@ -312,6 +312,8 @@ function RecordList({
           {/* WI-OI-145: the module tab bar already names this list; the title stays for assistive technology. */}
           <h2 className="sr-only">{view.label}</h2>
           <div className="flex items-center gap-2">
+            {/* The screen's own buttons (web-sdk ModulePage actions) sit here, beside the search. */}
+            <div data-page-actions-slot="" className="flex items-center gap-2" />
             {searchable && (
               <form
                 onSubmit={(event: FormEvent) => {

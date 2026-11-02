@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Text } from '@medusajs/ui';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 // WI-OI-145 (owner, 2026-11-02): screens have no heading of their own. The shell's top bar names the screen in its
@@ -23,10 +23,23 @@ export interface ModulePageProps {
 }
 
 export function ModulePage({ title, actions, children }: ModulePageProps) {
+  const root = useRef<HTMLDivElement>(null);
   const [slot, setSlot] = useState<HTMLElement | null | undefined>(undefined);
-  useEffect(() => setSlot(document.getElementById(ACTIONS_SLOT_ID)), []);
+  // The buttons go beside the search of the screen's list when it has one (a [data-page-actions-slot] inside this page,
+  // which may appear after the list loads), otherwise to the module tab bar's right end.
+  useEffect(() => {
+    const find = () =>
+      setSlot(
+        root.current?.querySelector<HTMLElement>('[data-page-actions-slot]') ?? document.getElementById(ACTIONS_SLOT_ID),
+      );
+    find();
+    if (!root.current) return;
+    const observer = new MutationObserver(find);
+    observer.observe(root.current, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
   return (
-    <div className="flex flex-col gap-4" data-module-page="">
+    <div ref={root} className="flex flex-col gap-4" data-module-page="">
       <h1 className="sr-only">{title}</h1>
       {actions && slot ? createPortal(<div className="flex flex-wrap items-center gap-2">{actions}</div>, slot) : null}
       {/* Outside the shell (no slot), the buttons sit above the content. */}
@@ -53,7 +66,7 @@ export interface PageTabsProps<K extends string> {
 /** Views inside one screen, in the same underline style as the module tab bar (never rounded buttons). */
 export function PageTabs<K extends string>({ tabs, value, onChange, label }: PageTabsProps<K>) {
   return (
-    <div role="tablist" aria-label={label} className="flex flex-wrap border-b border-ui-border-base">
+    <div role="tablist" aria-label={label} className="flex flex-nowrap overflow-x-auto overflow-y-hidden border-b border-ui-border-base [scrollbar-width:thin]">
       {tabs.map((tab) => {
         const selected = tab.key === value;
         return (
@@ -63,7 +76,7 @@ export function PageTabs<K extends string>({ tabs, value, onChange, label }: Pag
             role="tab"
             aria-selected={selected}
             onClick={() => onChange(tab.key)}
-            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm transition-colors ${
+            className={`shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm transition-colors ${
               selected ? 'border-ui-fg-interactive font-medium text-ui-fg-base' : 'border-transparent text-ui-fg-subtle hover:text-ui-fg-base'
             }`}
           >
