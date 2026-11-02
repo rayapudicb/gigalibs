@@ -19,3 +19,18 @@ node e2e/ux-benchmark/inventory.mjs "$OUT" docs/plans/ux-journeys-screen-invento
 - Journey times use the Keystroke-Level Model (think 1.35 s, point 1.1 s, click 0.1 s, 0.28 s per key) plus the
   measured screen load; required fields only. The Playwright journey specs of WI-OI-151 replace the estimates with
   measured times on the isolated test stack.
+
+## Timed journeys and the workbook
+
+```bash
+source e2e/load-uat-env.sh && (cd e2e && npx playwright test specs/journeys)   # dry: fills every form, saves nothing
+node e2e/ux-benchmark/workbook.mjs "Claude outputs/UX journeys <date>/GigaLibs-Functional-Technical-Workbook.xlsx"
+```
+
+`workbook.mjs` builds the functional and technical workbook: one sheet per module and Settings area (every screen,
+create form, action, journey, control-plane call and work item as a user story with inputs, API, request, response,
+expected result, business outcome, target, estimate, measurement, issues, bugs and QA status), the journeys and their
+steps, the QA bug tracker, the screen inventory, the field dictionary, the masters, the API catalogue, the roles and
+the work-item register. It reads this baseline, the latest report in `e2e/artifacts/journeys/` and the generated
+catalogue; `workbook-content.mjs` holds the hand-written parts (screen purposes, modules, bugs, UX stories). Update the
+bug statuses there when a fix reaches UAT, then regenerate.
