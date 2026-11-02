@@ -33,9 +33,14 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   'POST spares/reservations': '/api/v1/mobile/spares/reservations',
   // WI-OI-137 M-LOG.
   'GET logbook/logbooks': '/api/v1/mobile/logbook/logbooks',
+  // WI-OI-138 M-SOP.
+  'GET sop/procedures': '/api/v1/mobile/sop/procedures',
+  'GET sop/executions/awaiting-cosign': '/api/v1/mobile/sop/executions/awaiting-cosign',
+  'POST sop/executions': '/api/v1/mobile/sop/executions',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const STEP_KEY = /^[a-z][a-z0-9-]{0,31}$/;
 
 function mobileUpstreamPath(method: string, path: readonly string[]): string | undefined {
   const exact = MOBILE_ROUTES[`${method} ${path.join('/')}`];
@@ -80,6 +85,19 @@ function mobileUpstreamPath(method: string, path: readonly string[]): string | u
   if (method === 'POST' && path.length === 4 && path[0] === 'logbook' && path[1] === 'handovers' && UUID.test(path[2] ?? '') &&
       path[3] === 'accept')
     return `/api/v1/mobile/logbook/handovers/${path[2]}/accept`;
+  if (path[0] === 'sop' && path[1] === 'procedures' && UUID.test(path[2] ?? '')) {
+    if (method === 'GET' && path.length === 3) return `/api/v1/mobile/sop/procedures/${path[2]}`;
+    if (method === 'POST' && path.length === 4 && path[3] === 'feedback') return `/api/v1/mobile/sop/procedures/${path[2]}/feedback`;
+    if (method === 'GET' && path.length === 6 && path[3] === 'steps' && STEP_KEY.test(path[4] ?? '') && path[5] === 'image')
+      return `/api/v1/mobile/sop/procedures/${path[2]}/steps/${path[4]}/image`;
+  }
+  if (path[0] === 'sop' && path[1] === 'executions' && UUID.test(path[2] ?? '')) {
+    if (method === 'GET' && path.length === 3) return `/api/v1/mobile/sop/executions/${path[2]}`;
+    if (method === 'POST' && path.length === 4 && (path[3] === 'steps' || path[3] === 'complete'))
+      return `/api/v1/mobile/sop/executions/${path[2]}/${path[3]}`;
+    if (method === 'POST' && path.length === 6 && path[3] === 'steps' && STEP_KEY.test(path[4] ?? '') && path[5] === 'cosign')
+      return `/api/v1/mobile/sop/executions/${path[2]}/steps/${path[4]}/cosign`;
+  }
   return undefined;
 }
 

@@ -19,7 +19,7 @@ BASE_ENV="${COMPOSE_DIR}/.env"
 MODULE_ENV="${COMPOSE_DIR}/.env.modules"
 MIGRATIONS="${REPO_ROOT}/modules/physical-operations-cmms/db/migrations"
 DATABASES=(gigalibs_wi_oi_038_clean gigalibs_wi_oi_038_upgrade gigalibs_wi_oi_038_guard)
-APPEND_ONLY="audit_events,work_order_events,work_order_labour,meter_readings,stock_movements,calibration_points,calibration_record_standards,asset_audit_sightings"
+APPEND_ONLY="audit_events,work_order_events,work_order_labour,meter_readings,stock_movements,calibration_points,calibration_record_standards,asset_audit_sightings,sop_result_photos"
 
 read_value() {
   local file="$1" key="$2" value

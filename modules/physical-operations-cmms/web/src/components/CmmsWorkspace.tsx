@@ -20,6 +20,7 @@ import { type CmmsApiError, cmmsApi } from '../api';
 import { CmmsAssets } from './CmmsAssets';
 import { CmmsCalibration } from './CmmsCalibration';
 import { CmmsCommissioning } from './CmmsCommissioning';
+import { CmmsSop } from './CmmsSop';
 import { CmmsSpares } from './CmmsSpares';
 import { CmmsMeters } from './CmmsMeters';
 import { CmmsParts } from './CmmsParts';
@@ -39,6 +40,7 @@ export type CmmsSection =
   | 'calibration'
   | 'commissioning'
   | 'spares'
+  | 'sop'
   | 'inventory'
   | 'requests'
   | 'classifications';
@@ -104,6 +106,12 @@ const SECTIONS: ReadonlyArray<{
     description: 'Exploded diagrams with live spare-part stock and work-order reservations.',
   },
   {
+    key: 'sop',
+    label: 'Work instructions',
+    href: '/cmms/sop',
+    description: 'Step-by-step procedures with pictures, readings, decisions and countersigns.',
+  },
+  {
     key: 'inventory',
     label: 'Parts & stock',
     href: '/cmms/inventory',
@@ -162,6 +170,7 @@ export function CmmsWorkspace({ section, permissions = [] }: { section: CmmsSect
         {section === 'calibration' ? <CmmsCalibration permissions={permissions} /> : null}
         {section === 'commissioning' ? <CmmsCommissioning permissions={permissions} /> : null}
         {section === 'spares' ? <CmmsSpares permissions={permissions} /> : null}
+        {section === 'sop' ? <CmmsSop permissions={permissions} /> : null}
         {section === 'inventory' ? <CmmsParts /> : null}
         {section === 'requests' ? <CmmsWindow surface="cmms-requests" permissions={permissions} /> : null}
         {section === 'classifications' ? <CmmsWindow surface="cmms-classifications" permissions={permissions} /> : null}

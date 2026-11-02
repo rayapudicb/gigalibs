@@ -318,6 +318,8 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.audits.execute",
       "cmms.bom.read",
       "cmms.parts.reserve",
+      "cmms.sop.read",
+      "cmms.sop.execute",
       "maps.nodes.read",
       "workforce:read",
       "workforce.resources.read",
@@ -356,6 +358,10 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.bom.manage",
       "cmms.bom.publish",
       "cmms.parts.reserve",
+      "cmms.sop.read",
+      "cmms.sop.execute",
+      "cmms.sop.author",
+      "cmms.sop.approve",
       "maps:read",
       "maps.nodes.read",
       "workforce:read",
@@ -394,6 +400,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.commissioning.read",
       "cmms.audits.read",
       "cmms.bom.read",
+      "cmms.sop.read",
       "maps.nodes.read"
     ]
   },
@@ -410,6 +417,8 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.calibration.manage",
       "cmms.calibration.publish",
       "cmms.calibration.approve",
+      "cmms.sop.read",
+      "cmms.sop.approve",
       "maps.nodes.read"
     ]
   },

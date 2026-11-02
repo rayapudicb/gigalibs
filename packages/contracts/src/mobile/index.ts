@@ -272,6 +272,10 @@ export const MOBILE_PROBLEMS = {
     status: 409,
     title: 'Not enough stock is available, the work order is closed, or this reservation was already sent. Reload and try again.',
   },
+  MOBILE_SOP_CONFLICT: {
+    status: 409,
+    title: 'The procedure moved on: a step waits for a countersign, was already recorded, or the revision was withdrawn. Reload and try again.',
+  },
   MOBILE_COMMISSIONING_CONFLICT: {
     status: 409,
     title: 'The tag is already bound, the walk is finished, or this capture was already used. Check and try again.',

@@ -159,6 +159,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       ]
     },
     {
+      "key": "sop",
+      "label": "Work Instructions",
+      "path": "/cmms/sop",
+      "icon": "file-check",
+      "permissions": [
+        "cmms.sop.read"
+      ]
+    },
+    {
       "key": "analytics",
       "label": "Reliability",
       "path": "/cmms/analytics",

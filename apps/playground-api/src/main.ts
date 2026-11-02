@@ -11,6 +11,7 @@ import { disconnectDb } from '@gigalibs/db';
 import { GigaLogger, correlationMiddleware, logger } from '@gigalibs/logger';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
+import { boundedJsonMiddleware } from './bounded-json.middleware.js';
 import { runtimeConfig } from './config/runtime-config.js';
 import { createHttpMetricsMiddleware } from './http-metrics.middleware.js';
 import { MetricsService } from './metrics.service.js';
@@ -22,6 +23,8 @@ async function bootstrap() {
   app.use(correlationMiddleware);
   app.use(createHttpMetricsMiddleware(app.get(MetricsService)));
   app.use(helmet());
+  // WI-OI-138: mobile work-instruction steps may carry a bounded photo (≤ 500 KB as base64), up to the web BFF's 1 MiB cap.
+  app.use('/api/v1/mobile/sop/executions', boundedJsonMiddleware(1_048_576));
   app.enableCors({
     origin: runtimeConfig.corsOrigins,
     credentials: true,

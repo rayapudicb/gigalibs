@@ -106,6 +106,10 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.bom.read')) ? ['cmms.bom.read'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.parts.reserve')) ? ['cmms.parts.reserve'] : []),
   ] : [];
+  const sopCapabilities = entitlements.includes('asset-maintenance') ? [
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.sop.read')) ? ['cmms.sop.read'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.sop.execute')) ? ['cmms.sop.execute'] : []),
+  ] : [];
   const logbookCapabilities = entitlements.includes('gigaops') ? [
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.read')) ? ['workforce.logbook.read'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.write')) ? ['workforce.logbook.write'] : []),
@@ -139,6 +143,13 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
       capabilities:logbookCapabilities,
       presentationRevision:'logbook.v1',
       requiredDeviceCapabilities:[],
+    }] : []),
+    // WI-OI-138 M-SOP: work instructions for members who perform them; photo steps use the camera.
+    ...(sopCapabilities.includes('cmms.sop.execute') ? [{
+      key:'sop',enabled:true,navigationOrder:420,
+      capabilities:sopCapabilities,
+      presentationRevision:'sop.v1',
+      requiredDeviceCapabilities:['camera'],
     }] : []),
     // WI-OI-135 M-TAG: commissioning proposals and floor walks, each by its own permission.
     ...(commissioningCapabilities.length ? [{

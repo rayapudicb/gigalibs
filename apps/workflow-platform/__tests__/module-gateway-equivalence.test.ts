@@ -85,7 +85,9 @@ function intendedCmmsPermission(method: string, path: string): string | null {
   }
   // WI-OI-134 M-CAL: calibration routes, transcribed from CalibrationController's @RequirePermissions.
   const calibrationRoute = CALIBRATION_ROUTES.find(
-    ([routeMethod, pattern]) => routeMethod === method && new RegExp(`^v1/${pattern.replaceAll('{id}', UUID_SEGMENT)}$`).test(path),
+    ([routeMethod, pattern]) =>
+      routeMethod === method &&
+      new RegExp(`^v1/${pattern.replaceAll('{id}', UUID_SEGMENT).replaceAll('{key}', '[a-z][a-z0-9-]*')}$`).test(path),
   );
   if (calibrationRoute) return calibrationRoute[2];
   const screenRoute = SCREEN_ROUTES_U19A.find(
@@ -139,6 +141,29 @@ const CALIBRATION_ROUTES: readonly (readonly [string, string, string])[] = [
   ['POST', 'part-reservations', 'cmms.parts.reserve'],
   ['POST', 'part-reservations/{id}/release', 'cmms.parts.reserve'],
   ['GET', 'work-orders/{id}/part-reservations', 'cmms.parts.read'],
+  // WI-OI-138 M-SOP, from SopController ({key} is a step key).
+  ['GET', 'sop/procedures', 'cmms.sop.read'],
+  ['POST', 'sop/procedures', 'cmms.sop.author'],
+  ['GET', 'sop/procedures/{id}', 'cmms.sop.read'],
+  ['PATCH', 'sop/procedures/{id}', 'cmms.sop.author'],
+  ['POST', 'sop/procedures/{id}/revise', 'cmms.sop.author'],
+  ['POST', 'sop/procedures/{id}/submit', 'cmms.sop.author'],
+  ['POST', 'sop/procedures/{id}/approve', 'cmms.sop.approve'],
+  ['POST', 'sop/procedures/{id}/reject', 'cmms.sop.approve'],
+  ['POST', 'sop/procedures/{id}/withdraw', 'cmms.sop.approve'],
+  ['GET', 'sop/procedures/{id}/steps/{key}/image', 'cmms.sop.read'],
+  ['PUT', 'sop/procedures/{id}/steps/{key}/image', 'cmms.sop.author'],
+  ['GET', 'sop/procedures/{id}/durations', 'cmms.sop.read'],
+  ['POST', 'sop/procedures/{id}/feedback', 'cmms.sop.execute'],
+  ['GET', 'sop/feedback', 'cmms.sop.read'],
+  ['POST', 'sop/feedback/{id}/resolve', 'cmms.sop.author'],
+  ['GET', 'sop/executions', 'cmms.sop.read'],
+  ['POST', 'sop/executions', 'cmms.sop.execute'],
+  ['GET', 'sop/executions/{id}', 'cmms.sop.read'],
+  ['POST', 'sop/executions/{id}/steps', 'cmms.sop.execute'],
+  ['POST', 'sop/executions/{id}/complete', 'cmms.sop.execute'],
+  ['POST', 'sop/executions/{id}/steps/{key}/cosign', 'cmms.sop.execute'],
+  ['GET', 'sop/executions/{id}/steps/{key}/photo', 'cmms.sop.read'],
 ];
 
 /**

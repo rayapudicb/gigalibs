@@ -93,7 +93,8 @@ describe('CMMS screens reach their API through the gateway', () => {
         .split('/')
         .reduce<string[]>((paths, segment) => paths.flatMap((prefix) => segment.split('|').map((option) => (prefix ? `${prefix}/${option}` : option))), [''])
         .flatMap((path) => Object.keys(route.methods).map((method) => `${method} ${path}`))
-        .filter((route) => !served.has(route) && !sdkServed.has(route)),
+        // Controller parameters are read as `{id}`; a manifest `{key}` (WI-OI-138 step keys) is the same parameter.
+        .filter((route) => !served.has(route.replaceAll('{key}', '{id}')) && !sdkServed.has(route)),
     );
     expect(missing).toEqual([]);
   });

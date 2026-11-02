@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { CMMS_CONFIG } from './config.provider.js';
@@ -17,8 +18,11 @@ async function bootstrap(): Promise<void> {
     }
   }
 
-  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true, rawBody: true });
   const config = app.get<CmmsRuntimeConfig>(CMMS_CONFIG);
+  // Matches the web BFF's 1 MiB request cap: diagram images (WI-OI-136), step images and step photos (WI-OI-138) are
+  // bounded rasters sent as base64 JSON, beyond the 100 KB default.
+  app.useBodyParser('json', { limit: '1mb' });
 
   app.use(helmet());
   app.enableCors({

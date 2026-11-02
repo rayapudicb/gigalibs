@@ -173,6 +173,21 @@ describe('mobile session v3 projection', () => {
     expect(projectMobileSession(withPermissions(['workforce.logbook.read'],'asset-maintenance'),binding).modules).toEqual([]);
   });
 
+  it('offers work instructions to members who perform them, with the camera for photo steps (WI-OI-138)',() => {
+    const base = source();
+    const withPermissions = (permissions: string[]) => ({
+      ...base,
+      tenant:{...base.tenant!,entitlements:[...base.tenant!.entitlements,{moduleKey:'asset-maintenance',version:'2026-11-02'}]},
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,...permissions]} : assignment),
+    });
+    expect(projectMobileSession(withPermissions(['cmms.sop.read','cmms.sop.execute']),binding).modules).toEqual([{
+      key:'sop',enabled:true,navigationOrder:420,capabilities:['cmms.sop.read','cmms.sop.execute'],
+      presentationRevision:'sop.v1',requiredDeviceCapabilities:['camera'],
+    }]);
+    expect(projectMobileSession(withPermissions(['cmms.sop.read']),binding).modules).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();

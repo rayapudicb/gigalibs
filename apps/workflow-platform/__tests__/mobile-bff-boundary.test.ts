@@ -173,6 +173,23 @@ describe('mobile v1 BFF front door', () => {
     expect(upstreamFetch).toHaveBeenCalledTimes(6);
   });
 
+  it('forwards the work-instruction routes, UUID- and step-key-bound (WI-OI-138)', async () => {
+    const id = '10000000-0000-4000-8000-000000000001';
+    upstreamFetch.mockImplementation(async () => new Response('{}', { status: 200 }));
+    const auth = { headers: { Authorization: 'Bearer mobile-token' } };
+    for (const path of ['sop/procedures', `sop/procedures/${id}`, `sop/procedures/${id}/steps/isolate/image`, 'sop/executions/awaiting-cosign', `sop/executions/${id}`])
+      expect((await GET(mobileRequest(path, auth), context(path.split('/')))).status).toBe(200);
+    for (const path of ['sop/executions', `sop/executions/${id}/steps`, `sop/executions/${id}/complete`, `sop/executions/${id}/steps/isolate/cosign`, `sop/procedures/${id}/feedback`])
+      expect((await POST(mobileRequest(path, { ...auth, method: 'POST', body: '{}' }), context(path.split('/')))).status).toBe(200);
+    expect(upstreamFetch).toHaveBeenCalledTimes(10);
+    expect(String(upstreamFetch.mock.calls[2]?.[0])).toContain(`/api/v1/mobile/sop/procedures/${id}/steps/isolate/image`);
+    for (const path of [`sop/procedures/${id}/steps/Bad_Key/image`, `sop/procedures/${id}/steps/../image`, `sop/executions/${id}/steps/isolate/photo`])
+      expect((await GET(mobileRequest(path, auth), context(path.split('/')))).status).toBe(404);
+    expect((await POST(mobileRequest(`sop/procedures/${id}/approve`, { ...auth, method: 'POST', body: '{}' }),
+      context(['sop', 'procedures', id, 'approve']))).status).toBe(404);
+    expect(upstreamFetch).toHaveBeenCalledTimes(10);
+  });
+
   it('forwards only the listed Rounds supervisor board read', async () => {
     upstreamFetch.mockResolvedValueOnce(new Response('{"items":[]}', {status:200}));
     const response=await GET(mobileRequest('rounds/board'),context(['rounds','board']));

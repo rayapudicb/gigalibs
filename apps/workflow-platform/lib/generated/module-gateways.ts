@@ -2444,6 +2444,108 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/sop/procedures",
+        "pattern": "^v1/sop/procedures$",
+        "methods": {
+          "GET": "cmms.sop.read",
+          "POST": "cmms.sop.author"
+        }
+      },
+      {
+        "template": "v1/sop/procedures/{id}",
+        "pattern": "^v1/sop/procedures/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.sop.read",
+          "PATCH": "cmms.sop.author"
+        }
+      },
+      {
+        "template": "v1/sop/procedures/{id}/revise|submit",
+        "pattern": "^v1/sop/procedures/[0-9a-fA-F-]{36}/(?:revise|submit)$",
+        "methods": {
+          "POST": "cmms.sop.author"
+        }
+      },
+      {
+        "template": "v1/sop/procedures/{id}/approve|reject|withdraw",
+        "pattern": "^v1/sop/procedures/[0-9a-fA-F-]{36}/(?:approve|reject|withdraw)$",
+        "methods": {
+          "POST": "cmms.sop.approve"
+        }
+      },
+      {
+        "template": "v1/sop/procedures/{id}/steps/{key}/image",
+        "pattern": "^v1/sop/procedures/[0-9a-fA-F-]{36}/steps/[a-z][a-z0-9-]*/image$",
+        "methods": {
+          "GET": "cmms.sop.read",
+          "PUT": "cmms.sop.author"
+        }
+      },
+      {
+        "template": "v1/sop/procedures/{id}/durations",
+        "pattern": "^v1/sop/procedures/[0-9a-fA-F-]{36}/durations$",
+        "methods": {
+          "GET": "cmms.sop.read"
+        }
+      },
+      {
+        "template": "v1/sop/procedures/{id}/feedback",
+        "pattern": "^v1/sop/procedures/[0-9a-fA-F-]{36}/feedback$",
+        "methods": {
+          "POST": "cmms.sop.execute"
+        }
+      },
+      {
+        "template": "v1/sop/feedback",
+        "pattern": "^v1/sop/feedback$",
+        "methods": {
+          "GET": "cmms.sop.read"
+        }
+      },
+      {
+        "template": "v1/sop/feedback/{id}/resolve",
+        "pattern": "^v1/sop/feedback/[0-9a-fA-F-]{36}/resolve$",
+        "methods": {
+          "POST": "cmms.sop.author"
+        }
+      },
+      {
+        "template": "v1/sop/executions",
+        "pattern": "^v1/sop/executions$",
+        "methods": {
+          "GET": "cmms.sop.read",
+          "POST": "cmms.sop.execute"
+        }
+      },
+      {
+        "template": "v1/sop/executions/{id}",
+        "pattern": "^v1/sop/executions/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.sop.read"
+        }
+      },
+      {
+        "template": "v1/sop/executions/{id}/steps|complete",
+        "pattern": "^v1/sop/executions/[0-9a-fA-F-]{36}/(?:steps|complete)$",
+        "methods": {
+          "POST": "cmms.sop.execute"
+        }
+      },
+      {
+        "template": "v1/sop/executions/{id}/steps/{key}/cosign",
+        "pattern": "^v1/sop/executions/[0-9a-fA-F-]{36}/steps/[a-z][a-z0-9-]*/cosign$",
+        "methods": {
+          "POST": "cmms.sop.execute"
+        }
+      },
+      {
+        "template": "v1/sop/executions/{id}/steps/{key}/photo",
+        "pattern": "^v1/sop/executions/[0-9a-fA-F-]{36}/steps/[a-z][a-z0-9-]*/photo$",
+        "methods": {
+          "GET": "cmms.sop.read"
+        }
+      },
+      {
         "template": "v1/part-reservations/{id}/release",
         "pattern": "^v1/part-reservations/[0-9a-fA-F-]{36}/release$",
         "methods": {

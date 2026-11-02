@@ -150,6 +150,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
         key: 'spares', label: 'Visual Spares', href: '/cmms/spares', icon: moduleIcons.layers,
         permissions: ['cmms.bom.read'] as const,
       } as (typeof items)[number]);
+      // WI-OI-138 M-SOP: Work Instructions follows Visual Spares and is gated on cmms.sop.read.
+      items.splice(metersAt + 4, 0, {
+        key: 'sop', label: 'Work Instructions', href: '/cmms/sop', icon: moduleIcons['file-check'],
+        permissions: ['cmms.sop.read'] as const,
+      } as (typeof items)[number]);
       // WI-OI-131 C11: Reliability tab is permission-gated in the sidebar.
       return items.map((item) =>
         item.key === 'analytics'

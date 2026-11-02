@@ -483,6 +483,32 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "cmms.sop.approve",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.sop.author",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.sop.execute",
+    "entries": [
+      "asset-maintenance",
+      "platform"
+    ]
+  },
+  {
+    "code": "cmms.sop.read",
+    "entries": [
+      "asset-maintenance",
+      "platform"
+    ]
+  },
+  {
     "code": "cmms.work-orders.execute-own",
     "entries": [
       "asset-maintenance"
