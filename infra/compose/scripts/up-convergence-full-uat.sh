@@ -89,6 +89,7 @@ MODULE_MIGRATIONS=(
   universal-procurement-migrations
   universal-returns-migrations
   operator-rounds-migrations
+  safety-operations-migrations
   workforce-migrations
 )
 

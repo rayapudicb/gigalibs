@@ -3,6 +3,18 @@
 **Branch:** `feat/frontline-suite` (worktree `/Users/rayapudi/dev/gigalibs-rounds`). **Mobile repo:** `/Users/rayapudi/dev/gigalibs_mobile`.  
 **Owner intent (2026-11-02):** All twelve products complete (web + admin + BFF + mobile + DB), single deploy; no mocks.
 
+## Suite summary (2026-11-02)
+
+| Metric | Value |
+|--------|--------|
+| **Module gate (Built)** | **11 / 11** in scope (WI-OI-133 … WI-OI-143) |
+| **Parked** | WI-OI-144 M-CHAT |
+| **Platform verify** | PASS (`/tmp/verify-143.log`, post `62b580b3`) |
+| **Mobile tests** | 1978 passed (159 files) |
+| **Owner deploy handoff** | [FRONTLINE-SUITE-100-DEPLOY-2026-11-02.md](../handoff/FRONTLINE-SUITE-100-DEPLOY-2026-11-02.md) |
+
+**Done (UAT accepted)** remains **0 / 11** until owner records acceptance after release-worktree deploy.
+
 ## Definition of 100% (per product)
 
 Each WI-OI-133 … WI-OI-144 card must satisfy AGENTS.md module gate:
@@ -22,27 +34,28 @@ Each WI-OI-133 … WI-OI-144 card must satisfy AGENTS.md module gate:
 
 ## Product status (update as evidence lands)
 
-| # | Product | WI | Platform commit | Mobile feature | Open to 100% |
-|---|---------|-----|-----------------|----------------|--------------|
-| 1 | M-RND Rounds | 133 | Yes | `mobile-feature-operator-rounds` | **Built** — owner UAT journey, physical device proof, live conformance `--record` on rebuilt module-host |
-| 2 | M-CAL | 134 | Yes | `mobile-feature-calibration` | Offline journal, e-sign, device |
-| 3 | M-TAG | 135 | Yes | `mobile-feature-commissioning` | OCR/GPS device proof |
-| 4 | M-BOM Spares | 136 | Yes | `mobile-feature-spares` | Large media, offline |
-| 5 | M-LOG | 137 | Yes | `mobile-feature-logbook` | Voice/step-up |
-| 6 | M-SOP | 138 | Yes | `mobile-feature-sop` | Offline execution, rich media |
-| 7 | M-DVIR | 139 | Yes | `mobile-feature-fleet` | Credential interlock, offline |
-| 8 | M-REQ | 140 | Yes | `mobile-feature-requests` | Comms notify, edge throttle |
-| 9 | M-INC | 141 | Yes | `mobile-feature-safety` | Module deploy proof, CMMS relay |
-| 10 | M-LOTO | 142 | Yes | `mobile-feature-permits` | Offline, security review |
-| 11 | M-CONTR | 143 | Yes | `mobile-feature-contractor` | **Built** — commit mobile tree, PG proof, device QR, owner UAT |
-| 12 | M-CHAT | 144 | **Not started** | **Missing** | Full build (PTT deferred) |
+| # | Product | WI | Module gate | Mobile feature | Remaining to **Done** |
+|---|---------|-----|-------------|----------------|------------------------|
+| 1 | M-RND Rounds | 133 | **Built** | `mobile-feature-operator-rounds` | Owner UAT cert, device proof, live conformance `--record` |
+| 2 | M-CAL | 134 | **Built** | `mobile-feature-calibration` | Offline journal, e-sign, device, UAT |
+| 3 | M-TAG | 135 | **Built** | `mobile-feature-commissioning` | OCR/GPS device, UAT |
+| 4 | M-BOM Spares | 136 | **Built** | `mobile-feature-spares` | Large media, offline, UAT |
+| 5 | M-LOG | 137 | **Built** | `mobile-feature-logbook` | Voice/step-up, UAT |
+| 6 | M-SOP | 138 | **Built** | `mobile-feature-sop` | Offline execution, rich media, UAT |
+| 7 | M-DVIR | 139 | **Built** | `mobile-feature-fleet` | Credential interlock, offline, UAT |
+| 8 | M-REQ | 140 | **Built** | `mobile-feature-requests` | Comms notify, edge throttle, Security, UAT |
+| 9 | M-INC | 141 | **Built** | `mobile-feature-safety` | Deploy proof, CMMS relay live, UAT |
+| 10 | M-LOTO | 142 | **Built** | `mobile-feature-permits` | Offline, Security review, UAT |
+| 11 | M-CONTR | 143 | **Built** | `mobile-feature-contractor` | PG proof (opt-in), device QR, UAT |
+| 12 | M-CHAT | 144 | **Parked** | — | Full build when unparked (PTT deferred) |
 
-## Shared platform blockers (fix once for all)
+## Shared deploy checklist (owner, once)
 
-1. Four pre-existing `pnpm verify` test failures (control-plane env, project-operations migration expectation, signed-context synthetic worst case).
-2. Signed-context catalogue growth (WI-OI-134 platform decision / auth-core ADR).
-3. Compose: module-host image, migration pins, entitlements for all new modules (Safety Operations, Operator Rounds, CMMS mig bumps).
-4. Single release worktree merge: `feat/frontline-suite` → owner deploy script.
+1. Release worktree from `feat/frontline-suite`; rebuild **module-host**, **web**, **api**, **cmms-api**, **workforce** images.
+2. Run [up-convergence-full-uat.sh](../../infra/compose/scripts/up-convergence-full-uat.sh) (includes **safety-operations** + **operator-rounds** migrations).
+3. Seed entitlements for frontline catalog keys; assign tenant roles (`operator-rounds.*`, `safety-operations.*`, CMMS frontline permissions).
+4. Mobile operations app → UAT BFF; smoke each feature route.
+5. Record acceptance per WI in `.pi/WORK_ITEMS.md` → **Done**.
 
 ## Handshake pattern (repeat per product)
 
