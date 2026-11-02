@@ -1340,7 +1340,7 @@ for (const module of MODULES) {
     bug.status,
     bug.wi,
     `2026-11-02 · ${MEASURED_RELEASE}`,
-    fixedIn(bug.status),
+    bug.fixedIn ?? fixedIn(bug.status),
     bug.retest,
     null,
     null,
@@ -1465,7 +1465,7 @@ for (const module of MODULES) {
       ['268384f8', 'c88a88d4'].includes(hash)
         ? 'On UAT'
         : ['59c0fe7f', '88e493d7'].includes(hash)
-          ? 'Deploying (88e493d7)'
+          ? 'On UAT (88e493d7)'
           : "In branch, awaiting the owner's deploy",
     ]),
   );

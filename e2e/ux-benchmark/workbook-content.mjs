@@ -1538,8 +1538,9 @@ export const BUGS = [
     fix: 'One line, overflow-x scroll, active tab scrolled into view (59c0fe7f).',
     files: 'apps/workflow-platform/components/navigation/ModuleTabBar.tsx',
     wi: 'WI-OI-145',
-    status: 'Fixed - deploying',
-    retest: 'After the 88e493d7 deploy.',
+    status: 'Fixed - on UAT',
+    fixedIn: '59c0fe7f (on UAT in 88e493d7)',
+    retest: 'Check on 88e493d7.',
   },
   {
     id: 'QA-045',
@@ -1557,8 +1558,9 @@ export const BUGS = [
     files:
       'packages/web-sdk/src/page.tsx; packages/configuration-react/src/window/MetadataWindow.tsx',
     wi: 'WI-OI-145',
-    status: 'Fixed - deploying',
-    retest: 'After the 88e493d7 deploy.',
+    status: 'Fixed - on UAT',
+    fixedIn: '59c0fe7f (on UAT in 88e493d7)',
+    retest: 'Check on 88e493d7.',
   },
 ];
 
@@ -1643,7 +1645,7 @@ export const UX_STORIES = [
     'As any person, I want the screens of a module as one tab bar under the top bar, so that every screen is two clicks away.',
     'Tab bar from the manifest menu, underline style, one line that scrolls sideways, active tab scrolled into view.',
     'ModuleTabBar.tsx, module-tabs.ts, module.yaml menus',
-    'Done on UAT; one-line scrolling deploying (88e493d7)',
+    'Done on UAT (one-line scrolling in 88e493d7)',
     'c88a88d4, 59c0fe7f',
   ],
   [
@@ -1676,7 +1678,7 @@ export const UX_STORIES = [
     "As any person, I want a screen's buttons beside the list search, so that actions such as Open scanner are where I look.",
     "ModulePage actions portal into the list's action slot, else the tab bar end.",
     'web-sdk page.tsx, MetadataWindow.tsx',
-    'Deploying (88e493d7)',
+    'Done on UAT (88e493d7)',
     '59c0fe7f',
   ],
   [
