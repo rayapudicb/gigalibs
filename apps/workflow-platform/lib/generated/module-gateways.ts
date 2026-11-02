@@ -2444,6 +2444,35 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/portal/links",
+        "pattern": "^v1/portal/links$",
+        "methods": {
+          "GET": "cmms.portal.manage",
+          "POST": "cmms.portal.manage"
+        }
+      },
+      {
+        "template": "v1/portal/links/{id}/revoke",
+        "pattern": "^v1/portal/links/[0-9a-fA-F-]{36}/revoke$",
+        "methods": {
+          "POST": "cmms.portal.manage"
+        }
+      },
+      {
+        "template": "v1/portal/submissions",
+        "pattern": "^v1/portal/submissions$",
+        "methods": {
+          "GET": "cmms.portal.manage"
+        }
+      },
+      {
+        "template": "v1/portal/submissions/{id}/photo",
+        "pattern": "^v1/portal/submissions/[0-9a-fA-F-]{36}/photo$",
+        "methods": {
+          "GET": "cmms.portal.manage"
+        }
+      },
+      {
         "template": "v1/fleet/templates",
         "pattern": "^v1/fleet/templates$",
         "methods": {

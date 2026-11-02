@@ -1,5 +1,5 @@
 import { createPrivateKey, randomUUID } from 'node:crypto';
-import { buildPlatformContext, signPlatformContextToken } from '@gigalibs/auth-core';
+import { type PlatformContextSubject, buildPlatformContext, signPlatformContextToken } from '@gigalibs/auth-core';
 import { holdsPermission, type MobileProblemCode } from '@gigalibs/contracts';
 import { HttpException, type Logger } from '@nestjs/common';
 import { type MobileAuthService, MobileProblemException, type MobileRequest } from './mobile-auth.service.js';
@@ -39,7 +39,7 @@ interface MobileForwardOptions {
 }
 
 /** A module the mobile adapters call: its entitlement key, signed-context audience and environment names. */
-interface MobileModuleTarget {
+export interface MobileModuleTarget {
   readonly moduleKey: string;
   readonly audience: string;
   readonly urlEnvironment: string;
@@ -60,14 +60,25 @@ export function forwardMobileCmms(options: MobileForwardOptions): Promise<unknow
   return forwardMobileModule(CMMS_TARGET, options);
 }
 
-export async function forwardMobileModule(target: MobileModuleTarget, options: MobileForwardOptions): Promise<unknown> {
-  const subject = await options.mobile.moduleSubject(mobileRequestFrom(options.headers));
-  if (!subject.tenant || !subject.tenant.entitlements.some((item) =>
-    item.moduleKey === target.moduleKey && item.status === 'ENABLED') || !holdsPermission(subject.permissions, options.permission))
-    throw new MobileProblemException('MOBILE_SCOPE_DENIED');
+/** Why a module call could not be made or answered: the module is not configured or reachable, or it timed out. */
+export class ModuleCallUnavailable extends Error {
+  constructor(readonly reason: 'unavailable' | 'timeout') {
+    super(`Module call ${reason}.`);
+  }
+}
+
+/**
+ * Calls a module as `subject` with a 60-second context signed for that module only (WI-OI-140: also the portal
+ * principal). The caller has already decided the subject may make this call; the module re-checks everything.
+ */
+export async function callModule(
+  target: MobileModuleTarget,
+  subject: PlatformContextSubject,
+  call: { readonly method: 'GET' | 'POST'; readonly path: string; readonly body?: unknown; readonly correlationId?: string },
+): Promise<{ readonly status: number; readonly value: unknown }> {
   const upstream = process.env[target.urlEnvironment]?.trim();
   const encodedKey = process.env[target.keyEnvironment]?.trim();
-  if (!upstream || !encodedKey) throw new MobileProblemException('MOBILE_UNAVAILABLE');
+  if (!upstream || !encodedKey) throw new ModuleCallUnavailable('unavailable');
   let url: URL;
   let privateKey: string;
   try {
@@ -78,40 +89,60 @@ export async function forwardMobileModule(target: MobileModuleTarget, options: M
       .export({ format: 'pem', type: 'pkcs8' })
       .toString();
   } catch {
-    throw new MobileProblemException('MOBILE_UNAVAILABLE');
+    throw new ModuleCallUnavailable('unavailable');
   }
   const token = signPlatformContextToken(
     buildPlatformContext(subject, target.moduleKey, target.audience, { ttlSeconds: 60 }),
     privateKey,
   );
-  const requestUrl = new URL(`${url.pathname.replace(/\/$/, '')}${options.path}`, url.origin);
+  const requestUrl = new URL(`${url.pathname.replace(/\/$/, '')}${call.path}`, url.origin);
   let response: Response;
   try {
     response = await fetch(requestUrl, {
-      method: options.method,
+      method: call.method,
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json, application/problem+json',
-        'X-Correlation-Id': single(options.headers, 'x-correlation-id') ?? randomUUID(),
-        ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        'X-Correlation-Id': call.correlationId ?? randomUUID(),
+        ...(call.body === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
-      ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
+      ...(call.body === undefined ? {} : { body: JSON.stringify(call.body) }),
       cache: 'no-store',
       redirect: 'error',
       signal: AbortSignal.timeout(10_000),
     });
   } catch (error) {
-    throw new MobileProblemException(error instanceof Error && error.name === 'TimeoutError'
-      ? 'MOBILE_UPSTREAM_TIMEOUT' : 'MOBILE_UNAVAILABLE');
+    throw new ModuleCallUnavailable(error instanceof Error && error.name === 'TimeoutError' ? 'timeout' : 'unavailable');
   }
-  const value: unknown = await response.json().catch(() => null);
-  if (response.ok && value && typeof value === 'object') return value;
-  if (response.status === 409) throw new MobileProblemException(options.conflict);
-  if (response.status === 400 || response.status === 422) throw new MobileProblemException('MOBILE_REQUEST_INVALID');
-  if (response.status === 401) throw new MobileProblemException('MOBILE_AUTH_REQUIRED');
-  if (response.status === 403) throw new MobileProblemException('MOBILE_SCOPE_DENIED');
-  if (response.status === 404) throw new MobileProblemException('MOBILE_NOT_FOUND');
-  options.logger.warn(`${target.moduleKey} returned status ${response.status} to a mobile call.`);
+  return { status: response.status, value: await response.json().catch(() => null) };
+}
+
+export async function forwardMobileModule(target: MobileModuleTarget, options: MobileForwardOptions): Promise<unknown> {
+  const subject = await options.mobile.moduleSubject(mobileRequestFrom(options.headers));
+  if (!subject.tenant || !subject.tenant.entitlements.some((item) =>
+    item.moduleKey === target.moduleKey && item.status === 'ENABLED') || !holdsPermission(subject.permissions, options.permission))
+    throw new MobileProblemException('MOBILE_SCOPE_DENIED');
+  let answer: { readonly status: number; readonly value: unknown };
+  try {
+    const correlationId = single(options.headers, 'x-correlation-id');
+    answer = await callModule(target, subject, {
+      method: options.method, path: options.path,
+      ...(options.body === undefined ? {} : { body: options.body }),
+      ...(correlationId ? { correlationId } : {}),
+    });
+  } catch (error) {
+    if (error instanceof ModuleCallUnavailable)
+      throw new MobileProblemException(error.reason === 'timeout' ? 'MOBILE_UPSTREAM_TIMEOUT' : 'MOBILE_UNAVAILABLE');
+    throw error;
+  }
+  const { status, value } = answer;
+  if (status >= 200 && status < 300 && value && typeof value === 'object') return value;
+  if (status === 409) throw new MobileProblemException(options.conflict);
+  if (status === 400 || status === 422) throw new MobileProblemException('MOBILE_REQUEST_INVALID');
+  if (status === 401) throw new MobileProblemException('MOBILE_AUTH_REQUIRED');
+  if (status === 403) throw new MobileProblemException('MOBILE_SCOPE_DENIED');
+  if (status === 404) throw new MobileProblemException('MOBILE_NOT_FOUND');
+  options.logger.warn(`${target.moduleKey} returned status ${status} to a mobile call.`);
   throw new MobileProblemException('MOBILE_UNAVAILABLE');
 }
 

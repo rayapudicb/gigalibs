@@ -1331,3 +1331,4 @@ export * from './spares.js';
 
 export * from './sop.js';
 export * from './fleet.js';
+export * from './portal.js';

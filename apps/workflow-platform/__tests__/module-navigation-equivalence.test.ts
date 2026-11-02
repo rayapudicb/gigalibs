@@ -160,6 +160,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
         key: 'fleet', label: 'Fleet Readiness', href: '/cmms/fleet', icon: moduleIcons.gauge,
         permissions: ['cmms.fleet.read'] as const,
       } as (typeof items)[number]);
+      // WI-OI-140 M-REQ: QR Request Links follows Fleet Readiness and is gated on cmms.portal.manage.
+      items.splice(metersAt + 6, 0, {
+        key: 'request-links', label: 'QR Request Links', href: '/cmms/request-links', icon: moduleIcons['scan-line'],
+        permissions: ['cmms.portal.manage'] as const,
+      } as (typeof items)[number]);
       // WI-OI-131 C11: Reliability tab is permission-gated in the sidebar.
       return items.map((item) =>
         item.key === 'analytics'

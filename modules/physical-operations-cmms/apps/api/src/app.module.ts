@@ -16,6 +16,10 @@ import { SparesController } from './spares/spares.controller.js';
 import { SparesService } from './spares/spares.service.js';
 import { FleetController } from './fleet/fleet.controller.js';
 import { FleetService } from './fleet/fleet.service.js';
+import { PortalController } from './portal/portal.controller.js';
+import { PortalService } from './portal/portal.service.js';
+import { RequestReportsController } from './portal/request-reports.controller.js';
+import { RequestReportsService } from './portal/request-reports.service.js';
 import { SopController } from './sop/sop.controller.js';
 import { SopService } from './sop/sop.service.js';
 import { CalibrationService } from './calibration/calibration.service.js';
@@ -92,6 +96,8 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     SparesController,
     SopController,
     FleetController,
+    PortalController,
+    RequestReportsController,
     PartsController,
     AnalyticsController,
     CmmsInboxController,
@@ -106,6 +112,8 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     SparesService,
     SopService,
     FleetService,
+    PortalService,
+    RequestReportsService,
     CmmsAuthorizationGuard,
     AssetsService,
     DowntimesService,

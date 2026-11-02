@@ -183,6 +183,12 @@ const CALIBRATION_ROUTES: readonly (readonly [string, string, string])[] = [
   ['POST', 'fleet/groundings', 'cmms.fleet.inspect'],
   ['POST', 'fleet/groundings/{id}/certify', 'cmms.fleet.certify'],
   ['POST', 'fleet/groundings/{id}/clear', 'cmms.fleet.authorize'],
+  // WI-OI-140 M-REQ, the managers' routes of PortalController (the portal routes are on no gateway).
+  ['GET', 'portal/links', 'cmms.portal.manage'],
+  ['POST', 'portal/links', 'cmms.portal.manage'],
+  ['POST', 'portal/links/{id}/revoke', 'cmms.portal.manage'],
+  ['GET', 'portal/submissions', 'cmms.portal.manage'],
+  ['GET', 'portal/submissions/{id}/photo', 'cmms.portal.manage'],
 ];
 
 /**

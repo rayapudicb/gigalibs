@@ -177,6 +177,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       ]
     },
     {
+      "key": "request-links",
+      "label": "QR Request Links",
+      "path": "/cmms/request-links",
+      "icon": "scan-line",
+      "permissions": [
+        "cmms.portal.manage"
+      ]
+    },
+    {
       "key": "analytics",
       "label": "Reliability",
       "path": "/cmms/analytics",

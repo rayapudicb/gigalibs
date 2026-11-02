@@ -323,6 +323,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.fleet.read",
       "cmms.fleet.inspect",
       "cmms.fleet.certify",
+      "cmms.requests.report",
       "maps.nodes.read",
       "workforce:read",
       "workforce.resources.read",
@@ -369,6 +370,8 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.fleet.inspect",
       "cmms.fleet.authorize",
       "cmms.fleet.manage",
+      "cmms.portal.manage",
+      "cmms.requests.report",
       "maps:read",
       "maps.nodes.read",
       "workforce:read",
@@ -409,6 +412,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.bom.read",
       "cmms.sop.read",
       "cmms.fleet.read",
+      "cmms.requests.report",
       "maps.nodes.read"
     ]
   },
@@ -440,6 +444,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.assets.read",
       "cmms.fleet.read",
       "cmms.fleet.inspect",
+      "cmms.requests.report",
       "maps.nodes.read"
     ]
   },

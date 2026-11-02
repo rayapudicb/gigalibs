@@ -205,6 +205,17 @@ describe('mobile v1 BFF front door', () => {
     expect(upstreamFetch).toHaveBeenCalledTimes(6);
   });
 
+  it('forwards the problem-report routes (WI-OI-140)', async () => {
+    upstreamFetch.mockImplementation(async () => new Response('{}', { status: 200 }));
+    const auth = { headers: { Authorization: 'Bearer mobile-token' } };
+    expect((await GET(mobileRequest('requests/mine', auth), context(['requests', 'mine']))).status).toBe(200);
+    for (const path of ['requests/resolve', 'requests'])
+      expect((await POST(mobileRequest(path, { ...auth, method: 'POST', body: '{}' }), context(path.split('/')))).status).toBe(200);
+    expect(upstreamFetch).toHaveBeenCalledTimes(3);
+    expect((await GET(mobileRequest('requests', auth), context(['requests']))).status).toBe(404);
+    expect(upstreamFetch).toHaveBeenCalledTimes(3);
+  });
+
   it('forwards only the listed Rounds supervisor board read', async () => {
     upstreamFetch.mockResolvedValueOnce(new Response('{"items":[]}', {status:200}));
     const response=await GET(mobileRequest('rounds/board'),context(['rounds','board']));

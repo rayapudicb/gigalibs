@@ -23,9 +23,11 @@ async function bootstrap() {
   app.use(correlationMiddleware);
   app.use(createHttpMetricsMiddleware(app.get(MetricsService)));
   app.use(helmet());
-  // Mobile captures that may carry bounded photos, up to the web BFF's 1 MiB cap: work-instruction steps (WI-OI-138,
-  // ≤ 500 KB as base64) and fleet inspections (WI-OI-139, ≤ 600 KB of photos together).
-  app.use(['/api/v1/mobile/sop/executions', '/api/v1/mobile/fleet/inspections'], boundedJsonMiddleware(1_048_576));
+  // Captures that may carry bounded photos, up to the web BFF's 1 MiB cap: work-instruction steps (WI-OI-138, ≤ 500 KB
+  // as base64), fleet inspections (WI-OI-139, ≤ 600 KB of photos together) and portal requests (WI-OI-140, ≤ 300 KB).
+  app.use(['/api/v1/mobile/sop/executions', '/api/v1/mobile/fleet/inspections', '/api/v1/public/cmms-portal/requests',
+    '/api/v1/mobile/requests'],
+    boundedJsonMiddleware(1_048_576));
   app.enableCors({
     origin: runtimeConfig.corsOrigins,
     credentials: true,

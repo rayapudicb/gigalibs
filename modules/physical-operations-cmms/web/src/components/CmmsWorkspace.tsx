@@ -21,6 +21,7 @@ import { CmmsAssets } from './CmmsAssets';
 import { CmmsCalibration } from './CmmsCalibration';
 import { CmmsCommissioning } from './CmmsCommissioning';
 import { CmmsFleet } from './CmmsFleet';
+import { CmmsRequestLinks } from './CmmsRequestLinks';
 import { CmmsSop } from './CmmsSop';
 import { CmmsSpares } from './CmmsSpares';
 import { CmmsMeters } from './CmmsMeters';
@@ -43,6 +44,7 @@ export type CmmsSection =
   | 'spares'
   | 'sop'
   | 'fleet'
+  | 'request-links'
   | 'inventory'
   | 'requests'
   | 'classifications';
@@ -120,6 +122,12 @@ const SECTIONS: ReadonlyArray<{
     description: 'Circle checks, red tags and the readiness of every vehicle and machine.',
   },
   {
+    key: 'request-links',
+    label: 'QR request links',
+    href: '/cmms/request-links',
+    description: 'Printable labels anyone can scan to report a problem, and the requests they raise.',
+  },
+  {
     key: 'inventory',
     label: 'Parts & stock',
     href: '/cmms/inventory',
@@ -180,6 +188,7 @@ export function CmmsWorkspace({ section, permissions = [] }: { section: CmmsSect
         {section === 'spares' ? <CmmsSpares permissions={permissions} /> : null}
         {section === 'sop' ? <CmmsSop permissions={permissions} /> : null}
         {section === 'fleet' ? <CmmsFleet permissions={permissions} /> : null}
+        {section === 'request-links' ? <CmmsRequestLinks /> : null}
         {section === 'inventory' ? <CmmsParts /> : null}
         {section === 'requests' ? <CmmsWindow surface="cmms-requests" permissions={permissions} /> : null}
         {section === 'classifications' ? <CmmsWindow surface="cmms-classifications" permissions={permissions} /> : null}

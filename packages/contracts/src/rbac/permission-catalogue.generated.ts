@@ -497,6 +497,19 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "cmms.portal.manage",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.portal.submit",
+    "entries": [
+      "asset-maintenance",
+      "platform"
+    ]
+  },
+  {
     "code": "cmms.requests.create",
     "entries": [
       "asset-maintenance"
@@ -506,6 +519,13 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "cmms.requests.read",
     "entries": [
       "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.requests.report",
+    "entries": [
+      "asset-maintenance",
+      "platform"
     ]
   },
   {

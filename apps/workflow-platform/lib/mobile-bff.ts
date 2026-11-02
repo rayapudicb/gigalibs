@@ -42,6 +42,10 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   'POST fleet/inspections': '/api/v1/mobile/fleet/inspections',
   'GET fleet/groundings': '/api/v1/mobile/fleet/groundings',
   'POST fleet/groundings': '/api/v1/mobile/fleet/groundings',
+  // WI-OI-140 M-REQ.
+  'POST requests/resolve': '/api/v1/mobile/requests/resolve',
+  'POST requests': '/api/v1/mobile/requests',
+  'GET requests/mine': '/api/v1/mobile/requests/mine',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

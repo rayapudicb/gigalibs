@@ -203,6 +203,21 @@ describe('mobile session v3 projection', () => {
     expect(projectMobileSession(withPermissions(['cmms.fleet.read']),binding).modules).toEqual([]);
   });
 
+  it('offers problem reports to members who report from the app (WI-OI-140)',() => {
+    const base = source();
+    const withPermissions = (permissions: string[]) => ({
+      ...base,
+      tenant:{...base.tenant!,entitlements:[...base.tenant!.entitlements,{moduleKey:'asset-maintenance',version:'2026-11-02'}]},
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,...permissions]} : assignment),
+    });
+    expect(projectMobileSession(withPermissions(['cmms.requests.report']),binding).modules).toEqual([{
+      key:'requests',enabled:true,navigationOrder:440,capabilities:['cmms.requests.report'],
+      presentationRevision:'requests.v1',requiredDeviceCapabilities:[],
+    }]);
+    expect(projectMobileSession(withPermissions(['cmms.requests.create']),binding).modules).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();

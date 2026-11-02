@@ -280,6 +280,10 @@ export const MOBILE_PROBLEMS = {
     status: 409,
     title: 'The check changed, the asset is already grounded or not enrolled, or this capture was already sent. Reload and try again.',
   },
+  MOBILE_REPORT_CONFLICT: {
+    status: 409,
+    title: 'This report was already sent with different details. Start a new report.',
+  },
   MOBILE_COMMISSIONING_CONFLICT: {
     status: 409,
     title: 'The tag is already bound, the walk is finished, or this capture was already used. Check and try again.',

@@ -114,6 +114,9 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.fleet.inspect')) ? ['cmms.fleet.inspect'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.fleet.certify')) ? ['cmms.fleet.certify'] : []),
   ] : [];
+  // WI-OI-140 M-REQ: reporting a problem from the app needs cmms.requests.report.
+  const canReport = entitlements.includes('asset-maintenance') &&
+    projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.requests.report'));
   const logbookCapabilities = entitlements.includes('gigaops') ? [
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.read')) ? ['workforce.logbook.read'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.write')) ? ['workforce.logbook.write'] : []),
@@ -161,6 +164,12 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
       capabilities:fleetCapabilities,
       presentationRevision:'fleet.v1',
       requiredDeviceCapabilities:['camera'],
+    }] : []),
+    ...(canReport ? [{
+      key:'requests',enabled:true,navigationOrder:440,
+      capabilities:['cmms.requests.report'],
+      presentationRevision:'requests.v1',
+      requiredDeviceCapabilities:[],
     }] : []),
     // WI-OI-135 M-TAG: commissioning proposals and floor walks, each by its own permission.
     ...(commissioningCapabilities.length ? [{
