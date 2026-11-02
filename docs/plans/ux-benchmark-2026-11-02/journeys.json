@@ -1,0 +1,692 @@
+[
+ {
+  "id": "P1",
+  "persona": "Platform operator",
+  "outcome": "Create a customer workspace",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/platform-admin"
+   },
+   {
+    "form": {
+     "text": 3,
+     "number": 1,
+     "list": 2,
+     "text2": 1
+    }
+   }
+  ],
+  "note": "Platform Control Tower › create tenant: name, slug, owner email, trial days, region, isolation tier, audit reason.",
+  "seconds": 40,
+  "parts": [
+   "open /platform-admin 5.3s",
+   "form 7 fields 35.0s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "TOO SLOW"
+ },
+ {
+  "id": "P2",
+  "persona": "Platform operator",
+  "outcome": "Enable a module for a workspace",
+  "target": 10,
+  "steps": [
+   {
+    "nav": "/platform-admin"
+   },
+   {
+    "search": true
+   },
+   {
+    "clicks": 3
+   },
+   {
+    "form": {
+     "text": 1
+    }
+   }
+  ],
+  "note": "Find tenant, open it, tick the module, type the mandatory audit reason, save.",
+  "seconds": 28,
+  "parts": [
+   "open /platform-admin 5.3s",
+   "search 5.0s",
+   "3 click(s) 8.5s",
+   "form 1 fields 9.4s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "OVER TARGET"
+ },
+ {
+  "id": "A1",
+  "persona": "Workspace admin",
+  "outcome": "Invite a person with a role",
+  "target": 20,
+  "steps": [
+   {
+    "nav": "/settings"
+   },
+   {
+    "form": {
+     "text": 1,
+     "list": 1
+    }
+   }
+  ],
+  "seconds": 18,
+  "parts": [
+   "open /settings 4.6s",
+   "form 2 fields 13.2s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "MEETS"
+ },
+ {
+  "id": "A2",
+  "persona": "Workspace admin",
+  "outcome": "Add an organization unit (site/department)",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/settings/organization"
+   },
+   {
+    "form": {
+     "text": 2,
+     "list": 1
+    }
+   }
+  ],
+  "seconds": 23,
+  "parts": [
+   "open /settings/organization 4.7s",
+   "form 3 fields 18.0s"
+  ],
+  "masters": [],
+  "blockers": [
+   "/settings/organization: GET /api/maps/nodes → 502"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "A3",
+  "persona": "Workspace admin",
+  "outcome": "Turn on a module for the workspace (self-service)",
+  "target": 10,
+  "steps": [
+   {
+    "nav": "/settings/plan"
+   }
+  ],
+  "blockedReason": "Not possible: only a platform operator can enable modules; Plan & entitlements is read-only and has no request button.",
+  "seconds": 5,
+  "parts": [
+   "open /settings/plan 4.6s"
+  ],
+  "masters": [],
+  "blockers": [
+   "Not possible: only a platform operator can enable modules; Plan & entitlements is read-only and has no request button."
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "A4",
+  "persona": "Workspace admin",
+  "outcome": "Create a warehouse (Inventory master)",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/inventory"
+   },
+   {
+    "window": "inventory-warehouses"
+   }
+  ],
+  "seconds": 27,
+  "parts": [
+   "open /inventory 4.5s",
+   "form 4 required (3 text, 1 list) 22.8s"
+  ],
+  "masters": [],
+  "blockers": [
+   "/inventory: Could not load records The service is unavailable. Try again shortly. Try again"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "A5",
+  "persona": "Workspace admin",
+  "outcome": "Create a product with its unit",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/products"
+   },
+   {
+    "window": "catalogue-products"
+   }
+  ],
+  "seconds": 28,
+  "parts": [
+   "open /products 4.6s",
+   "form 4 required (2 text, 1 list, 1 picker) 23.1s"
+  ],
+  "masters": [
+   "catalogue-uoms"
+  ],
+  "blockers": [],
+  "verdict": "MEETS"
+ },
+ {
+  "id": "A6",
+  "persona": "Workspace admin",
+  "outcome": "Register an asset (CMMS master)",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/cmms/assets"
+   },
+   {
+    "window": "cmms-assets"
+   }
+  ],
+  "seconds": 19,
+  "parts": [
+   "open /cmms/assets 4.7s",
+   "form 2 required (2 text) 14.2s"
+  ],
+  "masters": [],
+  "blockers": [
+   "/cmms/assets: GET /api/maps/nodes → 502"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "A7",
+  "persona": "Workspace admin",
+  "outcome": "Add a person to Workforce",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/gigaops/resources"
+   },
+   {
+    "window": "wf-resources"
+   }
+  ],
+  "seconds": 23,
+  "parts": [
+   "open /gigaops/resources 4.5s",
+   "form 3 required (2 text, 1 list) 18.0s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "MEETS"
+ },
+ {
+  "id": "T1",
+  "persona": "Technician",
+  "outcome": "Report a maintenance problem",
+  "target": 15,
+  "steps": [
+   {
+    "nav": "/cmms/requests"
+   },
+   {
+    "window": "cmms-requests"
+   }
+  ],
+  "seconds": 18,
+  "parts": [
+   "open /cmms/requests 4.8s",
+   "form 2 required (1 text, 1 list) 13.2s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "OVER TARGET"
+ },
+ {
+  "id": "T2",
+  "persona": "Technician",
+  "outcome": "Raise a work order",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/cmms/work-orders"
+   },
+   {
+    "window": "cmms-work-orders"
+   }
+  ],
+  "seconds": 22,
+  "parts": [
+   "open /cmms/work-orders 4.8s",
+   "form 3 required (1 text, 2 list) 16.9s"
+  ],
+  "masters": [],
+  "blockers": [
+   "/cmms/work-orders: GET /api/maps/nodes → 502"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "T3",
+  "persona": "Technician",
+  "outcome": "Report a hazard with a photo",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/safety-operations/report"
+   },
+   {
+    "form": {
+     "list": 2,
+     "text": 2,
+     "long": 1
+    }
+   }
+  ],
+  "seconds": 37,
+  "parts": [
+   "open /safety-operations/report 5.3s",
+   "form 5 fields 31.3s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "TOO SLOW"
+ },
+ {
+  "id": "T4",
+  "persona": "Technician",
+  "outcome": "Request an absence",
+  "target": 20,
+  "steps": [
+   {
+    "nav": "/gigaops/availability"
+   },
+   {
+    "window": "wf-my-absences"
+   }
+  ],
+  "seconds": 25,
+  "parts": [
+   "open /gigaops/availability 4.5s",
+   "form 3 required (1 picker, 2 date) 20.4s"
+  ],
+  "masters": [
+   "wf-absence-types"
+  ],
+  "blockers": [
+   "master wf-absence-types: no records yet"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "T5",
+  "persona": "Operator",
+  "outcome": "Start a permit to work",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/cmms/permits"
+   },
+   {
+    "clicks": 1
+   },
+   {
+    "form": {
+     "list": 2,
+     "text": 1,
+     "picker": 1
+    }
+   }
+  ],
+  "seconds": 30,
+  "parts": [
+   "open /cmms/permits 4.6s",
+   "1 click(s) 3.4s",
+   "form 4 fields 22.0s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "MEETS"
+ },
+ {
+  "id": "S1",
+  "persona": "Supervisor",
+  "outcome": "Triage a hazard report",
+  "target": 20,
+  "steps": [
+   {
+    "nav": "/safety-operations/triage"
+   },
+   {
+    "clicks": 1
+   },
+   {
+    "form": {
+     "list": 3,
+     "text": 1
+    }
+   }
+  ],
+  "seconds": 29,
+  "parts": [
+   "open /safety-operations/triage 4.5s",
+   "1 click(s) 3.4s",
+   "form 4 fields 20.7s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "OVER TARGET"
+ },
+ {
+  "id": "S2",
+  "persona": "Supervisor",
+  "outcome": "Approve an absence",
+  "target": 10,
+  "steps": [
+   {
+    "nav": "/gigaops/availability"
+   },
+   {
+    "clicks": 2
+   },
+   {
+    "approve": true
+   }
+  ],
+  "seconds": 16,
+  "parts": [
+   "open /gigaops/availability 4.5s",
+   "2 click(s) 5.9s",
+   "open + approve 5.2s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "OVER TARGET"
+ },
+ {
+  "id": "S3",
+  "persona": "Supervisor",
+  "outcome": "Approve an invoice action",
+  "target": 10,
+  "steps": [
+   {
+    "nav": "/actions"
+   },
+   {
+    "approve": true
+   }
+  ],
+  "seconds": 10,
+  "parts": [
+   "open /actions 4.4s",
+   "open + approve 5.2s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "MEETS"
+ },
+ {
+  "id": "B1",
+  "persona": "Buyer",
+  "outcome": "Raise a purchase requisition",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/procurement"
+   },
+   {
+    "window": "procurement-requisitions"
+   }
+  ],
+  "seconds": 41,
+  "parts": [
+   "open /procurement 4.5s",
+   "form 7 required (3 picker, 2 text, 2 number) 36.8s"
+  ],
+  "masters": [
+   "organization-units",
+   "catalogue-products",
+   "catalogue-uoms"
+  ],
+  "blockers": [
+   "/procurement: Could not load records This is not set up for your workspace yet. Ask your workspace admin"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "B2",
+  "persona": "Buyer",
+  "outcome": "Create a purchase order",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/procurement/purchase-orders"
+   },
+   {
+    "window": "procurement-purchase-orders"
+   }
+  ],
+  "seconds": 56,
+  "parts": [
+   "open /procurement/purchase-orders 4.9s",
+   "form 10 required (4 picker, 4 text, 2 number) 51.5s"
+  ],
+  "masters": [
+   "organization-units",
+   "inventory-warehouses",
+   "catalogue-products",
+   "catalogue-uoms"
+  ],
+  "blockers": [
+   "/procurement/purchase-orders: Could not load records This is not set up for your workspace yet. Ask your workspace admin",
+   "master inventory-warehouses: lookup fails (HTTP 404)"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "B3",
+  "persona": "Clerk",
+  "outcome": "Receive goods into a warehouse",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/inventory/receipts"
+   },
+   {
+    "window": "inventory-receipts"
+   }
+  ],
+  "seconds": 14,
+  "parts": [
+   "open /inventory/receipts 4.7s",
+   "form 1 required (1 picker) 9.7s"
+  ],
+  "masters": [
+   "inventory-warehouses"
+  ],
+  "blockers": [
+   "/inventory/receipts: Could not load records The service is unavailable. Try again shortly. Try again",
+   "master inventory-warehouses: lookup fails (HTTP 404)"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "B4",
+  "persona": "AP clerk",
+  "outcome": "Record a vendor bill",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/procurement/vendor-bills"
+   },
+   {
+    "window": "procurement-vendor-bills"
+   }
+  ],
+  "seconds": 47,
+  "parts": [
+   "open /procurement/vendor-bills 4.7s",
+   "form 8 required (3 text, 2 date, 2 number, 1 picker) 42.2s"
+  ],
+  "masters": [
+   "catalogue-uoms"
+  ],
+  "blockers": [
+   "/procurement/vendor-bills: Could not load records This is not set up for your workspace yet. Ask your workspace admin"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "C1",
+  "persona": "Sales",
+  "outcome": "Send a quote",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/orders"
+   },
+   {
+    "window": "orders-sales-quotes"
+   }
+  ],
+  "seconds": 57,
+  "parts": [
+   "open /orders 4.8s",
+   "form 10 required (3 picker, 4 text, 1 date, 2 number) 51.8s"
+  ],
+  "masters": [
+   "organization-units",
+   "catalogue-products",
+   "catalogue-uoms"
+  ],
+  "blockers": [
+   "/orders: Could not load records This is not set up for your workspace yet. Ask your workspace admin"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "C2",
+  "persona": "Sales",
+  "outcome": "Create a sales order",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/orders/sales-orders"
+   },
+   {
+    "window": "orders-sales-orders"
+   }
+  ],
+  "seconds": 56,
+  "parts": [
+   "open /orders/sales-orders 4.5s",
+   "form 10 required (4 picker, 4 text, 2 number) 51.5s"
+  ],
+  "masters": [
+   "organization-units",
+   "inventory-warehouses",
+   "catalogue-products",
+   "catalogue-uoms"
+  ],
+  "blockers": [
+   "/orders/sales-orders: Could not load records This is not set up for your workspace yet. Ask your workspace admin",
+   "master inventory-warehouses: lookup fails (HTTP 404)"
+  ],
+  "verdict": "BLOCKED"
+ },
+ {
+  "id": "F1",
+  "persona": "Accountant",
+  "outcome": "Draft a manual journal",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/finance"
+   },
+   {
+    "window": "finance-journal-drafts"
+   }
+  ],
+  "seconds": 25,
+  "parts": [
+   "open /finance 4.9s",
+   "form 3 required (1 picker, 1 date, 1 text) 19.9s"
+  ],
+  "masters": [
+   "finance-books"
+  ],
+  "blockers": [],
+  "verdict": "MEETS"
+ },
+ {
+  "id": "F2",
+  "persona": "Accountant",
+  "outcome": "Read the trial balance",
+  "target": 10,
+  "steps": [
+   {
+    "nav": "/finance/reports"
+   },
+   {
+    "clicks": 1
+   }
+  ],
+  "seconds": 8,
+  "parts": [
+   "open /finance/reports 4.7s",
+   "1 click(s) 3.4s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "MEETS"
+ },
+ {
+  "id": "E1",
+  "persona": "Executive",
+  "outcome": "See today's operational and financial position",
+  "target": 10,
+  "steps": [
+   {
+    "nav": "/dashboard"
+   }
+  ],
+  "seconds": 5,
+  "parts": [
+   "open /dashboard 4.7s"
+  ],
+  "masters": [],
+  "blockers": [],
+  "verdict": "MEETS"
+ },
+ {
+  "id": "X1",
+  "persona": "Chemist",
+  "outcome": "Start a screening project",
+  "target": 30,
+  "steps": [
+   {
+    "nav": "/speed/projects"
+   },
+   {
+    "window": "speed-projects"
+   }
+  ],
+  "seconds": 24,
+  "parts": [
+   "open /speed/projects 4.7s",
+   "form 3 required (2 text, 1 picker) 19.3s"
+  ],
+  "masters": [
+   "speed-sites"
+  ],
+  "blockers": [],
+  "verdict": "MEETS"
+ }
+]
