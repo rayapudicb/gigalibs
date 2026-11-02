@@ -477,6 +477,12 @@ describe('manifest-generated gateways equal the hand-written allow-lists', () =>
         port: '4790',
         serviceHostname: 'module-host',
       },
+      // WI-OI-141 (ADR-0036).
+      'safety-operations': {
+        environmentKey: 'SAFETY_OPERATIONS_API_URL',
+        port: '4790',
+        serviceHostname: 'module-host',
+      },
       'universal-inventory': {
         environmentKey: 'UNIVERSAL_INVENTORY_API_URL',
         port: '4790',

@@ -79,6 +79,12 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       icon: moduleIcons['scan-line'],
       personas: ['OPERATIONS_SUPERVISOR'],
     },
+    // WI-OI-141 M-INC (ADR-0036): Safety Operations for supervisors and frontline workers; its permissions decide.
+    'safety-operations': {
+      group: 'Workforce & Operations',
+      icon: moduleIcons['shield-alert'],
+      personas: ['OPERATIONS_SUPERVISOR', 'WORKFORCE_MEMBER'],
+    },
     // WI-OI-120bw (SPEED S3, WI-OI-120bn): SPEED process safety screening for lab leads and chemists.
     'process-safety-screening': {
       group: 'Intelligence',

@@ -77,6 +77,7 @@ export const BASE_ROLE_DEFINITIONS: readonly BaseRoleDefinition[] = [
       'universal-returns:*',
       'project-operations:*',
       'operator-rounds:*',
+      'safety-operations:*',
     ],
   },
   {

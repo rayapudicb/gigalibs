@@ -628,5 +628,41 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "operator-rounds.board.read",
       "operator-rounds.exceptions.read"
     ]
+  },
+  {
+    "catalogKey": "safety-operations",
+    "key": "safety-frontline-worker",
+    "name": "Frontline worker (safety)",
+    "description": "Reports hazards, near misses and stop-work events, and follows their own reports.",
+    "permissions": [
+      "safety-operations.hazards.report"
+    ]
+  },
+  {
+    "catalogKey": "safety-operations",
+    "key": "safety-champion",
+    "name": "Area safety champion",
+    "description": "Reports and triages hazards, acknowledges stop-work alerts and works on investigations.",
+    "permissions": [
+      "safety-operations.hazards.report",
+      "safety-operations.hazards.read",
+      "safety-operations.hazards.triage",
+      "safety-operations.stop-work.acknowledge",
+      "safety-operations.investigations.manage"
+    ]
+  },
+  {
+    "catalogKey": "safety-operations",
+    "key": "safety-ehs-director",
+    "name": "EHS director",
+    "description": "Everything a champion does, and lifts stop-work alerts once the area is safe.",
+    "permissions": [
+      "safety-operations.hazards.report",
+      "safety-operations.hazards.read",
+      "safety-operations.hazards.triage",
+      "safety-operations.stop-work.acknowledge",
+      "safety-operations.stop-work.lift",
+      "safety-operations.investigations.manage"
+    ]
   }
 ];

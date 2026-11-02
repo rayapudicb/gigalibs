@@ -56,6 +56,12 @@ export const WORKFORCE_TARGET: MobileModuleTarget = {
   keyEnvironment: 'WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
 };
 
+/** WI-OI-141: Safety Operations (a hosted module, ADR-0036) for frontline hazard reports. */
+export const SAFETY_TARGET: MobileModuleTarget = {
+  moduleKey: 'safety-operations', audience: 'gigalibs-safety-operations-api', urlEnvironment: 'SAFETY_OPERATIONS_API_URL',
+  keyEnvironment: 'SAFETY_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+};
+
 export function forwardMobileCmms(options: MobileForwardOptions): Promise<unknown> {
   return forwardMobileModule(CMMS_TARGET, options);
 }

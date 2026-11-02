@@ -492,5 +492,9 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   ],
   "operator-rounds": [
     "OPERATIONS_SUPERVISOR"
+  ],
+  "safety-operations": [
+    "OPERATIONS_SUPERVISOR",
+    "WORKFORCE_MEMBER"
   ]
 };

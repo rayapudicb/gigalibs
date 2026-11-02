@@ -76,6 +76,9 @@ importers:
       '@gigalibs/project-operations-api':
         specifier: workspace:*
         version: link:../../modules/project-operations/apps/api
+      '@gigalibs/safety-operations-api':
+        specifier: workspace:*
+        version: link:../../modules/safety-operations/apps/api
       '@gigalibs/universal-inventory-api':
         specifier: workspace:*
         version: link:../../modules/universal-inventory/apps/api
@@ -279,6 +282,9 @@ importers:
       '@gigalibs/project-operations-web':
         specifier: workspace:*
         version: link:../../modules/project-operations/web
+      '@gigalibs/safety-operations-web':
+        specifier: workspace:*
+        version: link:../../modules/safety-operations/web
       '@gigalibs/universal-inventory-web':
         specifier: workspace:*
         version: link:../../modules/universal-inventory/web
@@ -1652,6 +1658,77 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.23.12)
+
+  modules/safety-operations/apps/api:
+    dependencies:
+      '@gigalibs/auth-core':
+        specifier: workspace:*
+        version: link:../../../../packages/auth-core
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
+      '@gigalibs/module-sdk':
+        specifier: workspace:*
+        version: link:../../../../packages/module-sdk
+      '@nestjs/common':
+        specifier: ^11.2.3
+        version: 11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.2.3
+        version: 11.2.6(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: ^11.2.3
+        version: 11.2.3(@nestjs/common@11.2.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.6)
+      helmet:
+        specifier: ^8.1.0
+        version: 8.3.0
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+      zod:
+        specifier: ^4.5.2
+        version: 4.5.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.13.3
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@24.13.3)
+
+  modules/safety-operations/web:
+    dependencies:
+      '@gigalibs/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+      '@medusajs/ui':
+        specifier: 4.2.3
+        version: 4.2.3(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      next:
+        specifier: 15.5.24
+        version: 15.5.24(@playwright/test@1.62.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   modules/saga-orchestrator/apps/api:
     dependencies:
@@ -4968,6 +5045,7 @@ packages:
   '@smithy/core@3.33.3':
     resolution: {integrity: sha512-CsOeKq/9kA3y6VJHt+/+VTCtBaxJ4OTFpgrjIUhPpDIKxBci1k2bJaQASF2h/ELWrulGp+t97DZ0mevfAD8idg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.5.2':
     resolution: {integrity: sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==}

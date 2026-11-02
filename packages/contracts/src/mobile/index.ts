@@ -284,6 +284,10 @@ export const MOBILE_PROBLEMS = {
     status: 409,
     title: 'This report was already sent with different details. Start a new report.',
   },
+  MOBILE_SAFETY_CONFLICT: {
+    status: 409,
+    title: 'This report was already sent with other details, or the stop-work alert was lifted. Reload and check.',
+  },
   MOBILE_COMMISSIONING_CONFLICT: {
     status: 409,
     title: 'The tag is already bound, the walk is finished, or this capture was already used. Check and try again.',

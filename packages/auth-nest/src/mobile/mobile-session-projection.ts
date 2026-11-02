@@ -117,6 +117,11 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
   // WI-OI-140 M-REQ: reporting a problem from the app needs cmms.requests.report.
   const canReport = entitlements.includes('asset-maintenance') &&
     projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.requests.report'));
+  // WI-OI-141 M-INC: hazard reports for members who report; acknowledging stop work is its own capability.
+  const safetyCapabilities = entitlements.includes('safety-operations') ? [
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.hazards.report')) ? ['safety-operations.hazards.report'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.stop-work.acknowledge')) ? ['safety-operations.stop-work.acknowledge'] : []),
+  ] : [];
   const logbookCapabilities = entitlements.includes('gigaops') ? [
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.read')) ? ['workforce.logbook.read'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.write')) ? ['workforce.logbook.write'] : []),
@@ -170,6 +175,12 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
       capabilities:['cmms.requests.report'],
       presentationRevision:'requests.v1',
       requiredDeviceCapabilities:[],
+    }] : []),
+    ...(safetyCapabilities.includes('safety-operations.hazards.report') ? [{
+      key:'safety',enabled:true,navigationOrder:450,
+      capabilities:safetyCapabilities,
+      presentationRevision:'safety.v1',
+      requiredDeviceCapabilities:['camera'],
     }] : []),
     // WI-OI-135 M-TAG: commissioning proposals and floor walks, each by its own permission.
     ...(commissioningCapabilities.length ? [{

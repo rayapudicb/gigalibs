@@ -33,7 +33,7 @@ describe('Tenant Admin base role covers every licensed business module', () => {
   });
 
   it('gives no side of a separated duty through a business-module family', () => {
-    const businessFamilies = ['iot:*', 'business-partners:*', 'speed:*', 'universal-manufacturing:*', 'universal-returns:*', 'project-operations:*', 'operator-rounds:*'];
+    const businessFamilies = ['iot:*', 'business-partners:*', 'speed:*', 'universal-manufacturing:*', 'universal-returns:*', 'project-operations:*', 'operator-rounds:*', 'safety-operations:*'];
     expect(businessFamilies.every((family) => admin.includes(family))).toBe(true);
     expect(dutyConflictCodes().filter((code) => holdsPermission(businessFamilies, code))).toEqual([]);
   });

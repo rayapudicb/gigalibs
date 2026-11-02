@@ -17,6 +17,7 @@
     "@gigalibs/process-safety-screening-api": "workspace:*",
     "@gigalibs/product-catalogue-api": "workspace:*",
     "@gigalibs/project-operations-api": "workspace:*",
+    "@gigalibs/safety-operations-api": "workspace:*",
     "@gigalibs/universal-inventory-api": "workspace:*",
     "@gigalibs/universal-manufacturing-api": "workspace:*",
     "@gigalibs/universal-orders-api": "workspace:*",

@@ -164,6 +164,31 @@
     ],
     "optionalEnvironment": []
   },
+  "safety-operations": {
+    "hosting": "host",
+    "basePath": "/safety-operations",
+    "package": "@gigalibs/safety-operations-api",
+    "directory": "modules/safety-operations",
+    "image": "gigalibs/module-host",
+    "component": "module-host",
+    "title": "Safety Operations",
+    "workItem": "WI-OI-141",
+    "prefix": "SAFETY_OPERATIONS",
+    "service": "module-host",
+    "port": 4790,
+    "schema": "gigalibs_safety_operations",
+    "migrationVersion": 2,
+    "audience": "gigalibs-safety-operations-api",
+    "appendOnlyTables": [
+      "audit_events",
+      "hazard_photos",
+      "stop_work_acknowledgements"
+    ],
+    "readOnlyTables": [
+      "auth_revocation_events"
+    ],
+    "optionalEnvironment": []
+  },
   "universal-inventory": {
     "hosting": "host",
     "basePath": "/universal-inventory",

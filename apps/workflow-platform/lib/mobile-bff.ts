@@ -46,6 +46,10 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   'POST requests/resolve': '/api/v1/mobile/requests/resolve',
   'POST requests': '/api/v1/mobile/requests',
   'GET requests/mine': '/api/v1/mobile/requests/mine',
+  // WI-OI-141 M-INC.
+  'POST safety/reports': '/api/v1/mobile/safety/reports',
+  'GET safety/reports/mine': '/api/v1/mobile/safety/reports/mine',
+  'GET safety/stop-work': '/api/v1/mobile/safety/stop-work',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -112,6 +116,9 @@ function mobileUpstreamPath(method: string, path: readonly string[]): string | u
   if (method === 'POST' && path.length === 4 && path[0] === 'fleet' && path[1] === 'groundings' && UUID.test(path[2] ?? '') &&
       path[3] === 'certify')
     return `/api/v1/mobile/fleet/groundings/${path[2]}/certify`;
+  if (method === 'POST' && path.length === 4 && path[0] === 'safety' && path[1] === 'stop-work' && UUID.test(path[2] ?? '') &&
+      path[3] === 'acknowledge')
+    return `/api/v1/mobile/safety/stop-work/${path[2]}/acknowledge`;
   return undefined;
 }
 

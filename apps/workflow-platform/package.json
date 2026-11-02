@@ -25,6 +25,7 @@
     "@gigalibs/operator-rounds-web": "workspace:*",
     "@gigalibs/maps-core": "workspace:*",
     "@gigalibs/process-safety-screening-web": "workspace:*",
+    "@gigalibs/safety-operations-web": "workspace:*",
     "@gigalibs/product-catalogue-web": "workspace:*",
     "@gigalibs/project-operations-web": "workspace:*",
     "@gigalibs/universal-inventory-web": "workspace:*",

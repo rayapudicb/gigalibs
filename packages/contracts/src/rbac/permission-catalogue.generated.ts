@@ -1710,6 +1710,56 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "safety-operations.hazards.read",
+    "entries": [
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.hazards.report",
+    "entries": [
+      "platform",
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.hazards.triage",
+    "entries": [
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.investigations.manage",
+    "entries": [
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.records.manage",
+    "entries": [
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.records.read",
+    "entries": [
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.stop-work.acknowledge",
+    "entries": [
+      "platform",
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.stop-work.lift",
+    "entries": [
+      "safety-operations"
+    ]
+  },
+  {
     "code": "saga:read",
     "entries": [
       "saga-orchestrator"

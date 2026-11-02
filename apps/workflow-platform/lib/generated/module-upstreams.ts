@@ -85,6 +85,13 @@ export const generatedModuleUpstreams = {
     "serviceHostname": "module-host",
     "basePath": "/project-operations"
   },
+  "safety-operations": {
+    "module": "safety-operations",
+    "environmentKey": "SAFETY_OPERATIONS_API_URL",
+    "port": "4790",
+    "serviceHostname": "module-host",
+    "basePath": "/safety-operations"
+  },
   "universal-inventory": {
     "module": "universal-inventory",
     "environmentKey": "UNIVERSAL_INVENTORY_API_URL",

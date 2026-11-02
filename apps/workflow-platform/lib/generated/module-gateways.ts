@@ -3515,6 +3515,111 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
     "transformBody": null,
     "unavailable": []
   },
+  "safety-operations": {
+    "module": "safety-operations",
+    "basePaths": [
+      "/api/safety-operations"
+    ],
+    "catalogKey": "safety-operations",
+    "audience": "gigalibs-safety-operations-api",
+    "upstream": "safety-operations",
+    "signingKeyEnvironment": "SAFETY_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64",
+    "codePrefix": "SAFETY_OPERATIONS",
+    "routeNoun": "Safety Operations",
+    "serviceName": "Safety Operations",
+    "entitlementName": "Safety Operations",
+    "routes": [
+      {
+        "template": "v1/records",
+        "pattern": "^v1/records$",
+        "methods": {
+          "GET": "safety-operations.records.read",
+          "POST": "safety-operations.records.manage"
+        }
+      },
+      {
+        "template": "v1/records/{id}",
+        "pattern": "^v1/records/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "safety-operations.records.read",
+          "PATCH": "safety-operations.records.manage"
+        }
+      },
+      {
+        "template": "v1/hazards",
+        "pattern": "^v1/hazards$",
+        "methods": {
+          "GET": "safety-operations.hazards.read",
+          "POST": "safety-operations.hazards.report"
+        }
+      },
+      {
+        "template": "v1/hazards/mine",
+        "pattern": "^v1/hazards/mine$",
+        "methods": {
+          "GET": "safety-operations.hazards.report"
+        }
+      },
+      {
+        "template": "v1/hazards/insights",
+        "pattern": "^v1/hazards/insights$",
+        "methods": {
+          "GET": "safety-operations.hazards.read"
+        }
+      },
+      {
+        "template": "v1/hazards/{id}",
+        "pattern": "^v1/hazards/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "safety-operations.hazards.report"
+        }
+      },
+      {
+        "template": "v1/hazards/{id}/photo",
+        "pattern": "^v1/hazards/[0-9a-fA-F-]{36}/photo$",
+        "methods": {
+          "GET": "safety-operations.hazards.report"
+        }
+      },
+      {
+        "template": "v1/hazards/{id}/triage|close",
+        "pattern": "^v1/hazards/[0-9a-fA-F-]{36}/(?:triage|close)$",
+        "methods": {
+          "POST": "safety-operations.hazards.triage"
+        }
+      },
+      {
+        "template": "v1/hazards/{id}/investigation",
+        "pattern": "^v1/hazards/[0-9a-fA-F-]{36}/investigation$",
+        "methods": {
+          "POST": "safety-operations.investigations.manage"
+        }
+      },
+      {
+        "template": "v1/stop-work",
+        "pattern": "^v1/stop-work$",
+        "methods": {
+          "GET": "safety-operations.hazards.report"
+        }
+      },
+      {
+        "template": "v1/stop-work/{id}/acknowledge",
+        "pattern": "^v1/stop-work/[0-9a-fA-F-]{36}/acknowledge$",
+        "methods": {
+          "POST": "safety-operations.stop-work.acknowledge"
+        }
+      },
+      {
+        "template": "v1/stop-work/{id}/lift",
+        "pattern": "^v1/stop-work/[0-9a-fA-F-]{36}/lift$",
+        "methods": {
+          "POST": "safety-operations.stop-work.lift"
+        }
+      }
+    ],
+    "transformBody": null,
+    "unavailable": []
+  },
   "universal-inventory": {
     "module": "universal-inventory",
     "basePaths": [

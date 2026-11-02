@@ -54,6 +54,9 @@ services:
       # WI-OI-137: the mobile logbook adapter signs Workforce contexts. Without the key, the mobile logbook is unavailable.
       WORKFORCE_API_URL: http://workforce-api:4700
       WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64-}
+      # WI-OI-141: the mobile safety adapter signs Safety Operations contexts. Without the key, mobile safety is unavailable.
+      SAFETY_OPERATIONS_API_URL: http://module-host:4790/safety-operations
+      SAFETY_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${SAFETY_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64-}
       WORKFLOW_SCHEMA_VERSION: ${WORKFLOW_SCHEMA_VERSION:?WORKFLOW_SCHEMA_VERSION is required}
       WORKFLOW_COMPILER_VERSION: ${WORKFLOW_COMPILER_VERSION:?WORKFLOW_COMPILER_VERSION is required}
       WORKFLOW_PUBLISH_MAX_RETRIES: ${WORKFLOW_PUBLISH_MAX_RETRIES:?WORKFLOW_PUBLISH_MAX_RETRIES is required}

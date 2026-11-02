@@ -26,7 +26,7 @@ async function bootstrap() {
   // Captures that may carry bounded photos, up to the web BFF's 1 MiB cap: work-instruction steps (WI-OI-138, ≤ 500 KB
   // as base64), fleet inspections (WI-OI-139, ≤ 600 KB of photos together) and portal requests (WI-OI-140, ≤ 300 KB).
   app.use(['/api/v1/mobile/sop/executions', '/api/v1/mobile/fleet/inspections', '/api/v1/public/cmms-portal/requests',
-    '/api/v1/mobile/requests'],
+    '/api/v1/mobile/requests', '/api/v1/mobile/safety/reports'],
     boundedJsonMiddleware(1_048_576));
   app.enableCors({
     origin: runtimeConfig.corsOrigins,

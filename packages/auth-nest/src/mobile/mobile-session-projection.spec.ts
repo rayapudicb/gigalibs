@@ -218,6 +218,21 @@ describe('mobile session v3 projection', () => {
     expect(projectMobileSession(withPermissions(['cmms.requests.create']),binding).modules).toEqual([]);
   });
 
+  it('offers hazard reports when Safety Operations is enabled (WI-OI-141)',() => {
+    const base = source();
+    const withPermissions = (permissions: string[], moduleKey = 'safety-operations') => ({
+      ...base,
+      tenant:{...base.tenant!,entitlements:[...base.tenant!.entitlements,{moduleKey,version:'2026-11-02'}]},
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,...permissions]} : assignment),
+    });
+    expect(projectMobileSession(withPermissions(['safety-operations.hazards.report','safety-operations.stop-work.acknowledge']),binding).modules).toEqual([{
+      key:'safety',enabled:true,navigationOrder:450,capabilities:['safety-operations.hazards.report','safety-operations.stop-work.acknowledge'],
+      presentationRevision:'safety.v1',requiredDeviceCapabilities:['camera'],
+    }]);
+    expect(projectMobileSession(withPermissions(['safety-operations.hazards.report'],'asset-maintenance'),binding).modules).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();

@@ -216,6 +216,20 @@ describe('mobile v1 BFF front door', () => {
     expect(upstreamFetch).toHaveBeenCalledTimes(3);
   });
 
+  it('forwards the safety routes, UUID-bound (WI-OI-141)', async () => {
+    const id = '10000000-0000-4000-8000-000000000001';
+    upstreamFetch.mockImplementation(async () => new Response('{}', { status: 200 }));
+    const auth = { headers: { Authorization: 'Bearer mobile-token' } };
+    for (const path of ['safety/reports/mine', 'safety/stop-work'])
+      expect((await GET(mobileRequest(path, auth), context(path.split('/')))).status).toBe(200);
+    for (const path of ['safety/reports', `safety/stop-work/${id}/acknowledge`])
+      expect((await POST(mobileRequest(path, { ...auth, method: 'POST', body: '{}' }), context(path.split('/')))).status).toBe(200);
+    expect(upstreamFetch).toHaveBeenCalledTimes(4);
+    expect((await POST(mobileRequest(`safety/stop-work/${id}/lift`, { ...auth, method: 'POST', body: '{}' }),
+      context(['safety', 'stop-work', id, 'lift']))).status).toBe(404);
+    expect(upstreamFetch).toHaveBeenCalledTimes(4);
+  });
+
   it('forwards only the listed Rounds supervisor board read', async () => {
     upstreamFetch.mockResolvedValueOnce(new Response('{"items":[]}', {status:200}));
     const response=await GET(mobileRequest('rounds/board'),context(['rounds','board']));
