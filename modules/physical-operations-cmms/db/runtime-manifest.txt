@@ -27,3 +27,4 @@
 000028_asset_tagging_commissioning.up.sql
 000029_asset_diagrams_part_reservations.up.sql
 000030_visual_work_instructions.up.sql
+000031_fleet_equipment_inspection.up.sql

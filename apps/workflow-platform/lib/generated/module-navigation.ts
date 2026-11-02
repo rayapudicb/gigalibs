@@ -168,6 +168,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       ]
     },
     {
+      "key": "fleet",
+      "label": "Fleet Readiness",
+      "path": "/cmms/fleet",
+      "icon": "gauge",
+      "permissions": [
+        "cmms.fleet.read"
+      ]
+    },
+    {
       "key": "analytics",
       "label": "Reliability",
       "path": "/cmms/analytics",

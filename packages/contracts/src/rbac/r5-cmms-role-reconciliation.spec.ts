@@ -28,17 +28,19 @@ describe('WI-OI-120ac: CMMS Default Role Reconciliation & explicitScopeRefusal P
     'cmms.parts.write',
   ] as const;
 
-  it('finds all 4 default CMMS roles in the generated catalogue', () => {
+  it('finds all 5 default CMMS roles in the generated catalogue', () => {
     expect(cmmsRoles.map((r) => r.name)).toEqual([
       'Maintenance technician',
       'Maintenance planner',
       'Maintenance viewer',
       // WI-OI-134 M-CAL.
       'Metrology lead',
+      // WI-OI-139 M-DVIR.
+      'Equipment operator',
     ]);
   });
 
-  it('refuses all 4 default CMMS roles at units and places (bundled platform/workforce/maps codes)', () => {
+  it('refuses all 5 default CMMS roles at units and places (bundled platform/workforce/maps codes)', () => {
     for (const role of cmmsRoles) {
       const unitRefusal = explicitScopeRefusal(role.permissions, 'units');
       expect(unitRefusal).not.toBeNull();

@@ -164,6 +164,25 @@ const CALIBRATION_ROUTES: readonly (readonly [string, string, string])[] = [
   ['POST', 'sop/executions/{id}/complete', 'cmms.sop.execute'],
   ['POST', 'sop/executions/{id}/steps/{key}/cosign', 'cmms.sop.execute'],
   ['GET', 'sop/executions/{id}/steps/{key}/photo', 'cmms.sop.read'],
+  // WI-OI-139 M-DVIR, from FleetController.
+  ['GET', 'fleet/templates', 'cmms.fleet.read'],
+  ['POST', 'fleet/templates', 'cmms.fleet.manage'],
+  ['GET', 'fleet/templates/{id}', 'cmms.fleet.read'],
+  ['PATCH', 'fleet/templates/{id}', 'cmms.fleet.manage'],
+  ['POST', 'fleet/templates/{id}/publish', 'cmms.fleet.manage'],
+  ['POST', 'fleet/templates/{id}/revise', 'cmms.fleet.manage'],
+  ['POST', 'fleet/templates/{id}/retire', 'cmms.fleet.manage'],
+  ['PUT', 'fleet/enrollments', 'cmms.fleet.manage'],
+  ['GET', 'fleet/readiness', 'cmms.fleet.read'],
+  ['GET', 'fleet/assets/{id}', 'cmms.fleet.read'],
+  ['GET', 'fleet/inspections', 'cmms.fleet.read'],
+  ['POST', 'fleet/inspections', 'cmms.fleet.inspect'],
+  ['GET', 'fleet/inspections/{id}', 'cmms.fleet.read'],
+  ['GET', 'fleet/inspections/{id}/items/{key}/photo', 'cmms.fleet.read'],
+  ['GET', 'fleet/groundings', 'cmms.fleet.read'],
+  ['POST', 'fleet/groundings', 'cmms.fleet.inspect'],
+  ['POST', 'fleet/groundings/{id}/certify', 'cmms.fleet.certify'],
+  ['POST', 'fleet/groundings/{id}/clear', 'cmms.fleet.authorize'],
 ];
 
 /**

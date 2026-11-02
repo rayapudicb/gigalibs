@@ -188,6 +188,21 @@ describe('mobile session v3 projection', () => {
     expect(projectMobileSession(withPermissions(['cmms.sop.read']),binding).modules).toEqual([]);
   });
 
+  it('offers fleet checks to operators and mechanics, with the camera (WI-OI-139)',() => {
+    const base = source();
+    const withPermissions = (permissions: string[]) => ({
+      ...base,
+      tenant:{...base.tenant!,entitlements:[...base.tenant!.entitlements,{moduleKey:'asset-maintenance',version:'2026-11-02'}]},
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,...permissions]} : assignment),
+    });
+    expect(projectMobileSession(withPermissions(['cmms.fleet.read','cmms.fleet.inspect','cmms.fleet.certify']),binding).modules).toEqual([{
+      key:'fleet',enabled:true,navigationOrder:430,capabilities:['cmms.fleet.inspect','cmms.fleet.certify'],
+      presentationRevision:'fleet.v1',requiredDeviceCapabilities:['camera'],
+    }]);
+    expect(projectMobileSession(withPermissions(['cmms.fleet.read']),binding).modules).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();

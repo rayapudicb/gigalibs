@@ -320,6 +320,9 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.parts.reserve",
       "cmms.sop.read",
       "cmms.sop.execute",
+      "cmms.fleet.read",
+      "cmms.fleet.inspect",
+      "cmms.fleet.certify",
       "maps.nodes.read",
       "workforce:read",
       "workforce.resources.read",
@@ -362,6 +365,10 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.sop.execute",
       "cmms.sop.author",
       "cmms.sop.approve",
+      "cmms.fleet.read",
+      "cmms.fleet.inspect",
+      "cmms.fleet.authorize",
+      "cmms.fleet.manage",
       "maps:read",
       "maps.nodes.read",
       "workforce:read",
@@ -401,6 +408,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.audits.read",
       "cmms.bom.read",
       "cmms.sop.read",
+      "cmms.fleet.read",
       "maps.nodes.read"
     ]
   },
@@ -419,6 +427,19 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.calibration.approve",
       "cmms.sop.read",
       "cmms.sop.approve",
+      "maps.nodes.read"
+    ]
+  },
+  {
+    "catalogKey": "asset-maintenance",
+    "key": "equipment-operator",
+    "name": "Equipment operator",
+    "description": "Inspects forklifts, cranes and vehicles before and after use, and red-tags equipment with a critical safety defect.",
+    "permissions": [
+      "cmms:read",
+      "cmms.assets.read",
+      "cmms.fleet.read",
+      "cmms.fleet.inspect",
       "maps.nodes.read"
     ]
   },

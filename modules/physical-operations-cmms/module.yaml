@@ -87,6 +87,12 @@ spec:
         sessionPermissions: true
         props:
           section: sop
+      # WI-OI-139 M-DVIR: fleet readiness, red tags, enrolment, check templates and inspection history.
+      - route: /cmms/fleet
+        component: CmmsWorkspace
+        sessionPermissions: true
+        props:
+          section: fleet
       - route: /cmms/inventory
         component: CmmsWorkspace
         props:
@@ -215,6 +221,7 @@ spec:
         - { key: commissioning, label: Commissioning, path: /cmms/commissioning, icon: map-pin, permissions: [cmms.commissioning.read] }
         - { key: spares, label: Visual Spares, path: /cmms/spares, icon: layers, permissions: [cmms.bom.read] }
         - { key: sop, label: Work Instructions, path: /cmms/sop, icon: file-check, permissions: [cmms.sop.read] }
+        - { key: fleet, label: Fleet Readiness, path: /cmms/fleet, icon: gauge, permissions: [cmms.fleet.read] }
         - { key: analytics, label: Reliability, path: /cmms/analytics, icon: bar-chart, permissions: [cmms.analytics.read, analytics:read] }
         - { key: floor, label: Floor Kiosk, path: /cmms/floor, icon: radio }
       # WI-OI-120n (owner, 2026-10-06): module roles, copied into a workspace when CMMS is switched on and assigned on
@@ -227,20 +234,25 @@ spec:
           # UAT before it: the work-order screen and REST API still require it. Narrowing them to their own work orders
           # (cmms.work-orders.execute-own only, WI-OI-120t) comes with the work-order window.
           description: Carries out work orders, records meter readings and labour, and punches their own time.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, cmms.calibration.read, cmms.calibration.execute, cmms.commissioning.read, cmms.commissioning.submit, cmms.audits.read, cmms.audits.execute, cmms.bom.read, cmms.parts.reserve, cmms.sop.read, cmms.sop.execute, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.parts.read, cmms.calibration.read, cmms.calibration.execute, cmms.commissioning.read, cmms.commissioning.submit, cmms.audits.read, cmms.audits.execute, cmms.bom.read, cmms.parts.reserve, cmms.sop.read, cmms.sop.execute, cmms.fleet.read, cmms.fleet.inspect, cmms.fleet.certify, maps.nodes.read, workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch]
         - key: maintenance-planner
           name: Maintenance planner
           description: Plans, assigns and closes work; manages assets, preventive schedules and parts; manages people and approves time and absence for everyone in the workspace (not only the maintenance team) until roles are held per unit (ADR-0034). Linking logins stays with administrators.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.requests.write, cmms.assets.read, cmms.assets.write, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.pm.write, cmms.parts.read, cmms.parts.write, cmms.analytics.read, cmms.calibration.read, cmms.calibration.manage, cmms.commissioning.read, cmms.commissioning.approve, cmms.audits.read, cmms.bom.read, cmms.bom.manage, cmms.bom.publish, cmms.parts.reserve, cmms.sop.read, cmms.sop.execute, cmms.sop.author, cmms.sop.approve, maps:read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.time.read, workforce.time.punch, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.work-orders.write, cmms.work-orders.execute-own, cmms.requests.read, cmms.requests.create, cmms.requests.write, cmms.assets.read, cmms.assets.write, cmms.meters.read, cmms.meters.write, cmms.pm.read, cmms.pm.write, cmms.parts.read, cmms.parts.write, cmms.analytics.read, cmms.calibration.read, cmms.calibration.manage, cmms.commissioning.read, cmms.commissioning.approve, cmms.audits.read, cmms.bom.read, cmms.bom.manage, cmms.bom.publish, cmms.parts.reserve, cmms.sop.read, cmms.sop.execute, cmms.sop.author, cmms.sop.approve, cmms.fleet.read, cmms.fleet.inspect, cmms.fleet.authorize, cmms.fleet.manage, maps:read, maps.nodes.read, workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.time.read, workforce.time.punch, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
         - key: maintenance-viewer
           name: Maintenance viewer
           description: Reads assets, work orders, schedules, meters, parts and reliability figures without changing them, and raises and follows their own maintenance requests.
-          permissions: [cmms:read, cmms.work-orders.read, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.pm.read, cmms.parts.read, cmms.analytics.read, cmms.calibration.read, cmms.commissioning.read, cmms.audits.read, cmms.bom.read, cmms.sop.read, maps.nodes.read]
+          permissions: [cmms:read, cmms.work-orders.read, cmms.requests.read, cmms.requests.create, cmms.assets.read, cmms.meters.read, cmms.pm.read, cmms.parts.read, cmms.analytics.read, cmms.calibration.read, cmms.commissioning.read, cmms.audits.read, cmms.bom.read, cmms.sop.read, cmms.fleet.read, maps.nodes.read]
         # WI-OI-134 M-CAL: approves calibrations and publishes instrument profiles (never their own: four eyes).
         - key: metrology-lead
           name: Metrology lead
           description: Keeps master standards and instrument calibration profiles, publishes profiles others drafted, and approves or rejects calibrations others performed.
           permissions: [cmms:read, cmms.assets.read, cmms.work-orders.read, cmms.calibration.read, cmms.calibration.manage, cmms.calibration.publish, cmms.calibration.approve, cmms.sop.read, cmms.sop.approve, maps.nodes.read]
+        # WI-OI-139 M-DVIR: drivers and equipment operators run circle checks and red-tag unsafe equipment.
+        - key: equipment-operator
+          name: Equipment operator
+          description: Inspects forklifts, cranes and vehicles before and after use, and red-tags equipment with a critical safety defect.
+          permissions: [cmms:read, cmms.assets.read, cmms.fleet.read, cmms.fleet.inspect, maps.nodes.read]
   # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context.
   # Templates: `{id}` is an identifier; `a|b` is one of several segment values. Generated by `pnpm modules:catalog`.
   gateway:
@@ -344,6 +356,18 @@ spec:
       - { path: 'v1/diagrams/{id}/publish', POST: cmms.bom.publish }
       - { path: 'v1/diagrams/{id}/image|consumption', GET: cmms.bom.read }
       - { path: 'v1/part-reservations', POST: cmms.parts.reserve }
+      - { path: 'v1/fleet/templates', GET: cmms.fleet.read, POST: cmms.fleet.manage }
+      - { path: 'v1/fleet/templates/{id}', GET: cmms.fleet.read, PATCH: cmms.fleet.manage }
+      - { path: 'v1/fleet/templates/{id}/publish|revise|retire', POST: cmms.fleet.manage }
+      - { path: 'v1/fleet/enrollments', PUT: cmms.fleet.manage }
+      - { path: 'v1/fleet/readiness', GET: cmms.fleet.read }
+      - { path: 'v1/fleet/assets/{id}', GET: cmms.fleet.read }
+      - { path: 'v1/fleet/inspections', GET: cmms.fleet.read, POST: cmms.fleet.inspect }
+      - { path: 'v1/fleet/inspections/{id}', GET: cmms.fleet.read }
+      - { path: 'v1/fleet/inspections/{id}/items/{key}/photo', GET: cmms.fleet.read }
+      - { path: 'v1/fleet/groundings', GET: cmms.fleet.read, POST: cmms.fleet.inspect }
+      - { path: 'v1/fleet/groundings/{id}/certify', POST: cmms.fleet.certify }
+      - { path: 'v1/fleet/groundings/{id}/clear', POST: cmms.fleet.authorize }
       - { path: 'v1/sop/procedures', GET: cmms.sop.read, POST: cmms.sop.author }
       - { path: 'v1/sop/procedures/{id}', GET: cmms.sop.read, PATCH: cmms.sop.author }
       - { path: 'v1/sop/procedures/{id}/revise|submit', POST: cmms.sop.author }

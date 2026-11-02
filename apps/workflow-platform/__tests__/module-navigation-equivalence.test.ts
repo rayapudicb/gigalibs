@@ -155,6 +155,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
         key: 'sop', label: 'Work Instructions', href: '/cmms/sop', icon: moduleIcons['file-check'],
         permissions: ['cmms.sop.read'] as const,
       } as (typeof items)[number]);
+      // WI-OI-139 M-DVIR: Fleet Readiness follows Work Instructions and is gated on cmms.fleet.read.
+      items.splice(metersAt + 5, 0, {
+        key: 'fleet', label: 'Fleet Readiness', href: '/cmms/fleet', icon: moduleIcons.gauge,
+        permissions: ['cmms.fleet.read'] as const,
+      } as (typeof items)[number]);
       // WI-OI-131 C11: Reliability tab is permission-gated in the sidebar.
       return items.map((item) =>
         item.key === 'analytics'

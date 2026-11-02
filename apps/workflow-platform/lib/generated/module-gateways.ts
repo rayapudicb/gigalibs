@@ -2444,6 +2444,94 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/fleet/templates",
+        "pattern": "^v1/fleet/templates$",
+        "methods": {
+          "GET": "cmms.fleet.read",
+          "POST": "cmms.fleet.manage"
+        }
+      },
+      {
+        "template": "v1/fleet/templates/{id}",
+        "pattern": "^v1/fleet/templates/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.fleet.read",
+          "PATCH": "cmms.fleet.manage"
+        }
+      },
+      {
+        "template": "v1/fleet/templates/{id}/publish|revise|retire",
+        "pattern": "^v1/fleet/templates/[0-9a-fA-F-]{36}/(?:publish|revise|retire)$",
+        "methods": {
+          "POST": "cmms.fleet.manage"
+        }
+      },
+      {
+        "template": "v1/fleet/enrollments",
+        "pattern": "^v1/fleet/enrollments$",
+        "methods": {
+          "PUT": "cmms.fleet.manage"
+        }
+      },
+      {
+        "template": "v1/fleet/readiness",
+        "pattern": "^v1/fleet/readiness$",
+        "methods": {
+          "GET": "cmms.fleet.read"
+        }
+      },
+      {
+        "template": "v1/fleet/assets/{id}",
+        "pattern": "^v1/fleet/assets/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.fleet.read"
+        }
+      },
+      {
+        "template": "v1/fleet/inspections",
+        "pattern": "^v1/fleet/inspections$",
+        "methods": {
+          "GET": "cmms.fleet.read",
+          "POST": "cmms.fleet.inspect"
+        }
+      },
+      {
+        "template": "v1/fleet/inspections/{id}",
+        "pattern": "^v1/fleet/inspections/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.fleet.read"
+        }
+      },
+      {
+        "template": "v1/fleet/inspections/{id}/items/{key}/photo",
+        "pattern": "^v1/fleet/inspections/[0-9a-fA-F-]{36}/items/[a-z][a-z0-9-]*/photo$",
+        "methods": {
+          "GET": "cmms.fleet.read"
+        }
+      },
+      {
+        "template": "v1/fleet/groundings",
+        "pattern": "^v1/fleet/groundings$",
+        "methods": {
+          "GET": "cmms.fleet.read",
+          "POST": "cmms.fleet.inspect"
+        }
+      },
+      {
+        "template": "v1/fleet/groundings/{id}/certify",
+        "pattern": "^v1/fleet/groundings/[0-9a-fA-F-]{36}/certify$",
+        "methods": {
+          "POST": "cmms.fleet.certify"
+        }
+      },
+      {
+        "template": "v1/fleet/groundings/{id}/clear",
+        "pattern": "^v1/fleet/groundings/[0-9a-fA-F-]{36}/clear$",
+        "methods": {
+          "POST": "cmms.fleet.authorize"
+        }
+      },
+      {
         "template": "v1/sop/procedures",
         "pattern": "^v1/sop/procedures$",
         "methods": {

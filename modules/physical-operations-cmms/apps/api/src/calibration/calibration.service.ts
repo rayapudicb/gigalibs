@@ -28,6 +28,7 @@ import type { CmmsCommandContext, CmmsPrincipal } from '../auth/authorization.js
 import { assertWritableScope, scopePredicates } from '../auth/scope.js';
 import { AssetsService } from '../assets/assets.service.js';
 import { assertUuid, iso, isoOrNull, notFound, parseInput, recordMutation, translateConstraint, versionConflict } from '../common/command.js';
+import { derivedRequestKey, systemPrincipal } from '../common/system-principal.js';
 import { DatabaseService } from '../database/database.service.js';
 import { WorkOrdersService } from '../work-orders/work-orders.service.js';
 
@@ -74,8 +75,7 @@ const sha256 = (value: string) => createHash('sha256').update(value).digest('hex
 
 /** Deterministic UUID-shaped key, so a replayed FAIL never raises a second corrective work order. */
 export function containmentRequestKey(tenantId: string, clientOperationId: string): string {
-  const hex = sha256(`calibration-containment:${tenantId}:${clientOperationId}`);
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+  return derivedRequestKey('calibration-containment', tenantId, clientOperationId);
 }
 
 /** The next-due state of an instrument from its latest record and its latest valid (approved PASS/ADJUSTED) one. */
@@ -93,17 +93,7 @@ export function dueState(
 }
 
 function containmentPrincipal(tenantId: string): CmmsPrincipal {
-  return Object.freeze({
-    tenantId,
-    subject: 'calibration:containment',
-    sessionId: 'calibration',
-    authVersion: 0,
-    permissions: Object.freeze(['cmms:*']),
-    roles: Object.freeze([]),
-    persona: 'OPERATIONS_SUPERVISOR' as const,
-    departmentScope: Object.freeze({ mode: 'ALL' as const }),
-    placeScope: Object.freeze({ mode: 'ALL' as const }),
-  });
+  return systemPrincipal(tenantId, 'calibration:containment', 'calibration');
 }
 
 function conflict(code: string, message: string): never {

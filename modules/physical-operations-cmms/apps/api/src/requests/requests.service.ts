@@ -117,60 +117,67 @@ export class RequestsService {
   /** Submit a maintenance request (any member holding cmms.requests.create). */
   async submit(context: CmmsCommandContext, raw: unknown): Promise<CmmsMaintenanceRequestV1> {
     const input = parseInput(CreateCmmsRequestV1Schema, raw);
-    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
-      // The request takes its asset's unit and site, so R5 scopes it like the asset's own work.
-      const asset = input.assetId ? await this.assets.visibleAsset(client, context.principal, input.assetId, false) : null;
+    return this.database.withTenantTransaction(context.principal.tenantId, (client) => this.submitWithClient(client, context, input));
+  }
 
-      const counter = await client.query<{ last_value: string }>(
-        `INSERT INTO gigalibs_cmms.request_counters AS c (tenant_id, last_value) VALUES ($1, 1)
-         ON CONFLICT (tenant_id) DO UPDATE SET last_value = c.last_value + 1
-         RETURNING last_value`,
-        [context.principal.tenantId],
-      );
-      // WI-OI-120 (Phase 4, S13): number through the shared engine (same REQ-###### format, one rule everywhere).
-      const requestNumber = renderDocumentNumber('REQ-{SEQ:6}', Number(counter.rows[0]!.last_value));
-      const id = randomUUID();
+  /** Raises a request inside the caller's transaction (also used for fleet defects, WI-OI-139). */
+  async submitWithClient(
+    client: PoolClient,
+    context: CmmsCommandContext,
+    input: CreateCmmsRequestV1,
+  ): Promise<CmmsMaintenanceRequestV1> {
+    // The request takes its asset's unit and site, so R5 scopes it like the asset's own work.
+    const asset = input.assetId ? await this.assets.visibleAsset(client, context.principal, input.assetId, false) : null;
 
-      const inserted = await client.query(
-        `INSERT INTO gigalibs_cmms.maintenance_requests
-           (tenant_id, id, request_number, title, description, priority, status,
-            asset_id, site_ref, department_id, requester_subject, requester_name, requester_email, requester_phone,
-            correlation_id)
-         VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7, $8, $9, $10, $11, $12, $13, $14)
-         RETURNING *`,
-        [
-          context.principal.tenantId,
-          id,
-          requestNumber,
-          input.title,
-          input.description ?? null,
-          input.priority,
-          input.assetId ?? null,
-          asset?.siteRef ?? null,
-          asset?.departmentId ?? null,
-          context.principal.subject,
-          input.requesterName ?? null,
-          input.requesterEmail ?? null,
-          input.requesterPhone ?? null,
-          context.correlationId,
-        ],
-      );
+    const counter = await client.query<{ last_value: string }>(
+      `INSERT INTO gigalibs_cmms.request_counters AS c (tenant_id, last_value) VALUES ($1, 1)
+       ON CONFLICT (tenant_id) DO UPDATE SET last_value = c.last_value + 1
+       RETURNING last_value`,
+      [context.principal.tenantId],
+    );
+    // WI-OI-120 (Phase 4, S13): number through the shared engine (same REQ-###### format, one rule everywhere).
+    const requestNumber = renderDocumentNumber('REQ-{SEQ:6}', Number(counter.rows[0]!.last_value));
+    const id = randomUUID();
 
-      await recordMutation(client, context, {
-        action: 'REQUEST_SUBMITTED',
-        aggregateType: 'MAINTENANCE_REQUEST',
-        aggregateId: id,
-        aggregateVersion: 1,
-        payload: {
-          requestNumber,
-          title: input.title,
-          priority: input.priority,
-          requesterSubject: context.principal.subject,
-        },
-      });
+    const inserted = await client.query(
+      `INSERT INTO gigalibs_cmms.maintenance_requests
+         (tenant_id, id, request_number, title, description, priority, status,
+          asset_id, site_ref, department_id, requester_subject, requester_name, requester_email, requester_phone,
+          correlation_id)
+       VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7, $8, $9, $10, $11, $12, $13, $14)
+       RETURNING *`,
+      [
+        context.principal.tenantId,
+        id,
+        requestNumber,
+        input.title,
+        input.description ?? null,
+        input.priority,
+        input.assetId ?? null,
+        asset?.siteRef ?? null,
+        asset?.departmentId ?? null,
+        context.principal.subject,
+        input.requesterName ?? null,
+        input.requesterEmail ?? null,
+        input.requesterPhone ?? null,
+        context.correlationId,
+      ],
+    );
 
-      return mapRequest(inserted.rows[0]);
+    await recordMutation(client, context, {
+      action: 'REQUEST_SUBMITTED',
+      aggregateType: 'MAINTENANCE_REQUEST',
+      aggregateId: id,
+      aggregateVersion: 1,
+      payload: {
+        requestNumber,
+        title: input.title,
+        priority: input.priority,
+        requesterSubject: context.principal.subject,
+      },
     });
+
+    return mapRequest(inserted.rows[0]);
   }
 
   /** Read a maintenance request by id. Requesters without planner rights can only see their own. */

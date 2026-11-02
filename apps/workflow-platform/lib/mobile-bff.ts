@@ -37,6 +37,11 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   'GET sop/procedures': '/api/v1/mobile/sop/procedures',
   'GET sop/executions/awaiting-cosign': '/api/v1/mobile/sop/executions/awaiting-cosign',
   'POST sop/executions': '/api/v1/mobile/sop/executions',
+  // WI-OI-139 M-DVIR.
+  'POST fleet/resolve': '/api/v1/mobile/fleet/resolve',
+  'POST fleet/inspections': '/api/v1/mobile/fleet/inspections',
+  'GET fleet/groundings': '/api/v1/mobile/fleet/groundings',
+  'POST fleet/groundings': '/api/v1/mobile/fleet/groundings',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -98,6 +103,11 @@ function mobileUpstreamPath(method: string, path: readonly string[]): string | u
     if (method === 'POST' && path.length === 6 && path[3] === 'steps' && STEP_KEY.test(path[4] ?? '') && path[5] === 'cosign')
       return `/api/v1/mobile/sop/executions/${path[2]}/steps/${path[4]}/cosign`;
   }
+  if (method === 'GET' && path.length === 3 && path[0] === 'fleet' && path[1] === 'assets' && UUID.test(path[2] ?? ''))
+    return `/api/v1/mobile/fleet/assets/${path[2]}`;
+  if (method === 'POST' && path.length === 4 && path[0] === 'fleet' && path[1] === 'groundings' && UUID.test(path[2] ?? '') &&
+      path[3] === 'certify')
+    return `/api/v1/mobile/fleet/groundings/${path[2]}/certify`;
   return undefined;
 }
 

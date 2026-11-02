@@ -67,7 +67,7 @@ const WO_FROM = `gigalibs_cmms.work_orders w
 
 /** Work-order provenance set by the service, never by the caller. */
 export interface WorkOrderOrigin {
-  readonly triggerSource: 'MANUAL' | 'PM_SCHEDULE' | 'METER_TRIGGER' | 'ROUND_EXCEPTION' | 'CALIBRATION';
+  readonly triggerSource: 'MANUAL' | 'PM_SCHEDULE' | 'METER_TRIGGER' | 'ROUND_EXCEPTION' | 'CALIBRATION' | 'FLEET_DEFECT';
   readonly pmScheduleId: string | null;
   readonly pmOccurrenceAt: string | null;
   readonly meterTriggerId?: string | null;

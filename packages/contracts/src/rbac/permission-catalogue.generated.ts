@@ -410,6 +410,38 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "cmms.fleet.authorize",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.fleet.certify",
+    "entries": [
+      "asset-maintenance",
+      "platform"
+    ]
+  },
+  {
+    "code": "cmms.fleet.inspect",
+    "entries": [
+      "asset-maintenance",
+      "platform"
+    ]
+  },
+  {
+    "code": "cmms.fleet.manage",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.fleet.read",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
     "code": "cmms.import.read",
     "entries": [
       "asset-maintenance"

@@ -8,6 +8,7 @@ import { MobileAuthController } from './mobile/mobile-auth.controller.js';
 import { MobileAuthService } from './mobile/mobile-auth.service.js';
 import { MobileCalibrationController } from './mobile/mobile-calibration.controller.js';
 import { MobileCommissioningController } from './mobile/mobile-commissioning.controller.js';
+import { MobileFleetController } from './mobile/mobile-fleet.controller.js';
 import { MobileLogbookController } from './mobile/mobile-logbook.controller.js';
 import { MobileSopController } from './mobile/mobile-sop.controller.js';
 import { MobileSparesController } from './mobile/mobile-spares.controller.js';
@@ -19,7 +20,7 @@ export interface AuthModuleOptions {
 }
 
 @Module({
-  controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController, MobileSparesController, MobileLogbookController, MobileSopController],
+  controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController, MobileSparesController, MobileLogbookController, MobileSopController, MobileFleetController],
   providers: [Reflector, AuthService, OidcService, MfaAssistedRecoveryService, MobileAuthService, JwtAuthGuard],
   exports: [AuthService, OidcService, MfaAssistedRecoveryService, JwtAuthGuard],
 })
@@ -43,7 +44,7 @@ export class AuthModule {
 
     return {
       module: AuthModule,
-      controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController, MobileSparesController, MobileLogbookController, MobileSopController],
+      controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController, MobileSparesController, MobileLogbookController, MobileSopController, MobileFleetController],
       providers: providers as any,
       exports: [AuthService, OidcService, MfaAssistedRecoveryService, JwtAuthGuard],
     };

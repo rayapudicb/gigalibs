@@ -110,6 +110,10 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.sop.read')) ? ['cmms.sop.read'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.sop.execute')) ? ['cmms.sop.execute'] : []),
   ] : [];
+  const fleetCapabilities = entitlements.includes('asset-maintenance') ? [
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.fleet.inspect')) ? ['cmms.fleet.inspect'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.fleet.certify')) ? ['cmms.fleet.certify'] : []),
+  ] : [];
   const logbookCapabilities = entitlements.includes('gigaops') ? [
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.read')) ? ['workforce.logbook.read'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.write')) ? ['workforce.logbook.write'] : []),
@@ -149,6 +153,13 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
       key:'sop',enabled:true,navigationOrder:420,
       capabilities:sopCapabilities,
       presentationRevision:'sop.v1',
+      requiredDeviceCapabilities:['camera'],
+    }] : []),
+    // WI-OI-139 M-DVIR: circle checks and red tags for operators, repair certificates for mechanics; scan and photos.
+    ...(fleetCapabilities.length ? [{
+      key:'fleet',enabled:true,navigationOrder:430,
+      capabilities:fleetCapabilities,
+      presentationRevision:'fleet.v1',
       requiredDeviceCapabilities:['camera'],
     }] : []),
     // WI-OI-135 M-TAG: commissioning proposals and floor walks, each by its own permission.

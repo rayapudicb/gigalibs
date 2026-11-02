@@ -276,6 +276,10 @@ export const MOBILE_PROBLEMS = {
     status: 409,
     title: 'The procedure moved on: a step waits for a countersign, was already recorded, or the revision was withdrawn. Reload and try again.',
   },
+  MOBILE_FLEET_CONFLICT: {
+    status: 409,
+    title: 'The check changed, the asset is already grounded or not enrolled, or this capture was already sent. Reload and try again.',
+  },
   MOBILE_COMMISSIONING_CONFLICT: {
     status: 409,
     title: 'The tag is already bound, the walk is finished, or this capture was already used. Check and try again.',

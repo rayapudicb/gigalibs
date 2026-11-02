@@ -14,6 +14,8 @@ import { CommissioningController } from './commissioning/commissioning.controlle
 import { CommissioningService } from './commissioning/commissioning.service.js';
 import { SparesController } from './spares/spares.controller.js';
 import { SparesService } from './spares/spares.service.js';
+import { FleetController } from './fleet/fleet.controller.js';
+import { FleetService } from './fleet/fleet.service.js';
 import { SopController } from './sop/sop.controller.js';
 import { SopService } from './sop/sop.service.js';
 import { CalibrationService } from './calibration/calibration.service.js';
@@ -89,6 +91,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     AssetAuditsController,
     SparesController,
     SopController,
+    FleetController,
     PartsController,
     AnalyticsController,
     CmmsInboxController,
@@ -102,6 +105,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     AssetAuditsService,
     SparesService,
     SopService,
+    FleetService,
     CmmsAuthorizationGuard,
     AssetsService,
     DowntimesService,

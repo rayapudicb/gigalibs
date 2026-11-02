@@ -20,6 +20,7 @@ import { type CmmsApiError, cmmsApi } from '../api';
 import { CmmsAssets } from './CmmsAssets';
 import { CmmsCalibration } from './CmmsCalibration';
 import { CmmsCommissioning } from './CmmsCommissioning';
+import { CmmsFleet } from './CmmsFleet';
 import { CmmsSop } from './CmmsSop';
 import { CmmsSpares } from './CmmsSpares';
 import { CmmsMeters } from './CmmsMeters';
@@ -41,6 +42,7 @@ export type CmmsSection =
   | 'commissioning'
   | 'spares'
   | 'sop'
+  | 'fleet'
   | 'inventory'
   | 'requests'
   | 'classifications';
@@ -112,6 +114,12 @@ const SECTIONS: ReadonlyArray<{
     description: 'Step-by-step procedures with pictures, readings, decisions and countersigns.',
   },
   {
+    key: 'fleet',
+    label: 'Fleet readiness',
+    href: '/cmms/fleet',
+    description: 'Circle checks, red tags and the readiness of every vehicle and machine.',
+  },
+  {
     key: 'inventory',
     label: 'Parts & stock',
     href: '/cmms/inventory',
@@ -171,6 +179,7 @@ export function CmmsWorkspace({ section, permissions = [] }: { section: CmmsSect
         {section === 'commissioning' ? <CmmsCommissioning permissions={permissions} /> : null}
         {section === 'spares' ? <CmmsSpares permissions={permissions} /> : null}
         {section === 'sop' ? <CmmsSop permissions={permissions} /> : null}
+        {section === 'fleet' ? <CmmsFleet permissions={permissions} /> : null}
         {section === 'inventory' ? <CmmsParts /> : null}
         {section === 'requests' ? <CmmsWindow surface="cmms-requests" permissions={permissions} /> : null}
         {section === 'classifications' ? <CmmsWindow surface="cmms-classifications" permissions={permissions} /> : null}
