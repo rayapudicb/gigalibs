@@ -84,7 +84,9 @@ describe('module access', () => {
   it('refuses every locked catalogue entry, even with its feature and every permission', () => {
     const locked = platformModuleCatalog.filter((module) => isLockedModule(module.key));
     expect(locked.length).toBeGreaterThan(0);
-    for (const module of locked) expect(canUseTenantModule(module.key, new Set([module.key]), ['*']), module.key).toBe(false);
+    for (const module of locked) {
+      expect(canUseTenantModule(module.key, new Set([module.key]), ['*'], { uatPreview: false }), module.key).toBe(false);
+    }
   });
 
   it('refuses a locked module even with its feature and every permission (ADR-0016 F6)', () => {

@@ -112,6 +112,21 @@ describe('Rounds published-route roster',() => {
     } finally {vi.useRealTimers();}
   });
 
+  it('runs scheduled PER_SHIFT generation through the current-day HTTP entrypoint',async () => {
+    const query=vi.fn(async (sql:string) => sql.includes('route_templates')
+      ? {rows:[{...route,schedule:{...route.schedule,cadence:'PER_SHIFT',localTime:undefined}}]}
+      : {rows:[{version:3}]});
+    const service=new RosterService(db(query) as never,{} as never,{} as never);
+    const generate=vi.spyOn(service,'generate').mockResolvedValue({
+      localDate:'2026-10-31',rosterVersion:3,scheduledStart:null,dueAt:null,items:[],
+    } as never);
+    vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-31T01:00:00.000Z'));
+    try {
+      await expect(service.generateCurrent(context,routeId)).resolves.toMatchObject({rosterVersion:3});
+      expect(generate).toHaveBeenCalledWith(context,routeId,{localDate:'2026-10-31',rosterVersion:3});
+    } finally {vi.useRealTimers();}
+  });
+
   it('skips a weekly route outside its selected weekdays without failing the schedule',async () => {
     const query=vi.fn(async (sql:string) => sql.includes('route_templates')
       ? {rows:[{...route,schedule:{...route.schedule,cadence:'WEEKLY',weekdays:[1]}}]}

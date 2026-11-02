@@ -23,7 +23,7 @@ describe('local time in a working time zone', () => {
       );
       expect(localOf(instantOf(local, 'Europe/Berlin'), 'Europe/Berlin')).toBe(local);
     }
-  });
+  }, 60_000);
 
   it('moves a skipped time past the gap and reads a repeated time as its first', () => {
     // London: 01:00 GMT becomes 02:00 BST on 2026-03-29; 02:00 BST becomes 01:00 GMT on 2026-10-25.

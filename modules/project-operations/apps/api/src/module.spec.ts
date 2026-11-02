@@ -72,7 +72,7 @@ describe('Project Operations runtime configuration', () => {
     }
   };
   it('loads the PROJECT_OPERATIONS_* variables', () => {
-    expect(load()).toMatchObject({ platformContextAudience: AUDIENCE, expectedMigrationVersion: 1 });
+    expect(load()).toMatchObject({ platformContextAudience: AUDIENCE, expectedMigrationVersion: 4 });
   });
   it('refuses another audience', () => {
     expect(() => load({ PROJECT_OPERATIONS_PLATFORM_CONTEXT_AUDIENCE: 'gigalibs-other-api' })).toThrow(AUDIENCE);

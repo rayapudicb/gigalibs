@@ -1,3 +1,4 @@
+import './test/unit-runtime-env.js';
 import { BadRequestException, GoneException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

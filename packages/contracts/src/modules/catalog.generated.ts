@@ -713,7 +713,7 @@ export const generatedPlatformModuleCatalog = [
     trialEligible: false,
     requiredPermission: 'operator-rounds.routes.read',
     platformInspection: false,
-    reason: 'WI-OI-133 build in progress. Live conformance and owner UAT acceptance are pending.',
+    reason: 'WI-OI-133 Built in source; raise to REVIEW after `pnpm module:conformance operator-rounds --live --record` on a rebuilt module-host with `.env.test.module.operator-rounds`.',
   },
   // modules/safety-operations/module.yaml
   {

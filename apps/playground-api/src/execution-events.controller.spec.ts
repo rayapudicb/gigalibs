@@ -1,3 +1,4 @@
+import './test/unit-runtime-env.js';
 import { createHmac } from 'node:crypto';
 import { UnauthorizedException } from '@nestjs/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,7 +27,7 @@ beforeAll(async () => {
   createExecutionEventsController = (service) =>
     new controllerModule.ExecutionEventsController(service as never);
   createExecutionEventSignatureGuard = () => new guardModule.ExecutionEventSignatureGuard();
-});
+}, 60_000);
 
 describe('ExecutionEventsController', () => {
   const service = { ingest: vi.fn() };

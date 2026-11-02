@@ -1,4 +1,3 @@
-import { createHash, randomBytes } from 'node:crypto';
 import { z } from 'zod';
 
 // WI-OI-143 M-CONTR: contractor site access (Safety Operations). Pass secrets are shown once at issuance; only a hash is stored.
@@ -7,7 +6,6 @@ const UuidSchema = z.string().uuid();
 const DateTimeSchema = z.string().datetime({ offset: true });
 const PrincipalRefSchema = z.string().min(1).max(128);
 const TextSchema = (max: number) => z.string().trim().min(1).max(max);
-const sha256Hex = (value: string) => createHash('sha256').update(value).digest('hex');
 
 export const CONTRACTOR_INDUCTION_VALID_DAYS = 365;
 export const CONTRACTOR_PASS_VALID_DAYS = 365;
@@ -122,15 +120,6 @@ export const ContractorPassIssuanceV1Schema = z
   })
   .strict();
 export type ContractorPassIssuanceV1 = z.infer<typeof ContractorPassIssuanceV1Schema>;
-
-export function hashContractorPassSecret(passSecret: string): string {
-  if (!/^[a-f0-9]{64}$/.test(passSecret)) throw new Error('passSecret must be 64 lowercase hex characters.');
-  return sha256Hex(passSecret);
-}
-
-export function generateContractorPassSecret(): string {
-  return randomBytes(32).toString('hex');
-}
 
 export const VerifyContractorPassV1Schema = z
   .object({

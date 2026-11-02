@@ -24,7 +24,7 @@ Each WI-OI-133 … WI-OI-144 card must satisfy AGENTS.md module gate:
 
 | # | Product | WI | Platform commit | Mobile feature | Open to 100% |
 |---|---------|-----|-----------------|----------------|--------------|
-| 1 | M-RND Rounds | 133 | Yes | `mobile-feature-operator-rounds` | Device proof, verify clean, Built status |
+| 1 | M-RND Rounds | 133 | Yes | `mobile-feature-operator-rounds` | **Built** — owner UAT journey, physical device proof, live conformance `--record` on rebuilt module-host |
 | 2 | M-CAL | 134 | Yes | `mobile-feature-calibration` | Offline journal, e-sign, device |
 | 3 | M-TAG | 135 | Yes | `mobile-feature-commissioning` | OCR/GPS device proof |
 | 4 | M-BOM Spares | 136 | Yes | `mobile-feature-spares` | Large media, offline |

@@ -11,8 +11,6 @@ import {
   EnrollContractorWorkerV1Schema,
   UpdateContractorCompanyV1Schema,
   VerifyContractorPassV1Schema,
-  generateContractorPassSecret,
-  hashContractorPassSecret,
   scoreContractorQuiz,
   type ContractorCompanyV1,
   type ContractorPassIssuanceV1,
@@ -22,6 +20,7 @@ import {
   type ContractorWorkerV1,
   type VerifyContractorPassResultV1,
 } from '@gigalibs/contracts';
+import { generateContractorPassSecret, hashContractorPassSecret } from '@gigalibs/contracts/frontline/contractor-secrets.js';
 import { type ModuleCommandContext, type ModulePrincipal, moduleErrors, recordMutation } from '@gigalibs/module-sdk';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { PoolClient } from 'pg';

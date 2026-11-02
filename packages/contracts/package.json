@@ -11,6 +11,10 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
+    },
+    "./frontline/contractor-secrets.js": {
+      "import": "./dist/frontline/contractor-secrets.js",
+      "types": "./dist/frontline/contractor-secrets.d.ts"
     }
   },
   "scripts": {

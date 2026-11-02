@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CONTRACTOR_QUIZ_CORRECT,
-  generateContractorPassSecret,
-  hashContractorPassSecret,
-  scoreContractorQuiz,
-} from './contractor.js';
+import { CONTRACTOR_QUIZ_CORRECT, scoreContractorQuiz } from './contractor.js';
+import { generateContractorPassSecret, hashContractorPassSecret } from './contractor-secrets.js';
 
 describe('contractor pass contracts (WI-OI-143)', () => {
   it('scores the fixed induction quiz', () => {

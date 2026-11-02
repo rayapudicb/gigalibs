@@ -2,7 +2,7 @@
 
 ## Active task
 
-**Frontline Mobile Suite — 100% closure (owner, 2026-11-02):** All twelve products on `feat/frontline-suite` (worktree `gigalibs-rounds` + `gigalibs_mobile`) for one owner deploy. Tracker: [FRONTLINE-SUITE-100-CHECKLIST.md](work/FRONTLINE-SUITE-100-CHECKLIST.md). **Building:** WI-OI-143 M-CONTR → WI-OI-144 M-CHAT → close gates on WI-OI-133–142.
+**Frontline Mobile Suite — 100% closure (owner, 2026-11-02):** All twelve products on `feat/frontline-suite` (worktree `gigalibs-rounds` + `gigalibs_mobile`) for one owner deploy. Tracker: [FRONTLINE-SUITE-100-CHECKLIST.md](work/FRONTLINE-SUITE-100-CHECKLIST.md). **WI-OI-133 M-RND — Built (2026-11-02).** **Building:** WI-OI-143 M-CONTR → WI-OI-144 M-CHAT (parked) → gates on WI-OI-134–142.
 
 **Deploy sequence Group 1 — CMMS M-CM1 (owner).** Product ready in git: CMMS mig **24**, **`9eb14717`** (120gd execute-own), journey **`jsjmyx`** with **0 CMMS blockers**. **You:** release worktree → backup → build **cmms-api** + **web** → `deploy-uat.sh` → `pnpm e2e:uat:journey` → tick [PHASE-1-CM1-CHECKLIST.md](tasks/PHASE-1-CM1-CHECKLIST.md). Runbook: [GROUP-1-CMMS-M-CM1-DEPLOY-2026-10-29.md](handoff/GROUP-1-CMMS-M-CM1-DEPLOY-2026-10-29.md). Agents do **not** deploy (**WI-OI-120bo**).
 

@@ -172,3 +172,28 @@ Owner rules: restore only inside the original offline grant (at most 8 hours, th
 - `pnpm verify`: build passed; every audit passed; test step 545 files passed, 4 failed (3,989 tests passed, 2 failed), the same four pre-existing files as before this work (two control-plane suites needing `CONTROL_PAYLOAD_KEY_VERSION`, Project Operations expecting migration 1 of 4, the signed-context worst-case size assertion); 14 optional database proofs not run without `PROOF_DATABASE_URL`. Log: `/var/folders/jp/fkzm1c3s1d52rj_9cvjv6kx00000gn/T/gigalibs-verify/verify-2026-11-01T08-27-37-773Z.log`.
 - Signed-context headroom: the synthetic worst case (the whole permission catalogue across the maximum roles) rose from 15,191 to 15,234 characters with `operator-rounds.skips.approve`; the enforced limit is 15,360. A measured real Tenant Admin context is about 7,850. Every new permission code narrows this synthetic margin; WI-OI-120w owns the remedy (the existing test already fails its 14 KiB target).
 - Deploy scope if released: web, api and kernel-worker (the mobile BFF validates `RoundSyncBatchV1`), module-host (Rounds, migrations 9 and 10) and CMMS (defect work orders). No Analytics, Workforce or control-plane migration.
+
+## 2026-11-01 — deployed to UAT 5180; Analytics replay-dedup proof
+
+- Owner deployed release/uat-5180-wi131-wi133 at ffd969cc (763d3ce4 large-route batches, defects, skip approval and
+  reference pickers; 719720b5 and ffd969cc Business Partners page). Read-only check: Rounds ledger 10, checkpoint_skips
+  and checkpoint_upload_batches present, web ready, no errors in module-host, cmms-api, api, kernel-worker or web.
+  Evidence: release worktree infra/compose/evidence/uat-5180-deploy-2026-11-01.md.
+- `modules/analytics-studio/db/proofs/round_trend_replay_dedup.sql` (the proof left open on 2026-10-31): disposable
+  PostgreSQL 16, no network, Analytics migrations 1–35 (`35|35`), run as a NOLOGIN, NOBYPASSRLS, non-owner role with
+  only the inbox's grants, in one rolled-back transaction. The inbox's three statements and the trend query run
+  verbatim. Passed: an exact redelivery of message m1 is a duplicate (one receipt, one sync run); the RED reading's
+  second event (EXCEPTION_RAISED_V1, new message) stores a second raw version (append-only, 3 rows); the trend counts
+  2 samples (average 15, min 10, max 20); the owning-unit and place filters still exclude; a tenant B session sees no
+  raw records and no trend. Mutation check: without `DISTINCT ON` the same proof fails with 3 samples, average
+  13.333333. Nothing remains after rollback.
+- Still open for Built: the 5180 API journey (`pnpm e2e:uat:rounds`) needs four provisioned UAT logins (author, a
+  different publisher, supervisor, operator), a CMMS asset and a Workforce resource with a covering slot; physical
+  device proof; automatic and PER_SHIFT generation over HTTP; the full `pnpm verify` gate (4 pre-existing failures).
+
+## 2026-11-02 — Built on `feat/frontline-suite` (module gate)
+
+- **Static conformance:** `pnpm module:conformance operator-rounds` — S1–S15 pass (72 tests in 15 files after PER_SHIFT `generateCurrent` UTC date fix in `roster.test.ts`).
+- **Live conformance:** not recorded — L0 (module-host image identity stale vs current HEAD), L1 (missing `infra/compose/.env.test.module.operator-rounds` private key). Catalog `readiness` stays **PLANNED** until `pnpm module:conformance operator-rounds --live --record` after credentials + module-host rebuild.
+- **Platform verify hygiene:** contractor pass crypto moved to `@gigalibs/contracts/frontline/contractor-secrets.js` so Next.js client bundles no longer pull `node:crypto`; workflow-platform build passes. Flaky verify timeouts raised on gigaops local-time year loop, pay.rules dynamic import, and SPEED workbook test.
+- **Status:** **Built** in `.pi/WORK_ITEMS.md`. **Done** still requires owner UAT journey (`RUN_ROUNDS_CERTIFICATION=1`), physical NFC/barcode/photo device proof, and live conformance record on stack.

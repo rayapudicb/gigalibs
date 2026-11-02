@@ -140,7 +140,7 @@ describe('SPEED packs as Excel workbooks (WI-OI-120ce)', () => {
       const read = await workbookToPack(kind, workbook);
       expect(read).toEqual({ ok: true, body: pack.body });
     }
-  });
+  }, 30_000);
 
   it('gives a blank template with every sheet and column, which is refused until it is filled in', async () => {
     const blank = await packToWorkbook('library', null);

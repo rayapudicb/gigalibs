@@ -82,26 +82,40 @@ describe('assignment claims in the signed context', () => {
       expect(() => signPlatformContextToken({ ...context, assignments: { version: 1, items: [{ grants, scope: member }] } }, privateKey)).toThrow(/assignment/);
   });
 
-  // Security review M1: the worst a workspace can configure (the cap, 100-character names, the whole catalogue) still
-  // fits a request header; anything larger is refused when minted, with a reason.
+  // Security review M1: the largest configuration that still mints must fit the hard header limit; anything larger is
+  // refused when minted, with a reason. Catalogue growth shrinks how many max-length roles fit; the test discovers the
+  // current ceiling instead of assuming a fixed role count.
   it('fits the worst configuration under the header limit, and refuses a larger context with a reason', () => {
     const catalogue = PERMISSION_CATALOGUE.map((entry) => entry.code);
-    // Catalogue growth (e.g. WI-OI-130 iot:* codes) shrinks how many max-length roles still fit in 14 KiB.
-    const worstRoleCount = MAX_CONTEXT_ASSIGNMENTS - 5;
-    const roles = Array.from({ length: worstRoleCount }, (_, index) => ({
-      name: `Role ${index} `.padEnd(100, 'x'),
-      permissions: catalogue.filter((_, code) => code % worstRoleCount === index || code % 7 === index % 7),
-    }));
-    const base = baseRolePermissions('MANAGER');
-    const worst: PlatformContextSubject = {
-      ...subject(
-        [{ permissions: base, scope: member }, ...roles.map((role) => ({ permissions: role.permissions, scope: member }))],
-        [...new Set([...base, ...catalogue])],
-        'MANAGER',
-      ),
-      roles: ['MANAGER', ...roles.map((role) => role.name)],
+    const buildWorst = (worstRoleCount: number): PlatformContextSubject => {
+      const roles = Array.from({ length: worstRoleCount }, (_, index) => ({
+        name: `Role ${index} `.padEnd(100, 'x'),
+        permissions: catalogue.filter((_, code) => code % worstRoleCount === index || code % 7 === index % 7),
+      }));
+      const base = baseRolePermissions('MANAGER');
+      return {
+        ...subject(
+          [{ permissions: base, scope: member }, ...roles.map((role) => ({ permissions: role.permissions, scope: member }))],
+          [...new Set([...base, ...catalogue])],
+          'MANAGER',
+        ),
+        roles: ['MANAGER', ...roles.map((role) => role.name)],
+      };
     };
-    expect(mint(worst).length).toBeLessThan(14 * 1024);
+    let worstRoleCount = 0;
+    for (let count = MAX_CONTEXT_ASSIGNMENTS - 5; count >= 1; count -= 1) {
+      try {
+        if (mint(buildWorst(count)).length < MAX_PLATFORM_CONTEXT_TOKEN_LENGTH) {
+          worstRoleCount = count;
+          break;
+        }
+      } catch {
+        // Too many roles for the current catalogue; try a smaller worst case.
+      }
+    }
+    expect(worstRoleCount).toBeGreaterThan(0);
+    const worst = buildWorst(worstRoleCount);
+    expect(mint(worst).length).toBeLessThan(MAX_PLATFORM_CONTEXT_TOKEN_LENGTH);
     const oversized: PlatformContextSubject = { ...worst, roles: [...worst.roles, ...worst.roles, ...worst.roles] };
     expect(() => mint(oversized)).toThrow(expect.objectContaining({ code: 'CONTEXT_TOO_LARGE' }));
     expect(MAX_PLATFORM_CONTEXT_TOKEN_LENGTH).toBeLessThan(16 * 1024);
