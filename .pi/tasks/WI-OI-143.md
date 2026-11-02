@@ -1,6 +1,6 @@
 # WI-OI-143: M-CONTR Contractor field safety pass (Safety Operations extension, web and mobile)
 
-- **Status:** Approved (owner, 2026-11-02: complete all twelve frontline products for single deploy); In progress on `feat/frontline-suite` (worktree `gigalibs-rounds`).
+- **Status:** **Built** (2026-11-02 on `feat/frontline-suite`). Owner UAT on single-suite deploy before **Done**; commit uncommitted platform + mobile slices.
 - **Work item:** WI-OI-143. Evidence: `.pi/work/WI-OI-143.md`. Spec: `docs/products/mobile-suite/07-contractor-safety-pass.md`; ADR-0035.
 - **Size:** L
 

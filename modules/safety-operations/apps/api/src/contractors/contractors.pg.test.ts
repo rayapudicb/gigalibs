@@ -32,6 +32,19 @@ describe.skipIf(!url)('contractor pass on PostgreSQL (WI-OI-143)', () => {
   });
   afterAll(async () => database?.onModuleDestroy());
 
+  it('replays enroll on the same clientOperationId', async () => {
+    await contractors.createCompany(context(admin), { code: 'REPL-1', name: 'Replay Co', coiExpiresOn: coiFuture() });
+    const opId = randomUUID();
+    const first = await contractors.enroll(context(workerUser), {
+      clientOperationId: opId, companyCode: 'REPL-1', displayName: 'John Doe',
+    });
+    const second = await contractors.enroll(context(workerUser), {
+      clientOperationId: opId, companyCode: 'REPL-1', displayName: 'Other Name',
+    });
+    expect(second.id).toBe(first.id);
+    expect(second.displayName).toBe('John Doe');
+  });
+
   it('issues a pass after induction and verifies at the gate once per operation', async () => {
     const company = await contractors.createCompany(context(admin), { code: 'APEX-1', name: 'Apex Electrical', coiExpiresOn: coiFuture() });
     const enrolled = await contractors.enroll(context(workerUser), {

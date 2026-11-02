@@ -177,7 +177,7 @@
     "service": "module-host",
     "port": 4790,
     "schema": "gigalibs_safety_operations",
-    "migrationVersion": 3,
+    "migrationVersion": 4,
     "audience": "gigalibs-safety-operations-api",
     "appendOnlyTables": [
       "audit_events",

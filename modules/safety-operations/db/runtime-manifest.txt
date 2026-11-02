@@ -3,3 +3,4 @@
 000001_safety_operations_foundation.up.sql
 000002_hazard_reports.up.sql
 000003_contractor_pass.up.sql
+000004_contractor_enroll_idempotency.up.sql

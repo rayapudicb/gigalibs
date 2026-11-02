@@ -4,7 +4,7 @@ Card: `.pi/tasks/WI-OI-143.md`. Branch `feat/frontline-suite` (worktree `gigalib
 
 ## Status
 
-In progress (2026-11-02). Core stack wired; full `pnpm verify` and owner UAT not yet recorded.
+**Built** (2026-11-02). Platform core `1db87eee` plus migration **4** and verify hygiene in working tree; `pnpm verify` PASS. Owner UAT and optional PG/device proof before **Done**.
 
 ## Ownership
 
@@ -22,8 +22,14 @@ Safety Operations (`safety-operations`) per ADR-0035: companies, workers, induct
 
 ## Gates still open
 
-- Full suite `pnpm verify` (no new failures).
-- PostgreSQL proof run with `SAFETY_OPERATIONS_PG_URL`.
+- PostgreSQL proof run with `SAFETY_OPERATIONS_PG_URL` (includes enroll replay case).
 - Device QR scan journey (camera) vs manual pass id/secret entry.
-- Enroll idempotency on `clientOperationId` (currently idempotent by platform user only).
 - Owner UAT on single-suite deploy.
+
+## 2026-11-02 checkpoint (WI-OI-143 `/next`)
+
+- **Migration 4** `000004_contractor_enroll_idempotency`: `enroll_client_operation_id` + unique `(tenant_id, enroll_client_operation_id)`; service replays enroll on `clientOperationId` before `platform_user_id` shortcut.
+- **Static conformance:** `pnpm module:conformance safety-operations` — S1–S15 with **4** migrations; `modules.json` migrationVersion **4**.
+- **Mobile (`gigalibs_mobile`, uncommitted):** exported contractor DTO types from `mobile-contracts`; fixed `mobile-feature-contractor` tsconfig + screens to match `Button`/`ServiceProblemPanel` patterns; `@gigalibs/mobile-api` and contractor feature **typecheck pass**.
+- **BFF tests:** `packages/auth-nest/src/mobile/mobile-contractor.spec.ts` — 2/2 pass.
+- **Verify:** `pnpm verify` PASS (2026-11-02); log `/tmp/verify-143.log`.

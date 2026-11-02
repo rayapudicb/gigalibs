@@ -100,6 +100,12 @@ export class ContractorsService {
     const input = errors.parseInput(EnrollContractorWorkerV1Schema, raw);
     const { tenantId, subject } = context.principal;
     return this.database.withTenantTransaction(tenantId, async (client) => {
+      const replay = await client.query<{ id: string }>(
+        `SELECT id FROM ${SCHEMA}.contractor_workers WHERE tenant_id = $1 AND enroll_client_operation_id = $2`,
+        [tenantId, input.clientOperationId],
+      );
+      if (replay.rows[0]) return this.workerRow(client, tenantId, replay.rows[0].id);
+
       const existing = await client.query<{ id: string }>(
         `SELECT id FROM ${SCHEMA}.contractor_workers WHERE tenant_id = $1 AND platform_user_id = $2`,
         [tenantId, subject],
@@ -114,9 +120,9 @@ export class ContractorsService {
 
       const id = randomUUID();
       await client.query(
-        `INSERT INTO ${SCHEMA}.contractor_workers (id, tenant_id, company_id, display_name, platform_user_id)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [id, tenantId, company.rows[0].id, input.displayName, subject],
+        `INSERT INTO ${SCHEMA}.contractor_workers (id, tenant_id, company_id, display_name, platform_user_id, enroll_client_operation_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [id, tenantId, company.rows[0].id, input.displayName, subject, input.clientOperationId],
       );
       return this.workerRow(client, tenantId, id);
     });

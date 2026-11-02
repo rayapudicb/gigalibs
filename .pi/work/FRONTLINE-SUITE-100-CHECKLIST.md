@@ -34,7 +34,7 @@ Each WI-OI-133 … WI-OI-144 card must satisfy AGENTS.md module gate:
 | 8 | M-REQ | 140 | Yes | `mobile-feature-requests` | Comms notify, edge throttle |
 | 9 | M-INC | 141 | Yes | `mobile-feature-safety` | Module deploy proof, CMMS relay |
 | 10 | M-LOTO | 142 | Yes | `mobile-feature-permits` | Offline, security review |
-| 11 | M-CONTR | 143 | **Not started** | **Missing** | Full build |
+| 11 | M-CONTR | 143 | Yes | `mobile-feature-contractor` | **Built** — commit mobile tree, PG proof, device QR, owner UAT |
 | 12 | M-CHAT | 144 | **Not started** | **Missing** | Full build (PTT deferred) |
 
 ## Shared platform blockers (fix once for all)
