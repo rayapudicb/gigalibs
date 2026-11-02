@@ -2,3 +2,4 @@
 # order, are copied into the module image and installed by run-module-migrations.mjs.
 000001_safety_operations_foundation.up.sql
 000002_hazard_reports.up.sql
+000003_contractor_pass.up.sql

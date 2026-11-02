@@ -699,7 +699,48 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "safety-operations.hazards.triage",
       "safety-operations.stop-work.acknowledge",
       "safety-operations.stop-work.lift",
-      "safety-operations.investigations.manage"
+      "safety-operations.investigations.manage",
+      "safety-operations.contractors.admin",
+      "safety-operations.contractors.roster"
+    ]
+  },
+  {
+    "catalogKey": "safety-operations",
+    "key": "contractor-worker",
+    "name": "Contractor worker (mobile)",
+    "description": "Enrolls with a vendor code, completes induction and carries a digital pass.",
+    "permissions": [
+      "safety-operations.contractors.worker"
+    ]
+  },
+  {
+    "catalogKey": "safety-operations",
+    "key": "contractor-gate-guard",
+    "name": "Security gate (mobile)",
+    "description": "Verifies contractor passes at the gate and reads the on-site roster.",
+    "permissions": [
+      "safety-operations.contractors.gate",
+      "safety-operations.contractors.roster"
+    ]
+  },
+  {
+    "catalogKey": "safety-operations",
+    "key": "contractor-escort",
+    "name": "Plant escort (mobile)",
+    "description": "Authorizes escorted access to restricted areas for checked-in contractors.",
+    "permissions": [
+      "safety-operations.contractors.escort",
+      "safety-operations.contractors.gate"
+    ]
+  },
+  {
+    "catalogKey": "safety-operations",
+    "key": "contractor-compliance-lead",
+    "name": "Contractor compliance lead (web)",
+    "description": "Maintains vendor companies, COI dates and the live evacuation roster.",
+    "permissions": [
+      "safety-operations.contractors.admin",
+      "safety-operations.contractors.roster"
     ]
   }
 ];

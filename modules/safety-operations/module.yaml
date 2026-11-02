@@ -15,6 +15,7 @@ spec:
   capabilities:
     - safety-operations-records
     - safety-operations-hazard-reports
+    - safety-operations-contractor-pass
   # WI-OI-141 M-INC: the Safety Operations workspace (stop work, triage, reports, insights, report a hazard).
   ui:
     basePath: /safety-operations
@@ -75,7 +76,24 @@ spec:
         - key: safety-ehs-director
           name: EHS director
           description: Everything a champion does, and lifts stop-work alerts once the area is safe.
-          permissions: [safety-operations.hazards.report, safety-operations.hazards.read, safety-operations.hazards.triage, safety-operations.stop-work.acknowledge, safety-operations.stop-work.lift, safety-operations.investigations.manage]
+          permissions: [safety-operations.hazards.report, safety-operations.hazards.read, safety-operations.hazards.triage, safety-operations.stop-work.acknowledge, safety-operations.stop-work.lift, safety-operations.investigations.manage, safety-operations.contractors.admin, safety-operations.contractors.roster]
+        # WI-OI-143 M-CONTR: contractor compliance, gate verify, escort and evacuation roster.
+        - key: contractor-worker
+          name: Contractor worker (mobile)
+          description: Enrolls with a vendor code, completes induction and carries a digital pass.
+          permissions: [safety-operations.contractors.worker]
+        - key: contractor-gate-guard
+          name: Security gate (mobile)
+          description: Verifies contractor passes at the gate and reads the on-site roster.
+          permissions: [safety-operations.contractors.gate, safety-operations.contractors.roster]
+        - key: contractor-escort
+          name: Plant escort (mobile)
+          description: Authorizes escorted access to restricted areas for checked-in contractors.
+          permissions: [safety-operations.contractors.escort, safety-operations.contractors.gate]
+        - key: contractor-compliance-lead
+          name: Contractor compliance lead (web)
+          description: Maintains vendor companies, COI dates and the live evacuation roster.
+          permissions: [safety-operations.contractors.admin, safety-operations.contractors.roster]
   # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context.
   gateway:
     basePaths: [/api/safety-operations]
@@ -100,3 +118,14 @@ spec:
       - { path: 'v1/stop-work', GET: safety-operations.hazards.report }
       - { path: 'v1/stop-work/{id}/acknowledge', POST: safety-operations.stop-work.acknowledge }
       - { path: 'v1/stop-work/{id}/lift', POST: safety-operations.stop-work.lift }
+      - { path: 'v1/contractor-companies', GET: safety-operations.contractors.admin, POST: safety-operations.contractors.admin }
+      - { path: 'v1/contractor-companies/{id}', POST: safety-operations.contractors.admin }
+      - { path: 'v1/contractor-companies/{id}/workers', POST: safety-operations.contractors.admin }
+      - { path: 'v1/contractor-workers/enroll', POST: safety-operations.contractors.worker }
+      - { path: 'v1/contractor-workers/mine', GET: safety-operations.contractors.worker }
+      - { path: 'v1/contractor-inductions', POST: safety-operations.contractors.worker }
+      - { path: 'v1/contractor-passes/mine', GET: safety-operations.contractors.worker }
+      - { path: 'v1/contractor-passes/verify', POST: safety-operations.contractors.gate }
+      - { path: 'v1/contractor-roster', GET: safety-operations.contractors.roster }
+      - { path: 'v1/contractor-visits/{id}/checkout', POST: safety-operations.contractors.roster }
+      - { path: 'v1/contractor-visits/{id}/escort', POST: safety-operations.contractors.escort }

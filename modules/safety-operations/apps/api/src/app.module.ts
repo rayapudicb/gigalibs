@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AuthorizationGuard } from './authorization.js';
 import { runtimeConfigProvider } from './config.js';
 import { DatabaseService } from './database.service.js';
+import { ContractorsController } from './contractors/contractors.controller.js';
+import { ContractorsService } from './contractors/contractors.service.js';
 import { HazardsController } from './hazards/hazards.controller.js';
 import { HazardsService } from './hazards/hazards.service.js';
 import { HealthController } from './health.controller.js';
@@ -13,7 +15,7 @@ import { RecordsService } from './records/records.service.js';
  * resource stays as the live-conformance probe; the domain is hazard reports (WI-OI-141, ADR-0036).
  */
 @Module({
-  controllers: [HealthController, RecordsController, HazardsController],
-  providers: [runtimeConfigProvider, DatabaseService, AuthorizationGuard, RecordsService, HazardsService],
+  controllers: [HealthController, RecordsController, HazardsController, ContractorsController],
+  providers: [runtimeConfigProvider, DatabaseService, AuthorizationGuard, RecordsService, HazardsService, ContractorsService],
 })
 export class AppModule {}

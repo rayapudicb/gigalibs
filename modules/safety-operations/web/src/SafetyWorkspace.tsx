@@ -12,6 +12,7 @@ import {
 } from '@gigalibs/contracts';
 import { Alert, Button, Container, Heading, Input, Label, StatusBadge, Table, Text, Textarea } from '@medusajs/ui';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { ContractorCompliance } from './ContractorCompliance';
 import { type SafetyApiError, safetyApi } from './safety-api';
 
 // WI-OI-141 M-INC (ADR-0036). Safety Operations decides: triage is by someone other than the reporter, a stop-work
@@ -21,7 +22,7 @@ import { type SafetyApiError, safetyApi } from './safety-api';
 export interface SafetyWorkspaceProps {
   readonly permissions?: readonly string[];
 }
-type Tab = 'stop-work' | 'triage' | 'reports' | 'insights' | 'report';
+type Tab = 'stop-work' | 'triage' | 'reports' | 'insights' | 'report' | 'contractors';
 
 const SEVERITY: Readonly<Record<HazardSeverityV1, { label: string; color: 'green' | 'orange' | 'red' }>> = {
   GOOD_CATCH: { label: 'Good catch', color: 'green' },
@@ -53,6 +54,7 @@ export function SafetyWorkspace({ permissions = [] }: SafetyWorkspaceProps) {
     ['reports', 'Reports', can('safety-operations.hazards.read')],
     ['insights', 'Insights', can('safety-operations.hazards.read')],
     ['report', 'Report a hazard', can('safety-operations.hazards.report')],
+    ['contractors', 'Contractors', can('safety-operations.contractors.admin') || can('safety-operations.contractors.roster')],
   ];
   if (open) return <ReportView reportId={open} can={can} onBack={() => setOpen(null)} />;
   return (
@@ -69,6 +71,7 @@ export function SafetyWorkspace({ permissions = [] }: SafetyWorkspaceProps) {
       {tab === 'reports' ? <ReportList title="Reports (180 days)" onOpen={setOpen} exportable /> : null}
       {tab === 'insights' ? <Insights /> : null}
       {tab === 'report' ? <ReportForm onDone={setOpen} /> : null}
+      {tab === 'contractors' ? <ContractorCompliance /> : null}
     </div>
   );
 }

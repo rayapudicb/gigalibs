@@ -288,6 +288,10 @@ export const MOBILE_PROBLEMS = {
     status: 409,
     title: 'This report was already sent with other details, or the stop-work alert was lifted. Reload and check.',
   },
+  MOBILE_CONTRACTOR_CONFLICT: {
+    status: 409,
+    title: 'This contractor action was already sent with other details. Reload and try again.',
+  },
   MOBILE_PERMIT_CONFLICT: {
     status: 409,
     title: 'The permit moved on: a step is out of order, someone is still locked on, or the permit expired. Reload and check.',

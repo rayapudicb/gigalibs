@@ -1748,6 +1748,40 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "safety-operations.contractors.admin",
+    "entries": [
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.contractors.escort",
+    "entries": [
+      "platform",
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.contractors.gate",
+    "entries": [
+      "platform",
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.contractors.roster",
+    "entries": [
+      "platform",
+      "safety-operations"
+    ]
+  },
+  {
+    "code": "safety-operations.contractors.worker",
+    "entries": [
+      "platform",
+      "safety-operations"
+    ]
+  },
+  {
     "code": "safety-operations.hazards.read",
     "entries": [
       "safety-operations"

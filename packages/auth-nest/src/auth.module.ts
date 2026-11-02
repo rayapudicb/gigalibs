@@ -12,6 +12,7 @@ import { MobileFleetController } from './mobile/mobile-fleet.controller.js';
 import { MobileLogbookController } from './mobile/mobile-logbook.controller.js';
 import { MobilePermitsController } from './mobile/mobile-permits.controller.js';
 import { MobileRequestsController } from './mobile/mobile-requests.controller.js';
+import { MobileContractorController } from './mobile/mobile-contractor.controller.js';
 import { MobileSafetyController } from './mobile/mobile-safety.controller.js';
 import { MobileSopController } from './mobile/mobile-sop.controller.js';
 import { PublicCmmsPortalController } from './portal/public-cmms-portal.controller.js';
@@ -24,7 +25,7 @@ export interface AuthModuleOptions {
 }
 
 @Module({
-  controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController, MobileSparesController, MobileLogbookController, MobileSopController, MobileFleetController, MobileRequestsController, MobileSafetyController, MobilePermitsController, PublicCmmsPortalController],
+  controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController, MobileSparesController, MobileLogbookController, MobileSopController, MobileFleetController, MobileRequestsController, MobileSafetyController, MobileContractorController, MobilePermitsController, PublicCmmsPortalController],
   providers: [Reflector, AuthService, OidcService, MfaAssistedRecoveryService, MobileAuthService, JwtAuthGuard],
   exports: [AuthService, OidcService, MfaAssistedRecoveryService, JwtAuthGuard],
 })
@@ -48,7 +49,7 @@ export class AuthModule {
 
     return {
       module: AuthModule,
-      controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController, MobileSparesController, MobileLogbookController, MobileSopController, MobileFleetController, MobileRequestsController, MobileSafetyController, MobilePermitsController, PublicCmmsPortalController],
+      controllers: [AuthController, MobileAuthController, MobileRoundsController, MobileCalibrationController, MobileCommissioningController, MobileSparesController, MobileLogbookController, MobileSopController, MobileFleetController, MobileRequestsController, MobileSafetyController, MobileContractorController, MobilePermitsController, PublicCmmsPortalController],
       providers: providers as any,
       exports: [AuthService, OidcService, MfaAssistedRecoveryService, JwtAuthGuard],
     };

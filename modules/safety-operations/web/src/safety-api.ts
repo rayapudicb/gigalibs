@@ -1,4 +1,13 @@
-import type { HazardInsightsV1, HazardReportV1, ReportHazardResultV1, StopWorkAlertV1 } from '@gigalibs/contracts';
+import type {
+  ContractorCompanyV1,
+  ContractorPassIssuanceV1,
+  ContractorRosterV1,
+  ContractorWorkerV1,
+  HazardInsightsV1,
+  HazardReportV1,
+  ReportHazardResultV1,
+  StopWorkAlertV1,
+} from '@gigalibs/contracts';
 
 // WI-OI-141 M-INC: the Safety Operations routes, as the signed-in user, through the web gateway /api/safety-operations.
 export const SAFETY_API = '/api/safety-operations/v1';
@@ -41,4 +50,13 @@ export const safetyApi = {
   openAlerts: () => call<{ items: StopWorkAlertV1[] }>('/stop-work'),
   acknowledge: (alertId: string) => call<StopWorkAlertV1>(`/stop-work/${id(alertId)}/acknowledge`, post({})),
   lift: (alertId: string, input: Record<string, unknown>) => call<StopWorkAlertV1>(`/stop-work/${id(alertId)}/lift`, post(input)),
+  listContractorCompanies: () => call<{ items: ContractorCompanyV1[] }>('/contractor-companies'),
+  createContractorCompany: (input: Record<string, unknown>) => call<ContractorCompanyV1>('/contractor-companies', post(input)),
+  updateContractorCompany: (companyId: string, input: Record<string, unknown>) =>
+    call<ContractorCompanyV1>(`/contractor-companies/${id(companyId)}`, post(input)),
+  createContractorWorker: (companyId: string, input: Record<string, unknown>) =>
+    call<ContractorWorkerV1>(`/contractor-companies/${id(companyId)}/workers`, post(input)),
+  contractorRoster: () => call<ContractorRosterV1>('/contractor-roster'),
+  completeContractorInduction: (input: Record<string, unknown>) =>
+    call<ContractorPassIssuanceV1>('/contractor-inductions', post(input)),
 };

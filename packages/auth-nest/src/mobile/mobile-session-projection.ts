@@ -122,6 +122,12 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.hazards.report')) ? ['safety-operations.hazards.report'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.stop-work.acknowledge')) ? ['safety-operations.stop-work.acknowledge'] : []),
   ] : [];
+  const contractorCapabilities = entitlements.includes('safety-operations') ? [
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.contractors.worker')) ? ['safety-operations.contractors.worker'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.contractors.gate')) ? ['safety-operations.contractors.gate'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.contractors.escort')) ? ['safety-operations.contractors.escort'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.contractors.roster')) ? ['safety-operations.contractors.roster'] : []),
+  ] : [];
   // WI-OI-142 M-LOTO: isolating and gas testing (request) and personal locks (lock), each by its own permission.
   const permitCapabilities = entitlements.includes('asset-maintenance') ? [
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.permits.request')) ? ['cmms.permits.request'] : []),
@@ -186,6 +192,12 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
       capabilities:safetyCapabilities,
       presentationRevision:'safety.v1',
       requiredDeviceCapabilities:['camera'],
+    }] : []),
+    ...(contractorCapabilities.length ? [{
+      key:'contractor',enabled:true,navigationOrder:455,
+      capabilities:contractorCapabilities,
+      presentationRevision:'contractor.v1',
+      requiredDeviceCapabilities:contractorCapabilities.includes('safety-operations.contractors.gate') ? ['camera'] : [],
     }] : []),
     ...(permitCapabilities.length ? [{
       key:'permits',enabled:true,navigationOrder:460,

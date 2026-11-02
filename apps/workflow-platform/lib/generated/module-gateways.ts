@@ -3701,6 +3701,84 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "POST": "safety-operations.stop-work.lift"
         }
+      },
+      {
+        "template": "v1/contractor-companies",
+        "pattern": "^v1/contractor-companies$",
+        "methods": {
+          "GET": "safety-operations.contractors.admin",
+          "POST": "safety-operations.contractors.admin"
+        }
+      },
+      {
+        "template": "v1/contractor-companies/{id}",
+        "pattern": "^v1/contractor-companies/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "POST": "safety-operations.contractors.admin"
+        }
+      },
+      {
+        "template": "v1/contractor-companies/{id}/workers",
+        "pattern": "^v1/contractor-companies/[0-9a-fA-F-]{36}/workers$",
+        "methods": {
+          "POST": "safety-operations.contractors.admin"
+        }
+      },
+      {
+        "template": "v1/contractor-workers/enroll",
+        "pattern": "^v1/contractor-workers/enroll$",
+        "methods": {
+          "POST": "safety-operations.contractors.worker"
+        }
+      },
+      {
+        "template": "v1/contractor-workers/mine",
+        "pattern": "^v1/contractor-workers/mine$",
+        "methods": {
+          "GET": "safety-operations.contractors.worker"
+        }
+      },
+      {
+        "template": "v1/contractor-inductions",
+        "pattern": "^v1/contractor-inductions$",
+        "methods": {
+          "POST": "safety-operations.contractors.worker"
+        }
+      },
+      {
+        "template": "v1/contractor-passes/mine",
+        "pattern": "^v1/contractor-passes/mine$",
+        "methods": {
+          "GET": "safety-operations.contractors.worker"
+        }
+      },
+      {
+        "template": "v1/contractor-passes/verify",
+        "pattern": "^v1/contractor-passes/verify$",
+        "methods": {
+          "POST": "safety-operations.contractors.gate"
+        }
+      },
+      {
+        "template": "v1/contractor-roster",
+        "pattern": "^v1/contractor-roster$",
+        "methods": {
+          "GET": "safety-operations.contractors.roster"
+        }
+      },
+      {
+        "template": "v1/contractor-visits/{id}/checkout",
+        "pattern": "^v1/contractor-visits/[0-9a-fA-F-]{36}/checkout$",
+        "methods": {
+          "POST": "safety-operations.contractors.roster"
+        }
+      },
+      {
+        "template": "v1/contractor-visits/{id}/escort",
+        "pattern": "^v1/contractor-visits/[0-9a-fA-F-]{36}/escort$",
+        "methods": {
+          "POST": "safety-operations.contractors.escort"
+        }
       }
     ],
     "transformBody": null,
