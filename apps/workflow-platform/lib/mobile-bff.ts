@@ -50,6 +50,10 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   'POST safety/reports': '/api/v1/mobile/safety/reports',
   'GET safety/reports/mine': '/api/v1/mobile/safety/reports/mine',
   'GET safety/stop-work': '/api/v1/mobile/safety/stop-work',
+  // WI-OI-142 M-LOTO.
+  'GET permits/mine': '/api/v1/mobile/permits/mine',
+  'GET permits/procedures': '/api/v1/mobile/permits/procedures',
+  'POST permits': '/api/v1/mobile/permits',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -119,6 +123,14 @@ function mobileUpstreamPath(method: string, path: readonly string[]): string | u
   if (method === 'POST' && path.length === 4 && path[0] === 'safety' && path[1] === 'stop-work' && UUID.test(path[2] ?? '') &&
       path[3] === 'acknowledge')
     return `/api/v1/mobile/safety/stop-work/${path[2]}/acknowledge`;
+  if (path[0] === 'permits' && UUID.test(path[1] ?? '')) {
+    if (method === 'GET' && path.length === 2) return `/api/v1/mobile/permits/${path[1]}`;
+    if (method === 'POST' && path.length === 3 && ['gas-tests', 'lock-on', 'lock-off', 'de-isolate'].includes(path[2] ?? ''))
+      return `/api/v1/mobile/permits/${path[1]}/${path[2]}`;
+    if (method === 'POST' && path.length === 5 && path[2] === 'points' && STEP_KEY.test(path[3] ?? '') &&
+        ['lock', 'verify', 'remove'].includes(path[4] ?? ''))
+      return `/api/v1/mobile/permits/${path[1]}/points/${path[3]}/${path[4]}`;
+  }
   return undefined;
 }
 

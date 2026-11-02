@@ -189,6 +189,23 @@ const CALIBRATION_ROUTES: readonly (readonly [string, string, string])[] = [
   ['POST', 'portal/links/{id}/revoke', 'cmms.portal.manage'],
   ['GET', 'portal/submissions', 'cmms.portal.manage'],
   ['GET', 'portal/submissions/{id}/photo', 'cmms.portal.manage'],
+  // WI-OI-142 M-LOTO, from PermitsController ({key} is a point key).
+  ['GET', 'isolation-procedures', 'cmms.permits.read'],
+  ['POST', 'isolation-procedures', 'cmms.isolations.manage'],
+  ['PATCH', 'isolation-procedures/{id}', 'cmms.isolations.manage'],
+  ['POST', 'isolation-procedures/{id}/publish', 'cmms.isolations.manage'],
+  ['POST', 'isolation-procedures/{id}/revise', 'cmms.isolations.manage'],
+  ['GET', 'permits', 'cmms.permits.read'],
+  ['POST', 'permits', 'cmms.permits.request'],
+  ['GET', 'permits/{id}', 'cmms.permits.read'],
+  ['POST', 'permits/{id}/gas-tests', 'cmms.permits.request'],
+  ['POST', 'permits/{id}/de-isolate', 'cmms.permits.request'],
+  ['POST', 'permits/{id}/cancel', 'cmms.permits.request'],
+  ['POST', 'permits/{id}/authorize', 'cmms.permits.authorize'],
+  ['POST', 'permits/{id}/close', 'cmms.permits.authorize'],
+  ['POST', 'permits/{id}/countersign', 'cmms.permits.countersign'],
+  ['POST', 'permits/{id}/lock-on', 'cmms.permits.lock'],
+  ['POST', 'permits/{id}/lock-off', 'cmms.permits.lock'],
 ];
 
 /**

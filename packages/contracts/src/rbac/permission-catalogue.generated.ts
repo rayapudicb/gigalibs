@@ -454,6 +454,12 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "cmms.isolations.manage",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
     "code": "cmms.meters.read",
     "entries": [
       "asset-maintenance"
@@ -482,6 +488,38 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "cmms.parts.write",
     "entries": [
       "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.permits.authorize",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.permits.countersign",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.permits.lock",
+    "entries": [
+      "asset-maintenance",
+      "platform"
+    ]
+  },
+  {
+    "code": "cmms.permits.read",
+    "entries": [
+      "asset-maintenance"
+    ]
+  },
+  {
+    "code": "cmms.permits.request",
+    "entries": [
+      "asset-maintenance",
+      "platform"
     ]
   },
   {

@@ -122,6 +122,11 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.hazards.report')) ? ['safety-operations.hazards.report'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'safety-operations.stop-work.acknowledge')) ? ['safety-operations.stop-work.acknowledge'] : []),
   ] : [];
+  // WI-OI-142 M-LOTO: isolating and gas testing (request) and personal locks (lock), each by its own permission.
+  const permitCapabilities = entitlements.includes('asset-maintenance') ? [
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.permits.request')) ? ['cmms.permits.request'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.permits.lock')) ? ['cmms.permits.lock'] : []),
+  ] : [];
   const logbookCapabilities = entitlements.includes('gigaops') ? [
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.read')) ? ['workforce.logbook.read'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.write')) ? ['workforce.logbook.write'] : []),
@@ -180,6 +185,12 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
       key:'safety',enabled:true,navigationOrder:450,
       capabilities:safetyCapabilities,
       presentationRevision:'safety.v1',
+      requiredDeviceCapabilities:['camera'],
+    }] : []),
+    ...(permitCapabilities.length ? [{
+      key:'permits',enabled:true,navigationOrder:460,
+      capabilities:permitCapabilities,
+      presentationRevision:'permits.v1',
       requiredDeviceCapabilities:['camera'],
     }] : []),
     // WI-OI-135 M-TAG: commissioning proposals and floor walks, each by its own permission.

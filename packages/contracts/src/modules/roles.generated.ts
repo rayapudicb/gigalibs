@@ -324,6 +324,9 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.fleet.inspect",
       "cmms.fleet.certify",
       "cmms.requests.report",
+      "cmms.permits.read",
+      "cmms.permits.request",
+      "cmms.permits.lock",
       "maps.nodes.read",
       "workforce:read",
       "workforce.resources.read",
@@ -372,6 +375,8 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.fleet.manage",
       "cmms.portal.manage",
       "cmms.requests.report",
+      "cmms.permits.read",
+      "cmms.isolations.manage",
       "maps:read",
       "maps.nodes.read",
       "workforce:read",
@@ -413,6 +418,7 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.sop.read",
       "cmms.fleet.read",
       "cmms.requests.report",
+      "cmms.permits.read",
       "maps.nodes.read"
     ]
   },
@@ -436,6 +442,35 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
   },
   {
     "catalogKey": "asset-maintenance",
+    "key": "permit-issuer",
+    "name": "Permit issuer",
+    "description": "Witnesses zero-energy checks, authorizes permits others requested, closes them after de-isolation, and keeps isolation procedures others publish.",
+    "permissions": [
+      "cmms:read",
+      "cmms.assets.read",
+      "cmms.work-orders.read",
+      "cmms.permits.read",
+      "cmms.permits.authorize",
+      "cmms.isolations.manage",
+      "maps.nodes.read"
+    ]
+  },
+  {
+    "catalogKey": "asset-maintenance",
+    "key": "area-operations-lead",
+    "name": "Area operations lead",
+    "description": "Countersigns permits the issuer authorized, so work in their area can start.",
+    "permissions": [
+      "cmms:read",
+      "cmms.assets.read",
+      "cmms.work-orders.read",
+      "cmms.permits.read",
+      "cmms.permits.countersign",
+      "maps.nodes.read"
+    ]
+  },
+  {
+    "catalogKey": "asset-maintenance",
     "key": "equipment-operator",
     "name": "Equipment operator",
     "description": "Inspects forklifts, cranes and vehicles before and after use, and red-tags equipment with a critical safety defect.",
@@ -445,6 +480,8 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "cmms.fleet.read",
       "cmms.fleet.inspect",
       "cmms.requests.report",
+      "cmms.permits.read",
+      "cmms.permits.lock",
       "maps.nodes.read"
     ]
   },

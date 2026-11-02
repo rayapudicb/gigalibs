@@ -29,3 +29,4 @@
 000030_visual_work_instructions.up.sql
 000031_fleet_equipment_inspection.up.sql
 000032_request_portal_links.up.sql
+000033_lockout_permits.up.sql

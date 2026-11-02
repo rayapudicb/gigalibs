@@ -186,6 +186,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       ]
     },
     {
+      "key": "permits",
+      "label": "Permits & LOTO",
+      "path": "/cmms/permits",
+      "icon": "lock",
+      "permissions": [
+        "cmms.permits.read"
+      ]
+    },
+    {
       "key": "analytics",
       "label": "Reliability",
       "path": "/cmms/analytics",

@@ -327,6 +327,22 @@ export class WorkOrdersService {
           message: `A ${from} work order cannot move to ${input.status}.`,
         });
       }
+      // WI-OI-142 M-LOTO interlock: work with a permit starts only while one is live, and completes only once every
+      // permit is closed or cancelled.
+      if (input.status === 'IN_PROGRESS' || input.status === 'COMPLETED') {
+        const permits = (await client.query<{ live: number; open: number }>(
+          `SELECT count(*) FILTER (WHERE status = 'LIVE')::int AS live,
+                  count(*) FILTER (WHERE status NOT IN ('CLOSED', 'CANCELLED'))::int AS open
+             FROM gigalibs_cmms.permits WHERE tenant_id = $1 AND work_order_id = $2`,
+          [context.principal.tenantId, workOrderId],
+        )).rows[0]!;
+        if (input.status === 'IN_PROGRESS' && permits.open > 0 && permits.live === 0) {
+          throw new ConflictException({ code: 'CMMS_PERMIT_NOT_LIVE', message: 'This work needs its permit live before it starts.' });
+        }
+        if (input.status === 'COMPLETED' && permits.open > 0) {
+          throw new ConflictException({ code: 'CMMS_PERMIT_OPEN', message: 'De-isolate and close the permit before completing the work.' });
+        }
+      }
       if (input.status === 'COMPLETED') {
         const pending = await client.query<{ pending: number }>(
           `SELECT COUNT(*)::int AS pending FROM gigalibs_cmms.work_order_tasks

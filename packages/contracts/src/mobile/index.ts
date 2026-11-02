@@ -288,6 +288,10 @@ export const MOBILE_PROBLEMS = {
     status: 409,
     title: 'This report was already sent with other details, or the stop-work alert was lifted. Reload and check.',
   },
+  MOBILE_PERMIT_CONFLICT: {
+    status: 409,
+    title: 'The permit moved on: a step is out of order, someone is still locked on, or the permit expired. Reload and check.',
+  },
   MOBILE_COMMISSIONING_CONFLICT: {
     status: 409,
     title: 'The tag is already bound, the walk is finished, or this capture was already used. Check and try again.',

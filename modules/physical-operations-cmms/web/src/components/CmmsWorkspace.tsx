@@ -21,6 +21,7 @@ import { CmmsAssets } from './CmmsAssets';
 import { CmmsCalibration } from './CmmsCalibration';
 import { CmmsCommissioning } from './CmmsCommissioning';
 import { CmmsFleet } from './CmmsFleet';
+import { CmmsPermits } from './CmmsPermits';
 import { CmmsRequestLinks } from './CmmsRequestLinks';
 import { CmmsSop } from './CmmsSop';
 import { CmmsSpares } from './CmmsSpares';
@@ -45,6 +46,7 @@ export type CmmsSection =
   | 'sop'
   | 'fleet'
   | 'request-links'
+  | 'permits'
   | 'inventory'
   | 'requests'
   | 'classifications';
@@ -128,6 +130,12 @@ const SECTIONS: ReadonlyArray<{
     description: 'Printable labels anyone can scan to report a problem, and the requests they raise.',
   },
   {
+    key: 'permits',
+    label: 'Permits & LOTO',
+    href: '/cmms/permits',
+    description: 'Lockout/tagout and permits to work: isolation board, approvals and isolation procedures.',
+  },
+  {
     key: 'inventory',
     label: 'Parts & stock',
     href: '/cmms/inventory',
@@ -189,6 +197,7 @@ export function CmmsWorkspace({ section, permissions = [] }: { section: CmmsSect
         {section === 'sop' ? <CmmsSop permissions={permissions} /> : null}
         {section === 'fleet' ? <CmmsFleet permissions={permissions} /> : null}
         {section === 'request-links' ? <CmmsRequestLinks /> : null}
+        {section === 'permits' ? <CmmsPermits permissions={permissions} /> : null}
         {section === 'inventory' ? <CmmsParts /> : null}
         {section === 'requests' ? <CmmsWindow surface="cmms-requests" permissions={permissions} /> : null}
         {section === 'classifications' ? <CmmsWindow surface="cmms-classifications" permissions={permissions} /> : null}

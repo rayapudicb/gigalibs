@@ -2473,6 +2473,92 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/isolation-procedures",
+        "pattern": "^v1/isolation-procedures$",
+        "methods": {
+          "GET": "cmms.permits.read",
+          "POST": "cmms.isolations.manage"
+        }
+      },
+      {
+        "template": "v1/isolation-procedures/{id}",
+        "pattern": "^v1/isolation-procedures/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "cmms.isolations.manage"
+        }
+      },
+      {
+        "template": "v1/isolation-procedures/{id}/publish|revise",
+        "pattern": "^v1/isolation-procedures/[0-9a-fA-F-]{36}/(?:publish|revise)$",
+        "methods": {
+          "POST": "cmms.isolations.manage"
+        }
+      },
+      {
+        "template": "v1/permits",
+        "pattern": "^v1/permits$",
+        "methods": {
+          "GET": "cmms.permits.read",
+          "POST": "cmms.permits.request"
+        }
+      },
+      {
+        "template": "v1/permits/{id}",
+        "pattern": "^v1/permits/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "cmms.permits.read"
+        }
+      },
+      {
+        "template": "v1/permits/{id}/points/{key}/lock|verify|remove",
+        "pattern": "^v1/permits/[0-9a-fA-F-]{36}/points/[a-z][a-z0-9-]*/(?:lock|verify|remove)$",
+        "methods": {
+          "POST": "cmms.permits.request"
+        }
+      },
+      {
+        "template": "v1/permits/{id}/points/{key}/witness",
+        "pattern": "^v1/permits/[0-9a-fA-F-]{36}/points/[a-z][a-z0-9-]*/witness$",
+        "methods": {
+          "POST": "cmms.permits.authorize"
+        }
+      },
+      {
+        "template": "v1/permits/{id}/points/{key}/photo",
+        "pattern": "^v1/permits/[0-9a-fA-F-]{36}/points/[a-z][a-z0-9-]*/photo$",
+        "methods": {
+          "GET": "cmms.permits.read"
+        }
+      },
+      {
+        "template": "v1/permits/{id}/gas-tests|de-isolate|cancel",
+        "pattern": "^v1/permits/[0-9a-fA-F-]{36}/(?:gas-tests|de-isolate|cancel)$",
+        "methods": {
+          "POST": "cmms.permits.request"
+        }
+      },
+      {
+        "template": "v1/permits/{id}/authorize|close",
+        "pattern": "^v1/permits/[0-9a-fA-F-]{36}/(?:authorize|close)$",
+        "methods": {
+          "POST": "cmms.permits.authorize"
+        }
+      },
+      {
+        "template": "v1/permits/{id}/countersign",
+        "pattern": "^v1/permits/[0-9a-fA-F-]{36}/countersign$",
+        "methods": {
+          "POST": "cmms.permits.countersign"
+        }
+      },
+      {
+        "template": "v1/permits/{id}/lock-on|lock-off",
+        "pattern": "^v1/permits/[0-9a-fA-F-]{36}/(?:lock-on|lock-off)$",
+        "methods": {
+          "POST": "cmms.permits.lock"
+        }
+      },
+      {
         "template": "v1/fleet/templates",
         "pattern": "^v1/fleet/templates$",
         "methods": {

@@ -233,6 +233,21 @@ describe('mobile session v3 projection', () => {
     expect(projectMobileSession(withPermissions(['safety-operations.hazards.report'],'asset-maintenance'),binding).modules).toEqual([]);
   });
 
+  it('offers permits to people who isolate or sign personal locks (WI-OI-142)',() => {
+    const base = source();
+    const withPermissions = (permissions: string[]) => ({
+      ...base,
+      tenant:{...base.tenant!,entitlements:[...base.tenant!.entitlements,{moduleKey:'asset-maintenance',version:'2026-11-02'}]},
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,...permissions]} : assignment),
+    });
+    expect(projectMobileSession(withPermissions(['cmms.permits.read','cmms.permits.request','cmms.permits.lock']),binding).modules).toEqual([{
+      key:'permits',enabled:true,navigationOrder:460,capabilities:['cmms.permits.request','cmms.permits.lock'],
+      presentationRevision:'permits.v1',requiredDeviceCapabilities:['camera'],
+    }]);
+    expect(projectMobileSession(withPermissions(['cmms.permits.read']),binding).modules).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();
