@@ -48,7 +48,7 @@ spec:
   catalog:
     - key: project-operations
       name: Project Operations
-      navigationLabel: Project Operations
+      navigationLabel: Projects
       area: Project Operations
       navigationGroup: Workforce & Operations
       route: /project-operations

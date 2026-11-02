@@ -2,7 +2,8 @@
 
 import { PLATFORM_LOOKUP_BASE_PATHS } from '@gigalibs/contracts';
 import { createRecordClient, MetadataWindow, usePublishedManifest } from '@gigalibs/configuration-react';
-import { useMemo, useState } from 'react';
+import { ModulePage } from '@gigalibs/web-sdk';
+import { useMemo } from 'react';
 
 // WI-OI-120gj/gk: Orders metadata windows (sales quotes and sales orders).
 
@@ -26,6 +27,8 @@ type OrdersSurface =
 
 export interface UniversalOrderWorkspaceProps {
   readonly permissions?: readonly string[];
+  /** The screen this route shows (WI-OI-145: the sidebar lists them). */
+  readonly section?: OrdersSection;
 }
 
 function OrdersMetadataPanel({
@@ -59,8 +62,22 @@ function OrdersMetadataPanel({
   return <MetadataWindow manifest={state.manifest} client={client} clients={clients} permissions={permissions} />;
 }
 
-export function UniversalOrderWorkspace({ permissions = [] }: UniversalOrderWorkspaceProps = {}) {
-  const [surface, setSurface] = useState<OrdersSurface>('orders-sales-quotes');
+/** Orders' screens, one per sidebar entry and route (WI-OI-145). */
+export type OrdersSection = 'quotes' | 'sales-orders' | 'fulfillment' | 'invoices' | 'credit-memos';
+
+export const ORDERS_SECTIONS: Readonly<
+  Record<OrdersSection, { readonly title: string; readonly description: string; readonly surface: OrdersSurface }>
+> = {
+  quotes: { title: 'Quotes', description: 'Prices offered to customers, waiting for their answer.', surface: 'orders-sales-quotes' },
+  'sales-orders': { title: 'Sales orders', description: 'Orders customers have placed.', surface: 'orders-sales-orders' },
+  fulfillment: { title: 'Fulfillment', description: 'Picking, packing and shipping what was ordered.', surface: 'orders-fulfillment-orders' },
+  invoices: { title: 'Invoices', description: 'Invoices sent to customers.', surface: 'orders-customer-invoices' },
+  'credit-memos': { title: 'Credit memos', description: 'Amounts credited back to customers.', surface: 'orders-customer-credit-memos' },
+};
+
+export function UniversalOrderWorkspace({ permissions = [], section = 'quotes' }: UniversalOrderWorkspaceProps = {}) {
+  const screen = ORDERS_SECTIONS[section];
+  const surface = screen.surface;
   const client = useMemo(() => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: LOOKUP_BASE_PATHS }), []);
   const clients = useMemo(
     () => ({
@@ -69,53 +86,9 @@ export function UniversalOrderWorkspace({ permissions = [] }: UniversalOrderWork
     }),
     [],
   );
-
   return (
-    <div className="space-y-6 p-6">
-      <header className="space-y-3">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold text-ui-fg-base">Universal Order Management &amp; Fulfillment</h1>
-          <p className="text-sm text-ui-fg-subtle">Quotes, orders, fulfillment, invoices, and credit memos backed by the Universal Orders service.</p>
-        </div>
-        <div className="inline-flex rounded-lg border border-ui-border-base bg-ui-bg-subtle p-1 text-sm font-medium">
-          <button
-            type="button"
-            className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'orders-sales-quotes' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}
-            onClick={() => setSurface('orders-sales-quotes')}
-          >
-            Sales quotes
-          </button>
-          <button
-            type="button"
-            className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'orders-sales-orders' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}
-            onClick={() => setSurface('orders-sales-orders')}
-          >
-            Sales orders
-          </button>
-          <button
-            type="button"
-            className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'orders-fulfillment-orders' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}
-            onClick={() => setSurface('orders-fulfillment-orders')}
-          >
-            Fulfillment
-          </button>
-          <button
-            type="button"
-            className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'orders-customer-invoices' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}
-            onClick={() => setSurface('orders-customer-invoices')}
-          >
-            Invoices
-          </button>
-          <button
-            type="button"
-            className={`rounded-md px-3 py-1.5 transition-colors ${surface === 'orders-customer-credit-memos' ? 'bg-ui-bg-base text-ui-fg-base shadow-sm' : 'text-ui-fg-muted hover:text-ui-fg-base'}`}
-            onClick={() => setSurface('orders-customer-credit-memos')}
-          >
-            Credit memos
-          </button>
-        </div>
-      </header>
+    <ModulePage title={screen.title} description={screen.description}>
       <OrdersMetadataPanel surfaceKey={surface} permissions={permissions} client={client} clients={clients} />
-    </div>
+    </ModulePage>
   );
 }

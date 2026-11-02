@@ -1,5 +1,6 @@
 'use client';
 
+import { codeLabel, ModulePage } from '@gigalibs/web-sdk';
 import type { BusinessActionStatus, BusinessActionSummary, CursorPage } from '@/lib/api-types';
 import { requestJson } from '@/lib/client-api';
 import { formatMinorAmount } from '@/lib/money';
@@ -75,16 +76,11 @@ export default function ActionQueuePage() {
   };
 
   return (
-    <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Action Toolbar ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
-        <div className="flex items-center gap-2">
-          <Badge color="blue" size="small">Approval Queue</Badge>
-          <Text size="small" className="text-ui-fg-subtle">
-            {page?.items.length ?? 0} Pending Business Decisions
-          </Text>
-        </div>
-        <div className="flex items-center gap-2">
+    <ModulePage
+      title="Invoice approvals"
+      description={`${page?.items.length ?? 0} waiting. Invoice actions that need a person to approve them.`}
+      actions={
+        <>
           <Button
             variant="secondary"
             size="small"
@@ -98,8 +94,9 @@ export default function ActionQueuePage() {
               Spend Approvals →
             </Button>
           </Link>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* ── Filter Pills ────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
@@ -115,7 +112,7 @@ export default function ActionQueuePage() {
                   : 'bg-ui-bg-base text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover border border-ui-border-base'
               }`}
             >
-              {item.toLowerCase().replaceAll('_', ' ')}
+              {codeLabel(item)}
             </button>
           ),
         )}
@@ -209,6 +206,6 @@ export default function ActionQueuePage() {
           ))
         )}
       </div>
-    </div>
+    </ModulePage>
   );
 }

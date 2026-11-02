@@ -47,7 +47,7 @@ spec:
   catalog:
     - key: universal-returns
       name: Returns and RMA
-      navigationLabel: Returns and RMA
+      navigationLabel: Returns
       area: Returns and RMA
       navigationGroup: Financial Operations
       route: /universal-returns

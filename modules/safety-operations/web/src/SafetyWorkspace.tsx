@@ -12,6 +12,7 @@ import {
 } from '@gigalibs/contracts';
 import { Alert, Button, Container, Heading, Input, Label, StatusBadge, Table, Text, Textarea } from '@medusajs/ui';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { ModulePage } from '@gigalibs/web-sdk';
 import { ContractorCompliance } from './ContractorCompliance';
 import { type SafetyApiError, safetyApi } from './safety-api';
 
@@ -21,6 +22,8 @@ import { type SafetyApiError, safetyApi } from './safety-api';
 
 export interface SafetyWorkspaceProps {
   readonly permissions?: readonly string[];
+  /** The screen this route shows (WI-OI-145: the sidebar lists them; there is no in-page module menu). */
+  readonly section?: Tab;
 }
 type Tab = 'stop-work' | 'triage' | 'reports' | 'insights' | 'report' | 'contractors';
 
@@ -44,35 +47,41 @@ function Problem({ error }: { error: SafetyApiError | null }) {
   return error ? <Alert variant="error" role="alert" className="mt-2">{error.message}</Alert> : null;
 }
 
-export function SafetyWorkspace({ permissions = [] }: SafetyWorkspaceProps) {
+const SCREENS: Readonly<Record<Tab, { readonly title: string; readonly description: string }>> = {
+  'stop-work': { title: 'Stop work', description: 'Stop-work alerts in force; acknowledge the ones that concern you.' },
+  triage: { title: 'Triage', description: 'New reports waiting for a risk rating and an owner.' },
+  reports: { title: 'Reports', description: 'Every hazard and incident report of the last 180 days.' },
+  insights: { title: 'Insights', description: 'Where and what is reported, and how fast it is closed.' },
+  report: { title: 'Report a hazard', description: 'Tell the safety team what you saw; add a photo if you can.' },
+  contractors: { title: 'Contractors', description: 'Contractor companies, inductions, passes and who is on site.' },
+};
+
+export function SafetyWorkspace({ permissions = [], section = 'stop-work' }: SafetyWorkspaceProps) {
   const can = useCallback((permission: string) => holdsPermission(permissions, permission), [permissions]);
-  const [tab, setTab] = useState<Tab>(can('safety-operations.hazards.read') ? 'triage' : 'report');
   const [open, setOpen] = useState<string | null>(null);
-  const tabs: readonly (readonly [Tab, string, boolean])[] = [
-    ['stop-work', 'Stop work', can('safety-operations.hazards.report')],
-    ['triage', 'Triage', can('safety-operations.hazards.triage')],
-    ['reports', 'Reports', can('safety-operations.hazards.read')],
-    ['insights', 'Insights', can('safety-operations.hazards.read')],
-    ['report', 'Report a hazard', can('safety-operations.hazards.report')],
-    ['contractors', 'Contractors', can('safety-operations.contractors.admin') || can('safety-operations.contractors.roster')],
-  ];
+  const tab = section;
+  const { title, description } = SCREENS[tab];
   if (open) return <ReportView reportId={open} can={can} onBack={() => setOpen(null)} />;
   return (
-    <div className="flex flex-col gap-4">
+    <ModulePage
+      title={title}
+      description={description}
+      actions={
+        tab !== 'report' && can('safety-operations.hazards.report') ? (
+          <Button size="small" variant="primary" asChild>
+            <a href="/safety-operations/report">Report a hazard</a>
+          </Button>
+        ) : null
+      }
+    >
       <StopWorkBanner can={can} />
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Safety views">
-        {tabs.filter(([, , shown]) => shown).map(([key, label]) => (
-          <Button key={key} type="button" size="small" role="tab" aria-selected={tab === key}
-            variant={tab === key ? 'primary' : 'secondary'} onClick={() => setTab(key)}>{label}</Button>
-        ))}
-      </div>
       {tab === 'stop-work' ? <StopWork can={can} /> : null}
       {tab === 'triage' ? <ReportList status="REPORTED" title="Waiting for triage" onOpen={setOpen} /> : null}
       {tab === 'reports' ? <ReportList title="Reports (180 days)" onOpen={setOpen} exportable /> : null}
       {tab === 'insights' ? <Insights /> : null}
       {tab === 'report' ? <ReportForm onDone={setOpen} /> : null}
       {tab === 'contractors' ? <ContractorCompliance /> : null}
-    </div>
+    </ModulePage>
   );
 }
 

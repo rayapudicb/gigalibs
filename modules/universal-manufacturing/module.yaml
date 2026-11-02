@@ -69,7 +69,7 @@ spec:
   catalog:
     - key: universal-manufacturing
       name: Manufacturing & MRP
-      navigationLabel: Manufacturing & MRP
+      navigationLabel: Manufacturing
       area: Manufacturing & MRP
       navigationGroup: Workforce & Operations
       route: /universal-manufacturing
@@ -81,6 +81,8 @@ spec:
       requiredPermission: universal-manufacturing.bom.read
       personas: [OPERATIONS_SUPERVISOR]
       menu:
+        # WI-OI-145: Overview joins the menu; the in-page link bar is gone.
+        - { key: overview, label: Overview, path: /universal-manufacturing, icon: gauge }
         - { key: boms, label: BOMs, path: /universal-manufacturing/boms, icon: layers }
         - { key: production, label: Production, path: /universal-manufacturing/production, icon: factory }
         - { key: mrp, label: MRP preview, path: /universal-manufacturing/mrp, icon: bar-chart }

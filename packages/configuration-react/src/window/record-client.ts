@@ -83,7 +83,7 @@ export function createRecordClient(options: RecordClientOptions): RecordClient {
     if (!response.ok) {
       const detail = body && typeof body === 'object' ? (body as { code?: unknown; message?: unknown; detail?: unknown; fields?: unknown }) : {};
       const message =
-        typeof detail.message === 'string' ? detail.message : typeof detail.detail === 'string' ? detail.detail : `Request failed (${response.status}).`;
+        typeof detail.message === 'string' ? detail.message : typeof detail.detail === 'string' ? detail.detail : plainStatus(response.status);
       throw new RecordClientError(response.status, typeof detail.code === 'string' ? detail.code : undefined, message, fieldMessages(detail.fields));
     }
     return body;
@@ -135,4 +135,18 @@ export function createRecordClient(options: RecordClientOptions): RecordClient {
       return (await call(`${lookupBase}/v1/lookups/${encodeURIComponent(resolverKey)}${suffix}`)) as readonly LookupOption[];
     },
   };
+}
+
+/**
+ * WI-OI-145: what a person sees when the server gave no message of its own, never the bare status code. Kept in step
+ * with @gigalibs/web-sdk's plainRequestError.
+ */
+export function plainStatus(status: number): string {
+  if (status === 401) return 'Your session has ended. Sign in again.';
+  if (status === 403) return 'You do not have permission to see this. Ask your workspace administrator.';
+  if (status === 404) return 'This is not set up for your workspace yet. Ask your workspace administrator.';
+  if (status === 409) return 'Someone changed this at the same time. Reload and try again.';
+  if (status === 429) return 'Too many requests. Wait a moment and try again.';
+  if (status >= 500) return 'The service is not responding. Try again in a moment.';
+  return 'The request was refused. Check the details and try again.';
 }

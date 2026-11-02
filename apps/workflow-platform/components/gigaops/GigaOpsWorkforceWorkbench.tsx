@@ -44,15 +44,16 @@ import { DispatchBoard } from './DispatchBoard';
 import { JobsAndPositions } from './JobsAndPositions';
 import { PayReadiness } from './PayReadiness';
 import { TimeAndAttendance, peopleList } from './TimeAndAttendance';
-import { GIGAOPS_SECTIONS, type GigaOpsSection } from './sections';
+import { ModulePage } from '@gigalibs/web-sdk';
+import { type GigaOpsSection } from './sections';
 
 const sectionMeta: Readonly<Record<GigaOpsSection, {
   label: string;
   description: string;
   available: boolean;
 }>> = {
-  overview: { label: 'Operations overview', description: 'Live tenant workforce foundation status.', available: true },
-  resources: { label: 'Resource directory', description: 'People, teams and shared labor pools.', available: true },
+  overview: { label: 'Overview', description: 'Live tenant workforce foundation status.', available: true },
+  resources: { label: 'People', description: 'People, teams and shared labor pools.', available: true },
   jobs: { label: 'Jobs & positions', description: 'Dated job profiles, positions at your sites and the people engaged in them.', available: true },
   capabilities: { label: 'Skills & qualifications', description: 'Reusable capabilities and verified assignments.', available: true },
   availability: { label: 'Availability', description: 'Working weeks, absences with a four-eyes decision, site calendars and who is available.', available: true },
@@ -117,20 +118,8 @@ export function GigaOpsWorkforceWorkbench({ section }: { section: GigaOpsSection
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <section className="min-h-full bg-ui-bg-subtle px-[5px] py-5 text-ui-fg-base" aria-labelledby="gigaops-title">
-      <div className="mx-auto w-full max-w-[1800px] space-y-5">
-        <Container className="p-3">
-          <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="GigaOps sections">
-            {GIGAOPS_SECTIONS.map((item) => (
-              <Button key={item} asChild size="small" variant={section === item ? 'primary' : 'secondary'} className="whitespace-nowrap">
-                <Link href={item === 'overview' ? '/gigaops' : `/gigaops/${item}`} aria-current={section === item ? 'page' : undefined}>
-                  {sectionMeta[item].label}
-                </Link>
-              </Button>
-            ))}
-          </nav>
-        </Container>
-
+    // WI-OI-145: the sidebar is Workforce's only menu; each screen has the shared page header with its sidebar name.
+    <ModulePage title={sectionMeta[section].label} description={sectionMeta[section].description}>
         {loading ? <LoadingState /> : error ? <ErrorState error={error} retry={load} /> :
           section === 'overview' ? (
             <Overview resources={resources} capabilities={capabilities} generatedAt={generatedAt} />
@@ -151,8 +140,7 @@ export function GigaOpsWorkforceWorkbench({ section }: { section: GigaOpsSection
           ) : (
             <PlannedSection section={section} />
           )}
-      </div>
-    </section>
+    </ModulePage>
   );
 }
 

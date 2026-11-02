@@ -40,8 +40,16 @@ async function person(browser: Browser, origin: string, user: { email: string; p
   return page;
 }
 
-async function openTab(page: Page, tab: string) {
-  await page.goto('/finance');
+// WI-OI-145: the ledger's screens are routes in the sidebar; related views are page tabs on a screen.
+const LEDGER_VIEWS: Readonly<Record<string, { route: string; tab: string }>> = {
+  'Journal entry': { route: '/finance', tab: 'Drafts' },
+  'Posted journals': { route: '/finance', tab: 'Posted' },
+  'Set up a book': { route: '/finance/books', tab: 'Set up a book' },
+};
+
+async function openTab(page: Page, view: string) {
+  const { route, tab } = LEDGER_VIEWS[view] ?? { route: '/finance', tab: view };
+  await page.goto(route);
   await page.getByRole('tab', { name: tab, exact: true }).click();
   await page.waitForLoadState('networkidle').catch(() => undefined);
 }

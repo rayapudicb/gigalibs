@@ -65,7 +65,7 @@ export function ModuleAccessGate({ access, children }: { access: ModuleAccessCon
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           {bought ? null : (
-            <Link className="rounded-md bg-ui-button-inverted px-3 py-1.5 font-medium text-ui-fg-on-inverted hover:bg-ui-button-inverted-hover" href="/settings?tab=plan">
+            <Link className="rounded-md bg-ui-button-inverted px-3 py-1.5 font-medium text-ui-fg-on-inverted hover:bg-ui-button-inverted-hover" href="/settings/plan">
               Plan & Entitlements
             </Link>
           )}

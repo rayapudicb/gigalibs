@@ -30,8 +30,31 @@ spec:
     basePath: /orders
     package: '@gigalibs/universal-orders-web'
     pages:
+      # WI-OI-145: one sidebar entry and one route per screen.
       - route: /orders
         component: UniversalOrderWorkspace
+        props:
+          section: quotes
+        sessionPermissions: true
+      - route: /orders/sales-orders
+        component: UniversalOrderWorkspace
+        props:
+          section: sales-orders
+        sessionPermissions: true
+      - route: /orders/fulfillment
+        component: UniversalOrderWorkspace
+        props:
+          section: fulfillment
+        sessionPermissions: true
+      - route: /orders/invoices
+        component: UniversalOrderWorkspace
+        props:
+          section: invoices
+        sessionPermissions: true
+      - route: /orders/credit-memos
+        component: UniversalOrderWorkspace
+        props:
+          section: credit-memos
         sessionPermissions: true
   api:
     application: apps/api
@@ -75,7 +98,7 @@ spec:
   catalog:
     - key: universal-orders
       name: Universal Order Management & Fulfillment
-      navigationLabel: Orders & Fulfillment
+      navigationLabel: Orders
       area: Commercial Operations
       navigationGroup: Financial Operations
       route: /orders
@@ -89,6 +112,27 @@ spec:
       reason: The module boundary is implemented under WI-OI-093 and remains PLANNED until live module conformance and independent review are recorded.
       navigationOrder: 129
       personas: [OPERATIONS_SUPERVISOR]
+      menu:
+        - key: quotes
+          label: Quotes
+          path: /orders
+          icon: file-text
+        - key: sales-orders
+          label: Sales orders
+          path: /orders/sales-orders
+          icon: shopping-bag
+        - key: fulfillment
+          label: Fulfillment
+          path: /orders/fulfillment
+          icon: boxes
+        - key: invoices
+          label: Invoices
+          path: /orders/invoices
+          icon: file-check
+        - key: credit-memos
+          label: Credit memos
+          path: /orders/credit-memos
+          icon: credit-card
       roles:
         - key: sales-representative
           name: Sales Representative

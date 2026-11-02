@@ -1,5 +1,6 @@
 'use client';
 
+import { ModulePage, PageTabs } from '@gigalibs/web-sdk';
 import {
   MetadataWindow,
   createRecordClient,
@@ -77,30 +78,14 @@ export function WorkforceWorkspace({ section, permissions = [] }: WorkforceWorks
   const [chosen, setChosen] = useState<string | null>(null);
   const current = open.find((tab) => tab.key === chosen) ?? open[0];
   return (
-    <div className="space-y-6 p-6">
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-ui-fg-base">{title}</h1>
-        <p className="text-sm text-ui-fg-subtle">{description}</p>
-      </header>
-      {open.length > 1 ? (
-        <nav
-          role="tablist"
-          aria-label={title}
-          className="flex flex-wrap gap-1 border-b border-ui-border-base"
-        >
-          {open.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={tab.key === current?.key}
-              className={`px-3 py-2 text-sm ${tab.key === current?.key ? 'border-b-2 border-ui-border-interactive font-medium text-ui-fg-base' : 'text-ui-fg-subtle hover:text-ui-fg-base'}`}
-              onClick={() => setChosen(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+    <ModulePage title={title} description={description}>
+      {open.length > 1 && current ? (
+        <PageTabs
+          tabs={open.map((tab) => ({ key: tab.key, label: tab.label }))}
+          value={current.key}
+          onChange={setChosen}
+          label={title}
+        />
       ) : null}
       {!current ? (
         <Notice
@@ -117,7 +102,7 @@ export function WorkforceWorkspace({ section, permissions = [] }: WorkforceWorks
           permissions={permissions}
         />
       )}
-    </div>
+    </ModulePage>
   );
 }
 

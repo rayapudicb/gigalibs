@@ -17,6 +17,7 @@ import {
   evaluateCalibrationPoint,
   holdsPermission,
 } from '@gigalibs/contracts';
+import { PageTabs } from '@gigalibs/web-sdk';
 import { Badge, Button, Container, Heading, Input, StatusBadge, Table, Text, Textarea } from '@medusajs/ui';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { type CmmsApiError, cmmsApi } from '../api';
@@ -54,14 +55,7 @@ export function CmmsCalibration({ permissions = [] }: { permissions?: readonly s
   const can = useCallback((permission: string) => holdsPermission(permissions, permission), [permissions]);
   return (
     <div className="flex flex-col gap-4">
-      <nav className="flex gap-2 overflow-x-auto" aria-label="Calibration views">
-        {TABS.map((item) => (
-          <Button key={item.key} type="button" size="small" variant={tab === item.key ? 'primary' : 'secondary'}
-            aria-pressed={tab === item.key} onClick={() => setTab(item.key)}>
-            {item.label}
-          </Button>
-        ))}
-      </nav>
+      <PageTabs tabs={TABS} value={tab} onChange={setTab} label="Calibration views" />
       {tab === 'instruments' ? <Instruments canExecute={can('cmms.calibration.execute')} /> : null}
       {tab === 'records' ? <Records canApprove={can('cmms.calibration.approve')} /> : null}
       {tab === 'profiles' ? <Profiles canManage={can('cmms.calibration.manage')} canPublish={can('cmms.calibration.publish')} /> : null}

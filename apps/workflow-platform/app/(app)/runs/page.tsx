@@ -1,5 +1,6 @@
 'use client';
 
+import { codeLabel, ModulePage } from '@gigalibs/web-sdk';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RunList, RunStatus, RunSummary } from '@/lib/api-types';
@@ -54,16 +55,11 @@ export default function RunsPage() {
   const items = useMemo(() => runs?.items ?? [], [runs]);
 
   return (
-    <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Action Toolbar ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
-        <div className="flex items-center gap-2">
-          <Badge color="green" size="small">Execution History</Badge>
-          <Text size="small" className="text-ui-fg-subtle">
-            {runs?.total ?? 0} Recorded Workflow Executions
-          </Text>
-        </div>
-        <div className="flex items-center gap-2">
+    <ModulePage
+      title="Run history"
+      description={`${runs?.total ?? 0} runs recorded. Each run shows what started it, every step and its outcome.`}
+      actions={
+        <>
           <Button
             variant="secondary"
             size="small"
@@ -79,8 +75,9 @@ export default function RunsPage() {
               Workflow Studio →
             </Button>
           </Link>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* ── Status Filter Pills ─────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
@@ -95,7 +92,7 @@ export default function RunsPage() {
                 : 'bg-ui-bg-base text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover border border-ui-border-base'
             }`}
           >
-            {status.replace('_', ' ')}
+            {codeLabel(status)}
           </button>
         ))}
       </div>
@@ -164,6 +161,6 @@ export default function RunsPage() {
           Showing {runs.items.length} of {runs.total} runs.
         </Text>
       )}
-    </div>
+    </ModulePage>
   );
 }

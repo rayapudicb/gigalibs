@@ -14,6 +14,8 @@ export type PlatformModuleMaturity =
   | 'PRODUCTION_PROVEN';
 
 // The sidebar groups, in display order (WI-OI-083c). Each catalogue entry picks its group in its manifest.
+// `Settings` (WI-OI-145): administration, integration and automation tools. They leave the daily sidebar and appear in
+// the Settings sidebar, sectioned by `area`.
 export type PlatformModuleArea =
   | 'Studio & Build'
   | 'Automate & Run'
@@ -21,7 +23,8 @@ export type PlatformModuleArea =
   | 'Financial Operations'
   | 'Intelligence'
   | 'Data & Documents'
-  | 'Platform';
+  | 'Platform'
+  | 'Settings';
 
 // The shell's navigation icon set (WI-OI-083c). A manifest picks one by name, so a new module needs no shell change.
 export type PlatformModuleIcon =
@@ -58,6 +61,8 @@ export type PlatformModuleIcon =
   | 'shield-check'
   | 'shopping-bag'
   | 'sparkles'
+  | 'users'
+  | 'globe'
   | 'workflow'
   | 'wrench'
   | 'zap';

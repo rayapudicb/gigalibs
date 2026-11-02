@@ -67,17 +67,7 @@ export function UserNav({ session }: { session: VerifiedSession }) {
 
   return (
     <div className="relative flex items-center gap-3" ref={dropdownRef}>
-      {/* Platform Authority quick banner */}
-      {hasPlatformAuthority && (
-        <Link
-          href="/platform-admin"
-          className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[11px] font-semibold text-amber-700 hover:bg-amber-500/20 transition-colors"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-          Platform Control Tower
-        </Link>
-      )}
-
+      {/* WI-OI-145: Platform Control Tower is in this menu and in the Settings sidebar, not a pill in the top bar. */}
       {/* User Avatar Trigger Button */}
       <button
         type="button"

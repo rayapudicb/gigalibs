@@ -1,35 +1,18 @@
-import { StudioSurfaceBoundary } from '@/components/configuration/StudioMode';
-import { TenantSettingsView } from '@/components/settings/TenantSettingsView';
-import { uatPreviewEnabled } from '@/lib/uat-module-status';
-import { verifiedSession } from '@/lib/verified-session';
-import { holdsAnyPermission } from '@gigalibs/contracts';
+import { SettingsScreen } from '@/components/settings/SettingsScreen';
+import { redirect } from 'next/navigation';
 
-export default async function TenantSettingsPage() {
-  const session = await verifiedSession(false);
-  if (session.response) {
-    return (
-      <main className="p-8" role="alert">
-        Tenant access could not be verified. Reload the page or sign in again.
-      </main>
-    );
-  }
+// WI-OI-145: Settings screens are routes. A link from before (/settings?tab=…) lands on the same screen.
+const FORMER_TABS: Readonly<Record<string, string>> = {
+  people: '/settings/people',
+  hierarchy: '/settings/organization',
+  plan: '/settings/plan',
+  general: '/settings/general',
+  security: '/settings/security',
+};
 
-  const tenantId = session.context.tenant?.id ?? '';
-  const permissions = session.context.permissions;
-  const canUpdateConfiguredValues = holdsAnyPermission(permissions, ['configuration-values:update']);
-
-  return (
-    <StudioSurfaceBoundary
-      registrationKey="tenant-profile-extension"
-      moduleLabel="Tenant & Access"
-      screenLabel="Tenant Settings"
-    >
-      <TenantSettingsView
-        session={session.context}
-        tenantId={tenantId}
-        canUpdateConfiguredValues={canUpdateConfiguredValues}
-        uatPreview={uatPreviewEnabled()}
-      />
-    </StudioSurfaceBoundary>
-  );
+export default async function TenantSettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string | string[] }> }) {
+  const { tab } = await searchParams;
+  const target = typeof tab === 'string' ? FORMER_TABS[tab] : undefined;
+  if (target) redirect(target);
+  return <SettingsScreen section="team" />;
 }

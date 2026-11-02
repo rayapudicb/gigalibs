@@ -1,3 +1,4 @@
+import { plainRequestError } from '@gigalibs/web-sdk';
 import type {
   ContractorCompanyV1,
   ContractorPassIssuanceV1,
@@ -26,7 +27,7 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
     cache: 'no-store',
   });
   const value = (await response.json().catch(() => ({}))) as { code?: string; message?: string };
-  if (!response.ok) throw new SafetyApiError(response.status, value.code ?? 'SAFETY_OPERATIONS_UNAVAILABLE', value.message ?? 'The request failed.');
+  if (!response.ok) throw new SafetyApiError(response.status, value.code ?? 'SAFETY_OPERATIONS_UNAVAILABLE', value.message ?? plainRequestError(response.status));
   return value as T;
 }
 const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });

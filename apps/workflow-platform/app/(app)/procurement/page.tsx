@@ -4,5 +4,5 @@ import { UniversalProcurementWorkspace } from '@gigalibs/universal-procurement-w
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <UniversalProcurementWorkspace permissions={session.context?.permissions ?? []} />;
+  return <UniversalProcurementWorkspace section={"requisitions"} permissions={session.context?.permissions ?? []} />;
 }

@@ -104,7 +104,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             >
               <CurrencyLocaleProvider enabled={currencyEnabled}>
                 <GeospatialPlacesProvider>
-                  <ModuleAccessGate access={access}>{children}</ModuleAccessGate>
+                  {/* WI-OI-145 (S2): the one page frame. Every screen gets this padding and width; none adds its own. */}
+                  <div className="mx-auto w-full max-w-[1600px] px-6 py-6 print:max-w-none print:p-0" data-page-frame>
+                    <ModuleAccessGate access={access}>{children}</ModuleAccessGate>
+                  </div>
                 </GeospatialPlacesProvider>
               </CurrencyLocaleProvider>
             </main>

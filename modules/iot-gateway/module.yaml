@@ -87,9 +87,11 @@ spec:
       reason: Device registry, telemetry ingest, condition rules and alert feed with tenant isolation. Protocol daemons and live network scan are phased.
       navigationOrder: 215
       menu:
+        # WI-OI-145: Overview joins the menu and Rules keeps one name; the in-page link bar is gone.
+        - { key: overview, label: Overview, path: /iot, icon: gauge }
         - { key: devices, label: Devices, path: /iot/devices, icon: radio }
         - { key: protocols, label: Protocols, path: /iot/protocols, icon: network }
-        - { key: rules, label: Condition Rules, path: /iot/rules, icon: workflow }
+        - { key: rules, label: Rules, path: /iot/rules, icon: workflow }
         - { key: discovery, label: Discovery, path: /iot/discovery, icon: scan-line }
         - { key: alerts, label: Alerts, path: /iot/alerts, icon: shield-alert }
       roles:

@@ -1,5 +1,7 @@
 'use client';
 
+import { codeLabel } from '@gigalibs/web-sdk';
+
 import type { SpeedAuditEntryV1, SpeedAuditPageV1, SpeedRouteV1 } from '@gigalibs/contracts';
 import { useCallback, useEffect, useState } from 'react';
 import { useSpeedApi, useSpeedText } from './hooks.js';
@@ -202,7 +204,7 @@ export function AuditTrailView({
                     {new Date(row.entry.occurredAt).toLocaleString()}
                   </td>
                   <td className="pr-3 text-ui-fg-base">{actorLabel(row.entry.actor, names, t)}</td>
-                  <td className="pr-3 text-ui-fg-base">{row.entry.action}</td>
+                  <td className="pr-3 text-ui-fg-base">{codeLabel(row.entry.action)}</td>
                   <td className="pr-3 text-ui-fg-subtle">
                     {row.entry.entityType}
                     {routeName(row.entry.entityId) ? ` · ${routeName(row.entry.entityId)}` : ''}

@@ -3,6 +3,7 @@
 import type { RoundCheckpointDraftV1, RoundScheduleV1 } from '@gigalibs/contracts';
 import { Alert, Button, Container, Heading, Input, Label, Text } from '@medusajs/ui';
 import { type DragEvent, type FormEvent, useCallback, useEffect, useState } from 'react';
+import { ModulePage, plainRequestError } from '@gigalibs/web-sdk';
 import { checkpointBatches } from './checkpoint-batches';
 import {
   assetSource, lookupSource, meterSource, operatorSource, ReferencePicker,
@@ -55,7 +56,7 @@ async function call<T>(path:string,init:RequestInit = {}):Promise<T> {
   if (!response.ok) {
     const value = body && typeof body === 'object' ? body as Record<string,unknown> : {};
     throw new Error(typeof value.message === 'string' ? value.message :
-      typeof value.title === 'string' ? value.title : `Request failed (${response.status}).`);
+      typeof value.title === 'string' ? value.title : plainRequestError(response.status));
   }
   return body as T;
 }
@@ -71,9 +72,17 @@ const blankPoint = (position:number):RoundCheckpointDraftV1 => ({
   redLow:null,redHigh:null,choices:[],branchRules:[],instructions:null,photoOnException:true,
 });
 
-export function RoundsWorkspace({permissions = []}:{readonly permissions?:readonly string[]}) {
+// WI-OI-145: each Rounds screen is its own route in the sidebar; the workspace shows the one its route names.
+const ROUNDS_SCREENS: Readonly<Record<RoundsWorkspaceTab, { readonly title: string; readonly description: string }>> = {
+  routes: { title: 'Routes', description: 'Publish versioned routes with their checkpoints, schedule and roster.' },
+  board: { title: 'Live board', description: 'Today\'s rounds, who has them and how far each has got.' },
+  exceptions: { title: 'Exceptions', description: 'Readings out of limits and the corrective action taken.' },
+  skips: { title: 'Skip approvals', description: 'Checkpoints an operator asked to skip, waiting for a decision.' },
+};
+
+export function RoundsWorkspace({permissions = [], section = 'routes'}:{readonly permissions?:readonly string[]; readonly section?: RoundsWorkspaceTab}) {
   const can = (permission:string) => canUseRoundsPermission(permissions,permission);
-  const visibleTabs = availableRoundsTabs(permissions);
+  const visibleTabs = availableRoundsTabs(permissions).filter((item) => item === section);
   const [routes,setRoutes] = useState<Route[]>([]);
   const [selected,setSelected] = useState<Route|null>(null);
   const [points,setPoints] = useState<RoundCheckpointDraftV1[]>([]);
@@ -82,8 +91,7 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
   const [skips,setSkips] = useState<SkipItem[]>([]);
   const [skipAction,setSkipAction] = useState<{id:string;decision:'APPROVED'|'REJECTED'}|null>(null);
   const [skipNote,setSkipNote] = useState('');
-  const [tab,setTab] = useState<RoundsWorkspaceTab>(visibleTabs[0] ?? 'routes');
-  const activeTab = visibleTabs.includes(tab) ? tab : visibleTabs[0] ?? null;
+  const activeTab = visibleTabs[0] ?? null;
   const [error,setError] = useState<string|null>(null);
   const [notice,setNotice] = useState<string|null>(null);
   const [busy,setBusy] = useState(false);
@@ -297,19 +305,11 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
     (cadence==='WEEKLY' && weekdays!==selected.schedule.weekdays?.join(','))
   );
 
-  return <div className="flex flex-col gap-4 p-6">
-    <Container className="flex flex-col gap-3">
-      <Heading level="h1">Operator inspection rounds</Heading>
-      <Text className="text-ui-fg-subtle" size="small">Publish versioned routes, assign operators, and review accepted readings and corrective actions.</Text>
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Rounds workspace">
-        {visibleTabs.map((item) =>
-          <Button key={item} type="button" variant={activeTab === item ? 'primary' : 'secondary'}
-            onClick={() => setTab(item)}>{item === 'routes' ? 'Routes' : item === 'board' ? 'Live board' : item === 'exceptions' ? 'Exceptions' : 'Skip approvals'}</Button>)}
-      </div>
-      {visibleTabs.length === 0 && <Alert variant="error">Rounds access is not assigned to this account.</Alert>}
-      {error && <Alert variant="error">{error}</Alert>}
-      {notice && <Alert variant="success">{notice}</Alert>}
-    </Container>
+  const screen = ROUNDS_SCREENS[activeTab ?? section];
+  return <ModulePage title={screen.title} description={screen.description}>
+    {visibleTabs.length === 0 && <Alert variant="error">Rounds access is not assigned to this account.</Alert>}
+    {error && <Alert variant="error">{error}</Alert>}
+    {notice && <Alert variant="success">{notice}</Alert>}
 
     {activeTab === 'routes' && <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
       <Container className="flex flex-col gap-3">
@@ -521,7 +521,7 @@ export function RoundsWorkspace({permissions = []}:{readonly permissions?:readon
           </form>}
         </div>)}</div>}
     </Container>}
-  </div>;
+  </ModulePage>;
 }
 
 function skipSummary(skips:{requested:number;approved:number;rejected:number}):string {

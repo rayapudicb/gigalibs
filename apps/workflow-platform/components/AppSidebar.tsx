@@ -8,7 +8,6 @@ import {
 } from '@/lib/module-access';
 import type { VerifiedSession } from '@/lib/verified-session';
 import {
-  type PlatformModuleArea,
   type PlatformModuleDefinition,
   type PlatformModuleReadiness,
   type PlatformContextPersona,
@@ -18,41 +17,47 @@ import {
 } from '@gigalibs/contracts';
 import { determinePersona } from '@/lib/persona-utils';
 import { moduleIcons } from '@/lib/module-icons';
-import { type ModuleMenuItem, moduleMenu, personaSeesModule } from '@/lib/module-navigation';
 import {
+  type ModuleMenuItem,
+  dailyGroupOrder,
+  dailyHiddenModuleKeys,
+  groupLabels,
+  hiddenModuleKeys,
+  moduleMenu,
+  personaSeesModule,
+} from '@/lib/module-navigation';
+import {
+  ArrowLeft,
   ArrowLeftRight,
   Boxes,
-  Building2,
   ChevronDown,
   ChevronRight,
   Gauge,
+  Home,
   Lock,
   type LucideIcon,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-// Sidebar group order. Each module picks its group in `navigationGroup` of its manifest (WI-OI-083c).
-const newGroupOrder: readonly PlatformModuleArea[] = [
-  'Studio & Build',
-  'Automate & Run',
-  'Workforce & Operations',
-  'Financial Operations',
-  'Intelligence',
-  'Data & Documents',
-  'Platform',
-];
+// Settings sidebar sections (WI-OI-145): the `area` of each Settings entry, in this order; an unlisted area follows.
+const settingsSectionOrder = ['Workspace', 'Integrations', 'Automation', 'Platform', 'Account'];
 
-const newGroupLabelByKey: Record<PlatformModuleArea, string> = {
-  'Studio & Build':      'Studio & Build',
-  'Automate & Run':      'Automate & Run',
-  'Workforce & Operations': 'Workforce & Ops',
-  'Financial Operations':'Financial Ops',
-  'Intelligence':        'Intelligence',
-  'Data & Documents':    'Data & Docs',
-  'Platform':            'Platform',
-};
+// Personas that see the Executive Control Tower (WI-OI-145: executives and administrators, not supervisors).
+const EXECUTIVE_PERSONAS: readonly PlatformContextPersona[] = ['C_LEVEL', 'TENANT_ADMIN', 'PLATFORM_OPERATOR'];
+
+/** Whether this page belongs to the Settings area: under /settings, or on a Settings entry's route. */
+function isSettingsPath(pathname: string): boolean {
+  return (
+    isNavigationPathActive(pathname, '/settings') ||
+    pathname === '/setup' ||
+    platformModuleCatalog.some(
+      (module) => module.navigationGroup === 'Settings' && isNavigationPathActive(pathname, module.route),
+    )
+  );
+}
 
 const PERSONA_CONFIG: Record<
   PlatformContextPersona,
@@ -60,32 +65,32 @@ const PERSONA_CONFIG: Record<
 > = {
   PLATFORM_OPERATOR: {
     label: 'Platform Operator',
-    badge: '★ Platform Operator',
+    badge: 'Platform Operator',
     pillClass: 'bg-amber-500/10 text-amber-700 border-amber-300 dark:border-amber-700 dark:text-amber-400',
   },
   C_LEVEL: {
     label: 'Executive (C-Level)',
-    badge: '👑 Executive (C-Level)',
+    badge: 'Executive',
     pillClass: 'bg-purple-500/10 text-purple-700 border-purple-300 dark:border-purple-700 dark:text-purple-400',
   },
   TENANT_ADMIN: {
     label: 'Workspace Admin',
-    badge: '🛡️ Workspace Admin',
+    badge: 'Workspace Admin',
     pillClass: 'bg-blue-500/10 text-blue-700 border-blue-300 dark:border-blue-700 dark:text-blue-400',
   },
   OPERATIONS_SUPERVISOR: {
     label: 'Operations Supervisor',
-    badge: '📋 Operations Supervisor',
+    badge: 'Operations Supervisor',
     pillClass: 'bg-emerald-500/10 text-emerald-700 border-emerald-300 dark:border-emerald-700 dark:text-emerald-400',
   },
   WORKFORCE_MEMBER: {
     label: 'Operations Member',
-    badge: '👷 Operations Member',
+    badge: 'Operations Member',
     pillClass: 'bg-sky-500/10 text-sky-700 border-sky-300 dark:border-sky-700 dark:text-sky-400',
   },
   CUSTOMER_GUEST: {
     label: 'Guest / Client',
-    badge: '👤 Guest / Client',
+    badge: 'Guest',
     pillClass: 'bg-zinc-500/10 text-zinc-700 border-zinc-300 dark:border-zinc-700 dark:text-zinc-400',
   },
 };
@@ -104,26 +109,6 @@ export default function AppSidebar({
   const hasPlatformAuthority = session.platformRoles.length > 0;
   const mayReadTenantApps = holdsAnyPermission(session.permissions, ['configuration-apps:read']);
 
-  const moduleLabelByKey: Record<string, string> = {
-    gigaops: 'GigaOps Workforce',
-    esign: t('eSignatureStudio'),
-    'accounts-receivable': t('accountsReceivable'),
-    'invoice-match': t('invoices'),
-    spend: t('spendManagement'),
-    tax: t('taxConfiguration'),
-    value: t('valueLedger'),
-    analytics: t('analytics'),
-    rules: t('rules'),
-    settings: t('settings'),
-    runs: t('workflows'),
-    workflow: t('workflows'),
-    fraud: t('fraud'),
-    geofence: t('geofence'),
-    products: t('products'),
-    orders: t('orders'),
-    clients: t('clients'),
-    exceptions: t('exceptions'),
-  };
 
   useEffect(() => {
     if (!session.tenant || !mayReadTenantApps) return;
@@ -133,9 +118,6 @@ export default function AppSidebar({
       .catch(() => setTenantApps([]));
   }, [mayReadTenantApps, session.tenant]);
 
-  // WI-OI-013: 'solutions' page is intentionally disabled (UnavailableCapability).
-  // 'personal-security' is accessed via top-right UserNav avatar menu, not as a business module.
-  const SIDEBAR_HIDDEN_KEYS = new Set(['solutions', 'personal-security']);
 
   const naturalPersona = determinePersona(session.roles, session.platformRoles, session.permissions);
   const [activePersona, setActivePersona] = useState<PlatformContextPersona>(naturalPersona);
@@ -164,27 +146,49 @@ export default function AppSidebar({
           ]
         : [naturalPersona];
 
-  const hasHierarchyAccess =
-    Boolean(session.tenant?.features?.includes('organization-hierarchy')) ||
-    holdsAnyPermission(session.permissions, ['tenant:read', 'users:read']);
 
-  const visibleModules = platformModuleCatalog.filter((module) => {
-    if (SIDEBAR_HIDDEN_KEYS.has(module.key)) return false;
-    if (!personaSeesModule(activePersona, module.key)) return false;
-    return canOpenPlatformModule(module, { ...session, uatPreview });
-  });
+  const openable = (module: PlatformModuleDefinition) =>
+    personaSeesModule(activePersona, module.key) && canOpenPlatformModule(module, { ...session, uatPreview });
+  const visibleModules = platformModuleCatalog.filter(
+    (module) => module.navigationGroup !== 'Settings' && !dailyHiddenModuleKeys.has(module.key) && openable(module),
+  );
   const activeModuleKey = mostSpecificActiveModuleKey(visibleModules, pathname);
 
-  const grouped = newGroupOrder
+  const grouped = dailyGroupOrder
     .map((group) => {
       const modules = visibleModules.filter((module) => module.navigationGroup === group);
       return {
         group,
-        label: newGroupLabelByKey[group],
+        label: groupLabels[group],
         modules,
       };
     })
-    .filter(({ group, modules }) => modules.length > 0 || (group === 'Platform' && hasHierarchyAccess));
+    .filter(({ modules }) => modules.length > 0);
+
+  // The Settings sidebar (WI-OI-145, Medusa's settings layout): Settings entries sectioned by `area`.
+  const settingsModules = platformModuleCatalog.filter(
+    (module) => module.navigationGroup === 'Settings' && !hiddenModuleKeys.has(module.key) && openable(module),
+  );
+  const settingsAreas = [...new Set(settingsModules.map((module) => module.area))].sort((left, right) => {
+    const rank = (area: string) => {
+      const at = settingsSectionOrder.indexOf(area);
+      return at === -1 ? settingsSectionOrder.length : at;
+    };
+    return rank(left) - rank(right);
+  });
+  const settingsSections = settingsAreas.map((area) => ({
+    area,
+    modules: settingsModules.filter((module) => module.area === area),
+  }));
+  // The Settings link opens Workspace settings, else the person's own profile, else the first entry they can open.
+  const settingsHome =
+    (
+      settingsModules.find((module) => module.key === 'tenant-access') ??
+      settingsModules.find((module) => module.key === 'personal-security') ??
+      settingsSections[0]?.modules[0]
+    )?.route ?? null;
+  const activeSettingsKey = mostSpecificActiveModuleKey(settingsModules, pathname);
+  const inSettings = isSettingsPath(pathname);
 
   return (
     <aside className="flex h-full w-64 shrink-0 select-none flex-col border-r border-ui-border-base bg-ui-bg-base font-sans text-ui-fg-base">
@@ -203,33 +207,29 @@ export default function AppSidebar({
           </div>
         </div>
 
-        {/* Persona Indicator Badge & Switcher */}
-        <div className="mt-2.5 flex items-center justify-between gap-1.5">
-          <div
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${PERSONA_CONFIG[activePersona].pillClass}`}
-            title={`Active Persona Lens: ${PERSONA_CONFIG[activePersona].label}`}
-          >
-            <span>{PERSONA_CONFIG[activePersona].badge}</span>
-            {isSimulating && (
-              <span className="font-mono text-[9px] opacity-75">(Simulated)</span>
-            )}
-          </div>
-
-          {canSwitchPersona && (
-            <div className="relative">
-              <select
-                aria-label="View As Persona"
-                value={activePersona}
-                onChange={(e) => setActivePersona(e.target.value as PlatformContextPersona)}
-                className="text-[10px] bg-ui-bg-subtle text-ui-fg-subtle hover:text-ui-fg-base border border-ui-border-base rounded px-1.5 py-0.5 font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-ui-fg-base"
-                title="Simulate subordinate persona navigation lens"
-              >
-                {allowedPersonas.map((p) => (
-                  <option key={p} value={p}>
-                    {p === naturalPersona ? `My: ${PERSONA_CONFIG[p].label}` : `View: ${PERSONA_CONFIG[p].label}`}
-                  </option>
-                ))}
-              </select>
+        {/* Persona lens. Someone who can switch sees only the switcher, which names the lens; it never overflows the
+            sidebar (WI-OI-145: the badge and the select side by side were wider than it and covered page titles). */}
+        <div className="mt-2.5 flex min-w-0 items-center gap-1.5">
+          {canSwitchPersona ? (
+            <select
+              aria-label="View As Persona"
+              value={activePersona}
+              onChange={(e) => setActivePersona(e.target.value as PlatformContextPersona)}
+              className="w-full min-w-0 truncate text-[11px] bg-ui-bg-subtle text-ui-fg-subtle hover:text-ui-fg-base border border-ui-border-base rounded px-1.5 py-1 font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-ui-fg-base"
+              title="Simulate subordinate persona navigation lens"
+            >
+              {allowedPersonas.map((p) => (
+                <option key={p} value={p}>
+                  {p === naturalPersona ? `My view: ${PERSONA_CONFIG[p].label}` : `View as: ${PERSONA_CONFIG[p].label}`}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div
+              className={`inline-flex max-w-full items-center gap-1 truncate whitespace-nowrap px-2 py-0.5 rounded text-[10px] font-semibold border ${PERSONA_CONFIG[activePersona].pillClass}`}
+              title={`Active Persona Lens: ${PERSONA_CONFIG[activePersona].label}`}
+            >
+              <span className="truncate">{PERSONA_CONFIG[activePersona].badge}</span>
             </div>
           )}
         </div>
@@ -248,20 +248,62 @@ export default function AppSidebar({
         )}
       </div>
 
+      {inSettings ? (
+        <nav aria-label={t('settings')} className="flex-1 space-y-4 overflow-y-auto px-3 py-2">
+          <div className="space-y-1">
+            <SidebarLink href="/modules" label={t('home')} icon={ArrowLeft} pathname={pathname} active={false} />
+            <p className="px-2.5 pt-1 text-sm font-semibold text-ui-fg-base">{t('settings')}</p>
+          </div>
+          {settingsSections.map(({ area, modules }) => (
+            <div key={area} className="space-y-1">
+              <span className="px-2 text-[10px] font-semibold uppercase tracking-wider text-ui-fg-muted">{area}</span>
+              <div className="mt-1 space-y-0.5">
+                {modules.flatMap((module) => {
+                  // An entry with a menu lists its screens here instead of itself (Workspace settings: Team & access, …).
+                  const items = moduleMenu(module.key).filter(
+                    (item) => !item.permissions?.length || item.permissions.every((code) => holdsPermission(session.permissions, code)),
+                  );
+                  if (items.length === 0)
+                    return [
+                      <SidebarLink
+                        key={module.key}
+                        href={module.route}
+                        label={module.navigationLabel}
+                        icon={moduleIcons[module.iconKey] ?? Boxes}
+                        pathname={pathname}
+                        active={activeSettingsKey === module.key}
+                      />,
+                    ];
+                  const activeItem =
+                    activeSettingsKey === module.key
+                      ? [...items]
+                          .filter((item) =>
+                            item.href === module.route ? pathname === item.href : isNavigationPathActive(pathname, item.href),
+                          )
+                          .sort((left, right) => right.href.length - left.href.length)[0]?.key
+                      : undefined;
+                  return items.map((item) => (
+                    <SidebarLink
+                      key={`${module.key}-${item.key}`}
+                      href={item.href}
+                      label={item.label}
+                      icon={item.icon}
+                      pathname={pathname}
+                      active={activeItem === item.key}
+                    />
+                  ));
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+      ) : (
       <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-2">
         <div className="space-y-1">
-          <span className="px-2 text-[10px] font-semibold uppercase tracking-wider text-ui-fg-muted">
-            {t('moduleCatalogue')}
-          </span>
-          {[
-            'C_LEVEL',
-            'TENANT_ADMIN',
-            'OPERATIONS_SUPERVISOR',
-            'PLATFORM_OPERATOR',
-          ].includes(naturalPersona) ? (
+          <SidebarLink href="/modules" label={t('home')} icon={Home} pathname={pathname} />
+          {EXECUTIVE_PERSONAS.includes(naturalPersona) ? (
             <SidebarLink href="/dashboard" label="Executive Control Tower" icon={Gauge} pathname={pathname} />
           ) : null}
-          <SidebarLink href="/modules" label={t('allModules')} icon={Boxes} pathname={pathname} />
         </div>
 
         {grouped.map(({ group, label, modules }) => (
@@ -274,21 +316,13 @@ export default function AppSidebar({
                 <ModuleLink
                   key={module.key}
                   module={module}
-                  label={moduleLabelByKey[module.key] ?? module.navigationLabel}
+                  label={module.navigationLabel}
                   pathname={pathname}
                   isActive={activeModuleKey === module.key}
                   uatPreview={uatPreview}
                   permissions={session.permissions}
                 />
               ))}
-              {group === 'Platform' && hasHierarchyAccess && (
-                <SidebarLink
-                  href="/settings?tab=hierarchy"
-                  label="Organization & Hierarchy"
-                  icon={Building2}
-                  pathname={pathname}
-                />
-              )}
             </div>
           </div>
         ))}
@@ -311,6 +345,13 @@ export default function AppSidebar({
           </div>
         ) : null}
       </nav>
+      )}
+
+      {!inSettings && settingsHome ? (
+        <div className="border-t border-ui-border-base px-3 py-2">
+          <SidebarLink href={settingsHome} label={t('settings')} icon={Settings} pathname={pathname} active={false} />
+        </div>
+      ) : null}
 
       <div className="border-t border-ui-border-base bg-ui-bg-subtle/50 p-3">
         <div className="flex items-center justify-between gap-2 rounded-lg border border-ui-border-base bg-ui-bg-base p-2 shadow-xs">

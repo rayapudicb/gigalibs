@@ -4,5 +4,5 @@ import { FinancialOperationsWorkspace } from '@gigalibs/financial-operations-web
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <FinancialOperationsWorkspace permissions={session.context?.permissions ?? []} />;
+  return <FinancialOperationsWorkspace section={"journal-entries"} permissions={session.context?.permissions ?? []} />;
 }

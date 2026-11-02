@@ -1,5 +1,6 @@
 'use client';
 
+import { ModulePage } from '@gigalibs/web-sdk';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
@@ -270,19 +271,11 @@ export default function WorkflowsPage() {
   }, [workflows, categoryFilter, searchQuery]);
 
   return (
-    <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Action Bar ────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
-        <div className="flex items-center gap-2">
-          <Badge color="blue" size="small">
-            Active Pipelines
-          </Badge>
-          <Text size="small" className="text-ui-fg-subtle">
-            {workflows.length} Automated Business Workflows
-          </Text>
-        </div>
-
-        <div className="flex items-center gap-3">
+    <ModulePage
+      title="Workflows"
+      description={`${workflows.length} workflows. Automations that run your business steps.`}
+      actions={
+        <>
           <Button
             variant="secondary"
             size="small"
@@ -311,11 +304,12 @@ export default function WorkflowsPage() {
               New Pipeline
             </Button>
           </Link>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* ── Metric Summary Cards ─────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Container className="p-4 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest">
           <Text size="xsmall" weight="plus" className="text-ui-fg-subtle uppercase tracking-wider">
             Total Pipelines
@@ -324,12 +318,9 @@ export default function WorkflowsPage() {
             <Heading level="h2" className="text-2xl font-bold text-ui-fg-base">
               {workflows.length}
             </Heading>
-            <Badge color="purple" size="small">
-              3 ACTIVE
-            </Badge>
           </div>
           <Text size="xsmall" className="text-ui-fg-muted mt-1">
-            Postgres 16 definitions
+            Workflow definitions
           </Text>
         </Container>
 
@@ -341,12 +332,9 @@ export default function WorkflowsPage() {
             <Heading level="h2" className="text-2xl font-bold text-ui-fg-base">
               {stats?.total_runs ?? runs.length}
             </Heading>
-            <Badge color="blue" size="small">
-              DURABLE LOGS
-            </Badge>
           </div>
           <Text size="xsmall" className="text-ui-fg-muted mt-1">
-            All tenant DAG executions
+            Runs of every workflow
           </Text>
         </Container>
 
@@ -358,11 +346,8 @@ export default function WorkflowsPage() {
             <Heading level="h2" className="text-2xl font-bold text-ui-fg-base">
               {stats && stats.total_runs > 0
                 ? `${((stats.completed_runs / stats.total_runs) * 100).toFixed(0)}%`
-                : '100%'}
+                : '—'}
             </Heading>
-            <Badge color="green" size="small">
-              ZERO CRASHES
-            </Badge>
           </div>
           <Text size="xsmall" className="text-ui-fg-muted mt-1">
             {stats?.completed_runs ?? 0} completed / {stats?.failed_runs ?? 0} failed
@@ -371,35 +356,15 @@ export default function WorkflowsPage() {
 
         <Container className="p-4 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest">
           <Text size="xsmall" weight="plus" className="text-ui-fg-subtle uppercase tracking-wider">
-            Avg DAG Latency
+            Average run time
           </Text>
           <div className="flex items-baseline justify-between mt-2">
             <Heading level="h2" className="text-2xl font-bold text-ui-fg-base">
-              {stats?.avg_duration_ms ? `${stats.avg_duration_ms} ms` : '18 ms'}
+              {stats?.avg_duration_ms ? `${stats.avg_duration_ms} ms` : '—'}
             </Heading>
-            <Badge color="green" size="small">
-              SUB-SECOND
-            </Badge>
           </div>
           <Text size="xsmall" className="text-ui-fg-muted mt-1">
-            Multi-hop cross-service
-          </Text>
-        </Container>
-
-        <Container className="p-4 border border-ui-border-base bg-ui-bg-base shadow-elevation-card-rest">
-          <Text size="xsmall" weight="plus" className="text-ui-fg-subtle uppercase tracking-wider">
-            Plug &amp; Play Modules
-          </Text>
-          <div className="flex items-baseline justify-between mt-2">
-            <Heading level="h2" className="text-2xl font-bold text-ui-fg-base">
-              7 / 7
-            </Heading>
-            <Badge color="green" size="small">
-              CONNECTED
-            </Badge>
-          </div>
-          <Text size="xsmall" className="text-ui-fg-muted mt-1">
-            Ports 3400–4000 live
+            Across completed runs
           </Text>
         </Container>
       </div>
@@ -968,6 +933,6 @@ export default function WorkflowsPage() {
           </Container>
         </div>
       )}
-    </div>
+    </ModulePage>
   );
 }

@@ -11,10 +11,10 @@ metadata:
 spec:
   catalog:
     - key: tenant-access
-      name: Tenant & Access Administration
-      navigationLabel: Tenant RBAC & Settings
-      area: Platform
-      navigationGroup: Platform
+      name: Workspace settings
+      navigationLabel: Workspace settings
+      area: Workspace
+      navigationGroup: Settings
       route: /settings
       iconKey: settings
       readiness: REVIEW
@@ -26,11 +26,37 @@ spec:
       reason: Tenant administration APIs and screens run against the local PostgreSQL reference environment. Not certified.
       navigationOrder: 10
       personas: [C_LEVEL]
+      # WI-OI-145: each Settings screen is its own route in the Settings sidebar (formerly ?tab= tabs with emoji).
+      menu:
+        - key: team
+          label: Team & access
+          path: /settings
+          icon: key-round
+        - key: people
+          label: People
+          path: /settings/people
+          icon: users
+        - key: organization
+          label: Organization & hierarchy
+          path: /settings/organization
+          icon: building
+        - key: plan
+          label: Plan & entitlements
+          path: /settings/plan
+          icon: credit-card
+        - key: general
+          label: General & localization
+          path: /settings/general
+          icon: globe
+        - key: security
+          label: Security & SSO
+          path: /settings/security
+          icon: shield-check
     - key: personal-security
-      name: Personal Security
-      navigationLabel: Personal Security & Profile
-      area: Platform
-      navigationGroup: Platform
+      name: My profile & security
+      navigationLabel: My profile & security
+      area: Account
+      navigationGroup: Settings
       route: /settings/profile
       iconKey: key-round
       readiness: REVIEW
@@ -41,11 +67,12 @@ spec:
       platformInspection: false
       reason: Profile, password, TOTP and recovery flows run against the local reference environment. Not certified.
       navigationOrder: 20
+      personas: [C_LEVEL, OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER, CUSTOMER_GUEST]
     - key: execution-runs
-      name: Execution Runs
-      navigationLabel: Execution Telemetry
-      area: Orchestration
-      navigationGroup: Automate & Run
+      name: Run history
+      navigationLabel: Run history
+      area: Automation
+      navigationGroup: Settings
       route: /runs
       iconKey: file-check
       readiness: REVIEW
@@ -56,12 +83,11 @@ spec:
       platformInspection: false
       reason: Run history screen over the core workflow tables. No run has been produced; workflow moves to Workflow Studio (ADR-0016 F3).
       navigationOrder: 40
-      personas: [C_LEVEL, OPERATIONS_SUPERVISOR]
     - key: exceptions-recovery
-      name: Exceptions & Recovery
-      navigationLabel: Exceptions & Quarantine
-      area: Operations
-      navigationGroup: Automate & Run
+      name: Processing exceptions
+      navigationLabel: Processing exceptions
+      area: Automation
+      navigationGroup: Settings
       route: /exceptions
       iconKey: shield-alert
       readiness: REVIEW
@@ -72,12 +98,11 @@ spec:
       platformInspection: false
       reason: Canonical exception and recovery records are available for controlled local evaluation.
       navigationOrder: 50
-      personas: [OPERATIONS_SUPERVISOR]
     - key: approval-queue
-      name: Approval Queue
-      navigationLabel: Approval Queues
-      area: Governance
-      navigationGroup: Automate & Run
+      name: Invoice approvals
+      navigationLabel: Invoice approvals
+      area: Finance
+      navigationGroup: Financial Operations
       route: /actions
       iconKey: check-circle
       readiness: REVIEW
@@ -88,11 +113,11 @@ spec:
       platformInspection: false
       reason: Hosted by the core until the Procurement module exists (ADR-0016 F4). Governed AP approval records are available for controlled local evaluation.
       hostedFor: procurement
-      navigationOrder: 60
-      personas: [C_LEVEL, OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
+      navigationOrder: 105
+      personas: [C_LEVEL, OPERATIONS_SUPERVISOR]
     - key: value-ledger
       name: Business Value Ledger
-      navigationLabel: Business Value Ledger
+      navigationLabel: Business value
       area: Intelligence
       navigationGroup: Intelligence
       route: /value
@@ -108,7 +133,7 @@ spec:
       personas: [C_LEVEL]
     - key: invoice-matching
       name: 3-Way Match Invoices
-      navigationLabel: 3-Way Match Invoices
+      navigationLabel: Invoice matching
       area: Finance
       navigationGroup: Financial Operations
       route: /ap
@@ -124,10 +149,10 @@ spec:
       personas: [C_LEVEL]
       hostedFor: procurement
     - key: dynamic-forms
-      name: Dynamic Form Studio
-      navigationLabel: Configuration Studio
-      area: Configuration
-      navigationGroup: Studio & Build
+      name: Forms & apps
+      navigationLabel: Forms & apps
+      area: Automation
+      navigationGroup: Settings
       route: /configuration
       iconKey: sparkles
       readiness: REVIEW
@@ -143,7 +168,7 @@ spec:
       name: Platform Control Tower
       navigationLabel: Platform Control Tower
       area: Platform
-      navigationGroup: Platform
+      navigationGroup: Settings
       route: /platform-admin
       iconKey: server
       readiness: REVIEW
@@ -154,6 +179,10 @@ spec:
       platformInspection: false
       reason: Platform control is global operator authority, not a tenant entitlement.
       navigationOrder: 190
+      # WI-OI-145: each screen is a Settings sidebar entry.
+      menu:
+        - { key: overview, label: Platform Control Tower, path: /platform-admin, icon: server }
+        - { key: users, label: Platform users, path: /platform-admin/users, icon: users }
     - key: solution-packs
       name: Solution Packs
       navigationLabel: Solution Packs
@@ -171,10 +200,10 @@ spec:
       navigationOrder: 310
       personas: [C_LEVEL]
     - key: module-marketplace
-      name: Modules & Plan
-      navigationLabel: Modules & Plan
-      area: Platform
-      navigationGroup: Platform
+      name: Modules & plan
+      navigationLabel: Modules & plan
+      area: Workspace
+      navigationGroup: Settings
       route: /marketplace
       iconKey: shopping-bag
       readiness: REVIEW

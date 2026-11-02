@@ -12,11 +12,13 @@
     "@gigalibs/web-sdk": "workspace:*"
   },
   "peerDependencies": {
+    "@medusajs/ui": "^4.2.3",
     "lucide-react": "^0.468.0",
     "next": "^15.2.0",
     "react": "^19.2.8"
   },
   "devDependencies": {
+    "@medusajs/ui": "4.2.3",
     "@types/react": "19.2.18",
     "next": "15.5.24",
     "react": "19.2.8",

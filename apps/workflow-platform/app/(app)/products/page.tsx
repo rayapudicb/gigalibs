@@ -4,5 +4,5 @@ import { ProductCatalogueWorkspace } from '@gigalibs/product-catalogue-web';
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <ProductCatalogueWorkspace permissions={session.context?.permissions ?? []} />;
+  return <ProductCatalogueWorkspace section={"products"} permissions={session.context?.permissions ?? []} />;
 }

@@ -1,20 +1,21 @@
 'use client';
 
 import { Container, Heading, StatusBadge, Table, Text, Button, Input } from '@medusajs/ui';
-import Link from 'next/link';
+import { codeLabel, ModulePage } from '@gigalibs/web-sdk';
 import { useCallback, useEffect, useState } from 'react';
 import { iotApi } from '../api';
 
 export type IotSection = 'home' | 'devices' | 'protocols' | 'rules' | 'discovery' | 'alerts';
 
-const NAV: ReadonlyArray<{ key: IotSection; label: string; href: string }> = [
-  { key: 'home', label: 'Dashboard', href: '/iot' },
-  { key: 'devices', label: 'Devices', href: '/iot/devices' },
-  { key: 'protocols', label: 'Protocols', href: '/iot/protocols' },
-  { key: 'rules', label: 'Rules', href: '/iot/rules' },
-  { key: 'discovery', label: 'Discovery', href: '/iot/discovery' },
-  { key: 'alerts', label: 'Alerts', href: '/iot/alerts' },
-];
+// WI-OI-145: the sidebar is IoT's only menu; each screen has the shared page header with its sidebar name.
+const SCREENS: Readonly<Record<IotSection, { readonly title: string; readonly description: string }>> = {
+  home: { title: 'Overview', description: 'Your devices, which are online and the alerts that need attention.' },
+  devices: { title: 'Devices', description: 'Connected equipment and sensors, and how each sends its readings.' },
+  protocols: { title: 'Protocols', description: 'The ways devices can connect: HTTP, MQTT, Modbus, OPC UA and more.' },
+  rules: { title: 'Rules', description: 'Conditions on readings that raise an alert or a work order.' },
+  discovery: { title: 'Discovery', description: 'Look for devices on a network before you connect them.' },
+  alerts: { title: 'Alerts', description: 'Alerts raised by your rules.' },
+};
 
 export function IotWorkspace({ section }: { section: IotSection }) {
   const [error, setError] = useState<string | null>(null);
@@ -82,21 +83,7 @@ export function IotWorkspace({ section }: { section: IotSection }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Heading level="h1">IoT Gateway</Heading>
-        <nav className="flex flex-wrap gap-2">
-          {NAV.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={`rounded px-3 py-1 text-xs ${section === item.key ? 'bg-ui-bg-highlight font-semibold' : 'text-ui-fg-subtle hover:text-ui-fg-base'}`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
+    <ModulePage title={SCREENS[section].title} description={SCREENS[section].description}>
       {error ? (
         <Text size="small" className="text-ui-fg-error">
           {error}
@@ -234,8 +221,8 @@ export function IotWorkspace({ section }: { section: IotSection }) {
               const p = row as Record<string, string | number>;
               return (
                 <Table.Row key={String(p.adapter_key)}>
-                  <Table.Cell>{p.adapter_key}</Table.Cell>
-                  <Table.Cell>{p.status}</Table.Cell>
+                  <Table.Cell>{codeLabel(String(p.adapter_key))}</Table.Cell>
+                  <Table.Cell>{codeLabel(String(p.status))}</Table.Cell>
                   <Table.Cell>{p.device_count}</Table.Cell>
                 </Table.Row>
               );
@@ -258,6 +245,6 @@ export function IotWorkspace({ section }: { section: IotSection }) {
           <pre className="text-xs overflow-auto">{JSON.stringify(discovery, null, 2)}</pre>
         </Container>
       ) : null}
-    </div>
+    </ModulePage>
   );
 }

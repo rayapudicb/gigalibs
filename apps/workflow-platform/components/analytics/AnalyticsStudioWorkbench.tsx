@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState, ModulePage, PageTabs } from '@gigalibs/web-sdk';
 import Link from 'next/link';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -131,93 +132,61 @@ export function AnalyticsStudioWorkbench() {
 
   if (loading && configured === null) {
     return (
-      <Container className="p-8">
-        <div className="flex items-center gap-3 text-zinc-500">
-          <ArrowPath className="animate-spin w-5 h-5 text-blue-600" />
-          <Text>Checking Analytics Studio tenant binding and PostgreSQL schema...</Text>
-        </div>
-      </Container>
+      <ModulePage title="Overview">
+        <Text size="small" className="text-ui-fg-subtle">Loading…</Text>
+      </ModulePage>
     );
   }
 
   if (configured === false) {
     return (
-      <Container className="p-8 max-w-4xl mx-auto space-y-6">
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <BarChart3 className="w-6 h-6 text-blue-600" />
-            <div>
-              <p className="font-semibold text-zinc-900">PostgreSQL Schema Initialization</p>
-              <Text className="text-xs text-zinc-600">
-                Bind tenant workspace to isolated <code>gigalibs_analytics</code> schema.
-              </Text>
-            </div>
-          </div>
-          <div className="border-t border-blue-100 pt-4 flex items-center justify-between">
-            <div className="text-xs font-mono text-zinc-500">
-              Authority: Verified local OIDC · Tenant RLS · PostgreSQL persistence
-            </div>
-            <Button variant="primary" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSetup} disabled={isSettingUp}>
-              {isSettingUp ? 'Initializing Schema...' : 'Initialize Analytics Studio'}
+      <ModulePage title="Overview" description="Trends from your modules' data, your saved charts and the decisions recorded against them.">
+        <EmptyState
+          title="Analytics is not set up for your workspace yet"
+          description="Set it up once to start building trends from your modules' data."
+          action={
+            <Button size="small" variant="primary" onClick={handleSetup} disabled={isSettingUp}>
+              {isSettingUp ? 'Setting up…' : 'Set up Analytics'}
             </Button>
-          </div>
-        </div>
-      </Container>
+          }
+        />
+      </ModulePage>
     );
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-3">
-        <div className="flex items-center gap-2">
-          <Badge color="blue">Analytics Studio</Badge>
-          <StatusBadge color="green">REGISTRY_GOVERNED</StatusBadge>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="secondary" onClick={() => void loadActions()} className="flex items-center gap-2">
+    <ModulePage
+      title="Overview"
+      description="Trends from your modules' data, your saved charts and the decisions recorded against them."
+      actions={
+        <>
+          <Button size="small" variant="secondary" onClick={() => void loadActions()}>
             <ArrowPath className="w-4 h-4" /> Refresh
           </Button>
-          <Button
-            variant="primary"
-            className="bg-zinc-900 text-white hover:bg-zinc-800 flex items-center gap-2"
-            onClick={() => setActionModalOpen(true)}
-          >
-            <Zap className="w-4 h-4 text-amber-400" /> Executive Action
-          </Button>
-          <Button asChild variant="secondary">
+          <Button size="small" variant="secondary" asChild>
             <Link href="/analytics/places">Place drill-down</Link>
           </Button>
-        </div>
-      </div>
-
+          <Button size="small" variant="primary" onClick={() => setActionModalOpen(true)}>
+            Record a decision
+          </Button>
+        </>
+      }
+    >
       {error && (
         <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           {error}
         </div>
       )}
 
-      <div className="flex items-center gap-2 border-b border-zinc-200">
-        <button
-          type="button"
-          onClick={() => setActiveTab('modules')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'modules' ? 'border-zinc-900 text-zinc-950 font-bold' : 'border-transparent text-zinc-500 hover:text-zinc-800'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4 text-blue-600" />
-          <span>Module sources &amp; Trend Builder</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('saved_charts')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'saved_charts' ? 'border-zinc-900 text-zinc-950 font-bold' : 'border-transparent text-zinc-500 hover:text-zinc-800'
-          }`}
-        >
-          <LayoutGrid className="w-4 h-4 text-purple-600" />
-          <span>Saved charts</span>
-        </button>
-      </div>
+      <PageTabs
+        label="Analytics views"
+        value={activeTab}
+        onChange={setActiveTab}
+        tabs={[
+          { key: 'modules', label: 'Trends' },
+          { key: 'saved_charts', label: 'Saved charts' },
+        ]}
+      />
 
       {activeTab === 'saved_charts' ? (
         <SavedChartViews />
@@ -357,6 +326,6 @@ export function AnalyticsStudioWorkbench() {
           </div>
         </div>
       )}
-    </div>
+    </ModulePage>
   );
 }

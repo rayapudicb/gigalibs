@@ -1,5 +1,6 @@
 'use client';
 
+import { ModulePage } from '@gigalibs/web-sdk';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { SchedulePanel } from '@/components/schedules/SchedulePanel';
@@ -314,17 +315,11 @@ export default function ConnectionsPage() {
   }, [connections, categoryFilter]);
 
   return (
-    <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Action Toolbar ────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
-        <div className="flex items-center gap-2">
-          <Badge color="blue" size="small">Active Integrations</Badge>
-          <Text size="small" className="text-ui-fg-subtle">
-            {connections.length} Active System Connections
-          </Text>
-        </div>
-
-        <div className="flex items-center gap-3">
+    <ModulePage
+      title="Connections"
+      description={`${connections.length} connections. Systems that send records in, or that records are pulled from.`}
+      actions={
+        <>
           <Button
             variant="secondary"
             size="small"
@@ -339,9 +334,9 @@ export default function ConnectionsPage() {
             <Button
               variant="secondary"
               size="small"
-              className="text-purple-600 border-purple-200 hover:bg-purple-50"
+              
             >
-              1-Click OAuth Studio
+              Connected apps
             </Button>
           </Link>
           <Button
@@ -352,8 +347,9 @@ export default function ConnectionsPage() {
             <PlusMini className="w-4 h-4 mr-1" />
             New Connection
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* ── Metric Summary Cards ─────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1012,6 +1008,6 @@ export default function ConnectionsPage() {
           </Container>
         </div>
       )}
-    </div>
+    </ModulePage>
   );
 }

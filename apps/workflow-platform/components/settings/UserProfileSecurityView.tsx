@@ -1,5 +1,6 @@
 'use client';
 
+import { ModulePage, PageTabs } from '@gigalibs/web-sdk';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
@@ -46,6 +47,9 @@ interface ActivityLogItem {
   userAgent: string | null;
   createdAt: string;
 }
+
+/** A role code as people read it: TENANT_ADMIN → Tenant admin (WI-OI-145). */
+const roleLabel = (role: string) => role.toLowerCase().replace(/_/g, ' ').replace(/^./, (letter) => letter.toUpperCase());
 
 export function UserProfileSecurityView({
   session,
@@ -200,60 +204,18 @@ export function UserProfileSecurityView({
     .toUpperCase();
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
+    <div className="flex flex-col gap-4">
       {loadError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {loadError}
         </div>
       )}
       {loading && <p className="text-sm text-ui-fg-muted">Loading the persisted account profile…</p>}
-      {/* Settings Navigation Subnav */}
-      <div className="flex gap-2 border-b border-ui-border-base pb-2 text-xs font-semibold">
-        <Link
-          href="/settings"
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-ui-fg-muted hover:bg-ui-bg-subtle hover:text-ui-fg-base transition"
-        >
-          🏢 Workspace & Team Access
-        </Link>
-        <Link
-          href="/settings/profile"
-          className="flex items-center gap-1.5 rounded-lg bg-ui-bg-subtle px-3 py-1.5 text-ui-fg-base border border-ui-border-base font-bold"
-        >
-          👤 Account Profile & Security
-        </Link>
-        {hasPlatformAuthority && (
-          <Link
-            href="/platform-admin"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-amber-800 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition ml-auto"
-          >
-            ★ Platform Control Tower →
-          </Link>
-        )}
-      </div>
-
-      {/* Top Breadcrumb & Title */}
-      <div>
-        <div className="flex items-center gap-2 text-xs text-ui-fg-muted font-mono mb-1">
-          <Link href="/settings" className="hover:text-ui-fg-base transition-colors">Settings</Link>
-          <span>/</span>
-          <span className="text-ui-fg-base">Profile & Security</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-ui-fg-base">
-                Personal Profile & Security
-              </h1>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-                User Scope
-              </span>
-            </div>
-            <p className="text-sm text-ui-fg-subtle mt-0.5">
-              Manage your personal identity, login credentials, authentication security, and personal activity log.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* WI-OI-145: the Settings sidebar replaces the emoji sub-navigation and this page's own breadcrumb. */}
+      <ModulePage
+        title="My profile & security"
+        description="Your name and contact details, password, sign-in methods, recovery and recent activity."
+      />
 
       {/* Account Identity Card (Hero Banner) */}
       <div className="rounded-xl border border-ui-border-base bg-ui-bg-base p-6 shadow-elevation-card-rest">
@@ -299,7 +261,7 @@ export function UserProfileSecurityView({
                   key={role}
                   className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs"
                 >
-                  ★ {role}
+                  {roleLabel(role)}
                 </span>
               ))}
               {session.roles.map((role) => (
@@ -307,7 +269,7 @@ export function UserProfileSecurityView({
                   key={role}
                   className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-violet-100 text-violet-800 border border-violet-200"
                 >
-                  {role}
+                  {roleLabel(role)}
                 </span>
               ))}
             </div>
@@ -318,75 +280,19 @@ export function UserProfileSecurityView({
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="border-b border-ui-border-base flex flex-wrap gap-4 text-sm font-medium">
-        <button
-          type="button"
-          onClick={() => setActiveTab('profile')}
-          className={`pb-2.5 transition-colors cursor-pointer ${
-            activeTab === 'profile'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          Profile Details
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('password')}
-          className={`pb-2.5 transition-colors cursor-pointer ${
-            activeTab === 'password'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          Change Password
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('activity')}
-          className={`pb-2.5 transition-colors cursor-pointer ${
-            activeTab === 'activity'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          Activity & Audit Logs
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('signin')}
-          className={`pb-2.5 transition-colors cursor-pointer ${
-            activeTab === 'signin'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          Sign-in Methods
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('mfa')}
-          className={`pb-2.5 transition-colors cursor-pointer ${
-            activeTab === 'mfa'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          MFA & Recovery
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('rbac')}
-          className={`pb-2.5 transition-colors cursor-pointer ${
-            activeTab === 'rbac'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          My Permissions
-        </button>
-      </div>
+      <PageTabs
+        label="Profile and security"
+        value={activeTab}
+        onChange={setActiveTab}
+        tabs={[
+          { key: 'profile', label: 'Profile' },
+          { key: 'password', label: 'Password' },
+          { key: 'activity', label: 'Activity' },
+          { key: 'signin', label: 'Sign-in methods' },
+          { key: 'mfa', label: 'Two-step sign-in & recovery' },
+          { key: 'rbac', label: 'My permissions' },
+        ]}
+      />
 
       {/* ── TAB 1: EDIT PROFILE ── */}
       {activeTab === 'profile' && (

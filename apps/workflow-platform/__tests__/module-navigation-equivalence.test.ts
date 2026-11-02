@@ -102,19 +102,42 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     );
   });
 
+  // WI-OI-145 (owner, 2026-11-02): administration, integration and automation tools leave the daily sidebar for the
+  // Settings sidebar; the AP-only approval queue joins Finance next to 3-Way Match.
+  const INTENDED_GROUP_CHANGES: Readonly<Record<string, string>> = {
+    'tenant-access': 'Settings',
+    'personal-security': 'Settings',
+    'module-marketplace': 'Settings',
+    'platform-control': 'Settings',
+    connections: 'Settings',
+    'connector-hub': 'Settings',
+    'workflow-definitions': 'Settings',
+    'dynamic-forms': 'Settings',
+    'execution-runs': 'Settings',
+    'exceptions-recovery': 'Settings',
+    'approval-queue': 'Financial Operations',
+  };
+
   it.each(platformModuleCatalog.map((module) => [module.key, module] as const))(
     '%s keeps its sidebar group and icon',
     (key, module) => {
       const legacy = LEGACY_SIDEBAR_NAVIGATION[key];
       const addition = INTENDED_ADDITIONS[key as keyof typeof INTENDED_ADDITIONS];
-      expect(module.navigationGroup).toBe(addition?.group ?? legacy?.group);
+      expect(module.navigationGroup).toBe(INTENDED_GROUP_CHANGES[key] ?? addition?.group ?? legacy?.group);
       expect(moduleIcons[module.iconKey]).toBe(addition?.icon ?? legacy?.icon);
     },
   );
 
   // Deliberate navigation changes made after the freeze, each with its work item. Every other entry must still match
   // the frozen tables exactly.
-  const INTENDED_MENU_CHANGES: Readonly<Record<string, ReturnType<typeof moduleMenu>>> = {
+  const m = (key: string, label: string, href: string, icon: keyof typeof moduleIcons, permissions?: readonly string[]) => ({
+    key,
+    label,
+    href,
+    icon: moduleIcons[icon],
+    ...(permissions ? { permissions } : {}),
+  });
+  const INTENDED_MENU_CHANGES: Record<string, ReturnType<typeof moduleMenu>> = {
     // WI-OI-103d: Analytics gains Overview, Places and the new Explore screen; WI-OI-103e adds Dashboards and Reports;
     // WI-OI-104e adds Sources (no-code mapping of pulled records into datasets).
     'analytics-studio': [
@@ -127,90 +150,42 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     ],
     // WI-OI-120be (W1 review C, I3): Maintenance Requests (first, WI-OI-120t slice 2) and Classifications (after
     // Assets, owner 2026-10-13) were accepted by the CMMS Security review.
-    'asset-maintenance': (() => {
-      const base = [
-        LEGACY_MODULE_MENUS['asset-maintenance']![0]!,
-        { key: 'spaces', label: 'CAFM Spaces', href: '/cmms/spaces', icon: moduleIcons.building },
-        ...LEGACY_MODULE_MENUS['asset-maintenance']!.slice(1),
-      ];
-      const assetsAt = base.findIndex((item) => item.key === 'assets');
-      const items = [
-        { key: 'requests', label: 'Maintenance Requests', href: '/cmms/requests', icon: moduleIcons['file-text'] },
-        ...base.slice(0, assetsAt + 1),
-        { key: 'classifications', label: 'Classifications', href: '/cmms/classifications', icon: moduleIcons.layers },
-        ...base.slice(assetsAt + 1),
-      ];
-      // WI-OI-134 M-CAL: Calibration follows Meters & IoT and is gated on cmms.calibration.read.
-      const metersAt = items.findIndex((item) => item.key === 'meters');
-      items.splice(metersAt + 1, 0, {
-        key: 'calibration', label: 'Calibration', href: '/cmms/calibration', icon: moduleIcons['shield-check'],
-        permissions: ['cmms.calibration.read'] as const,
-      } as (typeof items)[number]);
-      // WI-OI-135 M-TAG: Commissioning follows Calibration and is gated on cmms.commissioning.read.
-      items.splice(metersAt + 2, 0, {
-        key: 'commissioning', label: 'Commissioning', href: '/cmms/commissioning', icon: moduleIcons['map-pin'],
-        permissions: ['cmms.commissioning.read'] as const,
-      } as (typeof items)[number]);
-      // WI-OI-136 M-BOM: Visual Spares follows Commissioning and is gated on cmms.bom.read.
-      items.splice(metersAt + 3, 0, {
-        key: 'spares', label: 'Visual Spares', href: '/cmms/spares', icon: moduleIcons.layers,
-        permissions: ['cmms.bom.read'] as const,
-      } as (typeof items)[number]);
-      // WI-OI-138 M-SOP: Work Instructions follows Visual Spares and is gated on cmms.sop.read.
-      items.splice(metersAt + 4, 0, {
-        key: 'sop', label: 'Work Instructions', href: '/cmms/sop', icon: moduleIcons['file-check'],
-        permissions: ['cmms.sop.read'] as const,
-      } as (typeof items)[number]);
-      // WI-OI-139 M-DVIR: Fleet Readiness follows Work Instructions and is gated on cmms.fleet.read.
-      items.splice(metersAt + 5, 0, {
-        key: 'fleet', label: 'Fleet Readiness', href: '/cmms/fleet', icon: moduleIcons.gauge,
-        permissions: ['cmms.fleet.read'] as const,
-      } as (typeof items)[number]);
-      // WI-OI-140 M-REQ: QR Request Links follows Fleet Readiness and is gated on cmms.portal.manage.
-      items.splice(metersAt + 6, 0, {
-        key: 'request-links', label: 'QR Request Links', href: '/cmms/request-links', icon: moduleIcons['scan-line'],
-        permissions: ['cmms.portal.manage'] as const,
-      } as (typeof items)[number]);
-      // WI-OI-142 M-LOTO: Permits & LOTO follows QR Request Links and is gated on cmms.permits.read.
-      items.splice(metersAt + 7, 0, {
-        key: 'permits', label: 'Permits & LOTO', href: '/cmms/permits', icon: moduleIcons.lock,
-        permissions: ['cmms.permits.read'] as const,
-      } as (typeof items)[number]);
-      // WI-OI-131 C11: Reliability tab is permission-gated in the sidebar.
-      return items.map((item) =>
-        item.key === 'analytics'
-          ? { ...item, permissions: ['cmms.analytics.read', 'analytics:read'] as const }
-          : item,
-      );
-    })(),
-    // WI-OI-120u: Bookings, a read-only metadata window, follows Availability (Slice 2); Compliance and Workforce
-    // Analytics, which showed the retired WFO screens, are gone (Slice 3, owner "retire all").
-    gigaops: [
-      ...LEGACY_MODULE_MENUS.gigaops!.slice(0, 5),
-      { key: 'bookings', label: 'Bookings', href: '/gigaops/bookings', icon: moduleIcons.layers },
-      ...LEGACY_MODULE_MENUS.gigaops!.slice(5).filter((item) => item.key !== 'compliance' && item.key !== 'analytics'),
-      // WI-OI-137 M-LOG: Shift Logbook, gated on workforce.logbook.read.
-      { key: 'logbook', label: 'Shift Logbook', href: '/gigaops/logbook', icon: moduleIcons['file-text'], permissions: ['workforce.logbook.read'] as const },
-      {
-        key: 'analytics',
-        label: 'Analytics & Trends',
-        href: '/gigaops/analytics',
-        icon: moduleIcons['bar-chart'],
-        permissions: ['workforce.positions.read', 'analytics:read'] as const,
-      },
+    // WI-OI-145: one sentence-case name per screen (the same as its page title), Overview added, Floor Kiosk (not
+    // connected yet) off the menu; the in-page section bar is gone.
+    'asset-maintenance': [
+      m('overview', 'Overview', '/cmms', 'gauge'),
+      m('requests', 'Requests', '/cmms/requests', 'file-text'),
+      m('work-orders', 'Work orders', '/cmms/work-orders', 'wrench'),
+      m('assets', 'Assets', '/cmms/assets', 'factory'),
+      m('spaces', 'Spaces', '/cmms/spaces', 'building'),
+      m('classifications', 'Classifications', '/cmms/classifications', 'layers'),
+      m('schedules', 'Preventive maintenance', '/cmms/schedules', 'clock'),
+      m('inventory', 'Parts', '/cmms/inventory', 'boxes'),
+      m('meters', 'Meters', '/cmms/meters', 'gauge'),
+      m('calibration', 'Calibration', '/cmms/calibration', 'shield-check', ['cmms.calibration.read']),
+      m('commissioning', 'Commissioning', '/cmms/commissioning', 'map-pin', ['cmms.commissioning.read']),
+      m('spares', 'Visual spares', '/cmms/spares', 'layers', ['cmms.bom.read']),
+      m('sop', 'Work instructions', '/cmms/sop', 'file-check', ['cmms.sop.read']),
+      m('fleet', 'Fleet readiness', '/cmms/fleet', 'gauge', ['cmms.fleet.read']),
+      m('request-links', 'QR request links', '/cmms/request-links', 'scan-line', ['cmms.portal.manage']),
+      m('permits', 'Permits & LOTO', '/cmms/permits', 'lock', ['cmms.permits.read']),
+      m('analytics', 'Reliability', '/cmms/analytics', 'bar-chart', ['cmms.analytics.read', 'analytics:read']),
     ],
     // WI-OI-130 / WI-OI-126: new capability modules after the WI-OI-083c freeze.
+    // WI-OI-130 / WI-OI-126, then WI-OI-145: Overview joins the menus and Rules keeps one name.
     'iot-gateway': [
-      { key: 'devices', label: 'Devices', href: '/iot/devices', icon: moduleIcons.radio },
-      { key: 'protocols', label: 'Protocols', href: '/iot/protocols', icon: moduleIcons.network },
-      { key: 'rules', label: 'Condition Rules', href: '/iot/rules', icon: moduleIcons.workflow },
-      { key: 'discovery', label: 'Discovery', href: '/iot/discovery', icon: moduleIcons['scan-line'] },
-      { key: 'alerts', label: 'Alerts', href: '/iot/alerts', icon: moduleIcons['shield-alert'] },
+      m('overview', 'Overview', '/iot', 'gauge'),
+      m('devices', 'Devices', '/iot/devices', 'radio'),
+      m('protocols', 'Protocols', '/iot/protocols', 'network'),
+      m('rules', 'Rules', '/iot/rules', 'workflow'),
+      m('discovery', 'Discovery', '/iot/discovery', 'scan-line'),
+      m('alerts', 'Alerts', '/iot/alerts', 'shield-alert'),
     ],
     'universal-manufacturing': [
-      { key: 'boms', label: 'BOMs', href: '/universal-manufacturing/boms', icon: moduleIcons.layers },
-      { key: 'production', label: 'Production', href: '/universal-manufacturing/production', icon: moduleIcons.factory },
-      { key: 'mrp', label: 'MRP preview', href: '/universal-manufacturing/mrp', icon: moduleIcons['bar-chart'] },
+      m('overview', 'Overview', '/universal-manufacturing', 'gauge'),
+      m('boms', 'BOMs', '/universal-manufacturing/boms', 'layers'),
+      m('production', 'Production', '/universal-manufacturing/production', 'factory'),
+      m('mrp', 'MRP preview', '/universal-manufacturing/mrp', 'bar-chart'),
     ],
     // WI-OI-120cb (owner, 2026-10-21): SPEED expands into its screens like EAM, each on its own page.
     'process-safety-screening': [
@@ -224,6 +199,98 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     ],
   };
 
+  // WI-OI-145 (owner, 2026-11-02): every module with more than one screen lists them in the sidebar, one route each;
+  // their in-page module menus are gone. Settings entries list theirs in the Settings sidebar.
+  Object.assign(INTENDED_MENU_CHANGES, {
+    'tenant-access': [
+      m('team', 'Team & access', '/settings', 'key-round'),
+      m('people', 'People', '/settings/people', 'users'),
+      m('organization', 'Organization & hierarchy', '/settings/organization', 'building'),
+      m('plan', 'Plan & entitlements', '/settings/plan', 'credit-card'),
+      m('general', 'General & localization', '/settings/general', 'globe'),
+      m('security', 'Security & SSO', '/settings/security', 'shield-check'),
+    ],
+    'workflow-definitions': [
+      m('workflows', 'Workflows', '/workflows', 'zap'),
+      m('templates', 'Templates', '/workflows/templates', 'layers'),
+      m('api-keys', 'API keys', '/workflows/api-keys', 'key-round'),
+    ],
+    connections: [m('connections', 'Connections', '/connections', 'radio'), m('credentials', 'Credentials', '/connections/credentials', 'key-round')],
+    'platform-control': [
+      m('overview', 'Platform Control Tower', '/platform-admin', 'server'),
+      m('users', 'Platform users', '/platform-admin/users', 'users'),
+    ],
+    'universal-inventory': [
+      m('warehouses', 'Warehouses', '/inventory', 'building'),
+      m('items', 'Items', '/inventory/items', 'boxes'),
+      m('lots', 'Lots', '/inventory/lots', 'layers'),
+      m('receipts', 'Receipts', '/inventory/receipts', 'inbox'),
+      m('stock', 'Stock', '/inventory/stock', 'database'),
+      m('reservations', 'Reservations', '/inventory/reservations', 'lock'),
+      m('transfers', 'Transfers', '/inventory/transfers', 'arrow-left-right'),
+      m('replenishment', 'Replenishment', '/inventory/replenishment', 'gauge'),
+      m('availability', 'Availability', '/inventory/availability', 'check-circle'),
+      m('valuation', 'Valuation', '/inventory/valuation', 'coins'),
+    ],
+    'product-catalogue': [
+      m('products', 'Products', '/products', 'boxes'),
+      m('categories', 'Categories', '/products/categories', 'layers'),
+      m('attributes', 'Attributes', '/products/attributes', 'database'),
+      m('units', 'Units', '/products/units', 'scale'),
+      m('catalogues', 'Catalogues', '/products/catalogues', 'file-text'),
+      m('price-lists', 'Price lists', '/products/price-lists', 'coins'),
+      m('price-resolver', 'Price resolver', '/products/price-resolver', 'check-circle'),
+      m('import-export', 'Import & export', '/products/import-export', 'arrow-left-right'),
+    ],
+    'universal-procurement': [
+      m('requisitions', 'Requisitions', '/procurement', 'file-text'),
+      m('purchase-orders', 'Purchase orders', '/procurement/purchase-orders', 'shopping-bag'),
+      m('vendor-bills', 'Vendor bills', '/procurement/vendor-bills', 'file-check'),
+      m('debit-memos', 'Debit memos', '/procurement/debit-memos', 'credit-card'),
+      m('landed-cost', 'Landed cost', '/procurement/landed-cost', 'coins'),
+    ],
+    'universal-orders': [
+      m('quotes', 'Quotes', '/orders', 'file-text'),
+      m('sales-orders', 'Sales orders', '/orders/sales-orders', 'shopping-bag'),
+      m('fulfillment', 'Fulfillment', '/orders/fulfillment', 'boxes'),
+      m('invoices', 'Invoices', '/orders/invoices', 'file-check'),
+      m('credit-memos', 'Credit memos', '/orders/credit-memos', 'credit-card'),
+    ],
+    'financial-operations': [
+      m('journal-entries', 'Journal entries', '/finance', 'file-text'),
+      m('accounts', 'Chart of accounts', '/finance/accounts', 'layers'),
+      m('periods', 'Periods', '/finance/periods', 'calendar'),
+      m('books', 'Books', '/finance/books', 'database'),
+      m('reports', 'Reports', '/finance/reports', 'bar-chart'),
+    ],
+    'safety-operations': [
+      m('stop-work', 'Stop work', '/safety-operations', 'shield-alert', ['safety-operations.hazards.report']),
+      m('triage', 'Triage', '/safety-operations/triage', 'inbox', ['safety-operations.hazards.triage']),
+      m('reports', 'Reports', '/safety-operations/reports', 'file-text', ['safety-operations.hazards.read']),
+      m('insights', 'Insights', '/safety-operations/insights', 'bar-chart', ['safety-operations.hazards.read']),
+      m('contractors', 'Contractors', '/safety-operations/contractors', 'users'),
+    ],
+    'operator-rounds': [
+      m('routes', 'Routes', '/operator-rounds', 'workflow', ['operator-rounds.routes.read']),
+      m('board', 'Live board', '/operator-rounds/board', 'gauge', ['operator-rounds.board.read']),
+      m('exceptions', 'Exceptions', '/operator-rounds/exceptions', 'shield-alert', ['operator-rounds.exceptions.read']),
+      m('skips', 'Skip approvals', '/operator-rounds/skips', 'check-circle', ['operator-rounds.skips.approve']),
+    ],
+    gigaops: [
+      m('overview', 'Overview', '/gigaops', 'gauge'),
+      m('resources', 'People', '/gigaops/resources', 'check-circle'),
+      m('jobs', 'Jobs & positions', '/gigaops/jobs', 'layers'),
+      m('capabilities', 'Skills & qualifications', '/gigaops/capabilities', 'shield-check'),
+      m('availability', 'Availability', '/gigaops/availability', 'calendar'),
+      m('bookings', 'Bookings', '/gigaops/bookings', 'layers'),
+      m('scheduling', 'Scheduling & dispatch', '/gigaops/scheduling', 'calendar'),
+      m('time', 'Time & attendance', '/gigaops/time', 'clock'),
+      m('pay', 'Pay-ready outputs', '/gigaops/pay', 'coins'),
+      m('logbook', 'Shift logbook', '/gigaops/logbook', 'file-text', ['workforce.logbook.read']),
+      m('analytics', 'Analytics & trends', '/gigaops/analytics', 'bar-chart', ['workforce.positions.read', 'analytics:read']),
+    ],
+  });
+
   it.each(platformModuleCatalog.map((module) => [module.key] as const))('%s keeps its sub-menu', (key) => {
     expect(moduleMenu(key)).toEqual(INTENDED_MENU_CHANGES[key] ?? LEGACY_MODULE_MENUS[key] ?? []);
   });
@@ -233,6 +300,29 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     'asset-maintenance': {
       personas: ['CUSTOMER_GUEST'],
       reason: 'WI-OI-120n: a Viewer holding the Maintenance viewer role (an auditor) sees CMMS; cmms:read still decides.',
+    },
+    'personal-security': {
+      personas: ['C_LEVEL', 'OPERATIONS_SUPERVISOR', 'WORKFORCE_MEMBER', 'CUSTOMER_GUEST'],
+      reason: 'WI-OI-145: everyone finds My profile & security in the Settings sidebar; profile:* still decides.',
+    },
+  };
+  // Persona lenses narrowed after the freeze, each with its reason (WI-OI-145, owner 2026-11-02).
+  const INTENDED_LENS_REMOVALS: Readonly<Record<string, { readonly personas: readonly string[]; readonly reason: string }>> = {
+    'execution-runs': {
+      personas: ['C_LEVEL', 'OPERATIONS_SUPERVISOR'],
+      reason: 'Run history is a diagnostic tool for administrators, in Settings.',
+    },
+    'exceptions-recovery': {
+      personas: ['OPERATIONS_SUPERVISOR'],
+      reason: 'Processing exceptions are an integration tool for administrators, in Settings.',
+    },
+    'workflow-definitions': {
+      personas: ['C_LEVEL', 'OPERATIONS_SUPERVISOR'],
+      reason: 'Building workflows is an administrator task, in Settings.',
+    },
+    'approval-queue': {
+      personas: ['WORKFORCE_MEMBER'],
+      reason: 'Invoice approvals read only the AP action queue; frontline workers approve nothing there.',
     },
   };
 
@@ -245,10 +335,11 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
         expect([persona, module.key, personaSeesModule(persona as never, module.key)]).toEqual([
           persona,
           module.key,
-          legacy === undefined ||
+          (legacy === undefined ||
             legacy.includes(module.key) ||
             addition?.personas.includes(persona as never) === true ||
-            INTENDED_LENS_ADDITIONS[module.key]?.personas.includes(persona) === true,
+            INTENDED_LENS_ADDITIONS[module.key]?.personas.includes(persona) === true) &&
+            INTENDED_LENS_REMOVALS[module.key]?.personas.includes(persona) !== true,
         ]);
       }
     }

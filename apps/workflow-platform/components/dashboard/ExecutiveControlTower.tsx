@@ -524,7 +524,7 @@ export default function ExecutiveControlTower({
                     )}
 
                     <Link
-                      href="/settings?tab=hierarchy"
+                      href="/settings/organization"
                       className="p-2.5 rounded-lg border border-ui-border-base bg-ui-bg-subtle hover:bg-ui-bg-base hover:border-amber-500 transition-colors flex items-center justify-between text-xs font-medium"
                     >
                       <span className="flex items-center gap-1.5 truncate">

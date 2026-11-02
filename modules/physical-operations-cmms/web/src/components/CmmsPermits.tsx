@@ -9,6 +9,7 @@ import {
   gasWithinLimits,
   holdsPermission,
 } from '@gigalibs/contracts';
+import { PageTabs } from '@gigalibs/web-sdk';
 import { Button, Container, Heading, Input, StatusBadge, Table, Text } from '@medusajs/ui';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import type { CmmsApiError } from '../api';
@@ -53,12 +54,12 @@ export function CmmsPermits({ permissions = [] }: { permissions?: readonly strin
   ];
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Permit views">
-        {tabs.filter(([, , shown]) => shown).map(([key, text]) => (
-          <Button key={key} type="button" size="small" role="tab" aria-selected={tab === key}
-            variant={tab === key ? 'primary' : 'secondary'} onClick={() => setTab(key)}>{text}</Button>
-        ))}
-      </div>
+      <PageTabs
+        tabs={tabs.filter(([, , shown]) => shown).map(([key, text]) => ({ key, label: text }))}
+        value={tab}
+        onChange={setTab}
+        label="Permit views"
+      />
       {tab === 'board' ? <Board onOpen={setOpen} /> : null}
       {tab === 'request' ? <RequestForm onDone={setOpen} /> : null}
       {tab === 'procedures' ? <Procedures can={can} /> : null}

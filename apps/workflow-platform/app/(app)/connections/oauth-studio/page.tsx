@@ -1,5 +1,6 @@
 'use client';
 
+import { codeLabel, ModulePage } from '@gigalibs/web-sdk';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
@@ -187,16 +188,11 @@ export default function OAuthStudioPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
-      {/* ── Action Toolbar ─────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
-        <div className="flex items-center gap-2 text-xs font-medium">
-          <Link href="/connections" className="text-ui-fg-muted hover:text-ui-fg-base transition-colors">
-            ← Back to Connector Hub
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-3">
+    <ModulePage
+      title="Connected apps"
+      description="Connect Microsoft 365, Slack, SAP, Salesforce and other services your workspace uses."
+      actions={
+        <>
           <Button
             variant="secondary"
             size="small"
@@ -207,8 +203,9 @@ export default function OAuthStudioPage() {
             <ArrowPath className="w-4 h-4 mr-1.5" />
             Refresh
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* ── Status Banners ───────────────────────────────── */}
       {error && (
@@ -334,7 +331,7 @@ export default function OAuthStudioPage() {
                     <div className="flex items-center justify-between text-ui-fg-muted">
                       <span>Auth Protocols:</span>
                       <span className="font-mono text-[11px] text-ui-fg-base">
-                        {provider.auth_types?.join(', ')}
+                        {provider.auth_types?.map(codeLabel).join(', ')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-ui-fg-muted">
@@ -410,7 +407,7 @@ export default function OAuthStudioPage() {
                     {conn.slug}
                   </Table.Cell>
                   <Table.Cell>
-                    <Badge color="blue">{conn.auth_type}</Badge>
+                    <Badge color="blue">{codeLabel(conn.auth_type)}</Badge>
                   </Table.Cell>
                   <Table.Cell>
                     <StatusBadge color={conn.status === 'READY' ? 'green' : 'red'}>
@@ -548,6 +545,6 @@ export default function OAuthStudioPage() {
           </div>
         </div>
       )}
-    </div>
+    </ModulePage>
   );
 }

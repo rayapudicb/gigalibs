@@ -167,7 +167,7 @@ spec:
       - route: /cmms/floor
         unavailable:
           title: Shop-floor kiosk is not connected
-          summary: The kiosk view needs device identity and live meter alerts, which arrive with governed meter-to-work automation (CM-04). Technicians use the work-order screen to execute work.
+          summary: The kiosk view needs device identity and live meter alerts, which arrive with automatic work orders from meter readings. Technicians use the work-order screen to execute work.
           availableForTesting:
             - Work-order execution at /cmms/work-orders.
           blockedActions:
@@ -204,7 +204,7 @@ spec:
   catalog:
     - key: asset-maintenance
       name: Asset & Maintenance (CMMS)
-      navigationLabel: EAM Operations Console
+      navigationLabel: Asset maintenance
       area: Physical Operations
       navigationGroup: Workforce & Operations
       route: /cmms
@@ -221,23 +221,25 @@ spec:
       # permission still decides.
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER, CUSTOMER_GUEST]
       menu:
-        - { key: requests, label: Maintenance Requests, path: /cmms/requests, icon: file-text }
-        - { key: work-orders, label: Work Orders, path: /cmms/work-orders, icon: wrench }
-        - { key: spaces, label: CAFM Spaces, path: /cmms/spaces, icon: building }
-        - { key: assets, label: Assets & Twin, path: /cmms/assets, icon: factory }
+        # WI-OI-145: one plain name per screen, the same in the sidebar, the breadcrumb and the page title; Overview
+        # added; the in-page section bar is gone; Floor Kiosk (not connected yet) is off the menu, its page stays.
+        - { key: overview, label: Overview, path: /cmms, icon: gauge }
+        - { key: requests, label: Requests, path: /cmms/requests, icon: file-text }
+        - { key: work-orders, label: Work orders, path: /cmms/work-orders, icon: wrench }
+        - { key: assets, label: Assets, path: /cmms/assets, icon: factory }
+        - { key: spaces, label: Spaces, path: /cmms/spaces, icon: building }
         - { key: classifications, label: Classifications, path: /cmms/classifications, icon: layers }
-        - { key: schedules, label: PM Schedules, path: /cmms/schedules, icon: clock }
-        - { key: inventory, label: MRO Parts, path: /cmms/inventory, icon: boxes }
-        - { key: meters, label: Meters & IoT, path: /cmms/meters, icon: gauge }
+        - { key: schedules, label: Preventive maintenance, path: /cmms/schedules, icon: clock }
+        - { key: inventory, label: Parts, path: /cmms/inventory, icon: boxes }
+        - { key: meters, label: Meters, path: /cmms/meters, icon: gauge }
         - { key: calibration, label: Calibration, path: /cmms/calibration, icon: shield-check, permissions: [cmms.calibration.read] }
         - { key: commissioning, label: Commissioning, path: /cmms/commissioning, icon: map-pin, permissions: [cmms.commissioning.read] }
-        - { key: spares, label: Visual Spares, path: /cmms/spares, icon: layers, permissions: [cmms.bom.read] }
-        - { key: sop, label: Work Instructions, path: /cmms/sop, icon: file-check, permissions: [cmms.sop.read] }
-        - { key: fleet, label: Fleet Readiness, path: /cmms/fleet, icon: gauge, permissions: [cmms.fleet.read] }
-        - { key: request-links, label: QR Request Links, path: /cmms/request-links, icon: scan-line, permissions: [cmms.portal.manage] }
+        - { key: spares, label: Visual spares, path: /cmms/spares, icon: layers, permissions: [cmms.bom.read] }
+        - { key: sop, label: Work instructions, path: /cmms/sop, icon: file-check, permissions: [cmms.sop.read] }
+        - { key: fleet, label: Fleet readiness, path: /cmms/fleet, icon: gauge, permissions: [cmms.fleet.read] }
+        - { key: request-links, label: QR request links, path: /cmms/request-links, icon: scan-line, permissions: [cmms.portal.manage] }
         - { key: permits, label: Permits & LOTO, path: /cmms/permits, icon: lock, permissions: [cmms.permits.read] }
         - { key: analytics, label: Reliability, path: /cmms/analytics, icon: bar-chart, permissions: [cmms.analytics.read, analytics:read] }
-        - { key: floor, label: Floor Kiosk, path: /cmms/floor, icon: radio }
       # WI-OI-120n (owner, 2026-10-06): module roles, copied into a workspace when CMMS is switched on and assigned on
       # Settings -> Team, so maintenance access goes to the people who maintain and not to every Member. Each carries
       # the Workforce and site permissions its job needs, because a person holds one custom role today.

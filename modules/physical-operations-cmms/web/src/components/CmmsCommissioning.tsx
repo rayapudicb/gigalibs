@@ -7,6 +7,7 @@ import {
   type CommissioningRequestV1,
   holdsPermission,
 } from '@gigalibs/contracts';
+import { PageTabs } from '@gigalibs/web-sdk';
 import { Badge, Button, Container, Heading, Input, StatusBadge, Table, Text, Textarea } from '@medusajs/ui';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import type { CmmsApiError } from '../api';
@@ -39,14 +40,7 @@ export function CmmsCommissioning({ permissions = [] }: { permissions?: readonly
   const can = useCallback((permission: string) => holdsPermission(permissions, permission), [permissions]);
   return (
     <div className="flex flex-col gap-4">
-      <nav className="flex gap-2 overflow-x-auto" aria-label="Commissioning views">
-        {TABS.map((item) => (
-          <Button key={item.key} type="button" size="small" variant={tab === item.key ? 'primary' : 'secondary'}
-            aria-pressed={tab === item.key} onClick={() => setTab(item.key)}>
-            {item.label}
-          </Button>
-        ))}
-      </nav>
+      <PageTabs tabs={TABS} value={tab} onChange={setTab} label="Commissioning views" />
       {tab === 'requests' ? <Requests canApprove={can('cmms.commissioning.approve')} /> : null}
       {tab === 'walks' ? <Walks canExecute={can('cmms.audits.execute')} /> : null}
       {tab === 'tags' ? <TagLookup canManage={can('cmms.assets.write')} /> : null}

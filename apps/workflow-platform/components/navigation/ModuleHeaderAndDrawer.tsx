@@ -1,8 +1,10 @@
 'use client';
 
+import { breadcrumbFor } from '@/lib/breadcrumb';
 import { getKnowledgeEntry, type ModuleKnowledgeEntry } from '@/lib/module-knowledge-registry';
 import { ExclamationCircle, InformationCircle, ShieldCheck, XMark } from '@medusajs/icons';
 import { Badge, Button, Heading, Text } from '@medusajs/ui';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -27,30 +29,42 @@ export function ModuleHeaderAndDrawer() {
   }, [isOpen]);
 
   const entry: ModuleKnowledgeEntry = getKnowledgeEntry(pathname);
+  const trail = breadcrumbFor(pathname);
 
   return (
     <>
-      {/* ── Top Header Single-Line Business Title & Info Trigger ── */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex items-center gap-1.5 text-xs text-ui-fg-muted truncate">
-          <span className="font-medium hover:text-ui-fg-subtle transition-colors">
-            {entry.category}
-          </span>
-          <span className="text-ui-fg-muted/60">/</span>
-          <span className="font-semibold text-ui-fg-base text-sm truncate">
-            {entry.businessTitle}
-          </span>
-        </div>
+      {/* WI-OI-145 (S2): the trail Group › Module › Screen from the catalogue and manifest menus, and help as an icon. */}
+      <div className="flex min-w-0 items-center gap-2">
+        <nav aria-label="Breadcrumb" className="min-w-0">
+          <ol className="flex min-w-0 items-center gap-1.5 text-sm">
+            {trail.map((crumb, index) => {
+              const last = index === trail.length - 1;
+              return (
+                <li key={`${crumb.label}-${index}`} className="flex min-w-0 items-center gap-1.5">
+                  {index > 0 ? <span className="text-ui-fg-muted" aria-hidden>›</span> : null}
+                  {crumb.href && !last ? (
+                    <Link href={crumb.href} className="truncate text-ui-fg-subtle transition-colors hover:text-ui-fg-base">
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className={`truncate ${last ? 'font-medium text-ui-fg-base' : 'text-ui-fg-muted'}`} aria-current={last ? 'page' : undefined}>
+                      {crumb.label}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
 
-        {/* Knowledge Hub Info Button */}
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          title="Open Module Knowledge Hub & Action Playbook"
-          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-subtle-hover transition-colors border border-ui-border-base/70 shadow-sm shrink-0"
+          title="Knowledge Hub"
+          aria-label="Open the Knowledge Hub for this page"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ui-fg-muted transition-colors hover:bg-ui-bg-subtle-hover hover:text-ui-fg-base"
         >
-          <InformationCircle className="w-3.5 h-3.5 text-ui-fg-interactive" />
-          <span className="hidden sm:inline">Knowledge Hub</span>
+          <InformationCircle className="h-4 w-4" />
         </button>
       </div>
 

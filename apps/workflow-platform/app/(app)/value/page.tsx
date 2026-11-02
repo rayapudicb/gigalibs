@@ -1,5 +1,6 @@
 'use client';
 
+import { ModulePage } from '@gigalibs/web-sdk';
 import Link from 'next/link';
 import type {
   CursorPage,
@@ -174,13 +175,11 @@ export default function ValueLedgerPage() {
   }
 
   return (
-    <div className="space-y-8 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Action Toolbar ───────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
-        <div className="flex items-center gap-2">
-          <Badge color="green" size="small">AUDITOR PROOF</Badge>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+    <ModulePage
+      title="Business value"
+      description="The savings your automations deliver, from recorded value events."
+      actions={
+        <>
           <Button
             size="small"
             variant="secondary"
@@ -190,13 +189,9 @@ export default function ValueLedgerPage() {
             <ArrowPath className="w-4 h-4 mr-1.5" />
             Refresh
           </Button>
-          <Link href="/recovery">
-            <Button size="small" variant="primary" className="bg-ui-button-inverted text-ui-fg-on-inverted font-semibold whitespace-nowrap">
-              Cash Recovery Studio →
-            </Button>
-          </Link>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* ── Executive Business Outcome KPI Ribbon ─────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -208,7 +203,6 @@ export default function ValueLedgerPage() {
             <Heading level="h2" className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
               {formatMinorAmount(String(Math.round(totalVerifiedNetMinor)), primaryCurrency)}
             </Heading>
-            <Badge color="green" size="small">NET ROI</Badge>
           </div>
           <Text size="xsmall" className="text-ui-fg-muted mt-1">
             After operational cost deductions
@@ -223,7 +217,6 @@ export default function ValueLedgerPage() {
             <Heading level="h2" className="text-2xl font-bold text-ui-fg-base font-mono">
               {formatMinorAmount(String(Math.round(totalGrossBenefitMinor)), primaryCurrency)}
             </Heading>
-            <Badge color="blue" size="small">GROSS</Badge>
           </div>
           <Text size="xsmall" className="text-ui-fg-muted mt-1">
             Across all verified value events
@@ -238,7 +231,6 @@ export default function ValueLedgerPage() {
             <Heading level="h2" className="text-2xl font-bold text-ui-fg-base font-mono">
               {formatMinorAmount(String(Math.round(totalAllocatedCostsMinor)), primaryCurrency)}
             </Heading>
-            <Badge color="grey" size="small">COST DEDUCTION</Badge>
           </div>
           <Text size="xsmall" className="text-ui-fg-muted mt-1">
             Fully absorbed operating overhead
@@ -253,10 +245,9 @@ export default function ValueLedgerPage() {
             <Heading level="h2" className="text-2xl font-bold text-ui-fg-base font-mono">
               {totalEventsCount}
             </Heading>
-            <Badge color="purple" size="small">IMMUTABLE</Badge>
           </div>
           <Text size="xsmall" className="text-ui-fg-muted mt-1">
-            100% cryptographic trace verified
+            Recorded value events
           </Text>
         </Container>
       </div>
@@ -479,7 +470,7 @@ export default function ValueLedgerPage() {
           )}
         </Container>
       </section>
-    </div>
+    </ModulePage>
   );
 }
 

@@ -9,7 +9,8 @@
   "dependencies": {
     "@gigalibs/analytics-charts": "workspace:*",
     "@gigalibs/configuration-react": "workspace:*",
-    "@gigalibs/contracts": "workspace:*"
+    "@gigalibs/contracts": "workspace:*",
+    "@gigalibs/web-sdk": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.2.8"

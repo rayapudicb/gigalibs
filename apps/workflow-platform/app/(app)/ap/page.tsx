@@ -1,5 +1,6 @@
 'use client';
 
+import { codeLabel, ModulePage } from '@gigalibs/web-sdk';
 import type {
   ApDocumentStatus,
   CursorPage,
@@ -123,49 +124,21 @@ export default function AccountsPayablePage() {
   const latestEvaluation = invoiceDetail?.matchEvaluations?.[0];
 
   return (
-    <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Action Toolbar ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
-        <div className="flex items-center gap-2">
-          <Badge color="blue" size="small">Supplier Invoices</Badge>
-          <Text size="small" className="text-ui-fg-subtle">
-            {page.items.length} Invoices Listed
-          </Text>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/spend">
-            <Button variant="primary" size="small" className="bg-ui-button-inverted text-ui-fg-on-inverted font-semibold whitespace-nowrap">
-              Spend Studio →
-            </Button>
-          </Link>
-          <Link href="/actions">
-            <Button variant="secondary" size="small">
-              Approval Work Queue
-            </Button>
-          </Link>
-          <Link href="/scanner">
-            <Button variant="secondary" size="small" className="border border-purple-500/30 text-purple-600 hover:bg-purple-500/10">
-              Scan Invoice (AI / BYOM)
-            </Button>
-          </Link>
-          <Link href="/exceptions">
-            <Button variant="secondary" size="small">
-              Exceptions
-            </Button>
-          </Link>
-          <Button
-            variant="secondary"
-            size="small"
-            onClick={() => void load()}
-            disabled={loading}
-            isLoading={loading}
-          >
+    <ModulePage
+      title="Invoice matching"
+      description={`${page.items.length} invoices. Supplier invoices matched to their order and receipt before payment.`}
+      actions={
+        <>
+          <Button variant="secondary" size="small" asChild>
+            <Link href="/actions">Invoice approvals</Link>
+          </Button>
+          <Button variant="secondary" size="small" onClick={() => void load()} disabled={loading} isLoading={loading}>
             <ArrowPath className="w-4 h-4 mr-1.5" />
             Refresh
           </Button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {/* ── Status Filter Pills ─────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
         {FILTERS.map((item) => (
@@ -179,7 +152,7 @@ export default function AccountsPayablePage() {
                 : 'bg-ui-bg-base text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover border border-ui-border-base'
             }`}
           >
-            {item.toLowerCase().replaceAll('_', ' ')}
+            {codeLabel(item)}
           </button>
         ))}
       </div>
@@ -510,6 +483,6 @@ export default function AccountsPayablePage() {
           ) : null}
         </Container>
       )}
-    </div>
+    </ModulePage>
   );
 }

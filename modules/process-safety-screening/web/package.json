@@ -17,6 +17,7 @@
     "@gigalibs/i18n": "workspace:*",
     "@gigalibs/process-safety-engines": "workspace:*",
     "@gigalibs/process-safety-screening-domain": "workspace:*",
+    "@gigalibs/web-sdk": "workspace:*",
     "exceljs": "4.4.0"
   },
   "peerDependencies": {

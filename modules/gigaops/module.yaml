@@ -80,7 +80,7 @@ spec:
   catalog:
     - key: gigaops
       name: GigaOps Universal Workforce
-      navigationLabel: Universal Workforce & Payroll
+      navigationLabel: Workforce
       area: Workforce
       navigationGroup: Workforce & Operations
       route: /gigaops
@@ -95,17 +95,18 @@ spec:
       navigationOrder: 230
       personas: [OPERATIONS_SUPERVISOR, WORKFORCE_MEMBER]
       menu:
-        - { key: overview, label: Operations Overview, path: /gigaops, icon: gauge }
-        - { key: resources, label: Resource Directory, path: /gigaops/resources, icon: check-circle }
-        - { key: jobs, label: Jobs & Positions, path: /gigaops/jobs, icon: layers }
-        - { key: capabilities, label: Skills & Qualifications, path: /gigaops/capabilities, icon: shield-check }
+        # WI-OI-145: one sentence-case name per screen, the same as its page title; the in-page bar is gone.
+        - { key: overview, label: Overview, path: /gigaops, icon: gauge }
+        - { key: resources, label: People, path: /gigaops/resources, icon: check-circle }
+        - { key: jobs, label: Jobs & positions, path: /gigaops/jobs, icon: layers }
+        - { key: capabilities, label: Skills & qualifications, path: /gigaops/capabilities, icon: shield-check }
         - { key: availability, label: Availability, path: /gigaops/availability, icon: calendar }
         - { key: bookings, label: Bookings, path: /gigaops/bookings, icon: layers }
-        - { key: scheduling, label: Scheduling & Dispatch, path: /gigaops/scheduling, icon: calendar }
-        - { key: time, label: Time & Attendance, path: /gigaops/time, icon: clock }
-        - { key: pay, label: Pay-ready Outputs, path: /gigaops/pay, icon: coins }
-        - { key: logbook, label: Shift Logbook, path: /gigaops/logbook, icon: file-text, permissions: [workforce.logbook.read] }
-        - { key: analytics, label: Analytics & Trends, path: /gigaops/analytics, icon: bar-chart, permissions: [workforce.positions.read, analytics:read] }
+        - { key: scheduling, label: Scheduling & dispatch, path: /gigaops/scheduling, icon: calendar }
+        - { key: time, label: Time & attendance, path: /gigaops/time, icon: clock }
+        - { key: pay, label: Pay-ready outputs, path: /gigaops/pay, icon: coins }
+        - { key: logbook, label: Shift logbook, path: /gigaops/logbook, icon: file-text, permissions: [workforce.logbook.read] }
+        - { key: analytics, label: Analytics & trends, path: /gigaops/analytics, icon: bar-chart, permissions: [workforce.positions.read, analytics:read] }
       # WI-OI-120n (owner, 2026-10-06): Workforce roles for people outside maintenance, copied into a workspace when
       # Workforce is switched on and assigned on Settings -> Team.
       roles:

@@ -230,7 +230,7 @@ test.describe('Operator Rounds UAT API and admin journey', () => {
       const pageErrors: string[] = [];
       supervisor.page.on('pageerror', (error) => pageErrors.push(error.message));
       await supervisor.page.goto(`${base}/operator-rounds`);
-      await expect(supervisor.page.getByRole('heading', { name: 'Operator inspection rounds' })).toBeVisible();
+      await expect(supervisor.page.getByRole('heading', { name: 'Routes', level: 1 })).toBeVisible();
       expect(pageErrors).toEqual([]);
     } finally {
       await Promise.all(contexts.map((context) => context.close()));

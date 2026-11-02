@@ -4,5 +4,5 @@ import { UniversalOrderWorkspace } from '@gigalibs/universal-orders-web';
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <UniversalOrderWorkspace permissions={session.context?.permissions ?? []} />;
+  return <UniversalOrderWorkspace section={"quotes"} permissions={session.context?.permissions ?? []} />;
 }

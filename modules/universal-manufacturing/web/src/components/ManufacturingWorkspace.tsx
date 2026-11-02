@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Container, FocusModal, Heading, Input, StatusBadge, Table, Text } from '@medusajs/ui';
-import Link from 'next/link';
+import { ModulePage } from '@gigalibs/web-sdk';
 import { useCallback, useEffect, useState } from 'react';
 import { manufacturingApi } from '../api.js';
 
@@ -14,12 +14,13 @@ type OrderDetail = {
     issued_quantity: string; reservation_id: string | null }>;
 };
 
-const NAV: ReadonlyArray<{ key: ManufacturingSection; label: string; href: string }> = [
-  { key: 'home', label: 'Overview', href: '/universal-manufacturing' },
-  { key: 'boms', label: 'BOMs', href: '/universal-manufacturing/boms' },
-  { key: 'production', label: 'Production', href: '/universal-manufacturing/production' },
-  { key: 'mrp', label: 'MRP preview', href: '/universal-manufacturing/mrp' },
-];
+// WI-OI-145: the sidebar is Manufacturing's only menu; each screen has the shared page header with its sidebar name.
+const SCREENS: Readonly<Record<ManufacturingSection, { readonly title: string; readonly description: string }>> = {
+  home: { title: 'Overview', description: 'Bills of materials and the production orders in progress.' },
+  boms: { title: 'BOMs', description: 'What each product is made of, and the shortages for a planned run.' },
+  production: { title: 'Production', description: 'Production orders from release to completion.' },
+  mrp: { title: 'MRP preview', description: 'What to make and buy to meet demand, before anything is ordered.' },
+};
 
 export function ManufacturingWorkspace({ section }: { section: ManufacturingSection }) {
   const [error, setError] = useState<string | null>(null);
@@ -244,21 +245,7 @@ export function ManufacturingWorkspace({ section }: { section: ManufacturingSect
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Heading level="h1">Manufacturing &amp; MRP</Heading>
-        <nav className="flex flex-wrap gap-2">
-          {NAV.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={`rounded px-3 py-1 text-xs ${section === item.key ? 'bg-ui-bg-highlight font-semibold' : 'text-ui-fg-subtle hover:text-ui-fg-base'}`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
+    <ModulePage title={SCREENS[section].title} description={SCREENS[section].description}>
       {error ? (
         <Container className="border border-ui-border-error bg-ui-bg-subtle p-3">
           <Text size="small" className="text-ui-fg-error">
@@ -495,6 +482,6 @@ export function ManufacturingWorkspace({ section }: { section: ManufacturingSect
           ) : null}
         </Container>
       )}
-    </div>
+    </ModulePage>
   );
 }

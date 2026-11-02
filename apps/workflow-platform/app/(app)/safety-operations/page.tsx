@@ -4,5 +4,5 @@ import { SafetyWorkspace } from '@gigalibs/safety-operations-web';
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <SafetyWorkspace permissions={session.context?.permissions ?? []} />;
+  return <SafetyWorkspace section={"stop-work"} permissions={session.context?.permissions ?? []} />;
 }

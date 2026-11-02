@@ -43,7 +43,7 @@ spec:
   catalog:
     - key: geospatial-studio
       name: Geospatial Studio
-      navigationLabel: Geospatial & OSM Studio
+      navigationLabel: Places & maps
       area: Location
       navigationGroup: Workforce & Operations
       route: /maps

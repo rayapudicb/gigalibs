@@ -33,9 +33,56 @@ spec:
     basePath: /inventory
     package: '@gigalibs/universal-inventory-web'
     pages:
+      # WI-OI-145: one sidebar entry and one route per screen.
       - route: /inventory
         component: UniversalInventoryWorkspace
-        # WI-OI-120e (U3.2): the dictionary renderer gets the signed-in user's permissions.
+        props:
+          section: warehouses
+        sessionPermissions: true
+      - route: /inventory/items
+        component: UniversalInventoryWorkspace
+        props:
+          section: items
+        sessionPermissions: true
+      - route: /inventory/lots
+        component: UniversalInventoryWorkspace
+        props:
+          section: lots
+        sessionPermissions: true
+      - route: /inventory/receipts
+        component: UniversalInventoryWorkspace
+        props:
+          section: receipts
+        sessionPermissions: true
+      - route: /inventory/stock
+        component: UniversalInventoryWorkspace
+        props:
+          section: stock
+        sessionPermissions: true
+      - route: /inventory/reservations
+        component: UniversalInventoryWorkspace
+        props:
+          section: reservations
+        sessionPermissions: true
+      - route: /inventory/transfers
+        component: UniversalInventoryWorkspace
+        props:
+          section: transfers
+        sessionPermissions: true
+      - route: /inventory/replenishment
+        component: UniversalInventoryWorkspace
+        props:
+          section: replenishment
+        sessionPermissions: true
+      - route: /inventory/availability
+        component: UniversalInventoryWorkspace
+        props:
+          section: availability
+        sessionPermissions: true
+      - route: /inventory/valuation
+        component: UniversalInventoryWorkspace
+        props:
+          section: valuation
         sessionPermissions: true
   conformance:
     collection: v1/records/inventory.warehouses
@@ -102,7 +149,7 @@ spec:
   catalog:
     - key: universal-inventory
       name: Universal Inventory & Warehouses
-      navigationLabel: Inventory & Warehouses
+      navigationLabel: Inventory
       area: Workforce & Operations
       navigationGroup: Workforce & Operations
       route: /inventory
@@ -116,6 +163,47 @@ spec:
       reason: Material Ledger parity (WI-OI-124) extends the WI-OI-091 inventory boundary; remains PLANNED until live module conformance and independent review are recorded.
       navigationOrder: 126
       personas: [OPERATIONS_SUPERVISOR]
+      menu:
+        - key: warehouses
+          label: Warehouses
+          path: /inventory
+          icon: building
+        - key: items
+          label: Items
+          path: /inventory/items
+          icon: boxes
+        - key: lots
+          label: Lots
+          path: /inventory/lots
+          icon: layers
+        - key: receipts
+          label: Receipts
+          path: /inventory/receipts
+          icon: inbox
+        - key: stock
+          label: Stock
+          path: /inventory/stock
+          icon: database
+        - key: reservations
+          label: Reservations
+          path: /inventory/reservations
+          icon: lock
+        - key: transfers
+          label: Transfers
+          path: /inventory/transfers
+          icon: arrow-left-right
+        - key: replenishment
+          label: Replenishment
+          path: /inventory/replenishment
+          icon: gauge
+        - key: availability
+          label: Availability
+          path: /inventory/availability
+          icon: check-circle
+        - key: valuation
+          label: Valuation
+          path: /inventory/valuation
+          icon: coins
       roles:
         - key: inventory-operator
           name: Inventory Operator

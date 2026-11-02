@@ -31,9 +31,46 @@ spec:
     basePath: /products
     package: '@gigalibs/product-catalogue-web'
     pages:
+      # WI-OI-145: one sidebar entry and one route per screen.
       - route: /products
         component: ProductCatalogueWorkspace
-        # WI-OI-120e (U3.2): the dictionary renderer gets the signed-in user's permissions.
+        props:
+          section: products
+        sessionPermissions: true
+      - route: /products/categories
+        component: ProductCatalogueWorkspace
+        props:
+          section: categories
+        sessionPermissions: true
+      - route: /products/attributes
+        component: ProductCatalogueWorkspace
+        props:
+          section: attributes
+        sessionPermissions: true
+      - route: /products/units
+        component: ProductCatalogueWorkspace
+        props:
+          section: units
+        sessionPermissions: true
+      - route: /products/catalogues
+        component: ProductCatalogueWorkspace
+        props:
+          section: catalogues
+        sessionPermissions: true
+      - route: /products/price-lists
+        component: ProductCatalogueWorkspace
+        props:
+          section: price-lists
+        sessionPermissions: true
+      - route: /products/price-resolver
+        component: ProductCatalogueWorkspace
+        props:
+          section: price-resolver
+        sessionPermissions: true
+      - route: /products/import-export
+        component: ProductCatalogueWorkspace
+        props:
+          section: import-export
         sessionPermissions: true
   api:
     application: apps/api
@@ -74,7 +111,7 @@ spec:
   catalog:
     - key: product-catalogue
       name: Product & Catalogue Studio
-      navigationLabel: Products & Catalogues
+      navigationLabel: Products
       area: Commercial Operations
       navigationGroup: Workforce & Operations
       route: /products
@@ -88,6 +125,39 @@ spec:
       reason: The module boundary is implemented under WI-OI-112 and remains PLANNED until live module conformance and independent review are recorded.
       navigationOrder: 125
       personas: [OPERATIONS_SUPERVISOR]
+      menu:
+        - key: products
+          label: Products
+          path: /products
+          icon: boxes
+        - key: categories
+          label: Categories
+          path: /products/categories
+          icon: layers
+        - key: attributes
+          label: Attributes
+          path: /products/attributes
+          icon: database
+        - key: units
+          label: Units
+          path: /products/units
+          icon: scale
+        - key: catalogues
+          label: Catalogues
+          path: /products/catalogues
+          icon: file-text
+        - key: price-lists
+          label: Price lists
+          path: /products/price-lists
+          icon: coins
+        - key: price-resolver
+          label: Price resolver
+          path: /products/price-resolver
+          icon: check-circle
+        - key: import-export
+          label: Import & export
+          path: /products/import-export
+          icon: arrow-left-right
       roles:
         - key: product-catalogue-manager
           name: Product Catalogue Manager

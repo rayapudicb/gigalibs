@@ -43,7 +43,7 @@ spec:
           entityKey: partners
           surfaceKey: partners
           basePath: /api/business-partners
-          title: Universal Business Partner
+          title: Business partners
           description: Partners, accounts and credit. Partners are created in the platform's party records.
   api:
     application: apps/api
@@ -70,7 +70,7 @@ spec:
   catalog:
     - key: business-partners
       name: Universal Business Partner
-      navigationLabel: Universal Business Partner
+      navigationLabel: Business partners
       area: Universal Business Partner
       navigationGroup: Financial Operations
       route: /business-partners

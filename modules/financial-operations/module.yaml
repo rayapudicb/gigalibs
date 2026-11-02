@@ -47,10 +47,31 @@ spec:
     basePath: /finance
     package: '@gigalibs/financial-operations-web'
     pages:
-      # WI-OI-120l (U12): the general ledger on metadata windows (the mock-up was taken down in WI-OI-120g).
+      # WI-OI-145: one sidebar entry and one route per screen.
       - route: /finance
         component: FinancialOperationsWorkspace
-        # WI-OI-120e (U3.2): the dictionary renderer gets the signed-in user's permissions.
+        props:
+          section: journal-entries
+        sessionPermissions: true
+      - route: /finance/accounts
+        component: FinancialOperationsWorkspace
+        props:
+          section: accounts
+        sessionPermissions: true
+      - route: /finance/periods
+        component: FinancialOperationsWorkspace
+        props:
+          section: periods
+        sessionPermissions: true
+      - route: /finance/books
+        component: FinancialOperationsWorkspace
+        props:
+          section: books
+        sessionPermissions: true
+      - route: /finance/reports
+        component: FinancialOperationsWorkspace
+        props:
+          section: reports
         sessionPermissions: true
   api:
     application: apps/api
@@ -115,7 +136,7 @@ spec:
   catalog:
     - key: financial-operations
       name: Financial Operations & General Ledger
-      navigationLabel: General Ledger & Finance
+      navigationLabel: General ledger
       area: Financial Operations
       navigationGroup: Financial Operations
       route: /finance
@@ -129,6 +150,27 @@ spec:
       reason: The module boundary is implemented under WI-OI-094 and remains PLANNED until live module conformance and independent review are recorded.
       navigationOrder: 132
       personas: [OPERATIONS_SUPERVISOR]
+      menu:
+        - key: journal-entries
+          label: Journal entries
+          path: /finance
+          icon: file-text
+        - key: accounts
+          label: Chart of accounts
+          path: /finance/accounts
+          icon: layers
+        - key: periods
+          label: Periods
+          path: /finance/periods
+          icon: calendar
+        - key: books
+          label: Books
+          path: /finance/books
+          icon: database
+        - key: reports
+          label: Reports
+          path: /finance/reports
+          icon: bar-chart
       roles:
         - key: chief-accountant
           name: Chief Accountant

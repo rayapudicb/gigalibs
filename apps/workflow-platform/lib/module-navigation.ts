@@ -3,11 +3,42 @@ import {
   generatedModulePersonas,
 } from '@/lib/generated/module-navigation';
 import { moduleIcons } from '@/lib/module-icons';
-import { type PlatformContextPersona, platformModuleCatalog } from '@gigalibs/contracts';
+import { type PlatformContextPersona, type PlatformModuleArea, platformModuleCatalog } from '@gigalibs/contracts';
 import type { LucideIcon } from 'lucide-react';
 
 // WI-OI-083c: sidebar sub-menus and persona lenses come from `menu` and `personas` of each catalogue entry's
 // manifest; the shell holds no per-module navigation.
+
+/** Daily sidebar and Home group order. `Settings` entries appear in the Settings sidebar instead (WI-OI-145). */
+export const dailyGroupOrder: readonly PlatformModuleArea[] = [
+  'Studio & Build',
+  'Automate & Run',
+  'Workforce & Operations',
+  'Financial Operations',
+  'Intelligence',
+  'Data & Documents',
+  'Platform',
+];
+
+export const groupLabels: Readonly<Record<PlatformModuleArea, string>> = {
+  'Studio & Build': 'Studio & Build',
+  'Automate & Run': 'Automate & Run',
+  'Workforce & Operations': 'Operations',
+  'Financial Operations': 'Finance',
+  Intelligence: 'Intelligence',
+  'Data & Documents': 'Data & Documents',
+  Platform: 'Platform',
+  Settings: 'Settings',
+};
+
+/**
+ * Entries shown nowhere: Solution Packs is intentionally disabled (WI-OI-013); WI-OI-145 corrects the key, which was
+ * the route segment `solutions` and so never hid it. Modules & plan only redirects to Settings, Plan & entitlements.
+ */
+export const hiddenModuleKeys: ReadonlySet<string> = new Set(['solution-packs', 'module-marketplace']);
+
+/** Entries left out of the daily sidebar and Home: the profile is in the avatar menu and the Settings sidebar. */
+export const dailyHiddenModuleKeys: ReadonlySet<string> = new Set([...hiddenModuleKeys, 'personal-security']);
 
 export interface ModuleMenuItem {
   readonly key: string;

@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React from 'react';
+import { EmptyState, ModulePage } from '@gigalibs/web-sdk';
 import type { VerifiedSession } from '@/lib/verified-session';
 import { TenantAccessManager } from './TenantAccessManager';
 import { PeopleAdministration } from './PeopleAdministration';
@@ -14,165 +13,56 @@ import { OrganizationAdministration } from '@/components/organization/Organizati
 import { TenantSpatialScopeManager } from './TenantSpatialScopeManager';
 import { hasPermission } from '@/lib/module-access';
 
+/** The Settings screens; each is its own route in the Settings sidebar (WI-OI-145). */
+export type SettingsSection = 'team' | 'people' | 'organization' | 'plan' | 'general' | 'security';
+
+export const SETTINGS_SECTIONS: Readonly<Record<SettingsSection, { readonly title: string; readonly description: string }>> = {
+  team: { title: 'Team & access', description: 'Invite members, give them roles and create custom roles for your workspace.' },
+  people: { title: 'People', description: 'Invitations and off-boarding for the units you administer.' },
+  organization: {
+    title: 'Organization & hierarchy',
+    description: 'Your units, sites and who belongs where; access follows this structure.',
+  },
+  plan: { title: 'Plan & entitlements', description: 'The modules your workspace has and what each allows.' },
+  general: { title: 'General & localization', description: 'Language, time zone, formats and your workspace fields.' },
+  security: { title: 'Security & SSO', description: 'Sign-in rules, single sign-on and sessions.' },
+};
+
 interface TenantSettingsViewProps {
   session: VerifiedSession;
   tenantId: string;
   canUpdateConfiguredValues: boolean;
   /** The server's UAT preview setting; a client component cannot read it from process.env. */
   uatPreview?: boolean;
+  /** The screen this route shows (WI-OI-145: routes replace the former ?tab= tabs). */
+  section: SettingsSection;
 }
-
-type SettingsTab = 'team' | 'people' | 'hierarchy' | 'plan' | 'general' | 'security';
 
 export function TenantSettingsView({
   session,
   tenantId,
   canUpdateConfiguredValues,
   uatPreview = false,
+  section,
 }: TenantSettingsViewProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const activeTab = section;
   const geospatialEntitled = !!session.tenant?.entitlements.some(
     (entitlement) => entitlement.moduleKey === 'geospatial-studio' && entitlement.status === 'ENABLED',
   );
-  const initialTab = (searchParams.get('tab') as SettingsTab) || 'team';
-  const validTabs: SettingsTab[] = ['team', 'people', 'hierarchy', 'plan', 'general', 'security'];
-  const [activeTab, setActiveTab] = useState<SettingsTab>(
-    validTabs.includes(initialTab) ? initialTab : 'team'
-  );
-
-  useEffect(() => {
-    const tabParam = searchParams.get('tab') as SettingsTab;
-    if (tabParam && validTabs.includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams]);
-
-  const handleTabChange = (tab: SettingsTab) => {
-    setActiveTab(tab);
-    router.replace(`/settings?tab=${tab}`, { scroll: false });
-  };
-  const hasPlatformAuthority = session.platformRoles.length > 0;
   // WI-OI-120x: a workspace administrator may change their own access; anyone else asks one.
   const isWorkspaceAdministrator = session.roles.some((role) => role === 'TENANT_ADMIN' || role === 'SUPER_ADMIN');
   const tenantName = session.tenant?.name ?? 'Current workspace';
-  // WI-OI-120p (S17): the People tab is for delegated people administration — a head who can manage or read invites
-  // into their units, or an administrator who can off-board. Tenant Admins reach the same endpoints through their
-  // wildcard permissions, so the tab also shows for them.
+  // WI-OI-120p (S17): People is for delegated people administration — a head who can manage or read invites into their
+  // units, or an administrator who can off-board. Tenant Admins reach the same endpoints through their wildcard
+  // permissions, so it also opens for them.
   const canSeePeople =
     hasPermission(session.permissions, 'people:manage') ||
     hasPermission(session.permissions, 'people:read') ||
     hasPermission(session.permissions, 'users:update');
+  const { title, description } = SETTINGS_SECTIONS[section];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Settings Cross-Navigation Bar */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-ui-border-base pb-3 text-xs font-semibold">
-        <Link
-          href="/settings"
-          className="flex items-center gap-1.5 rounded-lg bg-ui-bg-subtle px-3 py-1.5 text-ui-fg-base border border-ui-border-base font-bold"
-        >
-          🏢 Workspace Settings
-        </Link>
-        <Link
-          href="/settings/profile"
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-ui-fg-muted hover:bg-ui-bg-subtle hover:text-ui-fg-base transition"
-        >
-          👤 My Profile & Security
-        </Link>
-        {/* WI-OI-120 (T11b): the guided set-up wizard for a new workspace. */}
-        <Link
-          href="/setup"
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-ui-fg-muted hover:bg-ui-bg-subtle hover:text-ui-fg-base transition"
-        >
-          🚀 Set-up guide
-        </Link>
-        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-          Tenant: {tenantName}
-        </span>
-        {hasPlatformAuthority && (
-          <Link
-            href="/platform-admin"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-amber-800 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition ml-auto"
-          >
-            ★ Platform Control Tower →
-          </Link>
-        )}
-      </div>
-
-      {/* Primary Section Tabs */}
-      <div className="border-b border-ui-border-base flex flex-wrap gap-4 text-sm font-medium">
-        <button
-          type="button"
-          onClick={() => handleTabChange('team')}
-          className={`pb-2.5 transition-colors cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'team'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          <span>👥</span> Team & Access
-        </button>
-        {canSeePeople && (
-          <button
-            type="button"
-            onClick={() => handleTabChange('people')}
-            className={`pb-2.5 transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'people'
-                ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-                : 'text-ui-fg-muted hover:text-ui-fg-base'
-            }`}
-          >
-            <span>🧑‍🤝‍🧑</span> People
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => handleTabChange('hierarchy')}
-          className={`pb-2.5 transition-colors cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'hierarchy'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          <span>🏢</span> Organization
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTabChange('plan')}
-          className={`pb-2.5 transition-colors cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'plan'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          <span>💳</span> Plan & Entitlements
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTabChange('general')}
-          className={`pb-2.5 transition-colors cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'general'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          <span>⚙️</span> General & Localization
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTabChange('security')}
-          className={`pb-2.5 transition-colors cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'security'
-              ? 'border-b-2 border-ui-fg-base text-ui-fg-base font-semibold'
-              : 'text-ui-fg-muted hover:text-ui-fg-base'
-          }`}
-        >
-          <span>🔐</span> Security & SSO
-        </button>
-      </div>
-
-      {/* Tab Panels */}
+    <ModulePage title={title} description={description}>
       <div>
         {activeTab === 'team' && (
           <TenantAccessManager
@@ -184,11 +74,18 @@ export function TenantSettingsView({
           />
         )}
 
-        {activeTab === 'people' && canSeePeople && (
-          <PeopleAdministration permissions={session.permissions} />
-        )}
+        {activeTab === 'people' ? (
+          canSeePeople ? (
+            <PeopleAdministration permissions={session.permissions} />
+          ) : (
+            <EmptyState
+              title="People is not open to you"
+              description="Ask your workspace administrator for people administration in your units."
+            />
+          )
+        ) : null}
 
-        {activeTab === 'hierarchy' && (
+        {activeTab === 'organization' && (
           <div className="space-y-6">
             <OrganizationAdministration grantedPermissions={session.permissions} userId={session.user.id} isAdministrator={isWorkspaceAdministrator} />
             {/* WI-OI-109d: departments stay reachable until the 109e bridge turns them into units and grants;
@@ -240,6 +137,6 @@ export function TenantSettingsView({
           />
         )}
       </div>
-    </div>
+    </ModulePage>
   );
 }

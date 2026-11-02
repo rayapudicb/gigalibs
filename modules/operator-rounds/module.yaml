@@ -30,8 +30,26 @@ spec:
     basePath: /operator-rounds
     package: '@gigalibs/operator-rounds-web'
     pages:
+      # WI-OI-145: one sidebar entry and one route per screen.
       - route: /operator-rounds
         component: RoundsWorkspace
+        props:
+          section: routes
+        sessionPermissions: true
+      - route: /operator-rounds/board
+        component: RoundsWorkspace
+        props:
+          section: board
+        sessionPermissions: true
+      - route: /operator-rounds/exceptions
+        component: RoundsWorkspace
+        props:
+          section: exceptions
+        sessionPermissions: true
+      - route: /operator-rounds/skips
+        component: RoundsWorkspace
+        props:
+          section: skips
         sessionPermissions: true
   api:
     application: apps/api
@@ -93,7 +111,7 @@ spec:
   catalog:
     - key: operator-rounds
       name: Operator Inspection Rounds
-      navigationLabel: Operator Inspection Rounds
+      navigationLabel: Inspection rounds
       area: Operator Inspection Rounds
       navigationGroup: Workforce & Operations
       route: /operator-rounds
@@ -107,6 +125,27 @@ spec:
       reason: WI-OI-133 Built in source; raise to REVIEW after `pnpm module:conformance operator-rounds --live --record` on a rebuilt module-host with `.env.test.module.operator-rounds`.
       navigationOrder: 370
       personas: [OPERATIONS_SUPERVISOR]
+      menu:
+        - key: routes
+          label: Routes
+          path: /operator-rounds
+          icon: workflow
+          permissions: [operator-rounds.routes.read]
+        - key: board
+          label: Live board
+          path: /operator-rounds/board
+          icon: gauge
+          permissions: [operator-rounds.board.read]
+        - key: exceptions
+          label: Exceptions
+          path: /operator-rounds/exceptions
+          icon: shield-alert
+          permissions: [operator-rounds.exceptions.read]
+        - key: skips
+          label: Skip approvals
+          path: /operator-rounds/skips
+          icon: check-circle
+          permissions: [operator-rounds.skips.approve]
       roles:
         - key: rounds-operator
           name: Rounds Operator

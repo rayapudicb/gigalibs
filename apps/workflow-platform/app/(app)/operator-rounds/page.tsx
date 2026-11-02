@@ -4,5 +4,5 @@ import { RoundsWorkspace } from '@gigalibs/operator-rounds-web';
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <RoundsWorkspace permissions={session.context?.permissions ?? []} />;
+  return <RoundsWorkspace section={"routes"} permissions={session.context?.permissions ?? []} />;
 }

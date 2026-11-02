@@ -126,7 +126,7 @@ export function CentralModuleAnalyticsPanel() {
             Module analytics
           </Heading>
           <Text className="text-xs text-ui-fg-muted">
-            Sources listed here passed server-side entitlement and permission checks (`GET /v1/module-sources`).
+            The modules whose data you may analyse. Choose one to build a trend.
           </Text>
         </div>
         <div className="flex items-center gap-2">

@@ -16,6 +16,7 @@ import {
 import { Badge, Button, Container, Heading, StatusBadge, Table, Text } from '@medusajs/ui';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { ModulePage } from '@gigalibs/web-sdk';
 import { type CmmsApiError, cmmsApi } from '../api';
 import { CmmsAssets } from './CmmsAssets';
 import { CmmsCalibration } from './CmmsCalibration';
@@ -77,7 +78,7 @@ const SECTIONS: ReadonlyArray<{
   },
   {
     key: 'spaces',
-    label: 'Spatial topology',
+    label: 'Spaces',
     href: '/cmms/spaces',
     description: 'CAFM spatial hierarchy (Sites, Buildings, Floors, Rooms) with CAD/BIM containment.',
   },
@@ -137,7 +138,7 @@ const SECTIONS: ReadonlyArray<{
   },
   {
     key: 'inventory',
-    label: 'Parts & stock',
+    label: 'Parts',
     href: '/cmms/inventory',
     description: 'Spare parts and the stock ledger.',
   },
@@ -162,47 +163,26 @@ const SECTIONS: ReadonlyArray<{
  */
 export function CmmsWorkspace({ section, permissions = [] }: { section: CmmsSection; permissions?: readonly string[] }) {
   const meta = SECTIONS.find((item) => item.key === section)!;
+  // WI-OI-145: the sidebar is CMMS's only menu; each screen has the shared page header with its sidebar name.
   return (
-    <section
-      className="min-h-full bg-ui-bg-subtle px-[5px] py-5 text-ui-fg-base"
-      aria-labelledby="cmms-title"
-    >
-      <div className="mx-auto w-full max-w-[1800px] space-y-5">
-        <Container className="p-3">
-          <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="Maintenance sections">
-            {SECTIONS.map((item) => (
-              <Button
-                key={item.key}
-                asChild
-                size="small"
-                variant={item.key === section ? 'primary' : 'secondary'}
-                className="whitespace-nowrap"
-              >
-                <Link href={item.href} aria-current={item.key === section ? 'page' : undefined}>
-                  {item.label}
-                </Link>
-              </Button>
-            ))}
-          </nav>
-        </Container>
-        {section === 'overview' ? <Overview /> : null}
-        {section === 'work-orders' ? <CmmsWorkOrders /> : null}
-        {section === 'assets' ? <CmmsAssets /> : null}
-        {section === 'spaces' ? <CmmsSpaceExplorer /> : null}
-        {section === 'schedules' ? <CmmsSchedules /> : null}
-        {section === 'meters' ? <CmmsMeters /> : null}
-        {section === 'calibration' ? <CmmsCalibration permissions={permissions} /> : null}
-        {section === 'commissioning' ? <CmmsCommissioning permissions={permissions} /> : null}
-        {section === 'spares' ? <CmmsSpares permissions={permissions} /> : null}
-        {section === 'sop' ? <CmmsSop permissions={permissions} /> : null}
-        {section === 'fleet' ? <CmmsFleet permissions={permissions} /> : null}
-        {section === 'request-links' ? <CmmsRequestLinks /> : null}
-        {section === 'permits' ? <CmmsPermits permissions={permissions} /> : null}
-        {section === 'inventory' ? <CmmsParts /> : null}
-        {section === 'requests' ? <CmmsWindow surface="cmms-requests" permissions={permissions} /> : null}
-        {section === 'classifications' ? <CmmsWindow surface="cmms-classifications" permissions={permissions} /> : null}
-      </div>
-    </section>
+    <ModulePage title={meta.label} description={meta.description}>
+      {section === 'overview' ? <Overview /> : null}
+      {section === 'work-orders' ? <CmmsWorkOrders /> : null}
+      {section === 'assets' ? <CmmsAssets /> : null}
+      {section === 'spaces' ? <CmmsSpaceExplorer /> : null}
+      {section === 'schedules' ? <CmmsSchedules /> : null}
+      {section === 'meters' ? <CmmsMeters /> : null}
+      {section === 'calibration' ? <CmmsCalibration permissions={permissions} /> : null}
+      {section === 'commissioning' ? <CmmsCommissioning permissions={permissions} /> : null}
+      {section === 'spares' ? <CmmsSpares permissions={permissions} /> : null}
+      {section === 'sop' ? <CmmsSop permissions={permissions} /> : null}
+      {section === 'fleet' ? <CmmsFleet permissions={permissions} /> : null}
+      {section === 'request-links' ? <CmmsRequestLinks /> : null}
+      {section === 'permits' ? <CmmsPermits permissions={permissions} /> : null}
+      {section === 'inventory' ? <CmmsParts /> : null}
+      {section === 'requests' ? <CmmsWindow surface="cmms-requests" permissions={permissions} /> : null}
+      {section === 'classifications' ? <CmmsWindow surface="cmms-classifications" permissions={permissions} /> : null}
+    </ModulePage>
   );
 }
 

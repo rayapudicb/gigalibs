@@ -4,5 +4,5 @@ import { ModuleWindowWorkspace } from '@gigalibs/configuration-react/module-wind
 
 export default async function Page() {
   const session = await verifiedSession(false);
-  return <ModuleWindowWorkspace moduleKey={"business-partners"} entityKey={"partners"} surfaceKey={"partners"} basePath={"/api/business-partners"} title={"Universal Business Partner"} description={"Partners, accounts and credit. Partners are created in the platform's party records."} permissions={session.context?.permissions ?? []} />;
+  return <ModuleWindowWorkspace moduleKey={"business-partners"} entityKey={"partners"} surfaceKey={"partners"} basePath={"/api/business-partners"} title={"Business partners"} description={"Partners, accounts and credit. Partners are created in the platform's party records."} permissions={session.context?.permissions ?? []} />;
 }

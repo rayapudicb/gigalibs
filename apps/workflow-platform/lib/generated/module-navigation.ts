@@ -12,6 +12,300 @@ export interface GeneratedModuleMenuItem {
 }
 
 export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedModuleMenuItem[]>> = {
+  "tenant-access": [
+    {
+      "key": "team",
+      "label": "Team & access",
+      "path": "/settings",
+      "icon": "key-round"
+    },
+    {
+      "key": "people",
+      "label": "People",
+      "path": "/settings/people",
+      "icon": "users"
+    },
+    {
+      "key": "organization",
+      "label": "Organization & hierarchy",
+      "path": "/settings/organization",
+      "icon": "building"
+    },
+    {
+      "key": "plan",
+      "label": "Plan & entitlements",
+      "path": "/settings/plan",
+      "icon": "credit-card"
+    },
+    {
+      "key": "general",
+      "label": "General & localization",
+      "path": "/settings/general",
+      "icon": "globe"
+    },
+    {
+      "key": "security",
+      "label": "Security & SSO",
+      "path": "/settings/security",
+      "icon": "shield-check"
+    }
+  ],
+  "workflow-definitions": [
+    {
+      "key": "workflows",
+      "label": "Workflows",
+      "path": "/workflows",
+      "icon": "zap"
+    },
+    {
+      "key": "templates",
+      "label": "Templates",
+      "path": "/workflows/templates",
+      "icon": "layers"
+    },
+    {
+      "key": "api-keys",
+      "label": "API keys",
+      "path": "/workflows/api-keys",
+      "icon": "key-round"
+    }
+  ],
+  "connections": [
+    {
+      "key": "connections",
+      "label": "Connections",
+      "path": "/connections",
+      "icon": "radio"
+    },
+    {
+      "key": "credentials",
+      "label": "Credentials",
+      "path": "/connections/credentials",
+      "icon": "key-round"
+    }
+  ],
+  "product-catalogue": [
+    {
+      "key": "products",
+      "label": "Products",
+      "path": "/products",
+      "icon": "boxes"
+    },
+    {
+      "key": "categories",
+      "label": "Categories",
+      "path": "/products/categories",
+      "icon": "layers"
+    },
+    {
+      "key": "attributes",
+      "label": "Attributes",
+      "path": "/products/attributes",
+      "icon": "database"
+    },
+    {
+      "key": "units",
+      "label": "Units",
+      "path": "/products/units",
+      "icon": "scale"
+    },
+    {
+      "key": "catalogues",
+      "label": "Catalogues",
+      "path": "/products/catalogues",
+      "icon": "file-text"
+    },
+    {
+      "key": "price-lists",
+      "label": "Price lists",
+      "path": "/products/price-lists",
+      "icon": "coins"
+    },
+    {
+      "key": "price-resolver",
+      "label": "Price resolver",
+      "path": "/products/price-resolver",
+      "icon": "check-circle"
+    },
+    {
+      "key": "import-export",
+      "label": "Import & export",
+      "path": "/products/import-export",
+      "icon": "arrow-left-right"
+    }
+  ],
+  "universal-inventory": [
+    {
+      "key": "warehouses",
+      "label": "Warehouses",
+      "path": "/inventory",
+      "icon": "building"
+    },
+    {
+      "key": "items",
+      "label": "Items",
+      "path": "/inventory/items",
+      "icon": "boxes"
+    },
+    {
+      "key": "lots",
+      "label": "Lots",
+      "path": "/inventory/lots",
+      "icon": "layers"
+    },
+    {
+      "key": "receipts",
+      "label": "Receipts",
+      "path": "/inventory/receipts",
+      "icon": "inbox"
+    },
+    {
+      "key": "stock",
+      "label": "Stock",
+      "path": "/inventory/stock",
+      "icon": "database"
+    },
+    {
+      "key": "reservations",
+      "label": "Reservations",
+      "path": "/inventory/reservations",
+      "icon": "lock"
+    },
+    {
+      "key": "transfers",
+      "label": "Transfers",
+      "path": "/inventory/transfers",
+      "icon": "arrow-left-right"
+    },
+    {
+      "key": "replenishment",
+      "label": "Replenishment",
+      "path": "/inventory/replenishment",
+      "icon": "gauge"
+    },
+    {
+      "key": "availability",
+      "label": "Availability",
+      "path": "/inventory/availability",
+      "icon": "check-circle"
+    },
+    {
+      "key": "valuation",
+      "label": "Valuation",
+      "path": "/inventory/valuation",
+      "icon": "coins"
+    }
+  ],
+  "universal-procurement": [
+    {
+      "key": "requisitions",
+      "label": "Requisitions",
+      "path": "/procurement",
+      "icon": "file-text"
+    },
+    {
+      "key": "purchase-orders",
+      "label": "Purchase orders",
+      "path": "/procurement/purchase-orders",
+      "icon": "shopping-bag"
+    },
+    {
+      "key": "vendor-bills",
+      "label": "Vendor bills",
+      "path": "/procurement/vendor-bills",
+      "icon": "file-check"
+    },
+    {
+      "key": "debit-memos",
+      "label": "Debit memos",
+      "path": "/procurement/debit-memos",
+      "icon": "credit-card"
+    },
+    {
+      "key": "landed-cost",
+      "label": "Landed cost",
+      "path": "/procurement/landed-cost",
+      "icon": "coins"
+    }
+  ],
+  "universal-orders": [
+    {
+      "key": "quotes",
+      "label": "Quotes",
+      "path": "/orders",
+      "icon": "file-text"
+    },
+    {
+      "key": "sales-orders",
+      "label": "Sales orders",
+      "path": "/orders/sales-orders",
+      "icon": "shopping-bag"
+    },
+    {
+      "key": "fulfillment",
+      "label": "Fulfillment",
+      "path": "/orders/fulfillment",
+      "icon": "boxes"
+    },
+    {
+      "key": "invoices",
+      "label": "Invoices",
+      "path": "/orders/invoices",
+      "icon": "file-check"
+    },
+    {
+      "key": "credit-memos",
+      "label": "Credit memos",
+      "path": "/orders/credit-memos",
+      "icon": "credit-card"
+    }
+  ],
+  "financial-operations": [
+    {
+      "key": "journal-entries",
+      "label": "Journal entries",
+      "path": "/finance",
+      "icon": "file-text"
+    },
+    {
+      "key": "accounts",
+      "label": "Chart of accounts",
+      "path": "/finance/accounts",
+      "icon": "layers"
+    },
+    {
+      "key": "periods",
+      "label": "Periods",
+      "path": "/finance/periods",
+      "icon": "calendar"
+    },
+    {
+      "key": "books",
+      "label": "Books",
+      "path": "/finance/books",
+      "icon": "database"
+    },
+    {
+      "key": "reports",
+      "label": "Reports",
+      "path": "/finance/reports",
+      "icon": "bar-chart"
+    }
+  ],
+  "platform-control": [
+    {
+      "key": "overview",
+      "label": "Platform Control Tower",
+      "path": "/platform-admin",
+      "icon": "server"
+    },
+    {
+      "key": "users",
+      "label": "Platform users",
+      "path": "/platform-admin/users",
+      "icon": "users"
+    }
+  ],
   "analytics-studio": [
     {
       "key": "overview",
@@ -52,6 +346,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
   ],
   "iot-gateway": [
     {
+      "key": "overview",
+      "label": "Overview",
+      "path": "/iot",
+      "icon": "gauge"
+    },
+    {
       "key": "devices",
       "label": "Devices",
       "path": "/iot/devices",
@@ -65,7 +365,7 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
     },
     {
       "key": "rules",
-      "label": "Condition Rules",
+      "label": "Rules",
       "path": "/iot/rules",
       "icon": "workflow"
     },
@@ -84,28 +384,34 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
   ],
   "asset-maintenance": [
     {
+      "key": "overview",
+      "label": "Overview",
+      "path": "/cmms",
+      "icon": "gauge"
+    },
+    {
       "key": "requests",
-      "label": "Maintenance Requests",
+      "label": "Requests",
       "path": "/cmms/requests",
       "icon": "file-text"
     },
     {
       "key": "work-orders",
-      "label": "Work Orders",
+      "label": "Work orders",
       "path": "/cmms/work-orders",
       "icon": "wrench"
     },
     {
-      "key": "spaces",
-      "label": "CAFM Spaces",
-      "path": "/cmms/spaces",
-      "icon": "building"
-    },
-    {
       "key": "assets",
-      "label": "Assets & Twin",
+      "label": "Assets",
       "path": "/cmms/assets",
       "icon": "factory"
+    },
+    {
+      "key": "spaces",
+      "label": "Spaces",
+      "path": "/cmms/spaces",
+      "icon": "building"
     },
     {
       "key": "classifications",
@@ -115,19 +421,19 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
     },
     {
       "key": "schedules",
-      "label": "PM Schedules",
+      "label": "Preventive maintenance",
       "path": "/cmms/schedules",
       "icon": "clock"
     },
     {
       "key": "inventory",
-      "label": "MRO Parts",
+      "label": "Parts",
       "path": "/cmms/inventory",
       "icon": "boxes"
     },
     {
       "key": "meters",
-      "label": "Meters & IoT",
+      "label": "Meters",
       "path": "/cmms/meters",
       "icon": "gauge"
     },
@@ -151,7 +457,7 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
     },
     {
       "key": "spares",
-      "label": "Visual Spares",
+      "label": "Visual spares",
       "path": "/cmms/spares",
       "icon": "layers",
       "permissions": [
@@ -160,7 +466,7 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
     },
     {
       "key": "sop",
-      "label": "Work Instructions",
+      "label": "Work instructions",
       "path": "/cmms/sop",
       "icon": "file-check",
       "permissions": [
@@ -169,7 +475,7 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
     },
     {
       "key": "fleet",
-      "label": "Fleet Readiness",
+      "label": "Fleet readiness",
       "path": "/cmms/fleet",
       "icon": "gauge",
       "permissions": [
@@ -178,7 +484,7 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
     },
     {
       "key": "request-links",
-      "label": "QR Request Links",
+      "label": "QR request links",
       "path": "/cmms/request-links",
       "icon": "scan-line",
       "permissions": [
@@ -203,36 +509,30 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
         "cmms.analytics.read",
         "analytics:read"
       ]
-    },
-    {
-      "key": "floor",
-      "label": "Floor Kiosk",
-      "path": "/cmms/floor",
-      "icon": "radio"
     }
   ],
   "gigaops": [
     {
       "key": "overview",
-      "label": "Operations Overview",
+      "label": "Overview",
       "path": "/gigaops",
       "icon": "gauge"
     },
     {
       "key": "resources",
-      "label": "Resource Directory",
+      "label": "People",
       "path": "/gigaops/resources",
       "icon": "check-circle"
     },
     {
       "key": "jobs",
-      "label": "Jobs & Positions",
+      "label": "Jobs & positions",
       "path": "/gigaops/jobs",
       "icon": "layers"
     },
     {
       "key": "capabilities",
-      "label": "Skills & Qualifications",
+      "label": "Skills & qualifications",
       "path": "/gigaops/capabilities",
       "icon": "shield-check"
     },
@@ -250,25 +550,25 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
     },
     {
       "key": "scheduling",
-      "label": "Scheduling & Dispatch",
+      "label": "Scheduling & dispatch",
       "path": "/gigaops/scheduling",
       "icon": "calendar"
     },
     {
       "key": "time",
-      "label": "Time & Attendance",
+      "label": "Time & attendance",
       "path": "/gigaops/time",
       "icon": "clock"
     },
     {
       "key": "pay",
-      "label": "Pay-ready Outputs",
+      "label": "Pay-ready outputs",
       "path": "/gigaops/pay",
       "icon": "coins"
     },
     {
       "key": "logbook",
-      "label": "Shift Logbook",
+      "label": "Shift logbook",
       "path": "/gigaops/logbook",
       "icon": "file-text",
       "permissions": [
@@ -277,7 +577,7 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
     },
     {
       "key": "analytics",
-      "label": "Analytics & Trends",
+      "label": "Analytics & trends",
       "path": "/gigaops/analytics",
       "icon": "bar-chart",
       "permissions": [
@@ -364,6 +664,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
   ],
   "universal-manufacturing": [
     {
+      "key": "overview",
+      "label": "Overview",
+      "path": "/universal-manufacturing",
+      "icon": "gauge"
+    },
+    {
       "key": "boms",
       "label": "BOMs",
       "path": "/universal-manufacturing/boms",
@@ -381,6 +687,88 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "path": "/universal-manufacturing/mrp",
       "icon": "bar-chart"
     }
+  ],
+  "operator-rounds": [
+    {
+      "key": "routes",
+      "label": "Routes",
+      "path": "/operator-rounds",
+      "icon": "workflow",
+      "permissions": [
+        "operator-rounds.routes.read"
+      ]
+    },
+    {
+      "key": "board",
+      "label": "Live board",
+      "path": "/operator-rounds/board",
+      "icon": "gauge",
+      "permissions": [
+        "operator-rounds.board.read"
+      ]
+    },
+    {
+      "key": "exceptions",
+      "label": "Exceptions",
+      "path": "/operator-rounds/exceptions",
+      "icon": "shield-alert",
+      "permissions": [
+        "operator-rounds.exceptions.read"
+      ]
+    },
+    {
+      "key": "skips",
+      "label": "Skip approvals",
+      "path": "/operator-rounds/skips",
+      "icon": "check-circle",
+      "permissions": [
+        "operator-rounds.skips.approve"
+      ]
+    }
+  ],
+  "safety-operations": [
+    {
+      "key": "stop-work",
+      "label": "Stop work",
+      "path": "/safety-operations",
+      "icon": "shield-alert",
+      "permissions": [
+        "safety-operations.hazards.report"
+      ]
+    },
+    {
+      "key": "triage",
+      "label": "Triage",
+      "path": "/safety-operations/triage",
+      "icon": "inbox",
+      "permissions": [
+        "safety-operations.hazards.triage"
+      ]
+    },
+    {
+      "key": "reports",
+      "label": "Reports",
+      "path": "/safety-operations/reports",
+      "icon": "file-text",
+      "permissions": [
+        "safety-operations.hazards.read"
+      ]
+    },
+    {
+      "key": "insights",
+      "label": "Insights",
+      "path": "/safety-operations/insights",
+      "icon": "bar-chart",
+      "permissions": [
+        "safety-operations.hazards.read"
+      ]
+    },
+    {
+      "key": "contractors",
+      "label": "Contractors",
+      "path": "/safety-operations/contractors",
+      "icon": "users"
+    }
   ]
 };
 
@@ -388,27 +776,21 @@ export const generatedModulePersonas: Readonly<Record<string, readonly PlatformC
   "tenant-access": [
     "C_LEVEL"
   ],
-  "workflow-definitions": [
-    "C_LEVEL",
-    "OPERATIONS_SUPERVISOR"
-  ],
-  "execution-runs": [
-    "C_LEVEL",
-    "OPERATIONS_SUPERVISOR"
-  ],
-  "exceptions-recovery": [
-    "OPERATIONS_SUPERVISOR"
-  ],
-  "approval-queue": [
+  "personal-security": [
     "C_LEVEL",
     "OPERATIONS_SUPERVISOR",
-    "WORKFORCE_MEMBER"
+    "WORKFORCE_MEMBER",
+    "CUSTOMER_GUEST"
   ],
   "value-ledger": [
     "C_LEVEL"
   ],
   "invoice-matching": [
     "C_LEVEL"
+  ],
+  "approval-queue": [
+    "C_LEVEL",
+    "OPERATIONS_SUPERVISOR"
   ],
   "accounts-receivable": [
     "C_LEVEL"

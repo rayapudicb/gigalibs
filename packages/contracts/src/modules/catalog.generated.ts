@@ -4,10 +4,10 @@ export const generatedPlatformModuleCatalog = [
   // platform/core.yaml
   {
     key: 'tenant-access',
-    name: 'Tenant & Access Administration',
-    navigationLabel: 'Tenant RBAC & Settings',
-    area: 'Platform',
-    navigationGroup: 'Platform',
+    name: 'Workspace settings',
+    navigationLabel: 'Workspace settings',
+    area: 'Workspace',
+    navigationGroup: 'Settings',
     route: '/settings',
     iconKey: 'settings',
     readiness: 'REVIEW',
@@ -21,10 +21,10 @@ export const generatedPlatformModuleCatalog = [
   // platform/core.yaml
   {
     key: 'personal-security',
-    name: 'Personal Security',
-    navigationLabel: 'Personal Security & Profile',
-    area: 'Platform',
-    navigationGroup: 'Platform',
+    name: 'My profile & security',
+    navigationLabel: 'My profile & security',
+    area: 'Account',
+    navigationGroup: 'Settings',
     route: '/settings/profile',
     iconKey: 'key-round',
     readiness: 'REVIEW',
@@ -38,10 +38,10 @@ export const generatedPlatformModuleCatalog = [
   // modules/workflow-studio/module.yaml
   {
     key: 'workflow-definitions',
-    name: 'Workflow Definitions',
-    navigationLabel: 'Workflow Studio & DAG Canvas',
-    area: 'Orchestration',
-    navigationGroup: 'Studio & Build',
+    name: 'Workflows',
+    navigationLabel: 'Workflows',
+    area: 'Automation',
+    navigationGroup: 'Settings',
     route: '/workflows',
     iconKey: 'zap',
     readiness: 'REVIEW',
@@ -55,10 +55,10 @@ export const generatedPlatformModuleCatalog = [
   // platform/core.yaml
   {
     key: 'execution-runs',
-    name: 'Execution Runs',
-    navigationLabel: 'Execution Telemetry',
-    area: 'Orchestration',
-    navigationGroup: 'Automate & Run',
+    name: 'Run history',
+    navigationLabel: 'Run history',
+    area: 'Automation',
+    navigationGroup: 'Settings',
     route: '/runs',
     iconKey: 'file-check',
     readiness: 'REVIEW',
@@ -72,10 +72,10 @@ export const generatedPlatformModuleCatalog = [
   // platform/core.yaml
   {
     key: 'exceptions-recovery',
-    name: 'Exceptions & Recovery',
-    navigationLabel: 'Exceptions & Quarantine',
-    area: 'Operations',
-    navigationGroup: 'Automate & Run',
+    name: 'Processing exceptions',
+    navigationLabel: 'Processing exceptions',
+    area: 'Automation',
+    navigationGroup: 'Settings',
     route: '/exceptions',
     iconKey: 'shield-alert',
     readiness: 'REVIEW',
@@ -88,26 +88,9 @@ export const generatedPlatformModuleCatalog = [
   },
   // platform/core.yaml
   {
-    key: 'approval-queue',
-    name: 'Approval Queue',
-    navigationLabel: 'Approval Queues',
-    area: 'Governance',
-    navigationGroup: 'Automate & Run',
-    route: '/actions',
-    iconKey: 'check-circle',
-    readiness: 'REVIEW',
-    maturity: 'INTEGRATED_CANDIDATE',
-    entitlementEligible: true,
-    trialEligible: true,
-    requiredPermission: 'actions:read',
-    platformInspection: false,
-    reason: 'Hosted by the core until the Procurement module exists (ADR-0016 F4). Governed AP approval records are available for controlled local evaluation.',
-  },
-  // platform/core.yaml
-  {
     key: 'value-ledger',
     name: 'Business Value Ledger',
-    navigationLabel: 'Business Value Ledger',
+    navigationLabel: 'Business value',
     area: 'Intelligence',
     navigationGroup: 'Intelligence',
     route: '/value',
@@ -141,9 +124,9 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'connections',
     name: 'Connections',
-    navigationLabel: 'Connections & Adapters',
-    area: 'Integration',
-    navigationGroup: 'Platform',
+    navigationLabel: 'Connections',
+    area: 'Integrations',
+    navigationGroup: 'Settings',
     route: '/connections',
     iconKey: 'radio',
     readiness: 'REVIEW',
@@ -158,7 +141,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'invoice-matching',
     name: '3-Way Match Invoices',
-    navigationLabel: '3-Way Match Invoices',
+    navigationLabel: 'Invoice matching',
     area: 'Finance',
     navigationGroup: 'Financial Operations',
     route: '/ap',
@@ -170,6 +153,23 @@ export const generatedPlatformModuleCatalog = [
     requiredPermission: 'ap:read',
     platformInspection: false,
     reason: 'Hosted by the core until the Procurement module exists (ADR-0016 F4). The reference AP outcome is available for controlled local evaluation.',
+  },
+  // platform/core.yaml
+  {
+    key: 'approval-queue',
+    name: 'Invoice approvals',
+    navigationLabel: 'Invoice approvals',
+    area: 'Finance',
+    navigationGroup: 'Financial Operations',
+    route: '/actions',
+    iconKey: 'check-circle',
+    readiness: 'REVIEW',
+    maturity: 'INTEGRATED_CANDIDATE',
+    entitlementEligible: true,
+    trialEligible: true,
+    requiredPermission: 'actions:read',
+    platformInspection: false,
+    reason: 'Hosted by the core until the Procurement module exists (ADR-0016 F4). Governed AP approval records are available for controlled local evaluation.',
   },
   // modules/accounts-receivable/module.yaml
   {
@@ -209,7 +209,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'product-catalogue',
     name: 'Product & Catalogue Studio',
-    navigationLabel: 'Products & Catalogues',
+    navigationLabel: 'Products',
     area: 'Commercial Operations',
     navigationGroup: 'Workforce & Operations',
     route: '/products',
@@ -226,7 +226,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'universal-inventory',
     name: 'Universal Inventory & Warehouses',
-    navigationLabel: 'Inventory & Warehouses',
+    navigationLabel: 'Inventory',
     area: 'Workforce & Operations',
     navigationGroup: 'Workforce & Operations',
     route: '/inventory',
@@ -243,7 +243,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'universal-procurement',
     name: 'Universal Procurement & Payables',
-    navigationLabel: 'Procurement & Payables',
+    navigationLabel: 'Procurement',
     area: 'Financial Operations',
     navigationGroup: 'Financial Operations',
     route: '/procurement',
@@ -260,7 +260,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'universal-orders',
     name: 'Universal Order Management & Fulfillment',
-    navigationLabel: 'Orders & Fulfillment',
+    navigationLabel: 'Orders',
     area: 'Commercial Operations',
     navigationGroup: 'Financial Operations',
     route: '/orders',
@@ -294,7 +294,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'financial-operations',
     name: 'Financial Operations & General Ledger',
-    navigationLabel: 'General Ledger & Finance',
+    navigationLabel: 'General ledger',
     area: 'Financial Operations',
     navigationGroup: 'Financial Operations',
     route: '/finance',
@@ -361,10 +361,10 @@ export const generatedPlatformModuleCatalog = [
   // platform/core.yaml
   {
     key: 'dynamic-forms',
-    name: 'Dynamic Form Studio',
-    navigationLabel: 'Configuration Studio',
-    area: 'Configuration',
-    navigationGroup: 'Studio & Build',
+    name: 'Forms & apps',
+    navigationLabel: 'Forms & apps',
+    area: 'Automation',
+    navigationGroup: 'Settings',
     route: '/configuration',
     iconKey: 'sparkles',
     readiness: 'REVIEW',
@@ -378,10 +378,10 @@ export const generatedPlatformModuleCatalog = [
   // modules/universal-connector-hub/module.yaml
   {
     key: 'connector-hub',
-    name: 'Connector Hub',
-    navigationLabel: '1-Click OAuth Studio',
-    area: 'Integration',
-    navigationGroup: 'Platform',
+    name: 'Connected apps',
+    navigationLabel: 'Connected apps',
+    area: 'Integrations',
+    navigationGroup: 'Settings',
     route: '/connections/oauth-studio',
     iconKey: 'lock',
     readiness: 'REVIEW',
@@ -398,7 +398,7 @@ export const generatedPlatformModuleCatalog = [
     name: 'Platform Control Tower',
     navigationLabel: 'Platform Control Tower',
     area: 'Platform',
-    navigationGroup: 'Platform',
+    navigationGroup: 'Settings',
     route: '/platform-admin',
     iconKey: 'server',
     readiness: 'REVIEW',
@@ -412,10 +412,10 @@ export const generatedPlatformModuleCatalog = [
   // platform/core.yaml
   {
     key: 'module-marketplace',
-    name: 'Modules & Plan',
-    navigationLabel: 'Modules & Plan',
-    area: 'Platform',
-    navigationGroup: 'Platform',
+    name: 'Modules & plan',
+    navigationLabel: 'Modules & plan',
+    area: 'Workspace',
+    navigationGroup: 'Settings',
     route: '/marketplace',
     iconKey: 'shopping-bag',
     readiness: 'REVIEW',
@@ -430,7 +430,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'analytics-studio',
     name: 'Analytics Studio',
-    navigationLabel: 'Universal Analytics Studio',
+    navigationLabel: 'Analytics',
     area: 'Intelligence',
     navigationGroup: 'Intelligence',
     route: '/analytics',
@@ -464,7 +464,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'asset-maintenance',
     name: 'Asset & Maintenance (CMMS)',
-    navigationLabel: 'EAM Operations Console',
+    navigationLabel: 'Asset maintenance',
     area: 'Physical Operations',
     navigationGroup: 'Workforce & Operations',
     route: '/cmms',
@@ -481,7 +481,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'gigaops',
     name: 'GigaOps Universal Workforce',
-    navigationLabel: 'Universal Workforce & Payroll',
+    navigationLabel: 'Workforce',
     area: 'Workforce',
     navigationGroup: 'Workforce & Operations',
     route: '/gigaops',
@@ -498,7 +498,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'geospatial-studio',
     name: 'Geospatial Studio',
-    navigationLabel: 'Geospatial & OSM Studio',
+    navigationLabel: 'Places & maps',
     area: 'Location',
     navigationGroup: 'Workforce & Operations',
     route: '/maps',
@@ -617,7 +617,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'business-partners',
     name: 'Universal Business Partner',
-    navigationLabel: 'Universal Business Partner',
+    navigationLabel: 'Business partners',
     area: 'Universal Business Partner',
     navigationGroup: 'Financial Operations',
     route: '/business-partners',
@@ -634,7 +634,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'process-safety-screening',
     name: 'SPEED Process Safety Screening',
-    navigationLabel: 'SPEED',
+    navigationLabel: 'Process safety (SPEED)',
     area: 'Process safety',
     navigationGroup: 'Intelligence',
     route: '/speed',
@@ -651,7 +651,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'universal-manufacturing',
     name: 'Manufacturing & MRP',
-    navigationLabel: 'Manufacturing & MRP',
+    navigationLabel: 'Manufacturing',
     area: 'Manufacturing & MRP',
     navigationGroup: 'Workforce & Operations',
     route: '/universal-manufacturing',
@@ -668,7 +668,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'universal-returns',
     name: 'Returns and RMA',
-    navigationLabel: 'Returns and RMA',
+    navigationLabel: 'Returns',
     area: 'Returns and RMA',
     navigationGroup: 'Financial Operations',
     route: '/universal-returns',
@@ -685,7 +685,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'project-operations',
     name: 'Project Operations',
-    navigationLabel: 'Project Operations',
+    navigationLabel: 'Projects',
     area: 'Project Operations',
     navigationGroup: 'Workforce & Operations',
     route: '/project-operations',
@@ -702,7 +702,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'operator-rounds',
     name: 'Operator Inspection Rounds',
-    navigationLabel: 'Operator Inspection Rounds',
+    navigationLabel: 'Inspection rounds',
     area: 'Operator Inspection Rounds',
     navigationGroup: 'Workforce & Operations',
     route: '/operator-rounds',
@@ -719,7 +719,7 @@ export const generatedPlatformModuleCatalog = [
   {
     key: 'safety-operations',
     name: 'Safety Operations',
-    navigationLabel: 'Safety Operations',
+    navigationLabel: 'Safety',
     area: 'Safety Operations',
     navigationGroup: 'Workforce & Operations',
     route: '/safety-operations',

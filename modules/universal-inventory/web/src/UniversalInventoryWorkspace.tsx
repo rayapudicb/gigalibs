@@ -6,6 +6,8 @@ import {
   usePublishedManifest,
 } from '@gigalibs/configuration-react';
 import type { BarcodeResolutionResultV1 } from '@gigalibs/contracts';
+import { ModulePage, PageTabs } from '@gigalibs/web-sdk';
+import { Button } from '@medusajs/ui';
 import { type FormEvent, useMemo, useState } from 'react';
 import { AtpLivePanel } from './AtpLivePanel.js';
 import { InventoryScannerDrawer } from './InventoryScannerDrawer.js';
@@ -26,20 +28,16 @@ const LOOKUP_BASE_PATHS = {
   'catalogue-uoms': CATALOGUE_PATH,
 };
 
-const WINDOWS = [
-  { surface: 'inventory-warehouses', label: 'Warehouses' },
-  { surface: 'inventory-items', label: 'Items' },
-  { surface: 'inventory-lots', label: 'Lots' },
-  { surface: 'inventory-receipts', label: 'Receipts' },
-  { surface: 'inventory-balances', label: 'Balances' },
-  { surface: 'inventory-reservations', label: 'Reservations' },
-  { surface: 'inventory-ledger', label: 'Stock ledger' },
-  { surface: 'inventory-cost-layers', label: 'Movement cost mirror' },
-  { surface: 'inventory-posted-receipt-costs', label: 'Posted receipt costs' },
-] as const;
-
-type Tab =
-  | (typeof WINDOWS)[number]['surface']
+type View =
+  | 'inventory-warehouses'
+  | 'inventory-items'
+  | 'inventory-lots'
+  | 'inventory-receipts'
+  | 'inventory-balances'
+  | 'inventory-reservations'
+  | 'inventory-ledger'
+  | 'inventory-cost-layers'
+  | 'inventory-posted-receipt-costs'
   | 'barcode'
   | 'warehouse-map'
   | 'valuation-settings'
@@ -47,15 +45,92 @@ type Tab =
   | 'transfers'
   | 'replenishment';
 
+/** Inventory's screens, one per sidebar entry (WI-OI-145); related views of one screen are its page tabs. */
+export type InventorySection =
+  | 'warehouses'
+  | 'items'
+  | 'lots'
+  | 'receipts'
+  | 'stock'
+  | 'reservations'
+  | 'transfers'
+  | 'replenishment'
+  | 'availability'
+  | 'valuation';
+
+export const INVENTORY_SECTIONS: Readonly<
+  Record<InventorySection, { readonly title: string; readonly description: string; readonly views: readonly { key: View; label: string }[] }>
+> = {
+  warehouses: {
+    title: 'Warehouses',
+    description: 'Your warehouses and their bins, as a list or on the map.',
+    views: [
+      { key: 'inventory-warehouses', label: 'List' },
+      { key: 'warehouse-map', label: 'Map' },
+    ],
+  },
+  items: {
+    title: 'Items',
+    description: 'Stocked items and how each is tracked; look an item up by its barcode.',
+    views: [
+      { key: 'inventory-items', label: 'Items' },
+      { key: 'barcode', label: 'Barcode lookup' },
+    ],
+  },
+  lots: { title: 'Lots', description: 'Lots and batches with their expiry.', views: [{ key: 'inventory-lots', label: 'Lots' }] },
+  receipts: {
+    title: 'Receipts',
+    description: 'Goods received into your warehouses.',
+    views: [{ key: 'inventory-receipts', label: 'Receipts' }],
+  },
+  stock: {
+    title: 'Stock',
+    description: 'What is on hand now, and every movement that changed it.',
+    views: [
+      { key: 'inventory-balances', label: 'Balances' },
+      { key: 'inventory-ledger', label: 'Ledger' },
+    ],
+  },
+  reservations: {
+    title: 'Reservations',
+    description: 'Stock held for orders and work.',
+    views: [{ key: 'inventory-reservations', label: 'Reservations' }],
+  },
+  transfers: { title: 'Transfers', description: 'Moves between warehouses, by stage.', views: [{ key: 'transfers', label: 'Transfers' }] },
+  replenishment: {
+    title: 'Replenishment',
+    description: 'Items below their reorder point and the purchase drafts proposed for them.',
+    views: [{ key: 'replenishment', label: 'Replenishment' }],
+  },
+  availability: {
+    title: 'Availability',
+    description: 'Available to promise: on hand less reserved, per item and warehouse.',
+    views: [{ key: 'atp', label: 'Availability' }],
+  },
+  valuation: {
+    title: 'Valuation',
+    description: 'How stock is valued, the cost of each movement and the costs posted from receipts.',
+    views: [
+      { key: 'valuation-settings', label: 'Settings' },
+      { key: 'inventory-cost-layers', label: 'Movement costs' },
+      { key: 'inventory-posted-receipt-costs', label: 'Posted receipt costs' },
+    ],
+  },
+};
+
 export interface UniversalInventoryWorkspaceProps {
   /** The signed-in user's permissions, for the windows' deny-by-default rules (the server still decides). */
   readonly permissions?: readonly string[];
+  /** The screen this route shows (WI-OI-145: the sidebar lists them; there is no in-page module menu). */
+  readonly section?: InventorySection;
 }
 
 export function UniversalInventoryWorkspace({
   permissions = [],
+  section = 'warehouses',
 }: UniversalInventoryWorkspaceProps = {}) {
-  const [tab, setTab] = useState<Tab>('inventory-warehouses');
+  const screen = INVENTORY_SECTIONS[section];
+  const [tab, setTab] = useState<View>(screen.views[0]!.key);
   const [scannerOpen, setScannerOpen] = useState(false);
   const client = useMemo(
     () => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: LOOKUP_BASE_PATHS }),
@@ -67,49 +142,18 @@ export function UniversalInventoryWorkspace({
     [],
   );
   return (
-    <div className="space-y-6 p-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold text-ui-fg-base">Inventory &amp; Warehouses</h1>
-          <p className="text-sm text-ui-fg-subtle">
-            Warehouses, stocked items, lots, goods receipts, balances and the stock ledger of your
-            organization.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="rounded-md bg-ui-button-inverted px-4 py-2 text-sm font-medium text-ui-fg-on-inverted"
-          onClick={() => setScannerOpen(true)}
-        >
+    <ModulePage
+      title={screen.title}
+      description={screen.description}
+      actions={
+        <Button size="small" variant="secondary" onClick={() => setScannerOpen(true)}>
           Open scanner
-        </button>
-      </header>
-      <nav
-        role="tablist"
-        aria-label="Inventory"
-        className="flex flex-wrap gap-1 border-b border-ui-border-base"
-      >
-        {[
-          ...WINDOWS,
-          { surface: 'warehouse-map' as const, label: 'Warehouse map' },
-          { surface: 'transfers' as const, label: 'Transfer board' },
-          { surface: 'replenishment' as const, label: 'Replenishment' },
-          { surface: 'atp' as const, label: 'Live ATP' },
-          { surface: 'valuation-settings' as const, label: 'Valuation setup' },
-          { surface: 'barcode' as const, label: 'Barcode lookup' },
-        ].map((entry) => (
-          <button
-            key={entry.surface}
-            type="button"
-            role="tab"
-            aria-selected={tab === entry.surface}
-            className={`px-3 py-2 text-sm ${tab === entry.surface ? 'border-b-2 border-ui-border-interactive font-medium text-ui-fg-base' : 'text-ui-fg-subtle hover:text-ui-fg-base'}`}
-            onClick={() => setTab(entry.surface)}
-          >
-            {entry.label}
-          </button>
-        ))}
-      </nav>
+        </Button>
+      }
+    >
+      {screen.views.length > 1 ? (
+        <PageTabs tabs={screen.views} value={tab} onChange={setTab} label={screen.title} />
+      ) : null}
       {tab === 'barcode' ? (
         <BarcodeLookup />
       ) : tab === 'warehouse-map' ? (
@@ -132,7 +176,7 @@ export function UniversalInventoryWorkspace({
         />
       )}
       {scannerOpen ? <InventoryScannerDrawer onClose={() => setScannerOpen(false)} /> : null}
-    </div>
+    </ModulePage>
   );
 }
 

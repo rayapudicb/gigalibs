@@ -8,13 +8,13 @@ import { test, type Page } from '@playwright/test';
 import { hasUatLogin, signInToUat } from './uat-session';
 
 const STEPS: { route: string; title: string; text: string }[] = [
-  { route: '/runs', title: 'Automate & Run → Execution Telemetry',
+  { route: '/runs', title: 'Settings → Run history',
     text: 'Every workflow run: what started it, each step, and its outcome. Empty here because runs are started from Workflow Studio, which is not deployed in this UAT instance yet (U29).' },
-  { route: '/exceptions', title: 'Automate & Run → Exceptions & Quarantine',
+  { route: '/exceptions', title: 'Settings → Processing exceptions',
     text: 'Records or run steps that failed a rule wait here for a person to fix, release or discard. It fills when workflows run.' },
-  { route: '/actions', title: 'Automate & Run → Approval Queues',
+  { route: '/actions', title: 'Finance → Invoice approvals',
     text: 'Run steps that need a person’s approval (maker-checker). It fills when workflows reach an approval step.' },
-  { route: '/workflows', title: 'Workflow Studio (where runs come from)',
+  { route: '/workflows', title: 'Settings → Workflows (where runs come from)',
     text: 'Design workflows and start them. Today it is refused: the permission/module is not set for this tenant and its service is not deployed (U29). This is why Automate & Run is empty.' },
   { route: '/value', title: 'Value',
     text: 'Measured benefit, for example minutes saved by automation, from outcome definitions and published formulas (the forms below). It works; there are no value events yet.' },

@@ -49,9 +49,9 @@ spec:
   catalog:
     - key: connections
       name: Connections
-      navigationLabel: Connections & Adapters
-      area: Integration
-      navigationGroup: Platform
+      navigationLabel: Connections
+      area: Integrations
+      navigationGroup: Settings
       route: /connections
       iconKey: radio
       readiness: REVIEW
@@ -62,11 +62,15 @@ spec:
       platformInspection: false
       reason: Webhook intake and scheduled pulls into a raw ingestion journal, as a service with tenant isolation. Outbound logins and certified connectors are planned (WI-OI-104). Not certified.
       navigationOrder: 90
+      # WI-OI-145: each screen is a Settings sidebar entry.
+      menu:
+        - { key: connections, label: Connections, path: /connections, icon: radio }
+        - { key: credentials, label: Credentials, path: /connections/credentials, icon: key-round }
     - key: connector-hub
-      name: Connector Hub
-      navigationLabel: 1-Click OAuth Studio
-      area: Integration
-      navigationGroup: Platform
+      name: Connected apps
+      navigationLabel: Connected apps
+      area: Integrations
+      navigationGroup: Settings
       route: /connections/oauth-studio
       iconKey: lock
       readiness: REVIEW

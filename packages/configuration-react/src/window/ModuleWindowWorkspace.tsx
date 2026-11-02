@@ -34,10 +34,11 @@ export function ModuleWindowWorkspace({
   const client = useMemo(() => createRecordClient({ basePath }), [basePath]);
   const state = usePublishedManifest({ moduleKey, entityKey, surfaceKey });
   return (
-    <div className="space-y-6 p-6">
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-ui-fg-base">{title}</h1>
-        {description ? <p className="text-sm text-ui-fg-subtle">{description}</p> : null}
+    // WI-OI-145: the shell frame gives the padding; the header matches @gigalibs/web-sdk's ModulePage.
+    <div className="flex flex-col gap-4">
+      <header className="min-w-0">
+        <h1 className="h1-core font-sans font-medium text-ui-fg-base">{title}</h1>
+        {description ? <p className="txt-small mt-1 max-w-3xl text-ui-fg-subtle">{description}</p> : null}
       </header>
       {state.status === 'loading' ? (
         <p className="text-sm text-ui-fg-muted">Loading the window…</p>

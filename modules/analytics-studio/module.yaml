@@ -44,7 +44,7 @@ spec:
   catalog:
     - key: analytics-studio
       name: Analytics Studio
-      navigationLabel: Universal Analytics Studio
+      navigationLabel: Analytics
       area: Intelligence
       navigationGroup: Intelligence
       route: /analytics

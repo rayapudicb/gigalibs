@@ -1,8 +1,9 @@
 'use client';
 
+import { ModulePage } from '@gigalibs/web-sdk';
 import type { RmaDispositionCode, RmaLineV1, RmaV1 } from '@gigalibs/contracts';
 import { RMA_DISPOSITION_CODES } from '@gigalibs/contracts';
-import { Button, Container, FocusModal, Heading, Input, StatusBadge, Table, Text, Textarea } from '@medusajs/ui';
+import { Button, FocusModal, Heading, Input, StatusBadge, Table, Text, Textarea } from '@medusajs/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { returnsApi } from '../api.js';
 import { deriveRmaChecklistSteps } from '../checklist.js';
@@ -171,18 +172,15 @@ export function ReturnsRmaWorkspace() {
   }
 
   return (
-    <Container className="mx-auto max-w-6xl space-y-6 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Heading level="h1">Returns processing checklist</Heading>
-          <Text className="text-ui-fg-subtle">
-            Authorize the RMA, inspect lines, choose disposition, then request a credit memo in Orders.
-          </Text>
-        </div>
-        <Button variant="secondary" disabled={busy} onClick={() => void loadList()}>
+    <ModulePage
+      title="Returns"
+      description="Authorize a return, inspect its lines, choose what happens to each, then request a credit memo in Orders."
+      actions={
+        <Button size="small" variant="secondary" disabled={busy} onClick={() => void loadList()}>
           Refresh
         </Button>
-      </div>
+      }
+    >
 
       {error ? (
         <div className="rounded-lg border border-ui-border-error bg-ui-bg-error px-4 py-3">
@@ -229,7 +227,7 @@ export function ReturnsRmaWorkspace() {
           {items.length === 0 ? (
             <Table.Row>
               <Table.Cell>
-                <Text className="text-ui-fg-subtle">No RMAs yet. Create one through the API or integration tests.</Text>
+                <Text className="text-ui-fg-subtle">No returns yet. A return appears here when a customer asks to send goods back.</Text>
               </Table.Cell>
               <Table.Cell />
               <Table.Cell />
@@ -427,6 +425,6 @@ export function ReturnsRmaWorkspace() {
           </FocusModal.Footer>
         </FocusModal.Content>
       </FocusModal>
-    </Container>
+    </ModulePage>
   );
 }

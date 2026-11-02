@@ -1,12 +1,13 @@
 'use client';
 
+import { ModulePage } from '@gigalibs/web-sdk';
 import type {
   ProjectBurnMatrixV1,
   ProjectGanttV1,
   ProjectSummaryV1,
   TimesheetApprovalQueueItemV1,
 } from '@gigalibs/contracts';
-import { Button, Container, FocusModal, Heading, Input, StatusBadge, Table, Text } from '@medusajs/ui';
+import { Button, FocusModal, Heading, Input, StatusBadge, Table, Text } from '@medusajs/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { projectOperationsApi } from '../api.js';
 import { ganttBarStyle, projectTimelineRange } from '../gantt-layout.js';
@@ -143,16 +144,12 @@ export function ProjectOperationsWorkspace() {
   const selected = projects.find((project) => project.id === selectedId) ?? null;
 
   return (
-    <Container className="flex flex-col gap-6 py-6">
-      <div className="flex flex-col gap-2">
-        <Heading level="h1">Project Operations</Heading>
-        <Text size="small" className="text-ui-fg-subtle">
-          Gantt, budget burn, and timesheet approval queue (Module 7 / WI-OI-129 S5–S6).
-        </Text>
-      </div>
-
-      <div>
+    <ModulePage
+      title="Projects"
+      description="Each project's tasks on a timeline, its budget burn, and the timesheets waiting for approval."
+      actions={
         <Button
+          size="small"
           variant="secondary"
           disabled={busy}
           onClick={() => {
@@ -162,7 +159,8 @@ export function ProjectOperationsWorkspace() {
         >
           Timesheet approvals
         </Button>
-      </div>
+      }
+    >
 
       <FocusModal open={approvalOpen} onOpenChange={setApprovalOpen}>
         <FocusModal.Content>
@@ -361,6 +359,6 @@ export function ProjectOperationsWorkspace() {
           </div>
         </section>
       ) : null}
-    </Container>
+    </ModulePage>
   );
 }

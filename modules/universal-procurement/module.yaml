@@ -31,8 +31,31 @@ spec:
     basePath: /procurement
     package: '@gigalibs/universal-procurement-web'
     pages:
+      # WI-OI-145: one sidebar entry and one route per screen.
       - route: /procurement
         component: UniversalProcurementWorkspace
+        props:
+          section: requisitions
+        sessionPermissions: true
+      - route: /procurement/purchase-orders
+        component: UniversalProcurementWorkspace
+        props:
+          section: purchase-orders
+        sessionPermissions: true
+      - route: /procurement/vendor-bills
+        component: UniversalProcurementWorkspace
+        props:
+          section: vendor-bills
+        sessionPermissions: true
+      - route: /procurement/debit-memos
+        component: UniversalProcurementWorkspace
+        props:
+          section: debit-memos
+        sessionPermissions: true
+      - route: /procurement/landed-cost
+        component: UniversalProcurementWorkspace
+        props:
+          section: landed-cost
         sessionPermissions: true
   api:
     application: apps/api
@@ -76,7 +99,7 @@ spec:
   catalog:
     - key: universal-procurement
       name: Universal Procurement & Payables
-      navigationLabel: Procurement & Payables
+      navigationLabel: Procurement
       area: Financial Operations
       navigationGroup: Financial Operations
       route: /procurement
@@ -90,6 +113,27 @@ spec:
       reason: The module boundary is implemented under WI-OI-092 and remains PLANNED until live module conformance and independent review are recorded.
       navigationOrder: 128
       personas: [OPERATIONS_SUPERVISOR]
+      menu:
+        - key: requisitions
+          label: Requisitions
+          path: /procurement
+          icon: file-text
+        - key: purchase-orders
+          label: Purchase orders
+          path: /procurement/purchase-orders
+          icon: shopping-bag
+        - key: vendor-bills
+          label: Vendor bills
+          path: /procurement/vendor-bills
+          icon: file-check
+        - key: debit-memos
+          label: Debit memos
+          path: /procurement/debit-memos
+          icon: credit-card
+        - key: landed-cost
+          label: Landed cost
+          path: /procurement/landed-cost
+          icon: coins
       roles:
         - key: procurement-requester
           name: Procurement Requester

@@ -1,5 +1,6 @@
 'use client';
 
+import { codeLabel } from '@gigalibs/web-sdk';
 /**
  * WI-OI-104e (ADR-0016 F8): pulled data becomes a dataset without code. A source (records Connector Hub sends, a
  * Postgres table, the Demo Lab) is discovered, its fields are mapped (names, types, unit conversions), the mapping is
@@ -157,7 +158,7 @@ export function SourcesWorkbench({ canMap, canModel }: { canMap: boolean; canMod
               <li key={source.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-ui-border-base px-3 py-2">
                 <div className="flex items-center gap-2">
                   <Text size="small" weight="plus">{source.displayName}</Text>
-                  <Badge size="2xsmall" color="grey">{SOURCE_KIND[source.sourceType] ?? source.sourceType}</Badge>
+                  <Badge size="2xsmall" color="grey">{SOURCE_KIND[source.sourceType] ?? codeLabel(source.sourceType)}</Badge>
                 </div>
                 {canMap ? (
                   <Button type="button" size="small" variant="secondary" onClick={() => setMappingSource(mappingSource?.id === source.id ? null : source)}>

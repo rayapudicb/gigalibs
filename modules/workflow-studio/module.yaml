@@ -40,10 +40,10 @@ spec:
   # Web module catalogue entries (WI-OI-081): generated into @gigalibs/contracts by `pnpm modules:catalog`.
   catalog:
     - key: workflow-definitions
-      name: Workflow Definitions
-      navigationLabel: Workflow Studio & DAG Canvas
-      area: Orchestration
-      navigationGroup: Studio & Build
+      name: Workflows
+      navigationLabel: Workflows
+      area: Automation
+      navigationGroup: Settings
       route: /workflows
       iconKey: zap
       readiness: REVIEW
@@ -54,4 +54,8 @@ spec:
       platformInspection: true
       reason: Workflow Studio service code with tests. Not running and no workflow has run; it becomes the one workflow capability (ADR-0016 F3).
       navigationOrder: 30
-      personas: [C_LEVEL, OPERATIONS_SUPERVISOR]
+      # WI-OI-145: each screen is a Settings sidebar entry.
+      menu:
+        - { key: workflows, label: Workflows, path: /workflows, icon: zap }
+        - { key: templates, label: Templates, path: /workflows/templates, icon: layers }
+        - { key: api-keys, label: API keys, path: /workflows/api-keys, icon: key-round }

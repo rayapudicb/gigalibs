@@ -1,6 +1,7 @@
 'use client';
 
 import { holdsPermission } from '@gigalibs/contracts';
+import { EmptyState, ModulePage, PageTabs } from '@gigalibs/web-sdk';
 import { createRecordClient, type LookupOption, MetadataWindow, type RecordClient, usePublishedManifest } from '@gigalibs/configuration-react';
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -31,54 +32,91 @@ const primary =
 const secondary =
   'rounded-md border border-ui-border-base bg-ui-button-neutral px-3 py-1.5 text-sm text-ui-fg-base hover:bg-ui-button-neutral-hover disabled:opacity-50';
 
+/** Product Catalogue's screens, one per sidebar entry (WI-OI-145); a screen's related views are its page tabs. */
+export type ProductCatalogueSection =
+  | 'products'
+  | 'categories'
+  | 'attributes'
+  | 'units'
+  | 'catalogues'
+  | 'price-lists'
+  | 'price-resolver'
+  | 'import-export';
+
+export const PRODUCT_CATALOGUE_SECTIONS: Readonly<
+  Record<ProductCatalogueSection, { readonly title: string; readonly description: string; readonly views: readonly { key: Tab; label: string }[] }>
+> = {
+  products: {
+    title: 'Products',
+    description: 'What your organization makes, buys and sells; other modules use products by reference.',
+    views: [{ key: 'catalogue-products', label: 'Products' }],
+  },
+  categories: { title: 'Categories', description: 'How products are grouped.', views: [{ key: 'catalogue-categories', label: 'Categories' }] },
+  attributes: {
+    title: 'Attributes',
+    description: 'The properties products carry, such as size or material.',
+    views: [{ key: 'catalogue-attributes', label: 'Attributes' }],
+  },
+  units: { title: 'Units', description: 'Units of measure and their conversions.', views: [{ key: 'catalogue-units', label: 'Units' }] },
+  catalogues: {
+    title: 'Catalogues',
+    description: 'Catalogues and their published versions.',
+    views: [
+      { key: 'catalogue-catalogues', label: 'Catalogues' },
+      { key: 'catalogue-catalogue-versions', label: 'Versions' },
+    ],
+  },
+  'price-lists': {
+    title: 'Price lists',
+    description: 'Price lists and their published versions.',
+    views: [
+      { key: 'catalogue-price-lists', label: 'Price lists' },
+      { key: 'catalogue-price-list-versions', label: 'Versions' },
+    ],
+  },
+  'price-resolver': {
+    title: 'Price resolver',
+    description: 'The price a product gets for a quantity, currency and date.',
+    views: [{ key: 'resolve', label: 'Price resolver' }],
+  },
+  'import-export': {
+    title: 'Import & export',
+    description: 'Bring products in from a file or take them out as one.',
+    views: [{ key: 'transfer', label: 'Import & export' }],
+  },
+};
+
 export interface ProductCatalogueWorkspaceProps {
   /** The signed-in user's permissions, for the windows' deny-by-default rules (the server still decides). */
   readonly permissions?: readonly string[];
+  /** The screen this route shows (WI-OI-145: the sidebar lists them; there is no in-page module menu). */
+  readonly section?: ProductCatalogueSection;
 }
 
 function holds(permissions: readonly string[], permission: string): boolean {
   return holdsPermission(permissions, permission);
 }
 
-export function ProductCatalogueWorkspace({ permissions = [] }: ProductCatalogueWorkspaceProps = {}) {
-  const [tab, setTab] = useState<Tab>('catalogue-products');
+export function ProductCatalogueWorkspace({ permissions = [], section = 'products' }: ProductCatalogueWorkspaceProps = {}) {
+  const screen = PRODUCT_CATALOGUE_SECTIONS[section];
+  const [tab, setTab] = useState<Tab>(screen.views[0]!.key);
   const client = useMemo(() => createRecordClient({ basePath: BASE_PATH }), []);
   const canTransfer = holds(permissions, 'products:import') || holds(permissions, 'products:export');
-  const tabs: readonly { surface: Tab; label: string }[] = [
-    ...WINDOWS,
-    { surface: 'resolve', label: 'Price resolver' },
-    ...(canTransfer ? [{ surface: 'transfer' as const, label: 'Import & export' }] : []),
-  ];
   return (
-    <div className="space-y-6 p-6">
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-ui-fg-base">Product Catalogue</h1>
-        <p className="text-sm text-ui-fg-subtle">
-          Products, units, categories, attributes, catalogues and price lists of your organization. Other modules use products by reference.
-        </p>
-      </header>
-      <nav role="tablist" aria-label="Product Catalogue" className="flex flex-wrap gap-1 border-b border-ui-border-base">
-        {tabs.map((entry) => (
-          <button
-            key={entry.surface}
-            type="button"
-            role="tab"
-            aria-selected={tab === entry.surface}
-            className={`px-3 py-2 text-sm ${tab === entry.surface ? 'border-b-2 border-ui-border-interactive font-medium text-ui-fg-base' : 'text-ui-fg-subtle hover:text-ui-fg-base'}`}
-            onClick={() => setTab(entry.surface)}
-          >
-            {entry.label}
-          </button>
-        ))}
-      </nav>
+    <ModulePage title={screen.title} description={screen.description}>
+      {screen.views.length > 1 ? <PageTabs tabs={screen.views} value={tab} onChange={setTab} label={screen.title} /> : null}
       {tab === 'resolve' ? (
         <PriceResolver client={client} />
       ) : tab === 'transfer' ? (
-        <ImportExport permissions={permissions} />
+        canTransfer ? (
+          <ImportExport permissions={permissions} />
+        ) : (
+          <EmptyState title="Import and export are not open to you" description="Ask your workspace administrator for product import or export." />
+        )
       ) : (
         <CatalogueWindow key={tab} surface={tab} client={client} permissions={permissions} />
       )}
-    </div>
+    </ModulePage>
   );
 }
 

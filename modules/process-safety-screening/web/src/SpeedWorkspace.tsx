@@ -1,5 +1,6 @@
 'use client';
 
+import { ModulePage } from '@gigalibs/web-sdk';
 import {
   type MetadataPanelRegistry,
   MetadataWindow,
@@ -73,31 +74,44 @@ export interface SpeedWorkspaceProps {
   readonly screenedTargetPercent?: number;
 }
 
+// WI-OI-145: each SPEED screen has the shared page header, named as its sidebar entry.
+const SCREENS: Readonly<Record<string, { readonly title: string; readonly description: string }>> = {
+  projects: { title: 'Projects', description: 'Process development projects and the sites they belong to.' },
+  routes: { title: 'Routes', description: 'Synthesis routes, their steps and how each step screens.' },
+  substances: { title: 'Substances', description: 'The materials your routes use and their hazard data.' },
+  library: { title: 'Screening library', description: 'The thermal and interaction data screening uses, and which version is in force.' },
+  criteria: { title: 'Screening criteria', description: 'The limits a step must meet to pass, and which version is in force.' },
+  outcomes: { title: 'Outcomes', description: 'How fast routes are screened and how many pass.' },
+  audit: { title: 'Audit trail', description: 'Every change to projects, routes and screening results.' },
+};
+
 /** The Outcomes page (a module page, screen spec §3.4) or the window of a section. */
-export function SpeedWorkspace({
+export function SpeedWorkspace(props: SpeedWorkspaceProps = {}) {
+  const screen = SCREENS[props.section ?? 'projects'] ?? SCREENS.projects!;
+  return (
+    <ModulePage title={screen.title} description={screen.description}>
+      <SpeedScreen {...props} />
+    </ModulePage>
+  );
+}
+
+function SpeedScreen({
   section,
   permissions = [],
   screeningTargetHours,
   screenedTargetPercent,
-}: SpeedWorkspaceProps = {}) {
+}: SpeedWorkspaceProps) {
   if (
     section === 'outcomes' &&
     typeof screeningTargetHours === 'number' &&
     typeof screenedTargetPercent === 'number'
   )
     return (
-      <div className="p-6">
-        <OutcomesPage
-          targets={{ screeningHours: screeningTargetHours, screenedPercent: screenedTargetPercent }}
-        />
-      </div>
+      <OutcomesPage
+        targets={{ screeningHours: screeningTargetHours, screenedPercent: screenedTargetPercent }}
+      />
     );
-  if (section === 'audit')
-    return (
-      <div className="p-6">
-        <AuditTrailPage />
-      </div>
-    );
+  if (section === 'audit') return <AuditTrailPage />;
   // WI-OI-120ce: the Library and Criteria pages show the set in force and the pack import above every version.
   if (section === 'library' || section === 'criteria')
     return (
@@ -108,7 +122,6 @@ export function SpeedWorkspace({
             permissions={permissions}
             refresh={refresh}
             onChanged={changed}
-            bare
           />
         )}
       </SetsPage>
@@ -121,15 +134,12 @@ function SpeedWindow({
   permissions,
   refresh = 0,
   onChanged,
-  bare = false,
 }: {
   section: string | undefined;
   permissions: readonly string[];
   /** A new value reloads the window's list (after an import on the page). */
   refresh?: number;
   onChanged?: () => void;
-  /** Inside a page that already pads its content. */
-  bare?: boolean;
 }) {
   const client = useMemo(
     () => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: PLATFORM_LOOKUP_BASE_PATHS }),
@@ -143,7 +153,7 @@ function SpeedWindow({
     surfaceKey: surface,
   });
   return (
-    <div className={bare ? 'space-y-6' : 'space-y-6 p-6'}>
+    <div className="space-y-6">
       {state.status === 'loading' ? (
         <div aria-busy="true" className="h-40 animate-pulse rounded-lg bg-ui-bg-subtle" />
       ) : state.status === 'ready' ? (

@@ -1,6 +1,8 @@
 import { canOpenPlatformModule } from '@/lib/module-access';
-import { moduleIconGlyphs } from '@/lib/module-icons';
+import { moduleIconGlyphs, moduleIcons } from '@/lib/module-icons';
+import { dailyGroupOrder, dailyHiddenModuleKeys, groupLabels, personaSeesModule } from '@/lib/module-navigation';
 import { MaturityBadge } from '@/components/modules/MaturityBadge';
+import { determinePersona } from '@/lib/persona-utils';
 import { verifiedSession } from '@/lib/verified-session';
 import { cookies } from 'next/headers';
 import { Translator } from '@gigalibs/i18n';
@@ -8,18 +10,96 @@ import {
   type PlatformModuleDefinition,
   platformModuleCatalog,
 } from '@gigalibs/contracts';
-import { Lock } from 'lucide-react';
+import { Boxes, ChevronRight, Lock } from 'lucide-react';
+import { ModulePage } from '@gigalibs/web-sdk';
 import Link from 'next/link';
 
-export default async function ModulesPage() {
+type CanOpen = (module: PlatformModuleDefinition) => boolean;
+
+// WI-OI-145: Home, where everyone lands after signing in. It lists only the modules this person can open, grouped like
+// the daily sidebar, without locks, maturity or readiness notes. Administrators reach their plan in Settings (Modules
+// & plan); platform operators keep the full catalogue at ?view=catalogue.
+export default async function ModulesPage({ searchParams }: { searchParams: Promise<{ view?: string | string[] }> }) {
   const session = await verifiedSession(false);
   const cookieStore = await cookies();
   const locale = cookieStore.get('gigalibs_locale')?.value || 'en-US';
   const translator = new Translator({ defaultLocale: locale });
 
   const context = session.context;
-  const canOpen = (module: PlatformModuleDefinition) =>
-    Boolean(context && canOpenPlatformModule(module, context));
+  const canOpen: CanOpen = (module) => Boolean(context && canOpenPlatformModule(module, context));
+  const platformOperator = Boolean(context && context.platformRoles.length > 0);
+  const { view } = await searchParams;
+  if (view === 'catalogue' && platformOperator) return <Catalogue translator={translator} canOpen={canOpen} />;
+
+  const persona = context ? determinePersona(context.roles, context.platformRoles, context.permissions) : null;
+  const mine = platformModuleCatalog.filter(
+    (module) =>
+      persona !== null &&
+      module.navigationGroup !== 'Settings' &&
+      !dailyHiddenModuleKeys.has(module.key) &&
+      personaSeesModule(persona, module.key) &&
+      canOpen(module),
+  );
+  const groups = dailyGroupOrder
+    .map((group) => ({ group, modules: mine.filter((module) => module.navigationGroup === group) }))
+    .filter(({ modules }) => modules.length > 0);
+  const marketplace = platformModuleCatalog.find((module) => module.key === 'module-marketplace');
+  const showPlan = Boolean(marketplace && canOpen(marketplace));
+  const tenantName = context?.tenant?.name;
+  const secondary =
+    'inline-flex items-center rounded-md bg-ui-bg-base px-3 py-1.5 text-xs font-medium text-ui-fg-base shadow-borders-base transition-colors hover:bg-ui-bg-base-hover';
+
+  return (
+    <ModulePage
+      title="Home"
+      description={tenantName ? `Your modules in ${tenantName}` : 'Your modules'}
+      actions={
+        showPlan || platformOperator ? (
+          <>
+            {showPlan ? <Link href="/settings/plan" className={secondary}>Modules &amp; plan</Link> : null}
+            {platformOperator ? <Link href="/modules?view=catalogue" className={secondary}>Full catalogue</Link> : null}
+          </>
+        ) : null
+      }
+    >
+      {groups.length === 0 ? (
+        <div className="rounded-lg bg-ui-bg-base p-8 text-center shadow-borders-base">
+          <p className="text-sm font-medium text-ui-fg-base">No modules are open to you yet</p>
+          <p className="mt-1 text-sm text-ui-fg-subtle">Ask your workspace administrator to give you a role.</p>
+        </div>
+      ) : (
+        groups.map(({ group, modules }) => (
+          <section key={group} aria-labelledby={`home-${group}`} className="flex flex-col gap-2">
+            <h2 id={`home-${group}`} className="text-xs font-medium text-ui-fg-muted">{groupLabels[group]}</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {modules.map((module) => {
+                const Icon = moduleIcons[module.iconKey] ?? Boxes;
+                return (
+                  <Link
+                    key={module.key}
+                    href={module.route}
+                    className="group flex items-center gap-3 rounded-lg bg-ui-bg-base p-4 shadow-borders-base transition-colors hover:bg-ui-bg-base-hover"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ui-bg-subtle">
+                      <Icon className="h-4 w-4 text-ui-fg-subtle" aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-ui-fg-base">
+                      {module.navigationLabel}
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-ui-fg-muted group-hover:text-ui-fg-subtle" aria-hidden />
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        ))
+      )}
+    </ModulePage>
+  );
+}
+
+/** The full catalogue with readiness and maturity, for platform operators (the page before WI-OI-145). */
+function Catalogue({ translator, canOpen }: { translator: Translator; canOpen: CanOpen }) {
   const enabledForSession = platformModuleCatalog.filter(canOpen).length;
 
   return (

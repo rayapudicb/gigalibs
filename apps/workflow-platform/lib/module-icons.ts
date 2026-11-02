@@ -1,5 +1,7 @@
 import type { PlatformModuleIcon } from '@gigalibs/contracts';
 import {
+  Globe,
+  Users,
   ArrowLeftRight,
   BarChart3,
   Boxes,
@@ -78,6 +80,9 @@ export const moduleIcons: Readonly<Record<PlatformModuleIcon, LucideIcon>> = {
   workflow: Workflow,
   wrench: Wrench,
   zap: Zap,
+  // WI-OI-145: Settings screens.
+  users: Users,
+  globe: Globe,
 };
 
 // The same icons as text glyphs, for the module catalogue page.
@@ -118,4 +123,6 @@ export const moduleIconGlyphs: Readonly<Record<PlatformModuleIcon, string>> = {
   workflow: '⇄',
   wrench: '⚒',
   zap: '↯',
+  users: '☺',
+  globe: '◍',
 };

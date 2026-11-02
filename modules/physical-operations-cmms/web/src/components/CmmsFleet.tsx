@@ -9,6 +9,7 @@ import {
   type FleetTemplateV1,
   holdsPermission,
 } from '@gigalibs/contracts';
+import { PageTabs } from '@gigalibs/web-sdk';
 import { Button, Container, Heading, Input, StatusBadge, Table, Text, Textarea } from '@medusajs/ui';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { type CmmsApiError, cmmsApi } from '../api';
@@ -35,12 +36,12 @@ export function CmmsFleet({ permissions = [] }: { permissions?: readonly string[
   if (asset) return <AssetFleetView assetId={asset} can={can} onBack={() => setAsset(null)} />;
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Fleet views">
-        {tabs.filter(([, , shown]) => shown).map(([key, label]) => (
-          <Button key={key} type="button" size="small" role="tab" aria-selected={tab === key}
-            variant={tab === key ? 'primary' : 'secondary'} onClick={() => setTab(key)}>{label}</Button>
-        ))}
-      </div>
+      <PageTabs
+        tabs={tabs.filter(([, , shown]) => shown).map(([key, label]) => ({ key, label: label }))}
+        value={tab}
+        onChange={setTab}
+        label="Fleet views"
+      />
       {tab === 'readiness' ? <Readiness onOpen={setAsset} /> : null}
       {tab === 'redtags' ? <RedTags can={can} /> : null}
       {tab === 'enrol' ? <Enrol /> : null}

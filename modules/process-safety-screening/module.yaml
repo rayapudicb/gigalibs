@@ -168,7 +168,7 @@ spec:
   catalog:
     - key: process-safety-screening
       name: SPEED Process Safety Screening
-      navigationLabel: SPEED
+      navigationLabel: Process safety (SPEED)
       area: Process safety
       navigationGroup: Intelligence
       route: /speed

@@ -13,12 +13,8 @@ export default async function DashboardPage() {
     session.context.platformRoles,
     session.context.permissions,
   );
-  const permitted = new Set([
-    'C_LEVEL',
-    'TENANT_ADMIN',
-    'OPERATIONS_SUPERVISOR',
-    'PLATFORM_OPERATOR',
-  ]);
+  // WI-OI-145: executives and administrators; supervisors work from their modules.
+  const permitted = new Set(['C_LEVEL', 'TENANT_ADMIN', 'PLATFORM_OPERATOR']);
   if (!permitted.has(persona)) {
     return (
       <section className="p-8" aria-labelledby="control-tower-denied">

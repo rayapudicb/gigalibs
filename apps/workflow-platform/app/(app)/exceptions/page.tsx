@@ -1,5 +1,6 @@
 'use client';
 
+import { codeLabel, ModulePage } from '@gigalibs/web-sdk';
 import type {
   CursorPage,
   OperationalExceptionStatus,
@@ -81,16 +82,11 @@ export default function ExceptionInboxPage() {
   };
 
   return (
-    <div className="space-y-6 p-8 min-h-screen bg-ui-bg-subtle text-ui-fg-base font-sans">
-      {/* ── Action Toolbar ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ui-border-base pb-3">
-        <div className="flex items-center gap-2">
-          <Badge color="green" size="small">Exception Queue</Badge>
-          <Text size="small" className="text-ui-fg-subtle">
-            {page?.items.length ?? 0} Operational Exceptions
-          </Text>
-        </div>
-        <div className="flex items-center gap-2">
+    <ModulePage
+      title="Processing exceptions"
+      description={`${page?.items.length ?? 0} open. Records and run steps that failed a rule wait here to be fixed, retried or discarded.`}
+      actions={
+        <>
           <Button
             variant="secondary"
             size="small"
@@ -104,8 +100,9 @@ export default function ExceptionInboxPage() {
               Recovery Studio →
             </Button>
           </Link>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* ── Filter Pills ────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
@@ -120,7 +117,7 @@ export default function ExceptionInboxPage() {
                 : 'bg-ui-bg-base text-ui-fg-subtle hover:text-ui-fg-base hover:bg-ui-bg-base-hover border border-ui-border-base'
             }`}
           >
-            {item.toLowerCase().replaceAll('_', ' ')}
+            {codeLabel(item)}
           </button>
         ))}
       </div>
@@ -226,6 +223,6 @@ export default function ExceptionInboxPage() {
           ))
         )}
       </div>
-    </div>
+    </ModulePage>
   );
 }
