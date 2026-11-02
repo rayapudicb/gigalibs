@@ -83,14 +83,20 @@ export function windowSource(builderFor) {
 
   const ORG_UNIT_REF = lookup('org-unit-ref', 'organization-units');
   const WAREHOUSE_REF = lookup('warehouse-ref', 'inventory-warehouses');
-  const PRODUCT_REF = lookup('product-ref', 'catalogue-products');
+  // WI-OI-149: picking a product fills its code, name and base unit; picking the customer (from Business partners)
+  // fills its name, instead of a typed party UUID and re-typed names.
+  const PRODUCT_REF = lookup('product-ref', 'catalogue-products', {
+    fills: { code: 'line-product-code', name: 'line-product-name', 'base-uom-id': 'line-uom-id' },
+  });
+  const CUSTOMER_REF = lookup('customer-ref', 'business-partners-parties', { fills: { name: 'customer-name' } });
+  const CUSTOMER_ONLY_REF = lookup('customer-ref', 'business-partners-parties');
   const UOM_REF = lookup('uom-ref', 'catalogue-uoms');
 
   const SO = 'orders.sales-orders';
   const soFields = [
     field(SO, 'order-number', 'Order number', 'TEXT', { readOnly: true }),
     field(SO, 'org-unit-id', 'Organization unit', 'REFERENCE', { required: true, ref: 'org-unit-ref', writePermission: 'orders:manage' }),
-    field(SO, 'customer-id', 'Customer party', 'TEXT', { required: true, help: 'Active workspace party UUID (customer).', writePermission: 'orders:manage' }),
+    field(SO, 'customer-id', 'Customer', 'REFERENCE', { required: true, ref: 'customer-ref', help: 'The customer, chosen from Business partners.', writePermission: 'orders:manage' }),
     field(SO, 'customer-name', 'Customer name', 'TEXT', { required: true, writePermission: 'orders:manage' }),
     field(SO, 'order-type', 'Order type', 'SELECT', { ref: 'order-types', defaultValue: 'STANDARD', writePermission: 'orders:manage' }),
     field(SO, 'warehouse-id', 'Fulfillment warehouse', 'REFERENCE', { required: true, ref: 'warehouse-ref', writePermission: 'orders:manage' }),
@@ -111,7 +117,7 @@ export function windowSource(builderFor) {
   const sqFields = [
     field(SQ, 'quote-number', 'Quote number', 'TEXT', { readOnly: true }),
     field(SQ, 'org-unit-id', 'Organization unit', 'REFERENCE', { required: true, ref: 'org-unit-ref', writePermission: 'orders:quotes:manage' }),
-    field(SQ, 'customer-id', 'Customer party', 'TEXT', { required: true, help: 'Active workspace party UUID (customer).', writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'customer-id', 'Customer', 'REFERENCE', { required: true, ref: 'customer-ref', help: 'The customer, chosen from Business partners.', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'customer-name', 'Customer name', 'TEXT', { required: true, writePermission: 'orders:quotes:manage' }),
     field(SQ, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'valid-until', 'Valid until', 'DATETIME', { required: true, writePermission: 'orders:quotes:manage' }),
@@ -142,7 +148,7 @@ export function windowSource(builderFor) {
   const CM = 'orders.customer-credit-memos';
   const cmFields = [
     field(CM, 'credit-memo-number', 'Credit memo number', 'TEXT', { readOnly: true }),
-    field(CM, 'customer-id', 'Customer party', 'TEXT', { required: true, help: 'Active workspace party UUID (customer).', writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'customer-id', 'Customer', 'REFERENCE', { required: true, ref: 'customer-ref', help: 'The customer, chosen from Business partners.', writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'order-id', 'Sales order', 'TEXT', { writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'invoice-id', 'Customer invoice', 'TEXT', { writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'orders:credit-memos:manage' }),
@@ -177,6 +183,7 @@ export function windowSource(builderFor) {
       dictionary('orders-sales-quotes', 'Sales quotes', SQ, [entity(SQ, 'Sales quotes')], sqFields, [], [
         values('quote-statuses', QUOTE_STATUS),
         ORG_UNIT_REF,
+        CUSTOMER_REF,
         PRODUCT_REF,
         UOM_REF,
       ], [
@@ -237,6 +244,7 @@ export function windowSource(builderFor) {
         values('order-types', ORDER_TYPES),
         values('order-statuses', ORDER_STATUS),
         ORG_UNIT_REF,
+        CUSTOMER_REF,
         WAREHOUSE_REF,
         PRODUCT_REF,
         UOM_REF,
@@ -345,6 +353,7 @@ export function windowSource(builderFor) {
       'Issue customer credit memos for returns and billing adjustments.',
       'orders:read',
       dictionary('orders-customer-credit-memos', 'Credit memos', CM, [entity(CM, 'Customer credit memos')], cmFields, [], [
+        CUSTOMER_ONLY_REF,
         values('credit-memo-statuses', CREDIT_MEMO_STATUS),
       ], [
         view('customer-credit-memos', 'Credit memos', [

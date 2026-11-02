@@ -107,6 +107,11 @@ export interface RecordAdapter {
 export interface LookupOption {
   readonly value: string;
   readonly label: string;
+  /**
+   * WI-OI-149: facts about the option a window copies into other fields when it is picked (a reference's `fills`),
+   * such as a product's code, name and base unit, so people do not type them again.
+   */
+  readonly attributes?: Readonly<Record<string, string>>;
 }
 
 export interface LookupResolver {

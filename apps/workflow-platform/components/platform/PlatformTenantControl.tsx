@@ -119,6 +119,7 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
   const [tenants, setTenants] = useState<TenantRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [create, setCreate] = useState<CreateForm>(emptyCreate);
+  const [slugEdited, setSlugEdited] = useState(false);
   const [createModules, setCreateModules] = useState<string[]>([]);
   const [editModules, setEditModules] = useState<string[]>([]);
   const [reason, setReason] = useState('Platform administrator review');
@@ -242,6 +243,7 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
         'Tenant creation',
       );
       setCreate(emptyCreate);
+      setSlugEdited(false);
       setSelectedId(created.id);
       setActiveTab('detail');
     } catch (failure) {
@@ -754,7 +756,9 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                       setCreate({
                         ...create,
                         name: event.target.value,
-                        slug: create.slug || slugify(event.target.value),
+                        // WI-OI-147: the slug follows the name until the operator edits it (it stopped after the
+                        // first letter: "Roche" gave "r").
+                        slug: slugEdited ? create.slug : slugify(event.target.value),
                       })
                     }
                     className={inputClass}
@@ -767,9 +771,10 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                     pattern="[a-z0-9][a-z0-9-]{1,47}"
                     placeholder="e.g. roche-pharma"
                     value={create.slug}
-                    onChange={(event) =>
-                      setCreate({ ...create, slug: slugify(event.target.value) })
-                    }
+                    onChange={(event) => {
+                      setSlugEdited(true);
+                      setCreate({ ...create, slug: slugify(event.target.value) });
+                    }}
                     className={inputClass}
                   />
                 </Field>

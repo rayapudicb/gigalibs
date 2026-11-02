@@ -67,7 +67,11 @@ export type ModuleCallPayload =
         | 'accounts-receivable.organization-sync'
         | 'manufacturing.organization-sync'
         | 'process-safety-screening.organization-sync'
-        | 'operator-rounds.organization-sync';
+        | 'operator-rounds.organization-sync'
+        | 'universal-inventory.organization-sync'
+        | 'universal-orders.organization-sync'
+        | 'universal-procurement.organization-sync'
+        | 'financial-operations.organization-sync';
       readonly versionId: string;
     };
 
@@ -91,6 +95,13 @@ export const ORGANIZATION_SYNC_OPERATIONS = {
   // WI-OI-120cc (SPEED S9): a SPEED project belongs to a site of the organization in force.
   'process-safety-screening': { operation: 'process-safety-screening.organization-sync' },
   'operator-rounds': { operation: 'operator-rounds.organization-sync' },
+  // WI-OI-146: these modules check the organization version in every read (organizationAccess) but were never sent
+  // it, so once a workspace activated a version they refused every request (Inventory 500, Orders and Procurement
+  // after their route fix). Each already serves v1/organization/versions.
+  'universal-inventory': { operation: 'universal-inventory.organization-sync' },
+  'universal-orders': { operation: 'universal-orders.organization-sync' },
+  'universal-procurement': { operation: 'universal-procurement.organization-sync' },
+  'financial-operations': { operation: 'financial-operations.organization-sync' },
 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -243,6 +254,46 @@ export const MODULE_CALL_OPERATIONS: Readonly<Record<ModuleCallPayload['operatio
     body: () => ({}),
     organizationVersion: true,
   },
+  'universal-inventory.organization-sync': {
+    moduleKey: 'universal-inventory',
+    audience: 'gigalibs-universal-inventory-api',
+    baseUrlEnvironment: 'UNIVERSAL_INVENTORY_API_URL',
+    privateKeyEnvironment: 'UNIVERSAL_INVENTORY_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `universal-inventory/v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
+  'universal-orders.organization-sync': {
+    moduleKey: 'universal-orders',
+    audience: 'gigalibs-universal-orders-api',
+    baseUrlEnvironment: 'UNIVERSAL_ORDERS_API_URL',
+    privateKeyEnvironment: 'UNIVERSAL_ORDERS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `universal-orders/v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
+  'universal-procurement.organization-sync': {
+    moduleKey: 'universal-procurement',
+    audience: 'gigalibs-universal-procurement-api',
+    baseUrlEnvironment: 'UNIVERSAL_PROCUREMENT_API_URL',
+    privateKeyEnvironment: 'UNIVERSAL_PROCUREMENT_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `universal-procurement/v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
+  'financial-operations.organization-sync': {
+    moduleKey: 'financial-operations',
+    audience: 'gigalibs-financial-operations-api',
+    baseUrlEnvironment: 'FINANCIAL_OPERATIONS_API_URL',
+    privateKeyEnvironment: 'FINANCIAL_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'organization:activate',
+    path: (payload) => `financial-operations/v1/organization/versions/${encodeURIComponent(moduleCallTarget(payload))}`,
+    body: () => ({}),
+    organizationVersion: true,
+  },
 };
 
 export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
@@ -277,6 +328,10 @@ export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
       input.operation === 'business-partners.organization-sync' ||
       input.operation === 'accounts-receivable.organization-sync' ||
       input.operation === 'manufacturing.organization-sync' ||
+      input.operation === 'universal-inventory.organization-sync' ||
+      input.operation === 'universal-orders.organization-sync' ||
+      input.operation === 'universal-procurement.organization-sync' ||
+      input.operation === 'financial-operations.organization-sync' ||
       input.operation === 'process-safety-screening.organization-sync' ||
       input.operation === 'operator-rounds.organization-sync') &&
     typeof input.versionId === 'string' &&
@@ -305,6 +360,10 @@ export function moduleCallPayload(operation: ModuleCallPayload['operation'], tar
     'manufacturing.organization-sync': { versionId: targetId },
     'process-safety-screening.organization-sync': { versionId: targetId },
     'operator-rounds.organization-sync': { versionId: targetId },
+    'universal-inventory.organization-sync': { versionId: targetId },
+    'universal-orders.organization-sync': { versionId: targetId },
+    'universal-procurement.organization-sync': { versionId: targetId },
+    'financial-operations.organization-sync': { versionId: targetId },
   }[operation];
   return parseModuleCallPayload({ operation, ...target });
 }
@@ -333,6 +392,10 @@ export function moduleCallTarget(payload: ModuleCallPayload): string {
     case 'manufacturing.organization-sync':
     case 'process-safety-screening.organization-sync':
     case 'operator-rounds.organization-sync':
+    case 'universal-inventory.organization-sync':
+    case 'universal-orders.organization-sync':
+    case 'universal-procurement.organization-sync':
+    case 'financial-operations.organization-sync':
       return payload.versionId;
   }
 }

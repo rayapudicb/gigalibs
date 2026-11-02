@@ -58,9 +58,12 @@ export function windowBuilder({ moduleKey, route, createWith = {} }) {
     staticValues: items.map(([value, label]) => ({ value, label })),
   });
 
-  /** A lookup resolved by a registered resolver; any window can use it. Offers "Add new" when `createWith` names it. */
-  const lookup = (key, resolver) => {
-    const reference = { referenceKey: key, referenceType: 'SEARCH_LOOKUP', resolverKey: resolver };
+  /**
+   * A lookup resolved by a registered resolver; any window can use it. Offers "Add new" when `createWith` names it.
+   * `fills` (WI-OI-149) copies the picked option's attributes into other fields: `{ attribute: fieldKey }`.
+   */
+  const lookup = (key, resolver, { fills } = {}) => {
+    const reference = { referenceKey: key, referenceType: 'SEARCH_LOOKUP', resolverKey: resolver, ...(fills ? { fills } : {}) };
     if (createWith[resolver]) {
       const [module, surface, permission] = createWith[resolver];
       reference.createWith = { moduleKey: module, surfaceKey: surface, permission };

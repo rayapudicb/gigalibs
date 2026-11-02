@@ -19,6 +19,9 @@ import {
   recordTitle,
   validateValues,
   createFormFields,
+  fieldLabel,
+  isMinorMoney,
+  moneyFromMinor,
   submittedValues,
   valueWhileTyping,
   type WindowModel,
@@ -352,7 +355,7 @@ function RecordList({
                         className="font-medium hover:text-ui-fg-base"
                         onClick={() => setQuery((current) => ({ ...current, page: 1, sort: field.fieldKey, direction: current.direction === 'ASC' ? 'DESC' : 'ASC' }))}
                       >
-                        {field.label} {query.sort === field.fieldKey ? (query.direction === 'ASC' ? '↑' : '↓') : ''}
+                        {fieldLabel(field)} {query.sort === field.fieldKey ? (query.direction === 'ASC' ? '↑' : '↓') : ''}
                       </button>
                     ) : (
                       field.label
@@ -405,6 +408,7 @@ function DisplayValue({ placed, value, label }: { placed: PlacedField; value: un
   const option = placed.options?.find((candidate) => candidate.value === String(value));
   if (option) return <span>{option.label}</span>;
   if (field.type === 'DATETIME' && typeof value === 'string') return <span>{value.slice(0, 16).replace('T', ' ')}</span>;
+  if (isMinorMoney(field)) return <span className="tabular-nums">{moneyFromMinor(value)}</span>;
   if (typeof value === 'object') return <span className="font-mono text-xs">{JSON.stringify(value)}</span>;
   return <span>{String(value)}</span>;
 }
@@ -636,7 +640,7 @@ function FieldInput({
   const set = (input: string | boolean) => onChange?.(field.fieldKey, valueWhileTyping(field, input));
   const label = (
     <label htmlFor={id} className="text-xs font-medium text-ui-fg-subtle">
-      {field.label}
+      {fieldLabel(field)}
       {required ? <span className="text-ui-fg-error"> *</span> : null}
     </label>
   );
@@ -648,7 +652,15 @@ function FieldInput({
   } else if (field.type === 'SELECT') {
     control = <SelectInput id={id} placed={placed} value={value} disabled={disabled} onChange={set} />;
   } else if (field.type === 'REFERENCE') {
-    control = <LookupInput id={id} placed={placed} value={value} disabled={disabled} client={client} onChange={set} />;
+    // WI-OI-149: the picked option's attributes fill the reference's `fills` fields (a product's code, name, unit).
+    const pick = (option: LookupOption) => {
+      set(option.value);
+      for (const [attribute, target] of Object.entries(placed.fills ?? {})) {
+        const filled = option.attributes?.[attribute];
+        if (filled !== undefined) onChange?.(target, filled);
+      }
+    };
+    control = <LookupInput id={id} placed={placed} value={value} disabled={disabled} client={client} onChange={set} onPick={pick} />;
   } else {
     const type = field.type === 'DATE' ? 'date' : field.type === 'DATETIME' ? 'datetime-local' : field.type === 'EMAIL' ? 'email' : field.type === 'URL' ? 'url' : 'text';
     const decimal = field.type === 'NUMBER' || field.type === 'CURRENCY' || field.type === 'INTEGER';
@@ -699,6 +711,7 @@ function LookupInput({
   disabled,
   client,
   onChange,
+  onPick,
 }: {
   id: string;
   placed: PlacedField;
@@ -706,6 +719,8 @@ function LookupInput({
   disabled: boolean;
   client: RecordClient;
   onChange: (input: string) => void;
+  /** Called instead of onChange when the person picks an option, with the whole option (its attributes). */
+  onPick?: (option: LookupOption) => void;
 }) {
   // WI-OI-120ce: one searchable field (a combobox), not a search box above a separate list: type to search, choose with
   // the mouse or the arrow keys and Enter; the chosen record shows by its name.
@@ -766,7 +781,8 @@ function LookupInput({
     setChosen(option);
     setSearch('');
     setOpen(false);
-    onChange(option.value);
+    if (onPick) onPick(option);
+    else onChange(option.value);
   };
   const shownName = current ? (chosen?.value === current ? chosen.label : '') : '';
   return (

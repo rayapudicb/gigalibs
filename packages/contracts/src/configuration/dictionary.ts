@@ -160,6 +160,12 @@ export const DictionaryReferenceV1Schema = z
       })
       .strict()
       .optional(),
+    /**
+     * WI-OI-149: fields a picked option fills from its attributes ({ attribute: fieldKey }), such as a product's code,
+     * name and base unit, or a partner's name, so people do not type what the choice already says. The person can
+     * still change a filled field.
+     */
+    fills: z.record(z.string().trim().min(1).max(64), ConfigurationKeySchema).optional(),
   })
   .strict();
 export type DictionaryReferenceV1 = z.infer<typeof DictionaryReferenceV1Schema>;

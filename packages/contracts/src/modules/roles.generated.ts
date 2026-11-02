@@ -91,7 +91,9 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     "description": "Creates and tracks departmental purchase requisitions.",
     "permissions": [
       "procurement:read",
-      "procurement:requisitions:manage"
+      "procurement:requisitions:manage",
+      "products:read",
+      "uoms:read"
     ]
   },
   {
@@ -114,7 +116,11 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "procurement:read",
       "procurement:orders:manage",
       "procurement:orders:issue",
-      "procurement:vendors:manage"
+      "procurement:vendors:manage",
+      "products:read",
+      "uoms:read",
+      "business-partners:read",
+      "inventory.read"
     ]
   },
   {
@@ -127,7 +133,10 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "procurement:match",
       "procurement:bills:manage",
       "procurement:variance:override",
-      "procurement:debit-memos:manage"
+      "procurement:debit-memos:manage",
+      "products:read",
+      "uoms:read",
+      "business-partners:read"
     ]
   },
   {
@@ -138,7 +147,11 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
     "permissions": [
       "orders:read",
       "orders:quotes:manage",
-      "orders:manage"
+      "orders:manage",
+      "products:read",
+      "uoms:read",
+      "business-partners:read",
+      "inventory.read"
     ]
   },
   {
@@ -150,7 +163,11 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "orders:read",
       "orders:quotes:approve",
       "orders:manage",
-      "orders:confirm"
+      "orders:confirm",
+      "products:read",
+      "uoms:read",
+      "business-partners:read",
+      "inventory.read"
     ]
   },
   {
@@ -173,7 +190,8 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "orders:read",
       "orders:invoices:manage",
       "orders:credit-memos:manage",
-      "orders:returns:manage"
+      "orders:returns:manage",
+      "business-partners:read"
     ]
   },
   {

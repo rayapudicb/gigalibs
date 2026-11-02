@@ -227,6 +227,11 @@
           "referenceKey": "product-ref",
           "referenceType": "SEARCH_LOOKUP",
           "resolverKey": "catalogue-products",
+          "fills": {
+            "code": "line-product-code",
+            "name": "line-product-name",
+            "base-uom-id": "line-uom-id"
+          },
           "createWith": {
             "moduleKey": "product-catalogue",
             "surfaceKey": "catalogue-products",

@@ -71,14 +71,21 @@ export function windowSource(builderFor) {
 
   const ORG_UNIT_REF = lookup('org-unit-ref', 'organization-units');
   const WAREHOUSE_REF = lookup('warehouse-ref', 'inventory-warehouses');
+  // WI-OI-149: picking a product fills its code, name and base unit where the window has those fields; picking the
+  // vendor (from Business partners) fills its name, instead of a typed party UUID and re-typed names.
   const PRODUCT_REF = lookup('product-ref', 'catalogue-products');
+  const PRODUCT_FILL_REF = lookup('product-ref', 'catalogue-products', {
+    fills: { code: 'line-product-code', name: 'line-product-name', 'base-uom-id': 'line-uom-id' },
+  });
+  const VENDOR_REF = lookup('vendor-ref', 'business-partners-parties', { fills: { name: 'vendor-name' } });
+  const VENDOR_ONLY_REF = lookup('vendor-ref', 'business-partners-parties');
   const UOM_REF = lookup('uom-ref', 'catalogue-uoms');
 
   const PO = 'procurement.purchase-orders';
   const poFields = [
     field(PO, 'order-number', 'PO number', 'TEXT', { readOnly: true }),
     field(PO, 'org-unit-id', 'Organization unit', 'REFERENCE', { required: true, ref: 'org-unit-ref', writePermission: 'procurement:orders:manage' }),
-    field(PO, 'vendor-id', 'Vendor party', 'TEXT', { required: true, help: 'Active workspace party UUID (supplier).', writePermission: 'procurement:orders:manage' }),
+    field(PO, 'vendor-id', 'Vendor', 'REFERENCE', { required: true, ref: 'vendor-ref', help: 'The vendor, chosen from Business partners.', writePermission: 'procurement:orders:manage' }),
     field(PO, 'vendor-name', 'Vendor name', 'TEXT', { required: true, writePermission: 'procurement:orders:manage' }),
     field(PO, 'destination-warehouse-id', 'Ship-to warehouse', 'REFERENCE', { required: true, ref: 'warehouse-ref', writePermission: 'procurement:orders:manage' }),
     field(PO, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:orders:manage' }),
@@ -112,7 +119,7 @@ export function windowSource(builderFor) {
   const VB = 'procurement.vendor-bills';
   const vbFields = [
     field(VB, 'vendor-invoice-number', 'Vendor invoice #', 'TEXT', { required: true, writePermission: 'procurement:bills:manage' }),
-    field(VB, 'vendor-id', 'Vendor party', 'TEXT', { required: true, help: 'Active workspace party UUID (supplier).', writePermission: 'procurement:bills:manage' }),
+    field(VB, 'vendor-id', 'Vendor', 'REFERENCE', { required: true, ref: 'vendor-ref', help: 'The vendor, chosen from Business partners.', writePermission: 'procurement:bills:manage' }),
     field(VB, 'invoice-date', 'Invoice date', 'DATETIME', { required: true, writePermission: 'procurement:bills:manage' }),
     field(VB, 'due-date', 'Due date', 'DATETIME', { required: true, writePermission: 'procurement:bills:manage' }),
     field(VB, 'purchase-order-id', 'Purchase order', 'TEXT', { writePermission: 'procurement:bills:manage', help: 'Optional PO UUID to link the bill.' }),
@@ -129,7 +136,7 @@ export function windowSource(builderFor) {
   const DM = 'procurement.debit-memos';
   const dmFields = [
     field(DM, 'debit-memo-number', 'Debit memo number', 'TEXT', { readOnly: true }),
-    field(DM, 'vendor-id', 'Vendor party', 'TEXT', { required: true, help: 'Active workspace party UUID (supplier).', writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'vendor-id', 'Vendor', 'REFERENCE', { required: true, ref: 'vendor-ref', help: 'The vendor, chosen from Business partners.', writePermission: 'procurement:debit-memos:manage' }),
     field(DM, 'vendor-bill-id', 'Vendor bill', 'TEXT', { writePermission: 'procurement:debit-memos:manage' }),
     field(DM, 'purchase-order-id', 'Purchase order', 'TEXT', { writePermission: 'procurement:debit-memos:manage' }),
     field(DM, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:debit-memos:manage' }),
@@ -151,6 +158,7 @@ export function windowSource(builderFor) {
       'Issue vendor debit memos against bills or purchase orders.',
       'procurement:read',
       dictionary('procurement-debit-memos', 'Debit memos', DM, [entity(DM, 'Debit memos')], dmFields, [], [
+        VENDOR_ONLY_REF,
         values('debit-memo-statuses', DEBIT_MEMO_STATUS),
         PRODUCT_REF,
       ], [
@@ -190,7 +198,7 @@ export function windowSource(builderFor) {
       dictionary('procurement-requisitions', 'Requisitions', REQ, [entity(REQ, 'Requisitions')], reqFields, [], [
         values('requisition-statuses', REQUISITION_STATUS),
         ORG_UNIT_REF,
-        PRODUCT_REF,
+        PRODUCT_FILL_REF,
         UOM_REF,
       ], [
         view('requisitions', 'Requisitions', [
@@ -251,6 +259,7 @@ export function windowSource(builderFor) {
       'Record vendor AP invoices for matching and approval.',
       'procurement:read',
       dictionary('procurement-vendor-bills', 'Vendor bills', VB, [entity(VB, 'Vendor bills')], vbFields, [], [
+        VENDOR_ONLY_REF,
         values('vendor-bill-statuses', VENDOR_BILL_STATUS),
         PRODUCT_REF,
         UOM_REF,
@@ -298,10 +307,11 @@ export function windowSource(builderFor) {
       'Create and review purchase order commitments to vendors.',
       'procurement:read',
       dictionary('procurement-purchase-orders', 'Purchase orders', PO, [entity(PO, 'Purchase orders')], poFields, [], [
+        VENDOR_REF,
         values('po-statuses', PO_STATUS),
         ORG_UNIT_REF,
         WAREHOUSE_REF,
-        PRODUCT_REF,
+        PRODUCT_FILL_REF,
         UOM_REF,
       ], [
         view('purchase-orders', 'Purchase orders', [

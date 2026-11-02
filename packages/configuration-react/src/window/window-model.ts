@@ -45,6 +45,8 @@ export interface PlacedField {
   readonly resolverKey?: string;
   /** WI-OI-120 (F0.6): the window that creates the reference's records, for "Add new" and "Open" from the picker. */
   readonly createWith?: { readonly moduleKey: string; readonly surfaceKey: string; readonly permission: string };
+  /** WI-OI-149: fields the picked option fills from its attributes. */
+  readonly fills?: Readonly<Record<string, string>>;
 }
 
 /** No permission named means open; otherwise the one permission rule (WI-OI-120q, `permissionMatches`). */
@@ -102,6 +104,7 @@ export function placedFields(
           ...(reference?.referenceType === 'VALUE_LIST' ? { options: (reference.staticValues ?? []).map(({ value, label }) => ({ value, label })) } : {}),
           ...(reference && reference.referenceType !== 'VALUE_LIST' && reference.resolverKey ? { resolverKey: reference.resolverKey } : {}),
           ...(reference?.createWith ? { createWith: reference.createWith } : {}),
+          ...(reference?.fills ? { fills: reference.fills } : {}),
         },
       ];
     });
@@ -158,11 +161,32 @@ export function actionKey(action: DictionaryActionV1, entityKey: string): string
   return action.handlerKey.slice(entityKey.length + 1);
 }
 
+/**
+ * WI-OI-149: money kept as a whole number of minor units (cents) — fields keyed `…-minor` or labelled "(minor)" /
+ * "(minor units)" — is shown and typed in normal units (12.50) and stored as before (1250).
+ */
+export function isMinorMoney(field: DictionaryFieldV1): boolean {
+  return (field.type === 'INTEGER' || field.type === 'TEXT') && (/-minor$/.test(field.fieldKey) || /\(minor( units)?\)/i.test(field.label));
+}
+
+/** The label people read: "(minor units)" is a storage detail, not theirs. */
+export function fieldLabel(field: DictionaryFieldV1): string {
+  return field.label.replace(/\s*\((minor|minor units)\)/i, '').trim();
+}
+
+/** Minor units as normal money text: 125000 → "1250.00". */
+export function moneyFromMinor(value: unknown): string {
+  const minor = typeof value === 'number' ? value : /^-?\d+$/.test(String(value).trim()) ? Number(String(value).trim()) : Number.NaN;
+  return Number.isFinite(minor) ? (minor / 100).toFixed(2) : String(value);
+}
+
 /** A form input's text as the value sent to the server: exact decimals stay strings, booleans and integers convert. */
 export function valueFromInput(field: DictionaryFieldV1, input: string | boolean): unknown {
   if (field.type === 'BOOLEAN') return input === true || input === 'true';
   const text = String(input).trim();
   if (text === '') return null;
+  if (field.type === 'INTEGER' && isMinorMoney(field))
+    return /^-?\d+(\.\d{1,2})?$/.test(text) ? Math.round(Number(text) * 100) : text;
   if (field.type === 'INTEGER') return /^-?\d+$/.test(text) ? Number(text) : text;
   return text;
 }
@@ -175,6 +199,8 @@ export function valueWhileTyping(field: DictionaryFieldV1, input: string | boole
   if (field.type === 'BOOLEAN') return input === true || input === 'true';
   const text = String(input);
   if (text.trim() === '') return null;
+  // Money in normal units stays as typed ("12.5") until it is saved, when valueFromInput makes it minor units.
+  if (isMinorMoney(field)) return text;
   if (field.type === 'INTEGER') return /^-?\d+$/.test(text.trim()) ? Number(text.trim()) : text;
   return text;
 }
@@ -200,6 +226,8 @@ export function submittedValues(fields: readonly PlacedField[], values: RecordVa
 /** A stored value as form input text. */
 export function inputFromValue(field: DictionaryFieldV1, value: unknown): string {
   if (value === null || value === undefined) return '';
+  // A stored number (or a read-only total) of minor units shows in normal units; text being typed shows as typed.
+  if (isMinorMoney(field) && (typeof value === 'number' || field.type === 'TEXT')) return moneyFromMinor(value);
   if (field.type === 'DATE' && typeof value === 'string') return value.slice(0, 10);
   if (field.type === 'DATETIME' && typeof value === 'string') return value.slice(0, 16);
   return String(value);
@@ -229,7 +257,10 @@ export function validateValues(model: WindowModel, fields: readonly PlacedField[
       continue;
     }
     if (empty) continue;
-    if (field.type === 'INTEGER' && !Number.isInteger(value)) errors[field.fieldKey] = `${field.label} must be a whole number.`;
+    if (field.type === 'INTEGER' && !Number.isInteger(value))
+      errors[field.fieldKey] = isMinorMoney(field)
+        ? `${fieldLabel(field)} must be an amount such as 12.50.`
+        : `${field.label} must be a whole number.`;
     if (field.type === 'NUMBER' || field.type === 'CURRENCY') {
       const decimal = parseExactDecimal(value);
       if (!decimal) errors[field.fieldKey] = `${field.label} must be a number.`;

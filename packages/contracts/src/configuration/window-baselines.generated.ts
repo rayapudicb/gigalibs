@@ -20128,14 +20128,15 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "customer-id",
             "entityKey": "orders.customer-credit-memos",
-            "label": "Customer party",
-            "type": "TEXT",
+            "label": "Customer",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Active workspace party UUID (customer).",
+            "referenceKey": "customer-ref",
+            "helpText": "The customer, chosen from Business partners.",
             "writePermission": "orders:credit-memos:manage"
           },
           {
@@ -20265,6 +20266,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         "relationships": [],
         "references": [
           {
+            "referenceKey": "customer-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "business-partners-parties"
+          },
+          {
             "referenceKey": "credit-memo-statuses",
             "referenceType": "VALUE_LIST",
             "staticValues": [
@@ -20374,7 +20380,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "customer-id",
                     "position": 3,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "parties"
                   },
                   {
@@ -21110,14 +21116,15 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "customer-id",
             "entityKey": "orders.sales-orders",
-            "label": "Customer party",
-            "type": "TEXT",
+            "label": "Customer",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Active workspace party UUID (customer).",
+            "referenceKey": "customer-ref",
+            "helpText": "The customer, chosen from Business partners.",
             "writePermission": "orders:manage"
           },
           {
@@ -21371,6 +21378,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "resolverKey": "organization-units"
           },
           {
+            "referenceKey": "customer-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "business-partners-parties",
+            "fills": {
+              "name": "customer-name"
+            }
+          },
+          {
             "referenceKey": "warehouse-ref",
             "referenceType": "SEARCH_LOOKUP",
             "resolverKey": "inventory-warehouses",
@@ -21384,6 +21399,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
             "resolverKey": "catalogue-products",
+            "fills": {
+              "code": "line-product-code",
+              "name": "line-product-name",
+              "base-uom-id": "line-uom-id"
+            },
             "createWith": {
               "moduleKey": "product-catalogue",
               "surfaceKey": "catalogue-products",
@@ -21484,7 +21504,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "customer-id",
                     "position": 4,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "parties"
                   },
                   {
@@ -21708,14 +21728,15 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "customer-id",
             "entityKey": "orders.sales-quotes",
-            "label": "Customer party",
-            "type": "TEXT",
+            "label": "Customer",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Active workspace party UUID (customer).",
+            "referenceKey": "customer-ref",
+            "helpText": "The customer, chosen from Business partners.",
             "writePermission": "orders:quotes:manage"
           },
           {
@@ -21919,9 +21940,22 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "resolverKey": "organization-units"
           },
           {
+            "referenceKey": "customer-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "business-partners-parties",
+            "fills": {
+              "name": "customer-name"
+            }
+          },
+          {
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
             "resolverKey": "catalogue-products",
+            "fills": {
+              "code": "line-product-code",
+              "name": "line-product-name",
+              "base-uom-id": "line-uom-id"
+            },
             "createWith": {
               "moduleKey": "product-catalogue",
               "surfaceKey": "catalogue-products",
@@ -22022,7 +22056,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "customer-id",
                     "position": 4,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "parties"
                   },
                   {
@@ -22204,14 +22238,15 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "vendor-id",
             "entityKey": "procurement.debit-memos",
-            "label": "Vendor party",
-            "type": "TEXT",
+            "label": "Vendor",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Active workspace party UUID (supplier).",
+            "referenceKey": "vendor-ref",
+            "helpText": "The vendor, chosen from Business partners.",
             "writePermission": "procurement:debit-memos:manage"
           },
           {
@@ -22354,6 +22389,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         "relationships": [],
         "references": [
           {
+            "referenceKey": "vendor-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "business-partners-parties"
+          },
+          {
             "referenceKey": "debit-memo-statuses",
             "referenceType": "VALUE_LIST",
             "staticValues": [
@@ -22473,7 +22513,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "vendor-id",
                     "position": 3,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "parties"
                   },
                   {
@@ -22611,14 +22651,15 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "vendor-id",
             "entityKey": "procurement.purchase-orders",
-            "label": "Vendor party",
-            "type": "TEXT",
+            "label": "Vendor",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Active workspace party UUID (supplier).",
+            "referenceKey": "vendor-ref",
+            "helpText": "The vendor, chosen from Business partners.",
             "writePermission": "procurement:orders:manage"
           },
           {
@@ -22777,6 +22818,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         "relationships": [],
         "references": [
           {
+            "referenceKey": "vendor-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "business-partners-parties",
+            "fills": {
+              "name": "vendor-name"
+            }
+          },
+          {
             "referenceKey": "po-statuses",
             "referenceType": "VALUE_LIST",
             "staticValues": [
@@ -22837,6 +22886,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
             "resolverKey": "catalogue-products",
+            "fills": {
+              "code": "line-product-code",
+              "name": "line-product-name",
+              "base-uom-id": "line-uom-id"
+            },
             "createWith": {
               "moduleKey": "product-catalogue",
               "surfaceKey": "catalogue-products",
@@ -22937,7 +22991,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "vendor-id",
                     "position": 4,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "parties"
                   },
                   {
@@ -23284,6 +23338,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "referenceKey": "product-ref",
             "referenceType": "SEARCH_LOOKUP",
             "resolverKey": "catalogue-products",
+            "fills": {
+              "code": "line-product-code",
+              "name": "line-product-name",
+              "base-uom-id": "line-uom-id"
+            },
             "createWith": {
               "moduleKey": "product-catalogue",
               "surfaceKey": "catalogue-products",
@@ -23562,14 +23621,15 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "vendor-id",
             "entityKey": "procurement.vendor-bills",
-            "label": "Vendor party",
-            "type": "TEXT",
+            "label": "Vendor",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Active workspace party UUID (supplier).",
+            "referenceKey": "vendor-ref",
+            "helpText": "The vendor, chosen from Business partners.",
             "writePermission": "procurement:bills:manage"
           },
           {
@@ -23714,6 +23774,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         "relationships": [],
         "references": [
           {
+            "referenceKey": "vendor-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "business-partners-parties"
+          },
+          {
             "referenceKey": "vendor-bill-statuses",
             "referenceType": "VALUE_LIST",
             "staticValues": [
@@ -23854,7 +23919,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "vendor-id",
                     "position": 3,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "parties"
                   },
                   {

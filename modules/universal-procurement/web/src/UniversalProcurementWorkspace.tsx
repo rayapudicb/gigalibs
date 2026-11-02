@@ -17,6 +17,8 @@ const LOOKUP_BASE_PATHS = {
   'inventory-warehouses': INVENTORY_PATH,
   'catalogue-products': CATALOGUE_PATH,
   'catalogue-uoms': CATALOGUE_PATH,
+  // WI-OI-149: the customer or vendor picker, over the Business partners module.
+  'business-partners-parties': '/api/business-partners',
 };
 
 type ProcurementSurface =

@@ -59,14 +59,15 @@
         {
           "fieldKey": "vendor-id",
           "entityKey": "procurement.purchase-orders",
-          "label": "Vendor party",
-          "type": "TEXT",
+          "label": "Vendor",
+          "type": "REFERENCE",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Active workspace party UUID (supplier).",
+          "referenceKey": "vendor-ref",
+          "helpText": "The vendor, chosen from Business partners.",
           "writePermission": "procurement:orders:manage"
         },
         {
@@ -225,6 +226,14 @@
       "relationships": [],
       "references": [
         {
+          "referenceKey": "vendor-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "business-partners-parties",
+          "fills": {
+            "name": "vendor-name"
+          }
+        },
+        {
           "referenceKey": "po-statuses",
           "referenceType": "VALUE_LIST",
           "staticValues": [
@@ -285,6 +294,11 @@
           "referenceKey": "product-ref",
           "referenceType": "SEARCH_LOOKUP",
           "resolverKey": "catalogue-products",
+          "fills": {
+            "code": "line-product-code",
+            "name": "line-product-name",
+            "base-uom-id": "line-uom-id"
+          },
           "createWith": {
             "moduleKey": "product-catalogue",
             "surfaceKey": "catalogue-products",
@@ -385,7 +399,7 @@
                   "fieldKey": "vendor-id",
                   "position": 4,
                   "span": 6,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "parties"
                 },
                 {

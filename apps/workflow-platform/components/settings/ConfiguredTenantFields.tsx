@@ -181,6 +181,8 @@ export function ConfiguredTenantFields({
 
   const busy = state.kind === 'loading' || state.kind === 'saving';
   const hasRuntime = runtime !== null;
+  // WI-OI-146: a workspace without configured fields shows nothing here rather than an empty section.
+  if (state.kind === 'absent') return null;
 
   return (
     <section
@@ -215,8 +217,7 @@ export function ConfiguredTenantFields({
         className="mb-4 rounded-lg border border-ui-border-base bg-ui-bg-subtle p-3 text-sm text-ui-fg-subtle focus:outline-none focus:ring-2 focus:ring-ui-fg-interactive"
       >
         <p>{state.message}</p>
-        {state.kind === 'absent' ||
-        state.kind === 'invalid-scope' ||
+        {state.kind === 'invalid-scope' ||
         state.kind === 'retryable-error' ||
         state.kind === 'conflict' ? (
           <Button className="mt-3" variant="secondary" onClick={() => void load()}>

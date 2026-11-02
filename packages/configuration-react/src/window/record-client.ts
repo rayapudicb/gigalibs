@@ -23,6 +23,8 @@ export interface RecordListRequest {
 export interface LookupOption {
   readonly value: string;
   readonly label: string;
+  /** WI-OI-149: facts a reference's `fills` copies into other fields when this option is picked. */
+  readonly attributes?: Readonly<Record<string, string>>;
 }
 
 export interface RecordClient {

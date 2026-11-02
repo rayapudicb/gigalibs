@@ -46,14 +46,15 @@
         {
           "fieldKey": "customer-id",
           "entityKey": "orders.customer-credit-memos",
-          "label": "Customer party",
-          "type": "TEXT",
+          "label": "Customer",
+          "type": "REFERENCE",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Active workspace party UUID (customer).",
+          "referenceKey": "customer-ref",
+          "helpText": "The customer, chosen from Business partners.",
           "writePermission": "orders:credit-memos:manage"
         },
         {
@@ -183,6 +184,11 @@
       "relationships": [],
       "references": [
         {
+          "referenceKey": "customer-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "business-partners-parties"
+        },
+        {
           "referenceKey": "credit-memo-statuses",
           "referenceType": "VALUE_LIST",
           "staticValues": [
@@ -292,7 +298,7 @@
                   "fieldKey": "customer-id",
                   "position": 3,
                   "span": 6,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "parties"
                 },
                 {

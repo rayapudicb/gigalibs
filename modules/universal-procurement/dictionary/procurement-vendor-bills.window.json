@@ -47,14 +47,15 @@
         {
           "fieldKey": "vendor-id",
           "entityKey": "procurement.vendor-bills",
-          "label": "Vendor party",
-          "type": "TEXT",
+          "label": "Vendor",
+          "type": "REFERENCE",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Active workspace party UUID (supplier).",
+          "referenceKey": "vendor-ref",
+          "helpText": "The vendor, chosen from Business partners.",
           "writePermission": "procurement:bills:manage"
         },
         {
@@ -199,6 +200,11 @@
       "relationships": [],
       "references": [
         {
+          "referenceKey": "vendor-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "business-partners-parties"
+        },
+        {
           "referenceKey": "vendor-bill-statuses",
           "referenceType": "VALUE_LIST",
           "staticValues": [
@@ -339,7 +345,7 @@
                   "fieldKey": "vendor-id",
                   "position": 3,
                   "span": 6,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "parties"
                 },
                 {

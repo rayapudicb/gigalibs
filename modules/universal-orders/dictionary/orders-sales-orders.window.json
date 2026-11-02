@@ -59,14 +59,15 @@
         {
           "fieldKey": "customer-id",
           "entityKey": "orders.sales-orders",
-          "label": "Customer party",
-          "type": "TEXT",
+          "label": "Customer",
+          "type": "REFERENCE",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Active workspace party UUID (customer).",
+          "referenceKey": "customer-ref",
+          "helpText": "The customer, chosen from Business partners.",
           "writePermission": "orders:manage"
         },
         {
@@ -320,6 +321,14 @@
           "resolverKey": "organization-units"
         },
         {
+          "referenceKey": "customer-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "business-partners-parties",
+          "fills": {
+            "name": "customer-name"
+          }
+        },
+        {
           "referenceKey": "warehouse-ref",
           "referenceType": "SEARCH_LOOKUP",
           "resolverKey": "inventory-warehouses",
@@ -333,6 +342,11 @@
           "referenceKey": "product-ref",
           "referenceType": "SEARCH_LOOKUP",
           "resolverKey": "catalogue-products",
+          "fills": {
+            "code": "line-product-code",
+            "name": "line-product-name",
+            "base-uom-id": "line-uom-id"
+          },
           "createWith": {
             "moduleKey": "product-catalogue",
             "surfaceKey": "catalogue-products",
@@ -433,7 +447,7 @@
                   "fieldKey": "customer-id",
                   "position": 4,
                   "span": 6,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "parties"
                 },
                 {

@@ -1,3 +1,4 @@
+import { ServiceUnavailableException } from '@nestjs/common';
 import type { OrganizationReplica, ReplicaClient } from './organization-replica.js';
 
 // WI-OI-109e3 (ADR-0018 §2–§3): what a member may read and change in a module, from the signed `organization` claim
@@ -24,11 +25,18 @@ export interface OrganizationAccess {
   readonly denied: boolean;
 }
 
-/** The context names a version this module does not hold yet; answer 503 and let the caller retry shortly. */
-export class OrganizationVersionPendingError extends Error {
+/**
+ * The context names a version this module does not hold yet; it answers 503 wherever it is thrown (WI-OI-146: modules
+ * that did not catch it answered 500), with a message that tells an administrator what to do.
+ */
+export class OrganizationVersionPendingError extends ServiceUnavailableException {
   readonly code = 'ORGANIZATION_VERSION_PENDING';
   constructor(readonly versionId: string) {
-    super('This organization version is still being delivered here; try again in a moment.');
+    super({
+      code: 'ORGANIZATION_VERSION_PENDING',
+      message:
+        'Your organization structure has not reached this module yet. An administrator can send it again from Settings, Organization & hierarchy.',
+    });
     this.name = 'OrganizationVersionPendingError';
   }
 }

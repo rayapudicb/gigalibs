@@ -4380,6 +4380,36 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
           "GET": "orders:read",
           "POST": "orders:returns:manage"
         }
+      },
+      {
+        "template": "v1/records/{entity}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*$",
+        "methods": {
+          "GET": "orders:read",
+          "POST": "orders:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "orders:read",
+          "PATCH": "orders:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions/{key}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
+        "methods": {
+          "POST": "orders:read"
+        }
+      },
+      {
+        "template": "v1/lookups/{key}",
+        "pattern": "^v1/lookups/[a-z][a-z0-9-]*$",
+        "methods": {
+          "GET": "orders:read"
+        }
       }
     ],
     "transformBody": null,
@@ -4533,6 +4563,36 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
       {
         "template": "v1/landed-cost/receipt-lines",
         "pattern": "^v1/landed-cost/receipt-lines$",
+        "methods": {
+          "GET": "procurement:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*$",
+        "methods": {
+          "GET": "procurement:read",
+          "POST": "procurement:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "GET": "procurement:read",
+          "PATCH": "procurement:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions/{key}",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
+        "methods": {
+          "POST": "procurement:read"
+        }
+      },
+      {
+        "template": "v1/lookups/{key}",
+        "pattern": "^v1/lookups/[a-z][a-z0-9-]*$",
         "methods": {
           "GET": "procurement:read"
         }

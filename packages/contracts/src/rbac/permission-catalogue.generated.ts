@@ -216,7 +216,9 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "business-partners:read",
     "entries": [
-      "business-partners"
+      "business-partners",
+      "universal-orders",
+      "universal-procurement"
     ]
   },
   {
@@ -1092,7 +1094,9 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "inventory.read",
     "entries": [
-      "universal-inventory"
+      "universal-inventory",
+      "universal-orders",
+      "universal-procurement"
     ]
   },
   {
@@ -1619,7 +1623,9 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     "code": "products:read",
     "entries": [
       "platform",
-      "product-catalogue"
+      "product-catalogue",
+      "universal-orders",
+      "universal-procurement"
     ]
   },
   {
@@ -2188,7 +2194,9 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "uoms:read",
     "entries": [
-      "product-catalogue"
+      "product-catalogue",
+      "universal-orders",
+      "universal-procurement"
     ]
   },
   {

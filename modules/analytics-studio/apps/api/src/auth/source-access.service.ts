@@ -254,10 +254,19 @@ export class SourceAccessService {
         [principal.tenantId, catalogKey],
       );
       if (entitlement.rows.length === 0 || entitlement.rows[0]!.status !== 'ENABLED') {
-        throw new ForbiddenException(`Module entitlement '${catalogKey}' is not active for this tenant.`);
+        // WI-OI-150: plain words for people; the module key stays in the answer for administrators.
+        throw new ForbiddenException({
+          code: 'ANALYTICS_SOURCE_NOT_ENTITLED',
+          message: 'This module is not in your workspace plan, so its data cannot be analysed here.',
+          module: catalogKey,
+        });
       }
       if (!holdsPermission(principal.permissions, contract.requiredReadPermission)) {
-        throw new ForbiddenException(`Missing module permission: ${contract.requiredReadPermission}`);
+        throw new ForbiddenException({
+          code: 'ANALYTICS_SOURCE_PERMISSION',
+          message: "Your role does not include this module's data. Ask your workspace administrator for access.",
+          permission: contract.requiredReadPermission,
+        });
       }
       if (contract.ownerScopePolicy === 'UNIT_REQUIRED') {
         const scoped = principal.orgScope as { mode?: string; departments?: readonly string[] };

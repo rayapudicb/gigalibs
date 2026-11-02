@@ -240,12 +240,22 @@ export class CatalogueRecordsService {
         }
       }
       values.push(request.limit);
+      // WI-OI-149: the code, name and (for a product) base unit travel with the option, for the window to fill.
+      const baseUom = entity === 'products' ? `, ${a}.base_uom_id AS base_uom_id` : '';
       const result = await client.query(
-        `SELECT ${a}.id, ${a}.code || ' — ' || ${a}.name AS label FROM ${spec.from}
-          WHERE ${where.join(' AND ')} ORDER BY ${a}.code ASC LIMIT $${values.length}`,
+        `SELECT ${a}.id, ${a}.code || ' — ' || ${a}.name AS label, ${a}.code AS code, ${a}.name AS name${baseUom}
+           FROM ${spec.from} WHERE ${where.join(' AND ')} ORDER BY ${a}.code ASC LIMIT $${values.length}`,
         values,
       );
-      return result.rows.map((row) => ({ value: String(row.id), label: String(row.label) }));
+      return result.rows.map((row) => ({
+        value: String(row.id),
+        label: String(row.label),
+        attributes: {
+          code: String(row.code),
+          name: String(row.name),
+          ...(row.base_uom_id ? { 'base-uom-id': String(row.base_uom_id) } : {}),
+        },
+      }));
     });
   }
 

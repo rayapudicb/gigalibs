@@ -75,6 +75,21 @@ interface CustomRole {
 }
 
 /** What a role grants with everything it includes (the server computes the same, at most five deep). */
+
+/**
+ * WI-OI-146: an answer whose body is empty or cut off (a navigation or a dropped connection) is treated as no answer,
+ * so the screen says what could not be loaded instead of "Unexpected end of JSON input".
+ */
+async function readJsonBody(response: Response): Promise<unknown> {
+  const text = await response.text().catch(() => '');
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 function grantedInTotal(roleId: string, roles: readonly CustomRole[], depth = 0, path: ReadonlySet<string> = new Set([roleId])): Set<string> {
   const role = roles.find((candidate) => candidate.id === roleId);
   const codes = new Set(role?.permissions ?? []);
@@ -819,7 +834,7 @@ export function TenantAccessManager({
             async (response) => {
               if (!response.ok)
                 throw new Error(await readError(response, 'Members could not be loaded.'));
-              const payload: unknown = await response.json();
+              const payload: unknown = await readJsonBody(response);
               if (!Array.isArray(payload))
                 throw new Error('Member service returned an invalid response.');
               setMembers(payload as Member[]);
@@ -833,7 +848,7 @@ export function TenantAccessManager({
             async (response) => {
               if (!response.ok)
                 throw new Error(await readError(response, 'Invitations could not be loaded.'));
-              const payload: unknown = await response.json();
+              const payload: unknown = await readJsonBody(response);
               if (!Array.isArray(payload))
                 throw new Error('Invitation service returned an invalid response.');
               setInvitations(payload as Invitation[]);
@@ -848,7 +863,7 @@ export function TenantAccessManager({
               if (!response.ok) {
                 throw new Error(await readError(response, 'Custom roles could not be loaded.'));
               }
-              const payload: unknown = await response.json();
+              const payload: unknown = await readJsonBody(response);
               if (!Array.isArray(payload)) {
                 throw new Error('Custom role service returned an invalid response.');
               }
@@ -863,7 +878,7 @@ export function TenantAccessManager({
             if (!response.ok) {
               throw new Error(await readError(response, 'Security settings could not be loaded.'));
             }
-            const payload = (await response.json()) as TenantSettings;
+            const payload = (await readJsonBody(response)) as TenantSettings;
             if (
               !Number.isSafeInteger(payload?.version) ||
               typeof payload?.security?.enforceMfa !== 'boolean'
@@ -882,7 +897,7 @@ export function TenantAccessManager({
               if (!response.ok) {
                 throw new Error(await readError(response, 'Tenant domain could not be loaded.'));
               }
-              const payload = (await response.json()) as TenantDomainStatus;
+              const payload = (await readJsonBody(response)) as TenantDomainStatus;
               if (
                 ![
                   'NOT_CONFIGURED',
