@@ -58,6 +58,10 @@ spec:
       - route: /gigaops/analytics
         component: WorkforceModuleAnalytics
         sessionPermissions: true
+      # WI-OI-137 M-LOG: the shift logbook, bypass register and two-person handover.
+      - route: /gigaops/logbook
+        component: ShiftLogbook
+        sessionPermissions: true
   api:
     application: apps/api
     port: 4700
@@ -100,6 +104,7 @@ spec:
         - { key: scheduling, label: Scheduling & Dispatch, path: /gigaops/scheduling, icon: calendar }
         - { key: time, label: Time & Attendance, path: /gigaops/time, icon: clock }
         - { key: pay, label: Pay-ready Outputs, path: /gigaops/pay, icon: coins }
+        - { key: logbook, label: Shift Logbook, path: /gigaops/logbook, icon: file-text, permissions: [workforce.logbook.read] }
         - { key: analytics, label: Analytics & Trends, path: /gigaops/analytics, icon: bar-chart, permissions: [workforce.positions.read, analytics:read] }
       # WI-OI-120n (owner, 2026-10-06): Workforce roles for people outside maintenance, copied into a workspace when
       # Workforce is switched on and assigned on Settings -> Team.
@@ -110,11 +115,11 @@ spec:
           # absence); punching gives a person their own time and week. WI-OI-120u (owner D1a): absences.request-own
           # reaches only the person linked to their own login.
           description: Punches their own time and sees their own week; asks for their own absence; reads job profiles.
-          permissions: [workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch, workforce.absences.request-own]
+          permissions: [workforce:read, workforce.resources.read, workforce.jobs.read, workforce.time.punch, workforce.absences.request-own, workforce.logbook.read, workforce.logbook.write]
         - key: workforce-supervisor
           name: Workforce supervisor
           description: Manages people, jobs, bookings, availability, absence types and calendars, and approves timesheets and absence for everyone in the workspace until roles are held per unit (ADR-0034). Linking logins stays with administrators.
-          permissions: [workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.calendars.read, workforce.calendars.manage, workforce.capabilities.read, workforce.capabilities.manage, workforce.time.read, workforce.time.punch, workforce.time.manage, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve]
+          permissions: [workforce:read, workforce.resources.read, workforce.resources.manage, workforce.jobs.read, workforce.jobs.manage, workforce.bookings.read, workforce.bookings.manage, workforce.availability.read, workforce.availability.manage, workforce.calendars.read, workforce.calendars.manage, workforce.capabilities.read, workforce.capabilities.manage, workforce.time.read, workforce.time.punch, workforce.time.manage, workforce.timesheets.approve, workforce.absences.read, workforce.absences.request, workforce.absences.approve, workforce.logbook.read, workforce.logbook.write, workforce.logbook.authorize, workforce.logbook.manage]
   # Web gateway (WI-OI-083): the BFF reaches only these routes, as the user, with a freshly signed context. A list
   # means any one of the permissions. Workers reach their own time; managers read, correct and approve others'.
   gateway:
@@ -143,6 +148,17 @@ spec:
       - { path: 'v1/runtime/tenant-scope', GET: workforce:read }
       # WI-OI-107: Workforce's section of the active packs (sent by the kernel's pack.apply job, which calls the module directly).
       - { path: 'v1/pack', GET: workforce:read }
+      # WI-OI-137 M-LOG.
+      - { path: 'v1/logbooks', GET: workforce.logbook.read, POST: workforce.logbook.manage }
+      - { path: 'v1/logbooks/{id}', PATCH: workforce.logbook.manage }
+      - { path: 'v1/logbooks/{id}/board', GET: workforce.logbook.read }
+      - { path: 'v1/logbooks/{id}/entries|handovers', GET: workforce.logbook.read, POST: workforce.logbook.write }
+      - { path: 'v1/logbooks/{id}/bypasses', POST: workforce.logbook.write }
+      - { path: 'v1/logbook-bypasses', GET: workforce.logbook.read }
+      - { path: 'v1/logbook-bypasses/{id}/decision', POST: workforce.logbook.authorize }
+      - { path: 'v1/logbook-bypasses/{id}/clear', POST: workforce.logbook.write }
+      - { path: 'v1/logbook-handovers/{id}/refreeze|accept', POST: workforce.logbook.write }
+      - { path: 'v1/logbook-handovers/{id}/countersign', POST: workforce.logbook.authorize }
       - { path: 'v1/resources', GET: workforce.resources.read, POST: workforce.resources.manage }
       - { path: 'v1/resources/{id}', GET: workforce.resources.read, PATCH: workforce.resources.manage }
       - { path: 'v1/resources/{id}/capabilities', POST: workforce.capabilities.manage }

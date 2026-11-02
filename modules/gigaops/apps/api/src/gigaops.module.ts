@@ -27,6 +27,8 @@ import {
   WorkingCalendarsController,
 } from './availability/availability.controller.js';
 import { AvailabilityService } from './availability/availability.service.js';
+import { LogbookController } from './logbook/logbook.controller.js';
+import { LogbookService } from './logbook/logbook.service.js';
 import { BookingsController, WorkRequirementsController } from './bookings/bookings.controller.js';
 import { BookingsService } from './bookings/bookings.service.js';
 import { WorkforceInboxController } from './relay/inbox.controller.js';
@@ -68,6 +70,7 @@ const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthoriza
 
 @Module({
   controllers: [
+    LogbookController,
     WorkforceHealthController,
     // WI-OI-120as: GET v1/health/relays for its two relays.
     RelayHealthController,
@@ -99,6 +102,7 @@ const GigaOpsRecordController = createRecordController({ guard: GigaOpsAuthoriza
     GigaOpsRecordController,
   ],
   providers: [
+    LogbookService,
     GigaOpsConfigProvider,
     WorkforceDatabaseService,
     GigaOpsAuthorizationGuard,

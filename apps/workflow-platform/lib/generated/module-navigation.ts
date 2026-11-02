@@ -231,6 +231,15 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "coins"
     },
     {
+      "key": "logbook",
+      "label": "Shift Logbook",
+      "path": "/gigaops/logbook",
+      "icon": "file-text",
+      "permissions": [
+        "workforce.logbook.read"
+      ]
+    },
+    {
       "key": "analytics",
       "label": "Analytics & Trends",
       "path": "/gigaops/analytics",

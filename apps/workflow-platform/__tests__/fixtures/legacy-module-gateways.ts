@@ -63,6 +63,9 @@ export function legacyWorkforcePermission(
   if (joined === 'v1/runtime/tenant-scope' && method === 'GET') return 'workforce:read';
   // WI-OI-107: Workforce's section of the active packs, added after the gateways were generated.
   if (joined === 'v1/pack' && method === 'GET') return 'workforce:read';
+  // WI-OI-137 M-LOG, transcribed from LogbookController's @RequirePermissions.
+  const logbookRoute = workforceLogbookPermission(method, joined);
+  if (logbookRoute !== undefined) return logbookRoute;
   if (joined === 'v1/resources' && method === 'GET') return 'workforce.resources.read';
   if (joined === 'v1/resources' && method === 'POST') return 'workforce.resources.manage';
   if (new RegExp(`^v1/resources/${UUID_SEGMENT}$`).test(joined)) {
@@ -246,4 +249,23 @@ export function legacyWorkforcePermission(
   if (new RegExp(`^v1/pay-exports/${UUID_SEGMENT}/acknowledge$`).test(joined) && method === 'POST')
     return 'workforce.pay.manage';
   return null;
+}
+
+function workforceLogbookPermission(method: string, joined: string): string | null | undefined {
+  const id = UUID_SEGMENT;
+  const table: readonly (readonly [string, RegExp, string])[] = [
+    ['GET', /^v1\/logbooks$/, 'workforce.logbook.read'],
+    ['POST', /^v1\/logbooks$/, 'workforce.logbook.manage'],
+    ['PATCH', new RegExp(`^v1/logbooks/${id}$`), 'workforce.logbook.manage'],
+    ['GET', new RegExp(`^v1/logbooks/${id}/board$`), 'workforce.logbook.read'],
+    ['GET', new RegExp(`^v1/logbooks/${id}/(entries|handovers)$`), 'workforce.logbook.read'],
+    ['POST', new RegExp(`^v1/logbooks/${id}/(entries|handovers|bypasses)$`), 'workforce.logbook.write'],
+    ['GET', /^v1\/logbook-bypasses$/, 'workforce.logbook.read'],
+    ['POST', new RegExp(`^v1/logbook-bypasses/${id}/decision$`), 'workforce.logbook.authorize'],
+    ['POST', new RegExp(`^v1/logbook-bypasses/${id}/clear$`), 'workforce.logbook.write'],
+    ['POST', new RegExp(`^v1/logbook-handovers/${id}/(refreeze|accept)$`), 'workforce.logbook.write'],
+    ['POST', new RegExp(`^v1/logbook-handovers/${id}/countersign$`), 'workforce.logbook.authorize'],
+  ];
+  if (!/^v1\/logbook/.test(joined)) return undefined;
+  return table.find(([routeMethod, pattern]) => routeMethod === method && pattern.test(joined))?.[2] ?? null;
 }

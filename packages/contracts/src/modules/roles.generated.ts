@@ -423,7 +423,9 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "workforce.resources.read",
       "workforce.jobs.read",
       "workforce.time.punch",
-      "workforce.absences.request-own"
+      "workforce.absences.request-own",
+      "workforce.logbook.read",
+      "workforce.logbook.write"
     ]
   },
   {
@@ -451,7 +453,11 @@ export const moduleDefaultRoles: readonly ModuleDefaultRole[] = [
       "workforce.timesheets.approve",
       "workforce.absences.read",
       "workforce.absences.request",
-      "workforce.absences.approve"
+      "workforce.absences.approve",
+      "workforce.logbook.read",
+      "workforce.logbook.write",
+      "workforce.logbook.authorize",
+      "workforce.logbook.manage"
     ]
   },
   {

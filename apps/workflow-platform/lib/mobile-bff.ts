@@ -31,6 +31,8 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   // WI-OI-136 M-BOM.
   'POST spares/resolve': '/api/v1/mobile/spares/resolve',
   'POST spares/reservations': '/api/v1/mobile/spares/reservations',
+  // WI-OI-137 M-LOG.
+  'GET logbook/logbooks': '/api/v1/mobile/logbook/logbooks',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -70,6 +72,14 @@ function mobileUpstreamPath(method: string, path: readonly string[]): string | u
   if (method === 'GET' && path[0] === 'spares' && path[1] === 'diagrams' && UUID.test(path[2] ?? '') &&
       (path.length === 3 || (path.length === 4 && path[3] === 'image')))
     return `/api/v1/mobile/spares/diagrams/${path[2]}${path.length === 4 ? '/image' : ''}`;
+  if (path.length === 4 && path[0] === 'logbook' && path[1] === 'logbooks' && UUID.test(path[2] ?? '')) {
+    if (method === 'GET' && path[3] === 'board') return `/api/v1/mobile/logbook/logbooks/${path[2]}/board`;
+    if (method === 'POST' && ['entries', 'bypasses', 'handovers'].includes(path[3] ?? ''))
+      return `/api/v1/mobile/logbook/logbooks/${path[2]}/${path[3]}`;
+  }
+  if (method === 'POST' && path.length === 4 && path[0] === 'logbook' && path[1] === 'handovers' && UUID.test(path[2] ?? '') &&
+      path[3] === 'accept')
+    return `/api/v1/mobile/logbook/handovers/${path[2]}/accept`;
   return undefined;
 }
 

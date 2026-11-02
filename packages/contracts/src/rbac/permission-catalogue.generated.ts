@@ -2203,6 +2203,32 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
     ]
   },
   {
+    "code": "workforce.logbook.authorize",
+    "entries": [
+      "gigaops"
+    ]
+  },
+  {
+    "code": "workforce.logbook.manage",
+    "entries": [
+      "gigaops"
+    ]
+  },
+  {
+    "code": "workforce.logbook.read",
+    "entries": [
+      "gigaops",
+      "platform"
+    ]
+  },
+  {
+    "code": "workforce.logbook.write",
+    "entries": [
+      "gigaops",
+      "platform"
+    ]
+  },
+  {
     "code": "workforce.pay.approve",
     "entries": [
       "gigaops"

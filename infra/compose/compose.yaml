@@ -51,6 +51,9 @@ services:
       # WI-OI-134: the mobile Calibration adapter signs CMMS contexts. Without the key, mobile calibration is unavailable.
       CMMS_API_URL: http://cmms-api:4200
       CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64-}
+      # WI-OI-137: the mobile logbook adapter signs Workforce contexts. Without the key, the mobile logbook is unavailable.
+      WORKFORCE_API_URL: http://workforce-api:4700
+      WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64-}
       WORKFLOW_SCHEMA_VERSION: ${WORKFLOW_SCHEMA_VERSION:?WORKFLOW_SCHEMA_VERSION is required}
       WORKFLOW_COMPILER_VERSION: ${WORKFLOW_COMPILER_VERSION:?WORKFLOW_COMPILER_VERSION is required}
       WORKFLOW_PUBLISH_MAX_RETRIES: ${WORKFLOW_PUBLISH_MAX_RETRIES:?WORKFLOW_PUBLISH_MAX_RETRIES is required}

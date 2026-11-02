@@ -1046,6 +1046,78 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/logbooks",
+        "pattern": "^v1/logbooks$",
+        "methods": {
+          "GET": "workforce.logbook.read",
+          "POST": "workforce.logbook.manage"
+        }
+      },
+      {
+        "template": "v1/logbooks/{id}",
+        "pattern": "^v1/logbooks/[0-9a-fA-F-]{36}$",
+        "methods": {
+          "PATCH": "workforce.logbook.manage"
+        }
+      },
+      {
+        "template": "v1/logbooks/{id}/board",
+        "pattern": "^v1/logbooks/[0-9a-fA-F-]{36}/board$",
+        "methods": {
+          "GET": "workforce.logbook.read"
+        }
+      },
+      {
+        "template": "v1/logbooks/{id}/entries|handovers",
+        "pattern": "^v1/logbooks/[0-9a-fA-F-]{36}/(?:entries|handovers)$",
+        "methods": {
+          "GET": "workforce.logbook.read",
+          "POST": "workforce.logbook.write"
+        }
+      },
+      {
+        "template": "v1/logbooks/{id}/bypasses",
+        "pattern": "^v1/logbooks/[0-9a-fA-F-]{36}/bypasses$",
+        "methods": {
+          "POST": "workforce.logbook.write"
+        }
+      },
+      {
+        "template": "v1/logbook-bypasses",
+        "pattern": "^v1/logbook-bypasses$",
+        "methods": {
+          "GET": "workforce.logbook.read"
+        }
+      },
+      {
+        "template": "v1/logbook-bypasses/{id}/decision",
+        "pattern": "^v1/logbook-bypasses/[0-9a-fA-F-]{36}/decision$",
+        "methods": {
+          "POST": "workforce.logbook.authorize"
+        }
+      },
+      {
+        "template": "v1/logbook-bypasses/{id}/clear",
+        "pattern": "^v1/logbook-bypasses/[0-9a-fA-F-]{36}/clear$",
+        "methods": {
+          "POST": "workforce.logbook.write"
+        }
+      },
+      {
+        "template": "v1/logbook-handovers/{id}/refreeze|accept",
+        "pattern": "^v1/logbook-handovers/[0-9a-fA-F-]{36}/(?:refreeze|accept)$",
+        "methods": {
+          "POST": "workforce.logbook.write"
+        }
+      },
+      {
+        "template": "v1/logbook-handovers/{id}/countersign",
+        "pattern": "^v1/logbook-handovers/[0-9a-fA-F-]{36}/countersign$",
+        "methods": {
+          "POST": "workforce.logbook.authorize"
+        }
+      },
+      {
         "template": "v1/resources",
         "pattern": "^v1/resources$",
         "methods": {

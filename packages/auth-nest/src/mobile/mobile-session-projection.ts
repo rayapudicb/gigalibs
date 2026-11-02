@@ -106,6 +106,10 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.bom.read')) ? ['cmms.bom.read'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'cmms.parts.reserve')) ? ['cmms.parts.reserve'] : []),
   ] : [];
+  const logbookCapabilities = entitlements.includes('gigaops') ? [
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.read')) ? ['workforce.logbook.read'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.write')) ? ['workforce.logbook.write'] : []),
+  ] : [];
   const modules = [
     ...(roundsEnabled ? [{
       key:'operator-rounds',enabled:true,navigationOrder:370,
@@ -127,6 +131,13 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
       key:'spares',enabled:true,navigationOrder:400,
       capabilities:sparesCapabilities,
       presentationRevision:'spares.v1',
+      requiredDeviceCapabilities:[],
+    }] : []),
+    // WI-OI-137 M-LOG: the shift logbook for members who read it (logging needs its own capability).
+    ...(logbookCapabilities.includes('workforce.logbook.read') ? [{
+      key:'logbook',enabled:true,navigationOrder:410,
+      capabilities:logbookCapabilities,
+      presentationRevision:'logbook.v1',
       requiredDeviceCapabilities:[],
     }] : []),
     // WI-OI-135 M-TAG: commissioning proposals and floor walks, each by its own permission.

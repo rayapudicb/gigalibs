@@ -158,6 +158,21 @@ describe('mobile session v3 projection', () => {
     expect(projectMobileSession(withPermissions(['cmms.parts.reserve']),binding).modules).toEqual([]);
   });
 
+  it('offers the shift logbook to readers with Workforce enabled (WI-OI-137)',() => {
+    const base = source();
+    const withPermissions = (permissions: string[], moduleKey = 'gigaops') => ({
+      ...base,
+      tenant:{...base.tenant!,entitlements:[...base.tenant!.entitlements,{moduleKey,version:'2026-11-02'}]},
+      assignments:base.assignments!.map((assignment,index) => index === 1
+        ? {...assignment,permissions:[...assignment.permissions,...permissions]} : assignment),
+    });
+    expect(projectMobileSession(withPermissions(['workforce.logbook.read','workforce.logbook.write']),binding).modules).toEqual([{
+      key:'logbook',enabled:true,navigationOrder:410,capabilities:['workforce.logbook.read','workforce.logbook.write'],
+      presentationRevision:'logbook.v1',requiredDeviceCapabilities:[],
+    }]);
+    expect(projectMobileSession(withPermissions(['workforce.logbook.read'],'asset-maintenance'),binding).modules).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();

@@ -163,6 +163,8 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       ...LEGACY_MODULE_MENUS.gigaops!.slice(0, 5),
       { key: 'bookings', label: 'Bookings', href: '/gigaops/bookings', icon: moduleIcons.layers },
       ...LEGACY_MODULE_MENUS.gigaops!.slice(5).filter((item) => item.key !== 'compliance' && item.key !== 'analytics'),
+      // WI-OI-137 M-LOG: Shift Logbook, gated on workforce.logbook.read.
+      { key: 'logbook', label: 'Shift Logbook', href: '/gigaops/logbook', icon: moduleIcons['file-text'], permissions: ['workforce.logbook.read'] as const },
       {
         key: 'analytics',
         label: 'Analytics & Trends',

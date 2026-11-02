@@ -4,7 +4,7 @@ import { holdsPermission, type MobileProblemCode } from '@gigalibs/contracts';
 import { HttpException, type Logger } from '@nestjs/common';
 import { type MobileAuthService, MobileProblemException, type MobileRequest } from './mobile-auth.service.js';
 
-// WI-OI-134/135: the mobile CMMS journeys (calibration, commissioning) call CMMS the same way. The mobile bearer is checked
+// WI-OI-134/135/137: the mobile module journeys (calibration, commissioning, spares, logbook) call their module the same way. The mobile bearer is checked
 // against the current control-plane session; CMMS (`asset-maintenance`) must be enabled and the member must hold the
 // route's permission; the call carries a 60-second context signed for CMMS only, and CMMS re-checks everything.
 
@@ -27,7 +27,7 @@ export function mobileRequestFrom(headers: RequestHeaders): MobileRequest {
   };
 }
 
-export async function forwardMobileCmms(options: {
+interface MobileForwardOptions {
   readonly mobile: MobileAuthService;
   readonly headers: RequestHeaders;
   readonly method: 'GET' | 'POST';
@@ -36,13 +36,37 @@ export async function forwardMobileCmms(options: {
   readonly conflict: MobileProblemCode;
   readonly logger: Logger;
   readonly body?: unknown;
-}): Promise<unknown> {
+}
+
+/** A module the mobile adapters call: its entitlement key, signed-context audience and environment names. */
+interface MobileModuleTarget {
+  readonly moduleKey: string;
+  readonly audience: string;
+  readonly urlEnvironment: string;
+  readonly keyEnvironment: string;
+}
+
+export const CMMS_TARGET: MobileModuleTarget = {
+  moduleKey: CMMS_MODULE_KEY, audience: CMMS_AUDIENCE, urlEnvironment: 'CMMS_API_URL',
+  keyEnvironment: 'CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+};
+/** WI-OI-137: Workforce (`gigaops`) for the mobile shift logbook. */
+export const WORKFORCE_TARGET: MobileModuleTarget = {
+  moduleKey: 'gigaops', audience: 'gigalibs-workforce-api', urlEnvironment: 'WORKFORCE_API_URL',
+  keyEnvironment: 'WORKFORCE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+};
+
+export function forwardMobileCmms(options: MobileForwardOptions): Promise<unknown> {
+  return forwardMobileModule(CMMS_TARGET, options);
+}
+
+export async function forwardMobileModule(target: MobileModuleTarget, options: MobileForwardOptions): Promise<unknown> {
   const subject = await options.mobile.moduleSubject(mobileRequestFrom(options.headers));
   if (!subject.tenant || !subject.tenant.entitlements.some((item) =>
-    item.moduleKey === CMMS_MODULE_KEY && item.status === 'ENABLED') || !holdsPermission(subject.permissions, options.permission))
+    item.moduleKey === target.moduleKey && item.status === 'ENABLED') || !holdsPermission(subject.permissions, options.permission))
     throw new MobileProblemException('MOBILE_SCOPE_DENIED');
-  const upstream = process.env['CMMS_API_URL']?.trim();
-  const encodedKey = process.env['CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64']?.trim();
+  const upstream = process.env[target.urlEnvironment]?.trim();
+  const encodedKey = process.env[target.keyEnvironment]?.trim();
   if (!upstream || !encodedKey) throw new MobileProblemException('MOBILE_UNAVAILABLE');
   let url: URL;
   let privateKey: string;
@@ -57,13 +81,13 @@ export async function forwardMobileCmms(options: {
     throw new MobileProblemException('MOBILE_UNAVAILABLE');
   }
   const token = signPlatformContextToken(
-    buildPlatformContext(subject, CMMS_MODULE_KEY, CMMS_AUDIENCE, { ttlSeconds: 60 }),
+    buildPlatformContext(subject, target.moduleKey, target.audience, { ttlSeconds: 60 }),
     privateKey,
   );
-  const target = new URL(`${url.pathname.replace(/\/$/, '')}${options.path}`, url.origin);
+  const requestUrl = new URL(`${url.pathname.replace(/\/$/, '')}${options.path}`, url.origin);
   let response: Response;
   try {
-    response = await fetch(target, {
+    response = await fetch(requestUrl, {
       method: options.method,
       headers: {
         Authorization: `Bearer ${token}`,
@@ -87,7 +111,7 @@ export async function forwardMobileCmms(options: {
   if (response.status === 401) throw new MobileProblemException('MOBILE_AUTH_REQUIRED');
   if (response.status === 403) throw new MobileProblemException('MOBILE_SCOPE_DENIED');
   if (response.status === 404) throw new MobileProblemException('MOBILE_NOT_FOUND');
-  options.logger.warn(`CMMS returned status ${response.status} to a mobile call.`);
+  options.logger.warn(`${target.moduleKey} returned status ${response.status} to a mobile call.`);
   throw new MobileProblemException('MOBILE_UNAVAILABLE');
 }
 
