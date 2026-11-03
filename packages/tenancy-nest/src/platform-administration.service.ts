@@ -356,6 +356,9 @@ export class PlatformAdministrationService {
   }
 
   async createTenant(dto: PlatformCreateTenantDto, actorUserId: string) {
+    // WI-OI-153: the workspace profile chosen at creation must name real codes; nothing is written otherwise.
+    const profileProblem = PlatformSettingsEngine.profileProblem(dto.profile);
+    if (profileProblem) throw new BadRequestException(profileProblem);
     const moduleKeys = this.eligibleModuleKeys(
       dto.moduleKeys.length > 0 ? dto.moduleKeys : trialModuleKeys,
     );
@@ -400,7 +403,7 @@ export class PlatformAdministrationService {
             status: 'ACTIVE',
           },
         });
-        const defaults = PlatformSettingsEngine.createDefaults(tenant.id);
+        const defaults = PlatformSettingsEngine.createDefaults(tenant.id, dto.profile);
         await transaction.tenantSettings.create({
           data: {
             tenantId: tenant.id,

@@ -49,6 +49,24 @@ export const TenantSchema = z.object({
   updatedAt: z.date(),
 });
 
+/**
+ * WI-OI-153 slice B (ADR-0038 §2, §5): the workspace profile chosen when a workspace is created — its country and
+ * industry, and the language, time zone and base currency the country suggests. All optional; codes are checked
+ * against the platform's ICU data when the workspace's settings are written.
+ */
+export const WorkspaceProfileInputSchema = z
+  .object({
+    countryCode: z.string().regex(/^[A-Z]{2}$/).optional(),
+    industryKey: z.string().regex(/^[a-z0-9][a-z0-9-]{1,59}$/).optional(),
+    defaultLocale: z.string().min(2).max(20).optional(),
+    defaultCurrency: z.string().regex(/^[A-Z]{3}$/).optional(),
+    timezone: z.string().min(1).max(100).optional(),
+    weekStart: z.number().int().min(1).max(7).optional(),
+    fiscalYearStartMonth: z.number().int().min(1).max(12).optional(),
+  })
+  .strict();
+export type WorkspaceProfileInput = z.infer<typeof WorkspaceProfileInputSchema>;
+
 export const CreateTenantSchema = z.object({
   name: z.string().min(1).max(100),
   slug: SlugSchema,
@@ -56,6 +74,7 @@ export const CreateTenantSchema = z.object({
   plan: z.string().optional(),
   isolationMode: TenantIsolationModeSchema.default('ROW_LEVEL_SECURITY'),
   region: z.string().min(1).max(100).default('local'),
+  profile: WorkspaceProfileInputSchema.optional(),
 });
 
 export const CreateTenantDomainChallengeSchema = z.object({
@@ -402,6 +421,7 @@ export const PlatformCreateTenantSchema = z.object({
   region: z.string().trim().min(1).max(100).default('local'),
   moduleKeys: z.array(PlatformModuleKeySchema).max(100).default([]),
   reason: z.string().trim().min(3).max(500),
+  profile: WorkspaceProfileInputSchema.optional(),
 });
 
 export const PlatformTenantStatusChangeSchema = z.object({

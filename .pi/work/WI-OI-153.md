@@ -47,6 +47,35 @@ Slice B (workspace profile: country, industry, currency, language, time zone —
 Settings › Localization saving, "Confirm your country" step) is next; A2 waits for the data-source decision below;
 C (platform units) after B.
 
+## Slice B — the workspace profile (built, part 1)
+
+Finding: every workspace already has versioned settings with `localization.defaultLocale`, `defaultCurrency`,
+`timezone` and `dateFormat` (`tenant_settings`, `GET|PATCH /api/v1/settings`, settings:read / settings:update). The
+gap was the screen, which never read or saved them. So the profile is an additive extension — no new table, no
+migration, no change to existing workspaces' data.
+
+- `@gigalibs/platform-settings`: optional `countryCode`, `industryKey`, `weekStart`, `fiscalYearStartMonth`; an
+  update must name a real currency, time zone and country (ICU, the same source as the reference sets; time zones
+  are checked by formatting, so IANA aliases such as Asia/Kolkata and UTC are accepted while the generated list holds
+  ICU's canonical Asia/Calcutta); a workspace saved before the profile still reads. `createDefaults(tenantId,
+  profile)` and `profileProblem(profile)`.
+- Workspace creation (self-service trial and platform operator): `profile` (country, industry, language, currency,
+  time zone, week start, fiscal year start) on `CreateTenantSchema` and `PlatformCreateTenantSchema`; an unusable
+  profile is refused before anything is written; the profile replaces the matching defaults.
+- Platform Control Tower › create workspace: Country and Base currency (the time zone follows a single-zone
+  country); the profile is sent only when chosen.
+- Settings › General & localization: reads and saves the workspace's own settings (country, language, time zone,
+  base currency, first day of the week, fiscal year start) with the version it read; a clash says so; choosing a
+  country suggests its time zone and week; design tokens throughout (the old screen kept time zone and currency in
+  memory and saved the language for the signed-in person only).
+- Set-up guide: a required "Confirm your country" step after "Name your company", done when the settings hold a
+  country (existing workspaces see it as their next step).
+
+Tests: platform-settings (profile rules, defaults, problems), Localization save request and country suggestions,
+create request with and without a profile, set-up progress with the new step.
+
+Remaining in slice B: new documents start in the workspace's base currency (the window defaults still say USD).
+
 ## Decision needed for A2 (recommendation)
 
 Add two data packages to the builder only (not to any runtime): `cldr-json` subdivision names (Unicode licence) for

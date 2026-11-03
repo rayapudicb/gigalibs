@@ -20,9 +20,10 @@ describe('SetupWizard', () => {
       <SetupWizard companyName="North Industries" companyNamed={true} enabledModuleCount={0} />,
     );
     expect(html).toContain('Set up North Industries');
-    // Six steps are listed.
+    // Seven steps are listed (WI-OI-153 adds "Confirm your country").
     for (const title of [
       'Name your company',
+      'Confirm your country',
       'Set up your organization',
       'Invite your people',
       'Tailor roles &amp; access',
@@ -31,8 +32,8 @@ describe('SetupWizard', () => {
     ]) {
       expect(html).toContain(title);
     }
-    // Company (auto-named) is the only done required step → 1 of 4 → 25%, next is organization.
-    expect(html).toContain('25%');
+    // Company (auto-named) is the only done required step → 1 of 5 → 20%; the country is confirmed after the fetch.
+    expect(html).toContain('20%');
     expect(html).toContain('Next step');
     expect(html).toContain('Checking your workspace');
   });
@@ -41,7 +42,7 @@ describe('SetupWizard', () => {
     const html = renderToStaticMarkup(
       <SetupWizard companyName="North" companyNamed={true} enabledModuleCount={3} />,
     );
-    // Company + modules done of 4 required → 50%.
-    expect(html).toContain('50%');
+    // Company + modules done of 5 required → 40%.
+    expect(html).toContain('40%');
   });
 });

@@ -28,6 +28,8 @@ interface WorkspaceCounts {
   units: number;
   members: number;
   roles: number;
+  /** WI-OI-153: the workspace settings hold a country. */
+  countryConfirmed: boolean;
 }
 
 const STATUS_BADGE: Record<SetupStepStatus, { label: string; className: string }> = {
@@ -57,6 +59,17 @@ async function countFrom(path: string, shape: 'array' | 'items'): Promise<number
   }
 }
 
+/** WI-OI-153: whether the workspace settings name a country (Settings › General & localization). */
+async function countryConfirmed(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/control/settings', { cache: 'no-store' });
+    const body = (await response.json().catch(() => null)) as { localization?: { countryCode?: string } } | null;
+    return response.ok && typeof body?.localization?.countryCode === 'string';
+  } catch {
+    return false;
+  }
+}
+
 export function SetupWizard({ companyName, companyNamed, enabledModuleCount }: SetupWizardProps) {
   const [counts, setCounts] = useState<WorkspaceCounts | null>(null);
 
@@ -66,8 +79,9 @@ export function SetupWizard({ companyName, companyNamed, enabledModuleCount }: S
       countFrom('/api/control/tenants/current/organization/units?limit=50', 'items'),
       countFrom('/api/control/tenants/current/members', 'array'),
       countFrom('/api/control/tenants/current/roles', 'array'),
-    ]).then(([units, members, roles]) => {
-      if (!cancelled) setCounts({ units, members, roles });
+      countryConfirmed(),
+    ]).then(([units, members, roles, country]) => {
+      if (!cancelled) setCounts({ units, members, roles, countryConfirmed: country });
     });
     return () => {
       cancelled = true;
@@ -76,6 +90,7 @@ export function SetupWizard({ companyName, companyNamed, enabledModuleCount }: S
 
   const signals: SetupSignals = {
     companyNamed,
+    countryConfirmed: counts?.countryConfirmed ?? false,
     enabledModuleCount,
     unitCount: counts?.units ?? 0,
     memberCount: counts?.members ?? 0,

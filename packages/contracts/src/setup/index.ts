@@ -4,7 +4,7 @@
 // always truthful and resumes itself without a separate state machine to drift. Pure and browser-safe.
 
 /** The ordered steps. Keys are stable (used in the UI and tests). */
-export type SetupStepKey = 'company' | 'organization' | 'people' | 'access' | 'modules' | 'packs';
+export type SetupStepKey = 'company' | 'country' | 'organization' | 'people' | 'access' | 'modules' | 'packs';
 
 export interface SetupStepDefinition {
   readonly key: SetupStepKey;
@@ -21,6 +21,14 @@ export const SETUP_STEPS: readonly SetupStepDefinition[] = [
     key: 'company',
     title: 'Name your company',
     description: 'Confirm the workspace name and branding.',
+    href: '/settings/general',
+    required: true,
+  },
+  {
+    // WI-OI-153 slice B (ADR-0038 §5): a workspace without a country confirms it; nothing is loaded until it does.
+    key: 'country',
+    title: 'Confirm your country',
+    description: 'Choose the workspace country, base currency and time zone; the country pack follows from it.',
     href: '/settings/general',
     required: true,
   },
@@ -64,6 +72,8 @@ export const SETUP_STEPS: readonly SetupStepDefinition[] = [
 /** What the wizard reads about a workspace to decide each step. `packInstalled: null` means "not known / not checked". */
 export interface SetupSignals {
   readonly companyNamed: boolean;
+  /** WI-OI-153: the workspace settings hold a country. */
+  readonly countryConfirmed: boolean;
   readonly unitCount: number;
   /** Includes the founding member, so "more than one" means someone else has been invited. */
   readonly memberCount: number;
@@ -95,6 +105,8 @@ function isStepSatisfied(key: SetupStepKey, signals: SetupSignals): boolean {
   switch (key) {
     case 'company':
       return signals.companyNamed;
+    case 'country':
+      return signals.countryConfirmed;
     case 'organization':
       return signals.unitCount > 0;
     case 'people':

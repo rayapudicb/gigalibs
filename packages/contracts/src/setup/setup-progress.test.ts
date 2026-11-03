@@ -4,6 +4,7 @@ import { SETUP_STEPS, type SetupSignals, type SetupStepKey, deriveSetupProgress 
 // WI-OI-120 (T11b): the set-up wizard derives each step from the workspace's own data — no persisted "setup done" flag.
 const base: SetupSignals = {
   companyNamed: true,
+  countryConfirmed: true,
   unitCount: 0,
   memberCount: 1,
   customRoleCount: 0,
@@ -14,9 +15,10 @@ const statusOf = (progress: ReturnType<typeof deriveSetupProgress>, key: SetupSt
   progress.steps.find((step) => step.key === key)?.status;
 
 describe('deriveSetupProgress', () => {
-  it('counts only required steps toward completion (company, organization, people, modules)', () => {
+  it('counts only required steps toward completion (company, country, organization, people, modules)', () => {
     expect(SETUP_STEPS.filter((step) => step.required).map((step) => step.key)).toEqual([
       'company',
+      'country',
       'organization',
       'people',
       'modules',
@@ -31,9 +33,9 @@ describe('deriveSetupProgress', () => {
     expect(statusOf(progress, 'modules')).toBe('todo');
     expect(statusOf(progress, 'access')).toBe('optional');
     expect(statusOf(progress, 'packs')).toBe('optional');
-    expect(progress.completedRequired).toBe(1);
-    expect(progress.totalRequired).toBe(4);
-    expect(progress.percent).toBe(25);
+    expect(progress.completedRequired).toBe(2);
+    expect(progress.totalRequired).toBe(5);
+    expect(progress.percent).toBe(40);
     expect(progress.nextStepKey).toBe('organization');
     expect(progress.allRequiredDone).toBe(false);
   });
@@ -41,6 +43,7 @@ describe('deriveSetupProgress', () => {
   it('a fully set-up workspace is 100% with no next step', () => {
     const progress = deriveSetupProgress({
       companyNamed: true,
+      countryConfirmed: true,
       unitCount: 3,
       memberCount: 5,
       customRoleCount: 2,
@@ -64,7 +67,13 @@ describe('deriveSetupProgress', () => {
     });
     expect(statusOf(progress, 'access')).toBe('done');
     expect(progress.nextStepKey).toBe('people');
-    expect(progress.percent).toBe(75); // company + organization + modules of 4 required
+    expect(progress.percent).toBe(80); // company + country + organization + modules of 5 required
+  });
+
+  it('a workspace without a country is asked to confirm it next (WI-OI-153)', () => {
+    const progress = deriveSetupProgress({ ...base, countryConfirmed: false });
+    expect(statusOf(progress, 'country')).toBe('todo');
+    expect(progress.nextStepKey).toBe('country');
   });
 
   it('an unnamed company surfaces as the first thing to do', () => {

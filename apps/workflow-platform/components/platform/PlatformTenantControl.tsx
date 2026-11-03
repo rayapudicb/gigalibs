@@ -2,6 +2,8 @@
 
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import type React from 'react';
+import { GENERATED_COUNTRIES, GENERATED_CURRENCIES } from '@gigalibs/contracts';
+import { countrySuggestions } from '@/components/settings/TenantLocalizationSettings';
 import type { VerifiedSession } from '@/lib/verified-session';
 
 type Readiness = 'AVAILABLE' | 'REVIEW' | 'CONTAINED' | 'PLANNED';
@@ -74,6 +76,10 @@ interface CreateForm {
   isolationMode: 'ROW_LEVEL_SECURITY' | 'SCHEMA_ISOLATED' | 'DEDICATED_DATABASE';
   region: string;
   reason: string;
+  // WI-OI-153 slice B: the workspace profile; empty means "keep the defaults, confirm later".
+  countryCode: string;
+  defaultCurrency: string;
+  timezone: string;
 }
 
 const emptyCreate: CreateForm = {
@@ -84,7 +90,21 @@ const emptyCreate: CreateForm = {
   isolationMode: 'ROW_LEVEL_SECURITY',
   region: 'local',
   reason: 'Create tenant trial',
+  countryCode: '',
+  defaultCurrency: '',
+  timezone: '',
 };
+
+/** The create request: the workspace profile only when something was chosen (WI-OI-153). */
+export function createTenantBody(create: CreateForm, moduleKeys: readonly string[]) {
+  const { countryCode, defaultCurrency, timezone, ...workspace } = create;
+  const profile = {
+    ...(countryCode ? { countryCode } : {}),
+    ...(defaultCurrency ? { defaultCurrency } : {}),
+    ...(timezone ? { timezone } : {}),
+  };
+  return { ...workspace, moduleKeys, ...(Object.keys(profile).length > 0 ? { profile } : {}) };
+}
 
 function slugify(value: string): string {
   return value
@@ -241,7 +261,7 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
       const created = await mutate(
         'tenants',
         'POST',
-        { ...create, moduleKeys: createModules },
+        createTenantBody(create, createModules),
         'Tenant creation',
       );
       setCreate(emptyCreate);
@@ -796,6 +816,44 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                     className={inputClass}
                   />
                 </Field>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Country">
+                    <select
+                      value={create.countryCode}
+                      onChange={(event) => {
+                        const countryCode = event.target.value;
+                        const zones = countryCode ? countrySuggestions(countryCode).timeZones : [];
+                        setCreate({ ...create, countryCode, timezone: zones.length === 1 ? (zones[0] ?? '') : '' });
+                      }}
+                      className={inputClass}
+                    >
+                      <option value="">Choose later</option>
+                      {GENERATED_COUNTRIES.entries.map((entry) => (
+                        <option key={entry.code} value={entry.code}>
+                          {entry.name}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Base currency">
+                    <select
+                      value={create.defaultCurrency}
+                      onChange={(event) => setCreate({ ...create, defaultCurrency: event.target.value })}
+                      className={inputClass}
+                    >
+                      <option value="">Default (USD)</option>
+                      {GENERATED_CURRENCIES.entries.map((entry) => (
+                        <option key={entry.code} value={entry.code}>
+                          {entry.code} — {entry.name}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+                {create.timezone ? (
+                  <p className="text-xs text-ui-fg-muted">Time zone: {create.timezone} (from the country; the workspace can change it).</p>
+                ) : null}
 
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Trial Period (Days)">

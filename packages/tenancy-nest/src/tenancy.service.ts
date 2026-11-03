@@ -83,6 +83,9 @@ import { assertTenantAdminAuthority, assertTenantAdministratorRetained } from '.
 export class TenancyService {
   private readonly logger = new Logger(TenancyService.name);
   async createTenant(dto: CreateTenantDto, ownerUserId: string) {
+    // WI-OI-153: the workspace profile chosen at creation must name real codes; nothing is written otherwise.
+    const profileProblem = PlatformSettingsEngine.profileProblem(dto.profile);
+    if (profileProblem) throw new BadRequestException(profileProblem);
     const [existing, activeTrial] = await Promise.all([
       prisma.tenant.findUnique({ where: { slug: dto.slug }, select: { id: true } }),
       prisma.tenantMember.findFirst({
@@ -134,7 +137,7 @@ export class TenancyService {
         },
       });
 
-      const defaults = PlatformSettingsEngine.createDefaults(tenant.id);
+      const defaults = PlatformSettingsEngine.createDefaults(tenant.id, dto.profile);
       await tx.tenantSettings.create({
         data: {
           tenantId: tenant.id,
