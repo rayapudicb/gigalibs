@@ -392,6 +392,15 @@ is released only with its relay built on the module SDK's `OutboxRelay`, configu
 8. **Industry packs:** WI-OI-107, 074; the manufacturing release, WI-OI-079.
 9. **M-NEW:** manufacturing, projects, returns.
 
+### Master data foundation (owner, 2026-11-03): before further modules
+
+The owner approved solving master data and the platform's developer foundations **before further modules are built or
+enhanced**: ADR-0037–0040, `docs/plans/master-data-foundation-execution-plan.md`, cards WI-OI-152–162. Phase 0 (hub,
+reference data and workspace profile, relay wiring, product events) and phase 1 (country and industry packs in the order
+India, Japan, USA, Middle East, Europe, China, Russia, Africa; import kit; reference replicas and validation) come first;
+new module cards (the frontline modules, M-NEW) and module enhancement cards start after its milestone B. Phases 2–3
+(model-first entities, classic masters, overlap reconciliation, workflow steps, simple metadata UI) follow, card by card.
+
 ### Future modules (a standing rule, not a phase)
 
 A new module:
