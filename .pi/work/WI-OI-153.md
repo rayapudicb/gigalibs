@@ -90,11 +90,32 @@ Slice B part 1 committed in 2d283447.
 
 Tests: the token on the server and in the window model, the profile loader (once per page; refusal and failure).
 
-## Decision needed for A2 (recommendation)
+Slice B part 2 committed in 26129054.
 
-Add two data packages to the builder only (not to any runtime): `cldr-json` subdivision names (Unicode licence) for
-regions and tax jurisdictions, and `libphonenumber-js` metadata (MIT) for dialling codes; take first day of the week
-and formats from `Intl`; write Incoterms 2020 as a reviewed list citing ICC. The generated files stay checksummed.
+## Slices A2 and C — the rest of the reference data and the standard units (built; owner approval 2026-11-03)
+
+Sources, used only by the builder (`scripts/build-platform-reference-data.mjs`, root devDependencies): `cldr-core`
+49.0.0 and `cldr-subdivisions-full` 49.0.0 (Unicode-3.0), `libphonenumber-js` 1.13.15 (MIT), and two reviewed lists
+in `scripts/reference-data/` — UN/ECE Recommendation 20 units (58, with symbol, dimension and conversion factor;
+packaging units are Rec 21 codes with the X prefix) and ICC Incoterms 2020 (11 rules). Every set is checksummed.
+
+- COUNTRIES (279) gain each country's current currency (CLDR currencyData; 255 have one), E.164 calling code (245),
+  first day of the week and measurement system — the baseline any country gets without a pack (ADR-0038 §2).
+- REGIONS (new set, 3,586 ISO 3166-2 first-level subdivisions with English names) and TAX_JURISDICTIONS (3,865:
+  countries and their regions, structure only) — in `regions.generated.ts`, imported by the loader through
+  `@gigalibs/contracts/platform-reference/regions.js`, never by the web app.
+- UNITS_OF_MEASURE is now the reviewed UN/ECE list (replacing CLDR's 45 measurement units, which had no symbols,
+  trade codes or counting units); TRADE_TERMS (new set) the 11 Incoterms 2020 rules.
+- Every set key is loadable; the controller's message lists the keys from the schema.
+- Choosing a country (Settings › Localization, Platform Control Tower create) now also suggests its currency.
+- Slice C: Products `POST v1/uoms/platform-units` (uoms:manage) writes the standard units into the workspace as
+  read-only PLATFORM_REFERENCE rows (`uom_type`, `iso_code` already existed — no migration) with fixed name-based
+  ids; running it again adds nothing; a code the workspace already uses for its own unit is kept. The Units screen
+  has "Add the standard units"; WI-OI-154 will run the same command when Products is enabled.
+
+Spot checks: India INR +91, Japan JPY +81, USA USD +1 (week starts Sunday, US measurement), UAE AED +971; IN-MH
+Maharashtra, US-CA California, JP-13 Tokyo. Check each unit code against the current UNECE list before a customer
+goes live (recorded in the list's note).
 
 ## Owner action (with the deploy that carries this card)
 

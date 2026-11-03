@@ -210,6 +210,7 @@ spec:
       - { path: 'v1/product-categories', GET: products:read, POST: product-categories:manage }
       - { path: 'v1/product-categories/{id}', PATCH: product-categories:manage }
       - { path: 'v1/uoms', GET: uoms:read, POST: uoms:manage }
+      - { path: 'v1/uoms/platform-units', POST: uoms:manage }
       - { path: 'v1/uom-conversions', POST: uoms:manage }
       - { path: 'v1/uom-conversions/resolve', POST: uoms:read }
       - { path: 'v1/product-attributes', GET: products:read, POST: products:update }

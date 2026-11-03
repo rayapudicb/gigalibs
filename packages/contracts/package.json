@@ -1,7 +1,7 @@
 {
   "name": "@gigalibs/contracts",
   "version": "0.0.1",
-  "description": "Zod schemas, TypeScript DTOs, API routes, enums, error codes — shared source of truth",
+  "description": "Zod schemas, TypeScript DTOs, API routes, enums, error codes \u2014 shared source of truth",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -15,6 +15,10 @@
     "./frontline/contractor-secrets.js": {
       "import": "./dist/frontline/contractor-secrets.js",
       "types": "./dist/frontline/contractor-secrets.d.ts"
+    },
+    "./platform-reference/regions.js": {
+      "import": "./dist/platform-reference/regions.generated.js",
+      "types": "./dist/platform-reference/regions.generated.d.ts"
     }
   },
   "scripts": {

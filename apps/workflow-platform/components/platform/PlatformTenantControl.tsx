@@ -823,8 +823,15 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                       value={create.countryCode}
                       onChange={(event) => {
                         const countryCode = event.target.value;
-                        const zones = countryCode ? countrySuggestions(countryCode).timeZones : [];
-                        setCreate({ ...create, countryCode, timezone: zones.length === 1 ? (zones[0] ?? '') : '' });
+                        const suggestion = countryCode ? countrySuggestions(countryCode) : { timeZones: [] as string[] };
+                        setCreate({
+                          ...create,
+                          countryCode,
+                          timezone: suggestion.timeZones.length === 1 ? (suggestion.timeZones[0] ?? '') : '',
+                          // WI-OI-153: the country's currency (CLDR) unless the operator already chose one.
+                          defaultCurrency:
+                            create.defaultCurrency || ('currency' in suggestion ? (suggestion.currency ?? '') : ''),
+                        });
                       }}
                       className={inputClass}
                     >

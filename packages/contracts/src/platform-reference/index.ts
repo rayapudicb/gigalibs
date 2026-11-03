@@ -15,6 +15,9 @@ export const ReferenceSetKeySchema = z.enum([
   'LANGUAGES',
   'TIME_ZONES',
   'TAX_JURISDICTIONS',
+  // WI-OI-153 slice A2 (ADR-0038 §1): ISO 3166-2 regions and the ICC Incoterms 2020 trade terms.
+  'REGIONS',
+  'TRADE_TERMS',
 ]);
 export type ReferenceSetKey = z.infer<typeof ReferenceSetKeySchema>;
 
@@ -27,6 +30,11 @@ export interface CurrencyEntry {
 export interface CountryEntry {
   readonly code: string; // ISO 3166-1 alpha-2
   readonly name: string;
+  // WI-OI-153 (ADR-0038 §2): the baseline any country gets — from CLDR supplemental data and phone-number metadata.
+  readonly currency?: string; // ISO 4217 code in current use (CLDR currencyData)
+  readonly callingCode?: string; // ITU-T E.164 country calling code, without "+"
+  readonly weekStart?: number; // 1 = Monday … 7 = Sunday (CLDR weekData)
+  readonly measurementSystem?: 'metric' | 'us' | 'uk'; // CLDR measurementData
 }
 export interface SubdivisionEntry {
   readonly code: string; // ISO 3166-2
@@ -34,8 +42,17 @@ export interface SubdivisionEntry {
   readonly countryCode: string;
 }
 export interface UomEntry {
-  readonly code: string; // CLDR measurement unit id (ICU), e.g. "kilogram", "liter"
+  readonly code: string; // UN/ECE Recommendation 20 common code, e.g. "KGM", "H87"; packaging units "X" + Rec 21
   readonly name: string;
+  readonly symbol: string;
+  readonly dimension: 'COUNT' | 'WEIGHT' | 'LENGTH' | 'AREA' | 'VOLUME' | 'TIME' | 'TEMPERATURE' | 'DATA';
+  /** Factor to the dimension's base unit (KGM, MTR, MTK, LTR, SEC, AD, H87), as a decimal string; absent when none. */
+  readonly toBase?: string;
+}
+export interface TradeTermEntry {
+  readonly code: string; // ICC Incoterms 2020 rule, e.g. "FOB"
+  readonly name: string;
+  readonly transport: 'ANY' | 'SEA';
 }
 export interface LanguageEntry {
   readonly code: string; // ISO 639-1

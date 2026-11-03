@@ -4,10 +4,12 @@ import {
   GENERATED_CURRENCIES,
   GENERATED_LANGUAGES,
   GENERATED_TIME_ZONES,
+  GENERATED_TRADE_TERMS,
   GENERATED_UNITS_OF_MEASURE,
   type ReferenceSetKey,
   canonicalReferenceString,
 } from '@gigalibs/contracts';
+import { GENERATED_REGIONS, GENERATED_TAX_JURISDICTIONS } from '@gigalibs/contracts/platform-reference/regions.js';
 import { Prisma, prisma } from '@gigalibs/db';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
@@ -34,6 +36,10 @@ const GENERATED: Partial<
   COUNTRIES: GENERATED_COUNTRIES,
   LANGUAGES: GENERATED_LANGUAGES,
   UNITS_OF_MEASURE: GENERATED_UNITS_OF_MEASURE,
+  // WI-OI-153 slice A2: regions, tax jurisdictions (structure) and trade terms.
+  REGIONS: GENERATED_REGIONS,
+  TAX_JURISDICTIONS: GENERATED_TAX_JURISDICTIONS,
+  TRADE_TERMS: GENERATED_TRADE_TERMS,
 };
 
 /** The sets that have generated data and can be loaded (WI-OI-153 slice A load command). */

@@ -53,11 +53,28 @@ const MONTHS = [
 const field =
   'block w-full max-w-md rounded-md border border-ui-border-base bg-ui-bg-field px-3 py-2 text-sm text-ui-fg-base shadow-xs focus:border-ui-border-interactive focus:outline-none disabled:opacity-60';
 
-/** What the runtime knows of a country: its time zones and first day of the week (suggestions only). */
+/**
+ * What is known of a country (suggestions only): its time zones from the runtime, and its currency and first day of the
+ * week from the platform reference data (CLDR), falling back to the runtime's week (WI-OI-153 baseline).
+ */
 export function countrySuggestions(countryCode: string): {
   timeZones: string[];
   weekStart?: number;
+  currency?: string;
 } {
+  const reference = GENERATED_COUNTRIES.entries.find((entry) => entry.code === countryCode) as
+    | { currency?: string; weekStart?: number }
+    | undefined;
+  const runtime = runtimeSuggestions(countryCode);
+  const weekStart = reference?.weekStart ?? runtime.weekStart;
+  return {
+    timeZones: runtime.timeZones,
+    ...(weekStart ? { weekStart } : {}),
+    ...(reference?.currency ? { currency: reference.currency } : {}),
+  };
+}
+
+function runtimeSuggestions(countryCode: string): { timeZones: string[]; weekStart?: number } {
   try {
     const locale = new Intl.Locale(`und-${countryCode}`).maximize() as Intl.Locale & {
       getTimeZones?: () => string[];
@@ -147,6 +164,7 @@ export function TenantLocalizationSettings({
       countryCode,
       ...(suggestion.timeZones.length === 1 ? { timezone: suggestion.timeZones[0] } : {}),
       ...(suggestion.weekStart ? { weekStart: suggestion.weekStart } : {}),
+      ...(suggestion.currency ? { defaultCurrency: suggestion.currency } : {}),
     });
   };
   const zones: readonly string[] = GENERATED_TIME_ZONES.entries.map((entry) => entry.code);

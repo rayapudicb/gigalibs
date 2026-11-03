@@ -122,6 +122,9 @@ export class UomsController {
     @Body() body: unknown, @Res({ passthrough: true }) response: ReplayResponse) {
     return replay(await this.catalogue.createUom(context, errors.parseInput(CreateUomInputV1Schema, body), key(header)), response);
   }
+  // WI-OI-153 slice C: add the platform's standard units to this workspace (idempotent).
+  @Post('platform-units') @HttpCode(200) @RequirePermissions('uoms:manage')
+  addPlatformUnits(@CommandContext() context: ModuleCommandContext) { return this.catalogue.addPlatformUnits(context); }
 }
 
 @Controller('v1/uom-conversions')

@@ -18,9 +18,7 @@ export class PlatformReferenceController {
   lookup(@Param('setKey') setKey: string) {
     const parsed = ReferenceSetKeySchema.safeParse(setKey);
     if (!parsed.success)
-      throw new BadRequestException(
-        'Unknown reference set; expected one of COUNTRIES, CURRENCIES, UNITS_OF_MEASURE, LANGUAGES, TIME_ZONES, TAX_JURISDICTIONS.',
-      );
+      throw new BadRequestException(`Unknown reference set; expected one of ${ReferenceSetKeySchema.options.join(', ')}.`);
     return this.reference.lookup(parsed.data);
   }
 }

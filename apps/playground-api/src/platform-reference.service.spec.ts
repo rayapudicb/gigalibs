@@ -65,12 +65,15 @@ describe('PlatformReferenceService', () => {
     expect(database.tx.auditLog.create).not.toHaveBeenCalled();
   });
 
-  it('refuses a set with no sourced dataset yet', async () => {
-    // TAX_JURISDICTIONS has no ICU source (and is not generated); UNITS_OF_MEASURE is now ICU-sourced.
-    await expect(service.loadGeneratedSet('op-1', 'TAX_JURISDICTIONS', 'x')).rejects.toThrow(
-      /sourced dataset/,
-    );
-    expect(database.$transaction).not.toHaveBeenCalled();
+  it('can load every set; regions, tax jurisdictions and trade terms are sourced now (WI-OI-153)', async () => {
+    const { LOADABLE_REFERENCE_SETS } = await import('./platform-reference.service.js');
+    const { ReferenceSetKeySchema } = await import('@gigalibs/contracts');
+    expect([...LOADABLE_REFERENCE_SETS].sort()).toEqual([...ReferenceSetKeySchema.options].sort());
+    const result = await service.loadGeneratedSet('op-1', 'REGIONS', 'initial load');
+    expect(result.entryCount).toBeGreaterThan(3000);
+    const createMany = database.tx.platformReferenceEntry.createMany.mock.calls[0]?.[0];
+    const maharashtra = createMany.data.find((entry: { code: string }) => entry.code === 'IN-MH');
+    expect(maharashtra).toMatchObject({ name: 'Maharashtra', payload: { countryCode: 'IN' } });
   });
 
   it('lookup serves the live version flattened (code + name + payload), or empty when none', async () => {

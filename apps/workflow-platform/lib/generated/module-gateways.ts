@@ -3335,6 +3335,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/uoms/platform-units",
+        "pattern": "^v1/uoms/platform-units$",
+        "methods": {
+          "POST": "uoms:manage"
+        }
+      },
+      {
         "template": "v1/uom-conversions",
         "pattern": "^v1/uom-conversions$",
         "methods": {

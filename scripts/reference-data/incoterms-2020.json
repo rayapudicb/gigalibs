@@ -1,0 +1,18 @@
+{
+  "source": "ICC Incoterms® 2020 (International Chamber of Commerce)",
+  "version": "Incoterms 2020",
+  "note": "The eleven rules by their three-letter code and name; the rules' text is the ICC's and is not reproduced. Incoterms is a trademark of the ICC.",
+  "terms": [
+    { "code": "EXW", "name": "Ex Works", "transport": "ANY" },
+    { "code": "FCA", "name": "Free Carrier", "transport": "ANY" },
+    { "code": "CPT", "name": "Carriage Paid To", "transport": "ANY" },
+    { "code": "CIP", "name": "Carriage and Insurance Paid To", "transport": "ANY" },
+    { "code": "DAP", "name": "Delivered at Place", "transport": "ANY" },
+    { "code": "DPU", "name": "Delivered at Place Unloaded", "transport": "ANY" },
+    { "code": "DDP", "name": "Delivered Duty Paid", "transport": "ANY" },
+    { "code": "FAS", "name": "Free Alongside Ship", "transport": "SEA" },
+    { "code": "FOB", "name": "Free on Board", "transport": "SEA" },
+    { "code": "CFR", "name": "Cost and Freight", "transport": "SEA" },
+    { "code": "CIF", "name": "Cost, Insurance and Freight", "transport": "SEA" }
+  ]
+}

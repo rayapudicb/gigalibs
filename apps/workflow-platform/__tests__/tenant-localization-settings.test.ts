@@ -26,5 +26,8 @@ describe('workspace profile on the Localization screen', () => {
     expect(india.weekStart).toBe(7);
     expect(countrySuggestions('US').timeZones.length).toBeGreaterThan(1);
     expect(countrySuggestions('??').timeZones).toEqual([]);
+    // Currency from the platform reference data (CLDR), for any country with or without a pack (WI-OI-153).
+    expect(countrySuggestions('IN').currency).toBe('INR');
+    expect(countrySuggestions('KE').currency).toBe('KES');
   });
 });

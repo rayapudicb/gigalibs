@@ -31,7 +31,7 @@ import {
   evaluateDictionaryCondition,
   validateDictionaryRules,
 } from '@gigalibs/configuration-core';
-import type { DictionaryValidationRuleV1 } from '@gigalibs/contracts';
+import { type DictionaryValidationRuleV1, GENERATED_UNITS_OF_MEASURE } from '@gigalibs/contracts';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import type pg from 'pg';
 import { SCHEMA, TOPIC } from '../config.js';
@@ -288,6 +288,36 @@ export class CatalogueService {
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const result = await client.query(`SELECT * FROM ${SCHEMA}.uom_definitions WHERE tenant_id = $1 ORDER BY code`, [principal.tenantId]);
       return { items: result.rows.map(mapUom) };
+    });
+  }
+
+  /**
+   * WI-OI-153 slice C (ADR-0038 §1): the platform's standard units (UN/ECE Recommendation 20, the platform reference
+   * set) written into this workspace as read-only PLATFORM_REFERENCE rows with fixed ids, so products and stock can use
+   * them like their own. Running it again adds nothing; a code the workspace already uses for its own unit is kept.
+   */
+  async addPlatformUnits(context: ModuleCommandContext) {
+    return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      const access = await this.resolveAccess(client, context.principal);
+      this.assertWrite(access, null);
+      const added: string[] = [];
+      for (const unit of GENERATED_UNITS_OF_MEASURE.entries) {
+        const inserted = await client.query(
+          `INSERT INTO ${SCHEMA}.uom_definitions
+            (id, tenant_id, code, name, symbol, dimension, standard_precision, costing_precision, uom_type, iso_code, created_by, updated_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,4,'PLATFORM_REFERENCE',$3,$8,$8)
+           ON CONFLICT DO NOTHING RETURNING id`,
+          [platformUnitId(context.principal.tenantId, unit.code), context.principal.tenantId, unit.code, unit.name, unit.symbol,
+            unit.dimension, unit.dimension === 'COUNT' ? 0 : 2, context.principal.subject],
+        );
+        if (inserted.rowCount) added.push(unit.code);
+      }
+      if (added.length > 0)
+        await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
+          action: 'PLATFORM_UOMS_ADDED', aggregateType: 'uom', aggregateId: platformUnitId(context.principal.tenantId, '*'),
+          aggregateVersion: 1, payload: { added: added.length, version: GENERATED_UNITS_OF_MEASURE.version },
+        });
+      return { added: added.length, available: GENERATED_UNITS_OF_MEASURE.entryCount, version: GENERATED_UNITS_OF_MEASURE.version };
     });
   }
 
@@ -1087,3 +1117,13 @@ export function multiplyDecimals(left: string, right: string, maximumScale: numb
 }
 function deterministicUuid(seed: string, index: number) { const hex = createHash('sha256').update(`${seed}:${index}`).digest('hex').slice(0,32).split(''); hex[12]='4'; hex[16]='8'; return `${hex.slice(0,8).join('')}-${hex.slice(8,12).join('')}-${hex.slice(12,16).join('')}-${hex.slice(16,20).join('')}-${hex.slice(20).join('')}`; }
 function csvCell(value: unknown) { let text = value == null ? '' : String(value); if (/^[=+\-@]/.test(text)) text = `'${text}`; return `"${text.replaceAll('"','""')}"`; }
+
+/** A platform unit's id in a workspace: a name-based UUID (RFC 4122 version 5 layout) of the workspace and the code. */
+export function platformUnitId(tenantId: string, code: string): string {
+  const bytes = createHash('sha1').update(`gigalibs:platform-uom:${tenantId}:${code}`).digest().subarray(0, 16);
+  bytes[6] = (bytes[6]! & 0x0f) | 0x50;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+

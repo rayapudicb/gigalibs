@@ -2,7 +2,13 @@
 
 import { holdsPermission, PLATFORM_LOOKUP_BASE_PATHS } from '@gigalibs/contracts';
 import { EmptyState, ModulePage } from '@gigalibs/web-sdk';
-import { createRecordClient, type LookupOption, MetadataWindow, type RecordClient, usePublishedManifest } from '@gigalibs/configuration-react';
+import {
+  createRecordClient,
+  type LookupOption,
+  MetadataWindow,
+  type RecordClient,
+  usePublishedManifest,
+} from '@gigalibs/configuration-react';
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 
 // WI-OI-120g (U7, ADR-0033 D1): the Product Catalogue's screens are metadata windows drawn from the dictionary each
@@ -45,7 +51,9 @@ export type ProductCatalogueSection =
   | 'price-resolver'
   | 'import-export';
 
-export const PRODUCT_CATALOGUE_SECTIONS: Readonly<Record<ProductCatalogueSection, { readonly title: string; readonly view: Tab }>> = {
+export const PRODUCT_CATALOGUE_SECTIONS: Readonly<
+  Record<ProductCatalogueSection, { readonly title: string; readonly view: Tab }>
+> = {
   products: { title: 'Products', view: 'catalogue-products' },
   units: { title: 'Units', view: 'catalogue-units' },
   categories: { title: 'Categories', view: 'catalogue-categories' },
@@ -69,36 +77,124 @@ function holds(permissions: readonly string[], permission: string): boolean {
   return holdsPermission(permissions, permission);
 }
 
-export function ProductCatalogueWorkspace({ permissions = [], section = 'products' }: ProductCatalogueWorkspaceProps = {}) {
+export function ProductCatalogueWorkspace({
+  permissions = [],
+  section = 'products',
+}: ProductCatalogueWorkspaceProps = {}) {
   const screen = PRODUCT_CATALOGUE_SECTIONS[section];
   const tab = screen.view;
   // WI-OI-153: platform lookups (the price list currency picker) are answered by the control plane.
-  const client = useMemo(() => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: PLATFORM_LOOKUP_BASE_PATHS }), []);
-  const canTransfer = holds(permissions, 'products:import') || holds(permissions, 'products:export');
+  const client = useMemo(
+    () => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: PLATFORM_LOOKUP_BASE_PATHS }),
+    [],
+  );
+  const canTransfer =
+    holds(permissions, 'products:import') || holds(permissions, 'products:export');
+  // WI-OI-153 slice C: the Units screen can add the platform's standard units; the list reloads after.
+  const [refresh, setRefresh] = useState(0);
+  const standardUnits =
+    tab === 'catalogue-units' && holds(permissions, 'uoms:manage') ? (
+      <StandardUnitsButton onAdded={() => setRefresh((value) => value + 1)} />
+    ) : undefined;
   return (
-    <ModulePage title={screen.title}>
+    <ModulePage title={screen.title} actions={standardUnits}>
       {tab === 'resolve' ? (
         <PriceResolver client={client} />
       ) : tab === 'transfer' ? (
         canTransfer ? (
           <ImportExport permissions={permissions} />
         ) : (
-          <EmptyState title="Import and export are not open to you" description="Ask your workspace administrator for product import or export." />
+          <EmptyState
+            title="Import and export are not open to you"
+            description="Ask your workspace administrator for product import or export."
+          />
         )
       ) : (
-        <CatalogueWindow key={tab} surface={tab} client={client} permissions={permissions} />
+        <CatalogueWindow
+          key={`${tab}-${refresh}`}
+          surface={tab}
+          client={client}
+          permissions={permissions}
+        />
       )}
     </ModulePage>
   );
 }
 
-function CatalogueWindow({ surface, client, permissions }: { surface: string; client: RecordClient; permissions: readonly string[] }) {
-  const state = usePublishedManifest({ moduleKey: 'product-catalogue', entityKey: surface, surfaceKey: surface });
-  if (state.status === 'loading') return <p className="text-sm text-ui-fg-muted">Loading the window…</p>;
+/** Adds the platform's standard units (UN/ECE Rec 20) to the workspace; running it again adds nothing. */
+function StandardUnitsButton({ onAdded }: { onAdded: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  async function add() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch(`${BASE_PATH}/v1/uoms/platform-units`, { method: 'POST' });
+      const body = (await response.json().catch(() => null)) as {
+        added?: number;
+        available?: number;
+      } | null;
+      if (!response.ok || typeof body?.added !== 'number') {
+        setMessage(await failureText(response, body));
+        return;
+      }
+      setMessage(
+        body.added === 0
+          ? 'The standard units are already here.'
+          : `Added ${body.added} standard units.`,
+      );
+      if (body.added > 0) onAdded();
+    } catch {
+      setMessage('The standard units could not be added. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <span className="inline-flex items-center gap-2">
+      {message ? (
+        <span role="status" className="text-xs text-ui-fg-subtle">
+          {message}
+        </span>
+      ) : null}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => void add()}
+        className="rounded-md border border-ui-border-base bg-ui-bg-base px-3 py-1.5 text-xs font-semibold text-ui-fg-base shadow-xs hover:bg-ui-bg-base-hover disabled:opacity-50"
+      >
+        {busy ? 'Adding…' : 'Add the standard units'}
+      </button>
+    </span>
+  );
+}
+
+async function failureText(response: Response, body: unknown): Promise<string> {
+  const detail =
+    (body as { detail?: string; message?: string } | null)?.detail ??
+    (body as { message?: string } | null)?.message;
+  if (response.status === 403) return 'Your role cannot add units.';
+  return detail ?? `The standard units could not be added (${response.status}).`;
+}
+
+function CatalogueWindow({
+  surface,
+  client,
+  permissions,
+}: { surface: string; client: RecordClient; permissions: readonly string[] }) {
+  const state = usePublishedManifest({
+    moduleKey: 'product-catalogue',
+    entityKey: surface,
+    surfaceKey: surface,
+  });
+  if (state.status === 'loading')
+    return <p className="text-sm text-ui-fg-muted">Loading the window…</p>;
   if (state.status !== 'ready') {
     return (
       <div role="alert" className="rounded-lg border border-ui-border-base bg-ui-bg-base p-4">
-        <p className="text-sm font-medium text-ui-fg-error">{state.status === 'forbidden' ? 'No access' : 'This window is not available'}</p>
+        <p className="text-sm font-medium text-ui-fg-error">
+          {state.status === 'forbidden' ? 'No access' : 'This window is not available'}
+        </p>
         <p className="mt-1 text-sm text-ui-fg-subtle">{state.message}</p>
       </div>
     );
@@ -111,7 +207,10 @@ async function failure(response: Response): Promise<string> {
   const body: unknown = await response.json().catch(() => null);
   if (body && typeof body === 'object') {
     const record = body as Record<string, unknown>;
-    const nested = record.message && typeof record.message === 'object' ? (record.message as Record<string, unknown>) : record;
+    const nested =
+      record.message && typeof record.message === 'object'
+        ? (record.message as Record<string, unknown>)
+        : record;
     if (typeof nested.message === 'string') return nested.message;
     if (typeof record.title === 'string') return record.title;
   }
@@ -119,7 +218,19 @@ async function failure(response: Response): Promise<string> {
 }
 
 /** A searchable picker over one of the Catalogue's lookups. */
-function Picker({ client, resolverKey, label, value, onChange }: { client: RecordClient; resolverKey: string; label: string; value: string; onChange: (value: string) => void }) {
+function Picker({
+  client,
+  resolverKey,
+  label,
+  value,
+  onChange,
+}: {
+  client: RecordClient;
+  resolverKey: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
   const [search, setSearch] = useState('');
   const [options, setOptions] = useState<readonly LookupOption[]>([]);
   useEffect(() => {
@@ -142,8 +253,19 @@ function Picker({ client, resolverKey, label, value, onChange }: { client: Recor
   return (
     <div className="space-y-1">
       <label className="text-xs font-medium text-ui-fg-subtle">{label}</label>
-      <input aria-label={`Search ${label}`} className={field} placeholder="Search" value={search} onChange={(event) => setSearch(event.target.value)} />
-      <select aria-label={label} className={field} value={value} onChange={(event) => onChange(event.target.value)}>
+      <input
+        aria-label={`Search ${label}`}
+        className={field}
+        placeholder="Search"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+      />
+      <select
+        aria-label={label}
+        className={field}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
         <option value="">Choose…</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -162,7 +284,11 @@ interface ResolvedPrice {
   readonly limitPriceMinor: string;
   readonly isTaxIncluded: boolean;
   readonly effectiveFrom: string;
-  readonly resolutionTrace: { readonly versionSelected: string; readonly precedenceRule: string; readonly quantityBreak: string };
+  readonly resolutionTrace: {
+    readonly versionSelected: string;
+    readonly precedenceRule: string;
+    readonly quantityBreak: string;
+  };
 }
 
 /** Minor units as a decimal amount, without floating point. */
@@ -201,7 +327,8 @@ function PriceResolver({ client }: { client: RecordClient }) {
           ...(date ? { effectiveAt: `${date}T00:00:00.000Z` } : {}),
         }),
       });
-      if (response.status === 404) setMessage('No active price applies to this product, unit, quantity, currency and date.');
+      if (response.status === 404)
+        setMessage('No active price applies to this product, unit, quantity, currency and date.');
       else if (!response.ok) setMessage(await failure(response));
       else setResult((await response.json()) as ResolvedPrice);
     } catch {
@@ -214,22 +341,63 @@ function PriceResolver({ client }: { client: RecordClient }) {
   return (
     <section className="max-w-2xl space-y-4">
       <p className="text-sm text-ui-fg-subtle">
-        Find the one price in force for a product on a date: the most specific active price-list version wins (organization, then audience, then quantity break, then the latest effective date).
+        Find the one price in force for a product on a date: the most specific active price-list
+        version wins (organization, then audience, then quantity break, then the latest effective
+        date).
       </p>
-      <form className="grid grid-cols-1 gap-3 sm:grid-cols-2" onSubmit={(event) => void resolve(event)}>
-        <Picker client={client} resolverKey="catalogue-products" label="Product" value={productId} onChange={setProductId} />
-        <Picker client={client} resolverKey="catalogue-uoms" label="Unit (optional)" value={uomId} onChange={setUomId} />
+      <form
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+        onSubmit={(event) => void resolve(event)}
+      >
+        <Picker
+          client={client}
+          resolverKey="catalogue-products"
+          label="Product"
+          value={productId}
+          onChange={setProductId}
+        />
+        <Picker
+          client={client}
+          resolverKey="catalogue-uoms"
+          label="Unit (optional)"
+          value={uomId}
+          onChange={setUomId}
+        />
         <div className="space-y-1">
-          <label className="text-xs font-medium text-ui-fg-subtle" htmlFor="resolve-quantity">Quantity</label>
-          <input id="resolve-quantity" className={field} value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+          <label className="text-xs font-medium text-ui-fg-subtle" htmlFor="resolve-quantity">
+            Quantity
+          </label>
+          <input
+            id="resolve-quantity"
+            className={field}
+            value={quantity}
+            onChange={(event) => setQuantity(event.target.value)}
+          />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium text-ui-fg-subtle" htmlFor="resolve-currency">Currency (optional)</label>
-          <input id="resolve-currency" className={field} maxLength={3} placeholder="USD" value={currencyCode} onChange={(event) => setCurrencyCode(event.target.value)} />
+          <label className="text-xs font-medium text-ui-fg-subtle" htmlFor="resolve-currency">
+            Currency (optional)
+          </label>
+          <input
+            id="resolve-currency"
+            className={field}
+            maxLength={3}
+            placeholder="USD"
+            value={currencyCode}
+            onChange={(event) => setCurrencyCode(event.target.value)}
+          />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium text-ui-fg-subtle" htmlFor="resolve-date">On date (optional)</label>
-          <input id="resolve-date" type="date" className={field} value={date} onChange={(event) => setDate(event.target.value)} />
+          <label className="text-xs font-medium text-ui-fg-subtle" htmlFor="resolve-date">
+            On date (optional)
+          </label>
+          <input
+            id="resolve-date"
+            type="date"
+            className={field}
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+          />
         </div>
         <div className="flex items-end">
           <button type="submit" className={primary} disabled={busy}>
@@ -296,7 +464,9 @@ export function parseCsv(text: string): Record<string, string>[] {
   if (row.some((value) => value.trim() !== '')) rows.push(row);
   const [header, ...body] = rows;
   if (!header) return [];
-  return body.map((values) => Object.fromEntries(header.map((name, column) => [name.trim(), (values[column] ?? '').trim()])));
+  return body.map((values) =>
+    Object.fromEntries(header.map((name, column) => [name.trim(), (values[column] ?? '').trim()])),
+  );
 }
 
 /** CSV cells as the product contract's types: booleans and empty cells. */
@@ -304,7 +474,9 @@ function productRow(row: Record<string, string>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(row)) {
     if (value === '') continue;
-    result[key] = /^(is[A-Z])/.test(key) ? ['true', 'yes', '1'].includes(value.toLowerCase()) : value;
+    result[key] = /^(is[A-Z])/.test(key)
+      ? ['true', 'yes', '1'].includes(value.toLowerCase())
+      : value;
   }
   return result;
 }
@@ -313,7 +485,11 @@ interface ImportPreview {
   readonly total: number;
   readonly valid: number;
   readonly quarantined: number;
-  readonly rows: readonly { readonly row: number; readonly status: string; readonly issues: readonly string[] }[];
+  readonly rows: readonly {
+    readonly row: number;
+    readonly status: string;
+    readonly issues: readonly string[];
+  }[];
 }
 
 function ImportExport({ permissions }: { permissions: readonly string[] }) {
@@ -327,17 +503,31 @@ function ImportExport({ permissions }: { permissions: readonly string[] }) {
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch(`${BASE_PATH}/v1/products/export`, { cache: 'no-store', headers: { Accept: 'application/json' } });
+      const response = await fetch(`${BASE_PATH}/v1/products/export`, {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      });
       if (!response.ok) throw new Error(await failure(response));
-      const file = (await response.json()) as { mediaType: string; filename: string; content: string; truncated: boolean };
+      const file = (await response.json()) as {
+        mediaType: string;
+        filename: string;
+        content: string;
+        truncated: boolean;
+      };
       const link = document.createElement('a');
       link.href = URL.createObjectURL(new Blob([file.content], { type: file.mediaType }));
       link.download = file.filename;
       link.click();
       URL.revokeObjectURL(link.href);
-      setMessage({ tone: 'info', text: file.truncated ? 'Exported the first 100 products.' : 'Exported.' });
+      setMessage({
+        tone: 'info',
+        text: file.truncated ? 'Exported the first 100 products.' : 'Exported.',
+      });
     } catch (error) {
-      setMessage({ tone: 'error', text: error instanceof Error ? error.message : 'The export failed.' });
+      setMessage({
+        tone: 'error',
+        text: error instanceof Error ? error.message : 'The export failed.',
+      });
     } finally {
       setBusy(false);
     }
@@ -350,7 +540,11 @@ function ImportExport({ permissions }: { permissions: readonly string[] }) {
       const response = await fetch(`${BASE_PATH}/v1/products/import/${path}`, {
         method: 'POST',
         cache: 'no-store',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(path === 'commit' ? { 'Idempotency-Key': crypto.randomUUID() } : {}) },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          ...(path === 'commit' ? { 'Idempotency-Key': crypto.randomUUID() } : {}),
+        },
         body: JSON.stringify({ rows }),
       });
       if (!response.ok) throw new Error(await failure(response));
@@ -362,7 +556,10 @@ function ImportExport({ permissions }: { permissions: readonly string[] }) {
         setMessage({ tone: 'info', text: `Imported ${result.imported} products as drafts.` });
       }
     } catch (error) {
-      setMessage({ tone: 'error', text: error instanceof Error ? error.message : 'The import failed.' });
+      setMessage({
+        tone: 'error',
+        text: error instanceof Error ? error.message : 'The import failed.',
+      });
     } finally {
       setBusy(false);
     }
@@ -373,8 +570,15 @@ function ImportExport({ permissions }: { permissions: readonly string[] }) {
       {holds(permissions, 'products:export') && (
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-ui-fg-base">Export products</h2>
-          <p className="text-sm text-ui-fg-subtle">Downloads your products as CSV. Formula-like cells are neutralised.</p>
-          <button type="button" className={secondary} disabled={busy} onClick={() => void exportProducts()}>
+          <p className="text-sm text-ui-fg-subtle">
+            Downloads your products as CSV. Formula-like cells are neutralised.
+          </p>
+          <button
+            type="button"
+            className={secondary}
+            disabled={busy}
+            onClick={() => void exportProducts()}
+          >
             Export CSV
           </button>
         </div>
@@ -383,7 +587,9 @@ function ImportExport({ permissions }: { permissions: readonly string[] }) {
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-ui-fg-base">Import products</h2>
           <p className="text-sm text-ui-fg-subtle">
-            Paste CSV with a header row: code, name, productType, baseUomId, isSold, isPurchased, isStocked (and optionally displayName, description, categoryId). Up to 500 rows; every row is checked before anything is saved.
+            Paste CSV with a header row: code, name, productType, baseUomId, isSold, isPurchased,
+            isStocked (and optionally displayName, description, categoryId). Up to 500 rows; every
+            row is checked before anything is saved.
           </p>
           <textarea
             aria-label="Products CSV"
@@ -395,10 +601,20 @@ function ImportExport({ permissions }: { permissions: readonly string[] }) {
             }}
           />
           <div className="flex gap-2">
-            <button type="button" className={secondary} disabled={busy || rows.length === 0} onClick={() => void send('preview')}>
+            <button
+              type="button"
+              className={secondary}
+              disabled={busy || rows.length === 0}
+              onClick={() => void send('preview')}
+            >
               Check {rows.length} rows
             </button>
-            <button type="button" className={primary} disabled={busy || !preview || preview.quarantined > 0} onClick={() => void send('commit')}>
+            <button
+              type="button"
+              className={primary}
+              disabled={busy || !preview || preview.quarantined > 0}
+              onClick={() => void send('commit')}
+            >
               Import
             </button>
           </div>
@@ -409,7 +625,10 @@ function ImportExport({ permissions }: { permissions: readonly string[] }) {
                 {preview.rows
                   .filter((row) => row.status !== 'VALID')
                   .map((row) => (
-                    <li key={row.row} className="text-ui-fg-error">{`Row ${row.row}: ${row.issues.join('; ')}`}</li>
+                    <li
+                      key={row.row}
+                      className="text-ui-fg-error"
+                    >{`Row ${row.row}: ${row.issues.join('; ')}`}</li>
                   ))}
               </ul>
             </div>
@@ -417,7 +636,10 @@ function ImportExport({ permissions }: { permissions: readonly string[] }) {
         </div>
       )}
       {message && (
-        <p role={message.tone === 'error' ? 'alert' : 'status'} className={`text-sm ${message.tone === 'error' ? 'text-ui-fg-error' : 'text-ui-fg-subtle'}`}>
+        <p
+          role={message.tone === 'error' ? 'alert' : 'status'}
+          className={`text-sm ${message.tone === 'error' ? 'text-ui-fg-error' : 'text-ui-fg-subtle'}`}
+        >
           {message.text}
         </p>
       )}
