@@ -93,7 +93,9 @@
           "maskOnDisplay": false,
           "referenceKey": "currency-ref",
           "writePermission": "procurement:debit-memos:manage",
-          "defaultValue": "USD"
+          "defaultValue": {
+            "$default": "WORKSPACE_CURRENCY"
+          }
         },
         {
           "fieldKey": "reason",

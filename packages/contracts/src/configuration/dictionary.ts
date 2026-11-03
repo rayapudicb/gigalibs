@@ -555,5 +555,7 @@ export const DICTIONARY_EXECUTABLE_CAPABILITIES = Object.freeze({
     TODAY: Object.freeze(['DATE'] as const satisfies readonly DictionaryFieldType[]),
     NOW: Object.freeze(['DATETIME'] as const satisfies readonly DictionaryFieldType[]),
     CURRENT_USER: Object.freeze(['REFERENCE', 'TEXT'] as const satisfies readonly DictionaryFieldType[]),
+    // WI-OI-153 (ADR-0038 §5): the workspace's base currency (Settings › General & localization).
+    WORKSPACE_CURRENCY: Object.freeze(['REFERENCE', 'TEXT', 'SELECT'] as const satisfies readonly DictionaryFieldType[]),
   }),
 });

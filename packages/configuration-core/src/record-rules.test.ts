@@ -1,6 +1,6 @@
 import type { DictionaryFieldV1, DictionaryValidationRuleV1, DictionaryViewV1 } from '@gigalibs/contracts';
 import { describe, expect, it } from 'vitest';
-import { checkRecord, defaultsFor, defaultValueToken, entityRules, type DictionaryRuleSource } from './record-rules.js';
+import { checkRecord, defaultsFor, defaultValueToken, entityRules, resolveDefault, type DictionaryRuleSource } from './record-rules.js';
 
 // WI-OI-120r (S1): the field rules the window and the record dispatcher share.
 const field = (fieldKey: string, extra: Partial<DictionaryFieldV1> = {}): DictionaryFieldV1 =>
@@ -184,3 +184,16 @@ describe('defaults', () => {
     expect(checkRecord(requests, { mode: 'CREATE', current: defaults, changes: { title: 'Leak', channel: 'PHONE' }, permissions: everyone }).errors).toEqual({});
   });
 });
+
+describe('workspace currency default (WI-OI-153)', () => {
+  const rule = { defaultValue: { $default: 'WORKSPACE_CURRENCY' } } as unknown as Parameters<typeof resolveDefault>[0];
+  it('is a known token', () => {
+    expect(defaultValueToken({ $default: 'WORKSPACE_CURRENCY' })).toBe('WORKSPACE_CURRENCY');
+  });
+  it('gives the workspace currency when the caller knows it, and nothing otherwise', () => {
+    const now = new Date('2026-11-03T00:00:00Z');
+    expect(resolveDefault(rule, { userId: 'u1', now, workspaceCurrency: 'JPY' })).toBe('JPY');
+    expect(resolveDefault(rule, { userId: 'u1', now })).toBeUndefined();
+  });
+});
+

@@ -97,7 +97,9 @@
           "maskOnDisplay": false,
           "referenceKey": "currency-ref",
           "writePermission": "orders:credit-memos:manage",
-          "defaultValue": "USD"
+          "defaultValue": {
+            "$default": "WORKSPACE_CURRENCY"
+          }
         },
         {
           "fieldKey": "reason",

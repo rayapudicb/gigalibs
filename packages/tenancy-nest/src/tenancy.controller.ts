@@ -105,6 +105,14 @@ export class TenancyController {
     return this.tenancyService.getTenantForUser(tenantId, userId);
   }
 
+  // WI-OI-153 (ADR-0038 §5): the workspace profile every member's forms read for their defaults (base currency,
+  // language, time zone, country); no secrets, so users:read, which every member holds, is enough.
+  @Get('current/profile')
+  @RequirePermissions('users:read')
+  workspaceProfile(@CurrentTenant('tenantId') tenantId: string) {
+    return this.tenancyService.workspaceProfile(tenantId);
+  }
+
   // WI-OI-147 (QA-035): a workspace administrator asks a platform operator to turn on a module.
   @Get('current/module-requests')
   @RequirePermissions('tenant:read')

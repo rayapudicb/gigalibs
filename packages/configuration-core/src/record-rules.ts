@@ -149,6 +149,8 @@ export interface DefaultContext {
   /** The signed-in user's id, for `CURRENT_USER`. */
   readonly userId: string;
   readonly now: Date;
+  /** WI-OI-153: the workspace's base currency, for `WORKSPACE_CURRENCY`, when the caller knows it. */
+  readonly workspaceCurrency?: string;
 }
 
 /** The value a default gives now, or undefined when the field has none. `TODAY` is the UTC date on the server. */
@@ -159,6 +161,7 @@ export function resolveDefault(rule: FieldRule, context: DefaultContext): unknow
   if (token === 'TODAY') return context.now.toISOString().slice(0, 10);
   if (token === 'NOW') return context.now.toISOString();
   if (token === 'CURRENT_USER') return context.userId;
+  if (token === 'WORKSPACE_CURRENCY') return context.workspaceCurrency;
   return undefined;
 }
 

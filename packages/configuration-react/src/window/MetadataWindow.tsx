@@ -2,6 +2,7 @@ import type { CompiledDictionaryManifestV1, DictionaryActionV1, DictionaryTabV1 
 import { type ComponentType, createContext, type FormEvent, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { type LookupOption, type RecordClient, RecordClientError, type RecordPage, type RecordValues } from './record-client.js';
 import { usePublishedManifest } from './use-published-manifest.js';
+import { useWorkspaceDefaults } from './workspace-defaults.js';
 import {
   actionKey,
   describeFailure,
@@ -546,6 +547,27 @@ function RecordForm({
 }) {
   // WI-OI-120r (S1): a new record starts with the window's defaults.
   const [values, setValues] = useState<Record<string, unknown>>(() => ({ ...(record ?? newRecordDefaults(model, tab)), ...fixed }));
+  // WI-OI-153: a field defaulting to the workspace currency takes it once the workspace profile is read, unless the
+  // person has already filled it.
+  const workspace = useWorkspaceDefaults();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: filled once, when the workspace currency arrives.
+  useEffect(() => {
+    if (record || !workspace.defaultCurrency) return;
+    const fixedDefaults = newRecordDefaults(model, tab);
+    const computed = newRecordDefaults(model, tab, new Date(), workspace);
+    setValues((current) => {
+      const next = { ...current };
+      let changed = false;
+      for (const [fieldKey, value] of Object.entries(computed)) {
+        if (fieldKey in fixedDefaults || fieldKey in fixed) continue;
+        if (next[fieldKey] === undefined || next[fieldKey] === '') {
+          next[fieldKey] = value;
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
+  }, [workspace.defaultCurrency]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

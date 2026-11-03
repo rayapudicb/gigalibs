@@ -315,11 +315,22 @@ export function formWarnings(model: WindowModel, entityKey: string, values: Reco
   return validateDictionaryRules(rules, values);
 }
 
+/** What the screen knows of the workspace for computed defaults (WI-OI-153). */
+export interface WorkspaceDefaults {
+  readonly defaultCurrency?: string;
+}
+
 /**
  * The values a new record starts with: each placed field's default, fixed or computed. `TODAY` is the local date and
- * `NOW` the current time; `CURRENT_USER` is filled in by the server, which knows who is signed in.
+ * `NOW` the current time; `CURRENT_USER` is filled in by the server, which knows who is signed in; `WORKSPACE_CURRENCY`
+ * is the workspace's base currency when the screen has read it.
  */
-export function newRecordDefaults(model: WindowModel, tab: DictionaryTabV1, now: Date = new Date()): Record<string, unknown> {
+export function newRecordDefaults(
+  model: WindowModel,
+  tab: DictionaryTabV1,
+  now: Date = new Date(),
+  workspace: WorkspaceDefaults = {},
+): Record<string, unknown> {
   const defaults: Record<string, unknown> = {};
   for (const placement of tab.fields) {
     const field = fieldOf(model, tab, placement.fieldKey);
@@ -328,6 +339,7 @@ export function newRecordDefaults(model: WindowModel, tab: DictionaryTabV1, now:
     if (token === undefined) defaults[field.fieldKey] = field.defaultValue;
     else if (token === 'TODAY') defaults[field.fieldKey] = localDate(now);
     else if (token === 'NOW') defaults[field.fieldKey] = now.toISOString();
+    else if (token === 'WORKSPACE_CURRENCY' && workspace.defaultCurrency) defaults[field.fieldKey] = workspace.defaultCurrency;
   }
   return defaults;
 }

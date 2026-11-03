@@ -257,6 +257,22 @@ export class TenancyService {
   }
 
   /** WI-OI-147 (QA-035): the modules this workspace asked for that are still not on. */
+  /** WI-OI-153: the profile fields of the workspace settings, for every member's form defaults. */
+  async workspaceProfile(tenantId: string) {
+    const settings = await prisma.tenantSettings.findUnique({ where: { tenantId }, select: { localization: true } });
+    const localization = (settings?.localization ?? {}) as Record<string, unknown>;
+    const text = (key: string) => (typeof localization[key] === 'string' ? (localization[key] as string) : null);
+    const whole = (key: string) => (typeof localization[key] === 'number' ? (localization[key] as number) : null);
+    return {
+      countryCode: text('countryCode'),
+      defaultCurrency: text('defaultCurrency'),
+      defaultLocale: text('defaultLocale'),
+      timezone: text('timezone'),
+      weekStart: whole('weekStart'),
+      fiscalYearStartMonth: whole('fiscalYearStartMonth'),
+    };
+  }
+
   async moduleRequests(tenantId: string) {
     const [rows, enabled] = await Promise.all([
       prisma.auditLog.findMany({

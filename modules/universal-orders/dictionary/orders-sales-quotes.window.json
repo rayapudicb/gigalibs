@@ -94,7 +94,9 @@
           "maskOnDisplay": false,
           "referenceKey": "currency-ref",
           "writePermission": "orders:quotes:manage",
-          "defaultValue": "USD"
+          "defaultValue": {
+            "$default": "WORKSPACE_CURRENCY"
+          }
         },
         {
           "fieldKey": "valid-until",

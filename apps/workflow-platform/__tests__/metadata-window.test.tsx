@@ -289,6 +289,7 @@ describe('window field rules', () => {
       field('received-on', 'inventory.receipts', { type: 'DATE', defaultValue: { $default: 'TODAY' } }),
       field('channel', 'inventory.receipts', { defaultValue: 'DOCK' }),
       field('received-by', 'inventory.receipts', { type: 'REFERENCE', referenceKey: 'warehouses', defaultValue: { $default: 'CURRENT_USER' } }),
+      field('currency-code', 'inventory.receipts', { defaultValue: { $default: 'WORKSPACE_CURRENCY' } }),
     ],
     validationRules: [
       { ruleKey: 'number-format', label: 'Number', errorMessage: 'Use RCV- numbers.', severity: 'ERROR', condition: { field: 'receipt-number', operator: 'MATCHES_REGEX', value: '^RCV-' } },
@@ -299,7 +300,7 @@ describe('window field rules', () => {
       ...view,
       tabs: view.tabs.map((tab) =>
         tab.level === 0
-          ? { ...tab, fields: [...tab.fields, { fieldKey: 'received-on', position: 90 }, { fieldKey: 'channel', position: 91 }, { fieldKey: 'received-by', position: 92 }] }
+          ? { ...tab, fields: [...tab.fields, { fieldKey: 'received-on', position: 90 }, { fieldKey: 'channel', position: 91 }, { fieldKey: 'received-by', position: 92 }, { fieldKey: 'currency-code', position: 93 }] }
           : tab,
       ),
     })),
@@ -321,6 +322,15 @@ describe('window field rules', () => {
   it('starts a new record with fixed and dated defaults; the server fills the current user', () => {
     const now = new Date(2026, 9, 6, 23, 30);
     expect(metadataWindowModel.newRecordDefaults(ruledModel, header, now)).toEqual({ 'received-on': '2026-10-06', channel: 'DOCK' });
+  });
+
+  it('starts in the workspace base currency once the screen knows it (WI-OI-153)', () => {
+    const now = new Date(2026, 9, 6, 23, 30);
+    expect(metadataWindowModel.newRecordDefaults(ruledModel, header, now, { defaultCurrency: 'INR' })).toEqual({
+      'received-on': '2026-10-06',
+      channel: 'DOCK',
+      'currency-code': 'INR',
+    });
   });
 });
 

@@ -107,7 +107,9 @@
           "maskOnDisplay": false,
           "referenceKey": "currency-ref",
           "writePermission": "procurement:orders:manage",
-          "defaultValue": "USD"
+          "defaultValue": {
+            "$default": "WORKSPACE_CURRENCY"
+          }
         },
         {
           "fieldKey": "status",

@@ -74,7 +74,21 @@ migration, no change to existing workspaces' data.
 Tests: platform-settings (profile rules, defaults, problems), Localization save request and country suggestions,
 create request with and without a profile, set-up progress with the new step.
 
-Remaining in slice B: new documents start in the workspace's base currency (the window defaults still say USD).
+Slice B part 1 committed in 2d283447.
+
+## Slice B, part 2 — documents start in the workspace currency (built)
+
+- Dictionary default token `WORKSPACE_CURRENCY` (`DICTIONARY_EXECUTABLE_CAPABILITIES.defaultTokens`; fills text,
+  reference and list fields); `resolveDefault` gives it when the caller knows the currency, nothing otherwise.
+- Member-readable workspace profile `GET /api/v1/tenants/current/profile` (users:read, which every member holds;
+  country, currency, language, time zone, week start, fiscal year start — no secrets).
+- Forms read it once per page (`useWorkspaceDefaults`, `@gigalibs/configuration-react`) and fill a
+  workspace-currency field when it arrives, unless the person has already filled it; without the profile they keep
+  their fixed defaults, and the Orders and Procurement adapters still fall back to USD when no currency is sent.
+- Quotes, sales orders, credit memos, requisitions, purchase orders, vendor bills and debit memos default to the
+  workspace currency instead of USD.
+
+Tests: the token on the server and in the window model, the profile loader (once per page; refusal and failure).
 
 ## Decision needed for A2 (recommendation)
 

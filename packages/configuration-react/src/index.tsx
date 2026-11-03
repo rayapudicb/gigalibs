@@ -560,4 +560,6 @@ export {
 } from './window/record-client.js';
 export { manifestState, manifestUrl, usePublishedManifest, type ManifestSurface, type PublishedManifestState } from './window/use-published-manifest.js';
 export * as metadataWindowModel from './window/window-model.js';
+// WI-OI-153: the workspace profile forms read for computed defaults (base currency).
+export { loadWorkspaceDefaults, resetWorkspaceDefaults, useWorkspaceDefaults } from './window/workspace-defaults.js';
 export { ModuleWindowWorkspace, type ModuleWindowWorkspaceProps } from './window/ModuleWindowWorkspace.js';

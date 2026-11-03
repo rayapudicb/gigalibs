@@ -20234,7 +20234,9 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "maskOnDisplay": false,
             "referenceKey": "currency-ref",
             "writePermission": "orders:credit-memos:manage",
-            "defaultValue": "USD"
+            "defaultValue": {
+              "$default": "WORKSPACE_CURRENCY"
+            }
           },
           {
             "fieldKey": "reason",
@@ -21285,7 +21287,9 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "maskOnDisplay": false,
             "referenceKey": "currency-ref",
             "writePermission": "orders:manage",
-            "defaultValue": "USD"
+            "defaultValue": {
+              "$default": "WORKSPACE_CURRENCY"
+            }
           },
           {
             "fieldKey": "status",
@@ -21876,7 +21880,9 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "maskOnDisplay": false,
             "referenceKey": "currency-ref",
             "writePermission": "orders:quotes:manage",
-            "defaultValue": "USD"
+            "defaultValue": {
+              "$default": "WORKSPACE_CURRENCY"
+            }
           },
           {
             "fieldKey": "valid-until",
@@ -22415,7 +22421,9 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "maskOnDisplay": false,
             "referenceKey": "currency-ref",
             "writePermission": "procurement:debit-memos:manage",
-            "defaultValue": "USD"
+            "defaultValue": {
+              "$default": "WORKSPACE_CURRENCY"
+            }
           },
           {
             "fieldKey": "reason",
@@ -22835,7 +22843,9 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "maskOnDisplay": false,
             "referenceKey": "currency-ref",
             "writePermission": "procurement:orders:manage",
-            "defaultValue": "USD"
+            "defaultValue": {
+              "$default": "WORKSPACE_CURRENCY"
+            }
           },
           {
             "fieldKey": "status",
@@ -23333,7 +23343,9 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "maskOnDisplay": false,
             "referenceKey": "currency-ref",
             "writePermission": "procurement:requisitions:manage",
-            "defaultValue": "USD"
+            "defaultValue": {
+              "$default": "WORKSPACE_CURRENCY"
+            }
           },
           {
             "fieldKey": "status",
@@ -23850,7 +23862,9 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "maskOnDisplay": false,
             "referenceKey": "currency-ref",
             "writePermission": "procurement:bills:manage",
-            "defaultValue": "USD"
+            "defaultValue": {
+              "$default": "WORKSPACE_CURRENCY"
+            }
           },
           {
             "fieldKey": "status",
