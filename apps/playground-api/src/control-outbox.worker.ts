@@ -49,7 +49,35 @@ export class ControlOutboxWorker implements OnApplicationBootstrap, OnApplicatio
     const intervalMs = runtimeConfig.controlOutboxPollIntervalSeconds * 1_000;
     this.timer = setInterval(() => void this.tick(), intervalMs);
     this.timer.unref();
-    void this.tick();
+    void this.requeueUndeliveredPartyEvents().finally(() => void this.tick());
+  }
+
+  /**
+   * WI-OI-146: Party facts quarantined because an earlier release could not relay them (no Party relay yet, or its
+   * settings missing on this service) never reached Business partners, whose customer and vendor pickers stayed
+   * empty. Once this process can relay them they go back in the queue; Business partners applies Party facts by
+   * version, so a late delivery never overwrites newer data. Other event families are left as they are.
+   */
+  async requeueUndeliveredPartyEvents(): Promise<number> {
+    if (!this.partyProjectionRelay?.isConfigured()) return 0;
+    try {
+      const { count } = await prisma.controlOutboxEvent.updateMany({
+        where: {
+          status: 'FAILED',
+          eventType: { in: [...PARTY_PROJECTION_EVENT_TYPES] },
+          lastErrorCode: { in: ['UNSUPPORTED_CONTROL_OUTBOX_EVENT', 'PARTY_RELAY_NOT_CONFIGURED'] },
+        },
+        data: { status: 'PENDING', attempts: 0, availableAt: new Date(), claimedAt: null, lastErrorCode: null },
+      });
+      if (count) this.logger.log(`Re-queued ${count} undelivered Party facts for Business partners.`);
+      return count;
+    } catch (error) {
+      this.logger.error(
+        'Re-queueing undelivered Party facts failed.',
+        error instanceof Error ? error.stack : undefined,
+      );
+      return 0;
+    }
   }
 
   async onApplicationShutdown() {

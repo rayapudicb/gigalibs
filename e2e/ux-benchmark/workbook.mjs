@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import {
+  BENCH_RELEASES,
   BUGS,
   JOURNEY_AFTER,
   JOURNEY_BUGS,
@@ -44,9 +45,21 @@ const git = (args) => {
 };
 
 // ---------------------------------------------------------------- data
-const BENCH = join(ROOT, 'docs/plans/ux-benchmark-2026-11-02');
-const live = readJson(join(BENCH, 'live.json'));
-const lookups = readJson(join(BENCH, 'lookups.json'));
+// The first benchmark folder is the baseline (with the KLM plan and the before journey run); the newest is "now".
+const BENCH_RUNS = readdirSync(join(ROOT, 'docs/plans'))
+  .filter(
+    (name) =>
+      /^ux-benchmark-\d{4}-\d{2}-\d{2}$/.test(name) &&
+      existsSync(join(ROOT, 'docs/plans', name, 'live.json')),
+  )
+  .sort();
+const BENCH = join(ROOT, 'docs/plans', BENCH_RUNS[0]);
+const CURRENT = join(ROOT, 'docs/plans', BENCH_RUNS.at(-1));
+const CURRENT_DATE = BENCH_RUNS.at(-1).slice('ux-benchmark-'.length);
+const BASE_DATE = BENCH_RUNS[0].slice('ux-benchmark-'.length);
+const live = readJson(join(CURRENT, 'live.json'));
+const liveBefore = readJson(join(BENCH, 'live.json'));
+const lookups = readJson(join(CURRENT, 'lookups.json'));
 const klm = Object.fromEntries(
   readJson(join(BENCH, 'journeys.json')).map((journey) => [journey.id, journey]),
 );
@@ -74,7 +87,9 @@ const catalog = Object.fromEntries(platformModuleCatalog.map((entry) => [entry.k
 const FIX_COMMIT = git('log -1 --format=%h --grep=WI-OI-146/147/149/151') || 'fix commit';
 const HEAD = git('rev-parse --short HEAD');
 const BRANCH = git('rev-parse --abbrev-ref HEAD');
-const MEASURED_RELEASE = 'c88a88d4';
+const MEASURED_RELEASE = BENCH_RELEASES[BASE_DATE] ?? BASE_DATE;
+const CURRENT_RELEASE = BENCH_RELEASES[CURRENT_DATE] ?? CURRENT_DATE;
+const CURRENT_HEADER = `Current result (${CURRENT_DATE})`;
 
 const gateways = (() => {
   const text = readFileSync(
@@ -171,6 +186,7 @@ const sample = (field) => {
 };
 const moduleOf = (route) => MODULES.find((module) => module.routes.test(route));
 const liveByRoute = Object.fromEntries(live.map((screen) => [screen.route, screen]));
+const beforeByRoute = Object.fromEntries(liveBefore.map((screen) => [screen.route, screen]));
 const screenLabel = (route) =>
   liveByRoute[route]?.crumb?.split(' › ').at(-1) ||
   windows.find((window) => window.route === route)?.label ||
@@ -245,11 +261,12 @@ const wiOf = (texts) => unique(texts.join(' ').match(/WI-OI-\d+/g) ?? []).sort()
 const bugRows = [];
 for (const bug of BUGS) {
   const modules =
-    bug.modules ?? unique(live.filter(bug.match).map((screen) => moduleOf(screen.route)?.sheet));
+    bug.modules ??
+    unique(liveBefore.filter(bug.match).map((screen) => moduleOf(screen.route)?.sheet));
   modules.forEach((sheet, index) => {
     const affected = new Set();
     if (bug.match)
-      for (const screen of live)
+      for (const screen of liveBefore)
         if (moduleOf(screen.route)?.sheet === sheet && bug.match(screen))
           affected.add(screen.route);
     for (const route of bug.routes ?? []) if (moduleOf(route)?.sheet === sheet) affected.add(route);
@@ -265,7 +282,7 @@ for (const bug of BUGS) {
 const bugById = Object.fromEntries(BUGS.map((bug) => [bug.id, bug]));
 const fixedIn = (status) =>
   /in branch/.test(status)
-    ? `${FIX_COMMIT} (${BRANCH}), awaiting the owner's deploy`
+    ? `${HEAD} (${BRANCH}), awaiting the owner's deploy`
     : /on UAT/.test(status)
       ? 'c88a88d4 (on UAT)'
       : /deploying/.test(status)
@@ -646,7 +663,7 @@ const STORY_COLUMNS = [
   { header: 'KLM estimate (s)', width: 10, fmt: '0.0' },
   { header: 'Screen ready (ms)', width: 10, fmt: '#,##0' },
   { header: 'Journey measured (s)', width: 10, fmt: '0.0' },
-  { header: 'Current result (2026-11-02)', width: 36 },
+  { header: CURRENT_HEADER, width: 36 },
   { header: 'Verdict', width: 13 },
   { header: 'Issues found', width: 40 },
   { header: 'Bug IDs', width: 14 },
@@ -663,7 +680,7 @@ const story = (values) => {
   for (const [key, value] of Object.entries(values)) row[COL[key]] = value;
   return row;
 };
-const BENCH_EVIDENCE = `docs/plans/ux-benchmark-2026-11-02/live.json (bench ${MEASURED_RELEASE}, 2026-11-02)`;
+const BENCH_EVIDENCE = `docs/plans/ux-benchmark-${CURRENT_DATE}/live.json (bench ${CURRENT_RELEASE}, ${CURRENT_DATE}); before: ux-benchmark-${BASE_DATE}`;
 const lookupCount = (resolver) => {
   const entry = lookups[resolver];
   return !entry
@@ -680,9 +697,10 @@ const pickerText = (field) => {
 };
 const routesOf = (module) =>
   unique(
-    [...live.map((screen) => screen.route), ...Object.keys(UNMEASURED)].filter((route) =>
-      module.routes.test(route),
-    ),
+    [...live, ...liveBefore]
+      .map((screen) => screen.route)
+      .concat(Object.keys(UNMEASURED))
+      .filter((route) => module.routes.test(route)),
   ).sort();
 const journeysOf = (module) => JOURNEY_IDS.filter((id) => journeySheet(id) === module.sheet);
 
@@ -758,7 +776,7 @@ function storiesFor(module) {
         'KLM estimate (s)': screen ? round1(HUMAN.navigate + screen.readyMs / 1000) : null,
         'Screen ready (ms)': screen?.readyMs ?? null,
         'Journey measured (s)': viewJourney ? latest[viewJourney].humanSeconds : null,
-        'Current result (2026-11-02)': screen
+        [CURRENT_HEADER]: screen
           ? `${screenState(screen)} — ready ${screen.readyMs} ms, ${screen.rows ?? 0} rows, ${screen.calls} calls`
           : `Not measured: ${UNMEASURED[route] ?? '—'}`,
         Verdict: verdict,
@@ -975,7 +993,7 @@ function windowStories(window, { id, module, route, screen, text, bugsHere }) {
         'KLM estimate (s)': seconds,
         'Screen ready (ms)': screen?.readyMs ?? null,
         'Journey measured (s)': measuredJourney?.humanSeconds ?? null,
-        'Current result (2026-11-02)': screen?.form
+        [CURRENT_HEADER]: screen?.form
           ? `New form: ${screen.form.controls} controls, ${screen.form.required} required, ${screen.form.pickers} pickers, opened in ${screen.form.openMs} ms`
           : screen
             ? screenState(screen)
@@ -1061,7 +1079,7 @@ function windowStories(window, { id, module, route, screen, text, bugsHere }) {
         'Business outcome': `${action.label} on ${lcFirst(label)} is controlled and traceable`,
         'Target (s)': 10,
         'KLM estimate (s)': seconds,
-        'Current result (2026-11-02)': screen
+        [CURRENT_HEADER]: screen
           ? screenVerdict(screen) === 'BLOCKED'
             ? 'Screen blocked (see the screen story)'
             : 'Action offered by the window (not run: dry e2e never changes data on UAT)'
@@ -1113,7 +1131,7 @@ function journeyStory(jid, storyId) {
     'Target (s)': estimate.target,
     'KLM estimate (s)': estimate.seconds,
     'Journey measured (s)': result?.verdict === 'NOT RUN' ? null : (result?.humanSeconds ?? null),
-    'Current result (2026-11-02)': result
+    [CURRENT_HEADER]: result
       ? `${result.verdict}${result.verdict === 'NOT RUN' ? '' : ` — ${result.humanSeconds} s human, ${result.machineSeconds} s machine`}`
       : 'not run',
     Verdict: result?.verdict ?? 'NOT RUN',
@@ -1339,10 +1357,10 @@ for (const module of MODULES) {
     bug.files,
     bug.status,
     bug.wi,
-    `2026-11-02 · ${MEASURED_RELEASE}`,
+    bug.found ?? `${BASE_DATE} · ${MEASURED_RELEASE}`,
     bug.fixedIn ?? fixedIn(bug.status),
     bug.retest,
-    null,
+    bug.retestResult ?? null,
     null,
     null,
   ]);
@@ -1629,6 +1647,10 @@ const inventoryRoutes = MODULES.flatMap((module) =>
         screen ? (screen.readyMs <= 2000 ? 'Yes' : 'No') : '',
       ),
       screenVerdict(screen),
+      beforeByRoute[route]?.readyMs ?? null,
+      beforeByRoute[route] ? screenState(beforeByRoute[route]) : 'not measured',
+      (beforeByRoute[route]?.failed ?? []).join('\n') || '—',
+      screenVerdict(beforeByRoute[route]),
     ];
   });
   SHEETS['Screen inventory'].rows = table(
@@ -1657,11 +1679,16 @@ const inventoryRoutes = MODULES.flatMap((module) =>
       { header: 'Ready ≤ 1 s', width: 8 },
       { header: 'Ready ≤ 2 s', width: 8 },
       { header: 'Verdict', width: 12 },
+      { header: `Ready before ${MEASURED_RELEASE} (ms)`, width: 10, fmt: '#,##0' },
+      { header: 'State before', width: 30 },
+      { header: 'Failed calls before', width: 40 },
+      { header: 'Verdict before', width: 12 },
     ],
     rows,
     { freezeColumns: 2 },
   );
   colorize(ws, `V2:V${rows.length + 1}`);
+  colorize(ws, `Z2:Z${rows.length + 1}`);
 }
 
 // ---------------------------------------------------------------- field dictionary
@@ -2130,48 +2157,58 @@ const inventoryRoutes = MODULES.flatMap((module) =>
   title(
     ws,
     'Dashboard',
-    `Measured on UAT 5180 (${MEASURED_RELEASE}) on 2026-11-02; latest journey run ${latestFile.split('/').at(-1)}; fixes in ${FIX_COMMIT}. Every number is a formula over the other sheets.`,
+    `Now: UAT 5180 ${CURRENT_RELEASE} on ${CURRENT_DATE}; before: ${MEASURED_RELEASE} on ${BASE_DATE}; latest journey run ${latestFile.split('/').at(-1)}; fixes in ${FIX_COMMIT}. Every number is a formula over the other sheets.`,
   );
   const inv = SHEETS['Screen inventory'].rows;
   const range = (column) => `'Screen inventory'!$${column}$${inv.first}:$${column}$${inv.last}`;
   const ready = live.map((screen) => screen.readyMs);
-  const measuredRoutes = inventoryRoutes.filter(([, route]) => liveByRoute[route]);
+  const readyBefore = liveBefore.map((screen) => screen.readyMs);
+  const failing = (screens) => screens.filter((screen) => (screen.failed ?? []).length).length;
+  const erroring = (screens) => screens.filter((screen) => (screen.alerts ?? []).length).length;
+  const empty = (screens) =>
+    screens.filter((screen) => screen.empty && !(screen.alerts ?? []).length).length;
   const screenKpis = [
-    ['Screens in the workbook', F(`COUNTA(${range('B')})`, inventoryRoutes.length), '—'],
-    ['Screens measured', F(`COUNT(${range('F')})`, measuredRoutes.length), '—'],
-    ['Ready p50 (ms)', F(`MEDIAN(${range('F')})`, median(ready)), '≤ 1,000'],
+    ['Screens in the workbook', F(`COUNTA(${range('B')})`, inventoryRoutes.length), null, '—'],
+    [
+      'Screens measured',
+      F(`COUNT(${range('F')})`, inventoryRoutes.filter(([, route]) => liveByRoute[route]).length),
+      F(`COUNT(${range('W')})`, inventoryRoutes.filter(([, route]) => beforeByRoute[route]).length),
+      '—',
+    ],
+    [
+      'Ready p50 (ms)',
+      F(`MEDIAN(${range('F')})`, median(ready)),
+      F(`MEDIAN(${range('W')})`, median(readyBefore)),
+      '≤ 1,000',
+    ],
     [
       'Ready p90 (ms)',
       F(`PERCENTILE(${range('F')},0.9)`, round1(percentile(ready, 0.9))),
+      F(`PERCENTILE(${range('W')},0.9)`, round1(percentile(readyBefore, 0.9))),
       '≤ 2,000',
     ],
     [
       'Screens ready ≤ 1 s',
-      F(`COUNTIF(${range('T')},"Yes")`, ready.filter((value) => value <= 1000).length),
+      F(`COUNTIF(${range('F')},"<=1000")`, ready.filter((value) => value <= 1000).length),
+      F(`COUNTIF(${range('W')},"<=1000")`, readyBefore.filter((value) => value <= 1000).length),
       'all',
     ],
     [
       'Screens with a failing call',
-      F(
-        `COUNTA(${range('J')})-COUNTIF(${range('J')},"—")`,
-        inventoryRoutes.filter(([, route]) => (liveByRoute[route]?.failed ?? []).length).length,
-      ),
+      F(`COUNTA(${range('J')})-COUNTIF(${range('J')},"—")`, failing(live)),
+      F(`COUNTA(${range('Y')})-COUNTIF(${range('Y')},"—")`, failing(liveBefore)),
       '0',
     ],
     [
       'Screens showing an error',
-      F(
-        `COUNTIF(${range('K')},"error*")`,
-        live.filter((screen) => (screen.alerts ?? []).length).length,
-      ),
+      F(`COUNTIF(${range('K')},"error*")`, erroring(live)),
+      F(`COUNTIF(${range('X')},"error*")`, erroring(liveBefore)),
       '0',
     ],
     [
       'Empty screens without guidance',
-      F(
-        `COUNTIF(${range('K')},"empty*")`,
-        live.filter((screen) => screen.empty && !(screen.alerts ?? []).length).length,
-      ),
+      F(`COUNTIF(${range('K')},"empty*")`, empty(live)),
+      F(`COUNTIF(${range('X')},"empty*")`, empty(liveBefore)),
       '0',
     ],
   ];
@@ -2181,7 +2218,8 @@ const inventoryRoutes = MODULES.flatMap((module) =>
     5,
     [
       { header: 'Measure', width: 34 },
-      { header: 'Value', width: 12, fmt: '#,##0' },
+      { header: `Now (${CURRENT_RELEASE})`, width: 12, fmt: '#,##0' },
+      { header: `Before (${MEASURED_RELEASE})`, width: 12, fmt: '#,##0' },
       { header: 'Target', width: 12 },
     ],
     screenKpis,
@@ -2355,7 +2393,7 @@ const inventoryRoutes = MODULES.flatMap((module) =>
     ],
     [
       'Measured on',
-      `UAT 5180, release ${MEASURED_RELEASE}, 2026-11-02, as the walkthrough workspace administrator at 1440×900 (read-only crawl, e2e/ux-benchmark/bench.mjs).`,
+      `Now: UAT 5180, release ${CURRENT_RELEASE}, ${CURRENT_DATE}; before: ${MEASURED_RELEASE}, ${BASE_DATE}. As the walkthrough workspace administrator at 1440×900 (read-only crawl, e2e/ux-benchmark/bench.mjs).`,
     ],
     [
       'Journeys',

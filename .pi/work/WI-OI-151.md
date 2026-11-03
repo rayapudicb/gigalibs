@@ -9,8 +9,10 @@
 - `e2e/specs/journeys/business-journeys.spec.ts`: the 27 persona journeys of the plan (create, view, inline form and
   not-run kinds). Dry mode (default) opens the screen and the form, fills every required field through the real pickers,
   cancels and adds an estimated Save step; write mode saves (test stack).
-- Run: `source e2e/load-uat-env.sh && cd e2e && npx playwright test specs/journeys` (dry, UAT-safe). Reports in
-  `e2e/artifacts/journeys/`.
+- Run (dry, UAT-safe), under bash from a worktree whose `e2e/uat.env` holds the walkthrough login (the loader needs
+  `BASH_SOURCE`; sourced from zsh it finds no file and every journey is skipped):
+  `bash -c "source e2e/load-uat-env.sh && cd e2e && JOURNEY_MODE=dry npx playwright test specs/journeys --workers=1"`.
+  Reports in `e2e/artifacts/journeys/`.
 
 ## Run 2 on UAT 5180 (`c88a88d4`, dry, 2026-11-02T13:58Z) — the "before"
 

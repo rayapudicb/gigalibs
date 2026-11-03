@@ -23,7 +23,8 @@ node e2e/ux-benchmark/inventory.mjs "$OUT" docs/plans/ux-journeys-screen-invento
 ## Timed journeys and the workbook
 
 ```bash
-source e2e/load-uat-env.sh && (cd e2e && npx playwright test specs/journeys)   # dry: fills every form, saves nothing
+# bash, from a worktree whose e2e/uat.env holds the walkthrough login (the loader needs BASH_SOURCE; zsh finds nothing)
+bash -c "source e2e/load-uat-env.sh && cd e2e && JOURNEY_MODE=dry npx playwright test specs/journeys --workers=1"   # dry: saves nothing
 node e2e/ux-benchmark/workbook.mjs "Claude outputs/UX journeys <date>/GigaLibs-Functional-Technical-Workbook.xlsx"
 ```
 

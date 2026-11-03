@@ -48,3 +48,46 @@
 - Inventory start-up error `InventoryReceiptPostingReconciliationJob: Cannot read properties of undefined (reading
   'getPool')`.
 - Organization delivery dead-letters early ("fetch failed") when a module is not up yet.
+
+## 2026-11-03 — after the owner's deploy of 213fde2d and "Send to modules again"
+
+Organization delivery (read-only `kernel_job_runs`, 02:41Z): succeeded for 11 of 12 modules, including Inventory,
+Orders, Procurement, General ledger and Inspection rounds; Accounts receivable retries with "fetch failed" (no AR
+container on UAT; QA-047).
+
+Read-only bench (`docs/plans/ux-benchmark-2026-11-03/`) against the 2026-11-02 baseline, 128 screens:
+
+| Measure | Before (c88a88d4) | After (213fde2d) |
+|---|---:|---:|
+| Screens with a failing call | 38 | 15 |
+| Screens showing an error | 25 | 3 |
+| Screens that never settle | 4 | 1 |
+| Empty screens (now reachable, no data yet) | 27 | 41 |
+
+Warehouses lookup 5 options (was 404), locations 4 (was 500). Remaining failures: Geospatial and Workflow Studio not
+running (502), Analytics module reads (403, now in plain words), Security & SSO (below), configured-fields manifest 404
+(expected, hidden).
+
+Journeys (dry, `e2e/artifacts/journeys/journeys-2026-11-03T02-48-50-439Z.json`): 15 meet (was 12), 3 over, 1 too
+slow, 5 blocked (was 8), 3 not run. A4 warehouse, A5 product and B3 goods receipt now meet; B1 requisition is
+unblocked but 42.8 s.
+
+### Found and fixed in the branch
+
+- **Customer and vendor pickers empty (QA-046).** The control plane holds 9 parties; the Business partners copy has
+  0. All 9 `party.created.v1` control outbox events were quarantined on 2026-10-06/19 as
+  `UNSUPPORTED_CONTROL_OUTBOX_EVENT` (the release then could not relay Party facts) and never retried; and the relay
+  URL and signing key were given to `kernel-worker`, while the control outbox worker that relays them runs in `api`.
+  Fix: `compose.yaml` gives `api` `BUSINESS_PARTNERS_RELAY_URL` and `BUSINESS_PARTNERS_INBOX_RELAY_PRIVATE_KEY_BASE64`
+  (declared in the deployment profile and `.env.example`); `ControlOutboxWorker.requeueUndeliveredPartyEvents` puts
+  Party facts that failed only for lack of a relay back in the queue at start-up, once the relay is configured
+  (Business partners applies them by version). Tests: `control-outbox.worker.spec.ts` (3 new).
+- **Security & SSO JSON error (QA-010), corrected root cause.** Still shown on 213fde2d. Read-only probe:
+  `GET /api/control/auth/oidc/config` answers 200 with an empty body when no single sign-on is configured;
+  `TenantOidcManager` now reads an empty body as "no configuration".
+- **Connections never settles (QA-013):** 5 calls answer in 0.2 s; something keeps the network busy. Open, P2.
+
+Backup note: `infra/compose/scripts/backup.sh` dumps the `gigalibs-postgres` container named in the release `.env`, not
+UAT; the 2026-11-02 dumps are not UAT backups. UAT backup taken directly:
+`infra/compose/backups/uat_postgres_gigalibs_20261103_024610Z.dump` (sha256 e02a1100…, 764 tables, `pg_restore --list`
+checked).

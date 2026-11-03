@@ -1,0 +1,1414 @@
+{
+  "run": "journeys-2026-11-03T02-48-50-439Z",
+  "mode": "dry",
+  "results": [
+    {
+      "id": "P1",
+      "persona": "Platform operator",
+      "module": "Platform Control Tower",
+      "outcome": "Create a customer workspace",
+      "targetSeconds": 30,
+      "route": "/platform-admin",
+      "kind": "not-run",
+      "reason": "Needs a platform operator login; the walkthrough login is a workspace administrator.",
+      "mode": "dry",
+      "steps": [],
+      "machineSeconds": 0,
+      "humanSeconds": 0,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "NOT RUN",
+      "blockers": [
+        "Needs a platform operator login; the walkthrough login is a workspace administrator."
+      ],
+      "finishedAt": "2026-11-03T02:48:51.456Z"
+    },
+    {
+      "id": "P2",
+      "persona": "Platform operator",
+      "module": "Platform Control Tower",
+      "outcome": "Enable a module for a workspace",
+      "targetSeconds": 10,
+      "route": "/platform-admin",
+      "kind": "not-run",
+      "reason": "Needs a platform operator login.",
+      "mode": "dry",
+      "steps": [],
+      "machineSeconds": 0,
+      "humanSeconds": 0,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "NOT RUN",
+      "blockers": [
+        "Needs a platform operator login."
+      ],
+      "finishedAt": "2026-11-03T02:48:51.708Z"
+    },
+    {
+      "id": "A1",
+      "persona": "Workspace admin",
+      "module": "Settings",
+      "outcome": "Invite a person with a role",
+      "targetSeconds": 20,
+      "route": "/settings",
+      "kind": "inline-form",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 2676,
+          "humanSeconds": 6.426,
+          "calls": 6,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 1293,
+          "humanSeconds": 14.543,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": [],
+          "note": "3 required, 0 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 31,
+          "humanSeconds": 0.031,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 4,
+      "humanSeconds": 24.2,
+      "requiredFields": 3,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "OVER TARGET",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:48:56.114Z"
+    },
+    {
+      "id": "A2",
+      "persona": "Workspace admin",
+      "module": "Settings",
+      "outcome": "Add an organization unit",
+      "targetSeconds": 30,
+      "route": "/settings/organization",
+      "kind": "view",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1199,
+          "humanSeconds": 4.949000000000001,
+          "calls": 14,
+          "failed": [
+            "GET /api/maps/nodes → 502"
+          ],
+          "shownErrors": []
+        },
+        {
+          "name": "Read the result",
+          "machineMs": 305,
+          "humanSeconds": 2.8550000000000004,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.5,
+      "humanSeconds": 7.8,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:48:57.874Z"
+    },
+    {
+      "id": "A3",
+      "persona": "Workspace admin",
+      "module": "Settings",
+      "outcome": "Turn on a module for the workspace",
+      "targetSeconds": 10,
+      "route": "/settings/plan",
+      "kind": "not-run",
+      "reason": "Not possible today: only a platform operator can enable modules (WI-OI-147).",
+      "mode": "dry",
+      "steps": [],
+      "machineSeconds": 0,
+      "humanSeconds": 0,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "NOT RUN",
+      "blockers": [
+        "Not possible today: only a platform operator can enable modules (WI-OI-147)."
+      ],
+      "finishedAt": "2026-11-03T02:48:58.102Z"
+    },
+    {
+      "id": "A4",
+      "persona": "Workspace admin",
+      "module": "Inventory",
+      "outcome": "Create a warehouse",
+      "targetSeconds": 30,
+      "route": "/inventory",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1060,
+          "humanSeconds": 4.8100000000000005,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 494,
+          "humanSeconds": 1.6940000000000002,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 230,
+          "humanSeconds": 18.35,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": [],
+          "note": "4 required, 0 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 46,
+          "humanSeconds": 0.046,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.8,
+      "humanSeconds": 28.1,
+      "requiredFields": 4,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:00.217Z"
+    },
+    {
+      "id": "A5",
+      "persona": "Workspace admin",
+      "module": "Products",
+      "outcome": "Create a product with its unit",
+      "targetSeconds": 30,
+      "route": "/products",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1222,
+          "humanSeconds": 4.972,
+          "calls": 5,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 450,
+          "humanSeconds": 1.6500000000000001,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 980,
+          "humanSeconds": 19.400000000000002,
+          "calls": 1,
+          "failed": [],
+          "shownErrors": [],
+          "note": "4 required, 1 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 48,
+          "humanSeconds": 0.048,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 2.7,
+      "humanSeconds": 29.2,
+      "requiredFields": 4,
+      "pickers": 1,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:03.145Z"
+    },
+    {
+      "id": "A6",
+      "persona": "Workspace admin",
+      "module": "Asset maintenance",
+      "outcome": "Register an asset",
+      "targetSeconds": 30,
+      "route": "/cmms/assets",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1382,
+          "humanSeconds": 5.132000000000001,
+          "calls": 6,
+          "failed": [
+            "GET /api/maps/nodes → 502"
+          ],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 557,
+          "humanSeconds": 1.7570000000000001,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 229,
+          "humanSeconds": 9.809,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": [],
+          "note": "2 required, 0 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 7,
+          "humanSeconds": 0.007,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 2.2,
+      "humanSeconds": 19.9,
+      "requiredFields": 2,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:05.553Z"
+    },
+    {
+      "id": "A7",
+      "persona": "Workspace admin",
+      "module": "Workforce",
+      "outcome": "Add a person to Workforce",
+      "targetSeconds": 30,
+      "route": "/gigaops/resources",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 991,
+          "humanSeconds": 4.7410000000000005,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 450,
+          "humanSeconds": 1.6500000000000001,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 81,
+          "humanSeconds": 13.411,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": [],
+          "note": "3 required, 0 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 36,
+          "humanSeconds": 0.036,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.6,
+      "humanSeconds": 23,
+      "requiredFields": 3,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:07.340Z"
+    },
+    {
+      "id": "T1",
+      "persona": "Technician",
+      "module": "Asset maintenance",
+      "outcome": "Report a maintenance problem",
+      "targetSeconds": 15,
+      "route": "/cmms/requests",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1215,
+          "humanSeconds": 4.965000000000001,
+          "calls": 5,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 479,
+          "humanSeconds": 1.6790000000000003,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 128,
+          "humanSeconds": 8.668,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": [],
+          "note": "2 required, 0 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 33,
+          "humanSeconds": 0.033,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.9,
+      "humanSeconds": 18.5,
+      "requiredFields": 2,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "OVER TARGET",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:09.392Z"
+    },
+    {
+      "id": "T2",
+      "persona": "Technician",
+      "module": "Asset maintenance",
+      "outcome": "Raise a work order",
+      "targetSeconds": 30,
+      "route": "/cmms/work-orders",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1017,
+          "humanSeconds": 4.767,
+          "calls": 5,
+          "failed": [
+            "GET /api/maps/nodes → 502"
+          ],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 455,
+          "humanSeconds": 1.6550000000000002,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 126,
+          "humanSeconds": 4.916,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": [],
+          "note": "1 required, 0 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 5,
+          "humanSeconds": 0.005,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.6,
+      "humanSeconds": 14.5,
+      "requiredFields": 1,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:11.196Z"
+    },
+    {
+      "id": "T3",
+      "persona": "Technician",
+      "module": "Safety",
+      "outcome": "Report a hazard",
+      "targetSeconds": 30,
+      "route": "/safety-operations/report",
+      "kind": "inline-form",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1027,
+          "humanSeconds": 4.777,
+          "calls": 2,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 75,
+          "humanSeconds": 9.655,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": [],
+          "note": "2 required, 0 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 6,
+          "humanSeconds": 0.006,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.1,
+      "humanSeconds": 17.6,
+      "requiredFields": 2,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:12.541Z"
+    },
+    {
+      "id": "T4",
+      "persona": "Technician",
+      "module": "Workforce",
+      "outcome": "Request an absence",
+      "targetSeconds": 20,
+      "route": "/gigaops/availability",
+      "viewTab": "My absences",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 973,
+          "humanSeconds": 4.723000000000001,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open \"My absences\"",
+          "machineMs": 43,
+          "humanSeconds": 2.5930000000000004,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 4,
+          "humanSeconds": 1.2040000000000002,
+          "calls": 1,
+          "failed": [],
+          "shownErrors": [],
+          "note": "failed: No create button on the screen."
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 4,
+          "humanSeconds": 0.004,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": [],
+          "note": "0 required, 0 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 6,
+          "humanSeconds": 0.006,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1,
+      "humanSeconds": 11.7,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "BLOCKED",
+      "blockers": [
+        "Open the New form: failed: No create button on the screen."
+      ],
+      "finishedAt": "2026-11-03T02:49:13.794Z"
+    },
+    {
+      "id": "T5",
+      "persona": "Operator",
+      "module": "Asset maintenance",
+      "outcome": "Start a permit to work",
+      "targetSeconds": 30,
+      "route": "/cmms/permits",
+      "viewTab": "Request a permit",
+      "kind": "inline-form",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 910,
+          "humanSeconds": 4.66,
+          "calls": 2,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open \"Request a permit\"",
+          "machineMs": 33,
+          "humanSeconds": 2.583,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 136,
+          "humanSeconds": 8.675999999999998,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": [],
+          "note": "2 required, 0 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 9,
+          "humanSeconds": 0.009,
+          "calls": 1,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.1,
+      "humanSeconds": 19.1,
+      "requiredFields": 2,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:15.140Z"
+    },
+    {
+      "id": "S1",
+      "persona": "Supervisor",
+      "module": "Safety",
+      "outcome": "Triage a hazard report",
+      "targetSeconds": 20,
+      "route": "/safety-operations/triage",
+      "kind": "view",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 941,
+          "humanSeconds": 4.691000000000001,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Read the result",
+          "machineMs": 304,
+          "humanSeconds": 2.854,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.2,
+      "humanSeconds": 7.5,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:16.636Z"
+    },
+    {
+      "id": "S2",
+      "persona": "Supervisor",
+      "module": "Workforce",
+      "outcome": "Approve an absence",
+      "targetSeconds": 10,
+      "route": "/gigaops/availability",
+      "viewTab": "Absence requests",
+      "kind": "view",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 990,
+          "humanSeconds": 4.74,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open \"Absence requests\"",
+          "machineMs": 33,
+          "humanSeconds": 2.583,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Read the result",
+          "machineMs": 306,
+          "humanSeconds": 2.8560000000000003,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.3,
+      "humanSeconds": 10.2,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "OVER TARGET",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:18.223Z"
+    },
+    {
+      "id": "S3",
+      "persona": "Supervisor",
+      "module": "Invoice approvals",
+      "outcome": "Approve an invoice action",
+      "targetSeconds": 10,
+      "route": "/actions",
+      "kind": "view",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1244,
+          "humanSeconds": 4.994000000000001,
+          "calls": 2,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Read the result",
+          "machineMs": 303,
+          "humanSeconds": 2.853,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.5,
+      "humanSeconds": 7.8,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:20.004Z"
+    },
+    {
+      "id": "B1",
+      "persona": "Buyer",
+      "module": "Procurement",
+      "outcome": "Raise a purchase requisition",
+      "targetSeconds": 30,
+      "route": "/procurement",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 824,
+          "humanSeconds": 4.574000000000001,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 444,
+          "humanSeconds": 1.6440000000000001,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 1208,
+          "humanSeconds": 33.397999999999996,
+          "calls": 4,
+          "failed": [],
+          "shownErrors": [],
+          "note": "7 required, 3 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 42,
+          "humanSeconds": 0.042,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 2.5,
+      "humanSeconds": 42.8,
+      "requiredFields": 7,
+      "pickers": 3,
+      "emptyPickers": [],
+      "verdict": "TOO SLOW",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:22.826Z"
+    },
+    {
+      "id": "B2",
+      "persona": "Buyer",
+      "module": "Procurement",
+      "outcome": "Create a purchase order",
+      "targetSeconds": 30,
+      "route": "/procurement/purchase-orders",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1050,
+          "humanSeconds": 4.800000000000001,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 447,
+          "humanSeconds": 1.6470000000000002,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 6689,
+          "humanSeconds": 53.849,
+          "calls": 6,
+          "failed": [],
+          "shownErrors": [],
+          "note": "10 required, 5 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 35,
+          "humanSeconds": 0.035,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 8.2,
+      "humanSeconds": 63.5,
+      "requiredFields": 10,
+      "pickers": 5,
+      "emptyPickers": [
+        "Vendor"
+      ],
+      "verdict": "BLOCKED",
+      "blockers": [
+        "no options in Vendor"
+      ],
+      "finishedAt": "2026-11-03T02:49:31.239Z"
+    },
+    {
+      "id": "B3",
+      "persona": "Clerk",
+      "module": "Inventory",
+      "outcome": "Receive goods into a warehouse",
+      "targetSeconds": 30,
+      "route": "/inventory/receipts",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1066,
+          "humanSeconds": 4.816000000000001,
+          "calls": 4,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 451,
+          "humanSeconds": 1.6510000000000002,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 393,
+          "humanSeconds": 5.483,
+          "calls": 1,
+          "failed": [],
+          "shownErrors": [],
+          "note": "1 required, 1 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 32,
+          "humanSeconds": 0.032,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.9,
+      "humanSeconds": 15.1,
+      "requiredFields": 1,
+      "pickers": 1,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:33.377Z"
+    },
+    {
+      "id": "B4",
+      "persona": "AP clerk",
+      "module": "Procurement",
+      "outcome": "Record a vendor bill",
+      "targetSeconds": 30,
+      "route": "/procurement/vendor-bills",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 965,
+          "humanSeconds": 4.715000000000001,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 449,
+          "humanSeconds": 1.6490000000000002,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 5212,
+          "humanSeconds": 43.012,
+          "calls": 2,
+          "failed": [],
+          "shownErrors": [],
+          "note": "8 required, 2 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 46,
+          "humanSeconds": 0.046,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 6.7,
+      "humanSeconds": 52.6,
+      "requiredFields": 8,
+      "pickers": 2,
+      "emptyPickers": [
+        "Vendor"
+      ],
+      "verdict": "BLOCKED",
+      "blockers": [
+        "no options in Vendor"
+      ],
+      "finishedAt": "2026-11-03T02:49:40.323Z"
+    },
+    {
+      "id": "C1",
+      "persona": "Sales",
+      "module": "Orders",
+      "outcome": "Send a quote",
+      "targetSeconds": 30,
+      "route": "/orders",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 920,
+          "humanSeconds": 4.670000000000001,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 456,
+          "humanSeconds": 1.6560000000000001,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 5862,
+          "humanSeconds": 53.282000000000004,
+          "calls": 5,
+          "failed": [],
+          "shownErrors": [],
+          "note": "10 required, 4 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 34,
+          "humanSeconds": 0.034,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 7.3,
+      "humanSeconds": 62.8,
+      "requiredFields": 10,
+      "pickers": 4,
+      "emptyPickers": [
+        "Customer"
+      ],
+      "verdict": "BLOCKED",
+      "blockers": [
+        "no options in Customer"
+      ],
+      "finishedAt": "2026-11-03T02:49:47.797Z"
+    },
+    {
+      "id": "C2",
+      "persona": "Sales",
+      "module": "Orders",
+      "outcome": "Create a sales order",
+      "targetSeconds": 30,
+      "route": "/orders/sales-orders",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 974,
+          "humanSeconds": 4.724,
+          "calls": 3,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 440,
+          "humanSeconds": 1.6400000000000001,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 5740,
+          "humanSeconds": 52.9,
+          "calls": 6,
+          "failed": [],
+          "shownErrors": [],
+          "note": "10 required, 5 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 39,
+          "humanSeconds": 0.039,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 7.2,
+      "humanSeconds": 62.5,
+      "requiredFields": 10,
+      "pickers": 5,
+      "emptyPickers": [
+        "Customer"
+      ],
+      "verdict": "BLOCKED",
+      "blockers": [
+        "no options in Customer"
+      ],
+      "finishedAt": "2026-11-03T02:49:55.207Z"
+    },
+    {
+      "id": "F1",
+      "persona": "Accountant",
+      "module": "General ledger",
+      "outcome": "Draft a manual journal",
+      "targetSeconds": 30,
+      "route": "/finance",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 921,
+          "humanSeconds": 4.671,
+          "calls": 4,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 448,
+          "humanSeconds": 1.6480000000000001,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 971,
+          "humanSeconds": 16.200999999999997,
+          "calls": 1,
+          "failed": [],
+          "shownErrors": [],
+          "note": "3 required, 1 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 43,
+          "humanSeconds": 0.043,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 2.4,
+      "humanSeconds": 25.7,
+      "requiredFields": 3,
+      "pickers": 1,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:57.806Z"
+    },
+    {
+      "id": "F2",
+      "persona": "Accountant",
+      "module": "General ledger",
+      "outcome": "Read the trial balance",
+      "targetSeconds": 10,
+      "route": "/finance/reports",
+      "kind": "view",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 934,
+          "humanSeconds": 4.684,
+          "calls": 2,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Read the result",
+          "machineMs": 306,
+          "humanSeconds": 2.8560000000000003,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.2,
+      "humanSeconds": 7.5,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:49:59.272Z"
+    },
+    {
+      "id": "E1",
+      "persona": "Executive",
+      "module": "Executive Control Tower",
+      "outcome": "See today's position",
+      "targetSeconds": 10,
+      "route": "/dashboard",
+      "kind": "view",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 890,
+          "humanSeconds": 4.640000000000001,
+          "calls": 2,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Read the result",
+          "machineMs": 305,
+          "humanSeconds": 2.8550000000000004,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 1.2,
+      "humanSeconds": 7.5,
+      "requiredFields": 0,
+      "pickers": 0,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:50:00.717Z"
+    },
+    {
+      "id": "X1",
+      "persona": "Chemist",
+      "module": "Process safety (SPEED)",
+      "outcome": "Start a screening project",
+      "targetSeconds": 30,
+      "route": "/speed/projects",
+      "kind": "create",
+      "mode": "dry",
+      "steps": [
+        {
+          "name": "Open the screen",
+          "machineMs": 1282,
+          "humanSeconds": 5.032,
+          "calls": 6,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Open the New form",
+          "machineMs": 445,
+          "humanSeconds": 1.6450000000000002,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Fill the required fields",
+          "machineMs": 445,
+          "humanSeconds": 15.115,
+          "calls": 1,
+          "failed": [],
+          "shownErrors": [],
+          "note": "3 required, 1 picker(s)"
+        },
+        {
+          "name": "Cancel (dry run: nothing saved)",
+          "machineMs": 47,
+          "humanSeconds": 0.047,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        },
+        {
+          "name": "Save (estimated)",
+          "machineMs": 0,
+          "humanSeconds": 3.15,
+          "calls": 0,
+          "failed": [],
+          "shownErrors": []
+        }
+      ],
+      "machineSeconds": 2.2,
+      "humanSeconds": 25,
+      "requiredFields": 3,
+      "pickers": 1,
+      "emptyPickers": [],
+      "verdict": "MEETS",
+      "blockers": [],
+      "finishedAt": "2026-11-03T02:50:03.190Z"
+    }
+  ]
+}

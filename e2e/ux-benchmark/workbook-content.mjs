@@ -1,6 +1,9 @@
 // WI-OI-151: the hand-written part of the functional and technical workbook (workbook.mjs): what each screen is for,
 // the modules, the QA bug tracker and the UX user stories. Everything measured comes from the data files instead.
 
+/** The release each benchmark folder (docs/plans/ux-benchmark-<date>) measured on UAT. */
+export const BENCH_RELEASES = { '2026-11-02': 'c88a88d4', '2026-11-03': '213fde2d' };
+
 /** route | persona | I want to … | so that … */
 const SCREEN_LINES = `
 /modules | Any signed-in person | open any module I may use from one Home page | I reach my daily work in two clicks
@@ -709,7 +712,10 @@ export const BUGS = [
     files:
       'modules/universal-procurement/module.yaml; apps/workflow-platform/lib/generated/module-gateways.ts',
     wi: 'WI-OI-146',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult:
+      'Bench 2026-11-03: all Procurement tabs load (empty, no error); journey B1 opens and fills the requisition.',
     retest:
       'After the owner deploys the fix commit: open each Procurement tab; run journeys B1, B2, B4.',
   },
@@ -729,7 +735,9 @@ export const BUGS = [
     files:
       'modules/universal-orders/module.yaml; apps/workflow-platform/lib/generated/module-gateways.ts',
     wi: 'WI-OI-146',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Bench 2026-11-03: all Orders tabs load (empty, no error).',
     retest: 'Open each Orders tab; run journeys C1, C2.',
   },
   {
@@ -751,7 +759,10 @@ export const BUGS = [
     files:
       'apps/playground-api/src/kernel-worker/module-call.job.ts; packages/module-sdk/src/organization-access.ts',
     wi: 'WI-OI-146',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult:
+      'Bench 2026-11-03 after "Send to modules again": every Inventory tab loads; journeys A4 and B3 meet their target.',
     retest: 'Deploy, click "Send to modules again", open Inventory tabs; run journeys A4, B3.',
   },
   {
@@ -772,7 +783,10 @@ export const BUGS = [
     fix: 'Fixed by QA-001, QA-002 and QA-003.',
     files: 'see QA-001..003',
     wi: 'WI-OI-146',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult:
+      'Lookups 2026-11-03: inventory-warehouses 5 options; journey B3 picks a warehouse.',
     retest: 'After deploy and "Send to modules again": the pickers list warehouses.',
   },
   {
@@ -791,7 +805,9 @@ export const BUGS = [
     fix: 'Fixed by QA-003.',
     files: 'see QA-003',
     wi: 'WI-OI-146',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Lookups 2026-11-03: inventory-locations 4 options.',
     retest: 'Picker lists locations after the deploy.',
   },
   {
@@ -811,7 +827,9 @@ export const BUGS = [
     fix: 'sortFields display-name and code; ORDER BY honours field and direction.',
     files: 'modules/business-partners/apps/api/src/party/partners-record-adapter.ts',
     wi: 'WI-OI-146',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Bench 2026-11-03: Business partners loads ("No records yet").',
     retest: 'Open Business partners; sort by name and code both ways.',
   },
   {
@@ -831,7 +849,10 @@ export const BUGS = [
     fix: 'Owner action after the deploy: Settings › Organization & hierarchy › "Send to modules again" (button exists). Early dead-letter tracked as QA-035.',
     files: '— (operation)',
     wi: 'WI-OI-146 / WI-OI-147',
-    status: 'Owner action',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult:
+      'Delivery jobs 2026-11-03 02:41Z succeeded for operator-rounds; all four Inspection rounds tabs load.',
     retest: 'After the click, open every Inspection rounds tab.',
   },
   {
@@ -882,12 +903,17 @@ export const BUGS = [
     steps: 'Settings › Security & SSO.',
     expected: 'Single sign-on, domain and data export sections load.',
     actual: 'Red "Unexpected end of JSON input".',
-    evidence: 'Bench alert on /settings/security.',
-    cause: 'Load calls parsed an empty or aborted response body as JSON.',
-    fix: 'readJsonBody helper (empty or broken body → null) on the five load calls.',
-    files: 'apps/workflow-platform/components/settings/TenantAccessManager.tsx',
+    evidence:
+      "Bench alert on /settings/security on c88a88d4 and again on 213fde2d (\"Failed to execute 'json' on 'Response': Unexpected end of JSON input\"); read-only probe 2026-11-03: GET /api/control/auth/oidc/config → 200 with an empty body.",
+    cause:
+      'The single sign-on load parsed the response as JSON, but a workspace without single sign-on gets 200 with an empty body (the handler returns null). The first fix (empty bodies in TenantAccessManager) was right but not the source.',
+    fix: 'TenantOidcManager reads an empty body as "no configuration" (plus readJsonBody in TenantAccessManager, on UAT).',
+    files:
+      'apps/workflow-platform/components/settings/TenantOidcManager.tsx; TenantAccessManager.tsx',
     wi: 'WI-OI-146',
     status: 'Fixed - in branch',
+    retestResult:
+      'Retest 2026-11-03 on 213fde2d: still shown — root cause corrected, fix in branch.',
     retest: 'Open Security & SSO; reload several times.',
   },
   {
@@ -906,7 +932,10 @@ export const BUGS = [
     fix: 'The section renders nothing when the manifest is absent.',
     files: 'apps/workflow-platform/components/settings/ConfiguredTenantFields.tsx',
     wi: 'WI-OI-146',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult:
+      'Bench 2026-11-03: no configured-fields error shown (the 404 call is expected and hidden).',
     retest: 'Open General & localization.',
   },
   {
@@ -930,20 +959,24 @@ export const BUGS = [
   },
   {
     id: 'QA-013',
-    title: 'Screens never settle (15 s timeout)',
+    title: 'Connections never settles (15 s)',
     match: (screen) => screen.readyMs > 3000,
-    modules: ['Set · Connections', 'Inventory'],
+    modules: ['Set · Connections'],
     severity: 'S3 Minor',
-    priority: 'P1',
+    priority: 'P2',
     steps: 'Open Connections, Inventory warehouse map, replenishment or availability and wait.',
     expected: 'Ready ≤ 2 s; a failure shows Try again once.',
-    actual: 'Spinner keeps retrying a failing call; network never idle.',
+    actual:
+      '5 API calls answer in 0.2 s with no failures, but the network never goes idle (some background request keeps running), so the screen is usable but cannot be measured as ready.',
     evidence: 'Bench readyMs 15,144 on /connections.',
-    cause: 'Retry loop on a failing call.',
-    fix: 'Did not reproduce in the journey runs; retest after the deploy, then stop retrying after one failure.',
+    cause:
+      'Something on the screen keeps a request open or keeps refreshing; to find. The three Inventory screens that also never settled were retry loops on failing calls and are fixed with QA-003.',
+    fix: 'Find the background request; stop it or exclude it from the ready signal.',
     files: '—',
     wi: 'WI-OI-146 / WI-OI-149',
-    status: 'Retest',
+    status: 'Open',
+    retestResult:
+      'Retest 2026-11-03: Inventory warehouse map, replenishment and availability now ready in under 2 s; Connections still 15.4 s.',
     retest: 'Bench the four screens after the deploy.',
   },
   {
@@ -962,7 +995,9 @@ export const BUGS = [
     files:
       'modules/universal-orders/dictionary/windows.mjs (+ generated window JSON); modules/business-partners/apps/api/src/party/partners-record-adapter.ts',
     wi: 'WI-OI-149',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Picker live (bench 2026-11-03), but it has no options until QA-046 is deployed.',
     retest: 'New quote: pick a customer; the name fills.',
   },
   {
@@ -984,7 +1019,9 @@ export const BUGS = [
     fix: 'Vendor reference over business-partners-parties, fills the vendor name.',
     files: 'modules/universal-procurement/dictionary/windows.mjs (+ generated window JSON)',
     wi: 'WI-OI-149',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Picker live (bench 2026-11-03), but it has no options until QA-046 is deployed.',
     retest: 'New purchase order: pick a vendor.',
   },
   {
@@ -1003,7 +1040,9 @@ export const BUGS = [
     files:
       'modules/product-catalogue/apps/api/src/catalogue/catalogue-records.service.ts; packages/contracts/src/configuration/dictionary.ts; packages/configuration-react/src/window/*; scripts/lib/window-builder.mjs',
     wi: 'WI-OI-149',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Journey B1 2026-11-03: the product pick fills code, name and unit.',
     retest: 'Add a line; pick a product.',
   },
   {
@@ -1028,7 +1067,9 @@ export const BUGS = [
     fix: 'Typed and shown in normal units, stored in minor units as before; label suffix dropped.',
     files: 'packages/configuration-react/src/window/window-model.ts; MetadataWindow.tsx',
     wi: 'WI-OI-149 / WI-OI-150',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Deployed in 213fde2d.',
     retest: 'Type 12.50; save; reopen shows 12.50.',
   },
   {
@@ -1047,7 +1088,9 @@ export const BUGS = [
     files:
       'modules/universal-orders/module.yaml; modules/universal-procurement/module.yaml; packages/contracts/src/modules/roles.generated.ts',
     wi: 'WI-OI-149',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Deployed in 213fde2d.',
     retest: 'Module-only role: pickers list options.',
   },
   {
@@ -1065,7 +1108,9 @@ export const BUGS = [
     fix: 'plainStatus words per status.',
     files: 'packages/configuration-react/src/window/record-client.ts',
     wi: 'WI-OI-150',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Deployed in 213fde2d.',
     retest: 'Force a failure; read the message.',
   },
   {
@@ -1083,7 +1128,9 @@ export const BUGS = [
     fix: 'Slug follows the name until edited. Still open: defaults for region, tier, trial and audit reason.',
     files: 'apps/workflow-platform/components/platform/PlatformTenantControl.tsx',
     wi: 'WI-OI-147',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Deployed in 213fde2d; not retested (needs a platform operator login).',
     retest: 'Type a name; the address follows; edit it; it stops following.',
   },
   {
@@ -1101,7 +1148,9 @@ export const BUGS = [
     fix: 'Links to /settings/general, /organization, /people, /settings, /plan.',
     files: 'packages/contracts/src/setup/index.ts',
     wi: 'WI-OI-147',
-    status: 'Fixed - in branch',
+    status: 'Fixed - on UAT',
+    fixedIn: '300d72b6 (on UAT in 213fde2d, verified 2026-11-03)',
+    retestResult: 'Deployed in 213fde2d.',
     retest: 'Click each guide step.',
   },
   {
@@ -1417,13 +1466,14 @@ export const BUGS = [
   {
     id: 'QA-038',
     title: 'Journeys over their time target',
-    routes: ['/settings', '/products', '/cmms/requests', '/gigaops/availability'],
-    modules: ['Set · Team & access', 'Products', 'Asset maintenance', 'Workforce'],
+    routes: ['/settings', '/cmms/requests', '/gigaops/availability', '/procurement'],
+    modules: ['Set · Team & access', 'Asset maintenance', 'Workforce', 'Procurement'],
     severity: 'S3 Minor',
     priority: 'P2',
-    steps: 'Run journeys A1, A5, T1, S2.',
-    expected: 'Within target (20, 30, 15, 10 s).',
-    actual: 'A1 25.3 s, A5 33.6 s, T1 19.4 s, S2 11.4 s (run 2).',
+    steps: 'Run journeys A1, T1, S2, B1.',
+    expected: 'Within target (20, 15, 10, 30 s).',
+    actual:
+      'Latest run 2026-11-03: A1 24.2 s, T1 18.5 s, S2 10.2 s, B1 42.8 s (7 required fields). A5 now meets (29.2 of 30 s).',
     evidence: 'docs/plans/ux-benchmark-2026-11-02/journeys-e2e-before.json.',
     cause: 'Fields without defaults; approvals two tabs deep.',
     fix: 'Defaults, first-field focus, one-click approvals.',
@@ -1562,6 +1612,59 @@ export const BUGS = [
     fixedIn: '59c0fe7f (on UAT in 88e493d7)',
     retest: 'Check on 88e493d7.',
   },
+  {
+    id: 'QA-046',
+    title:
+      "Customer and vendor pickers are empty: Business partners never received the workspace's parties",
+    routes: [
+      '/orders',
+      '/orders/sales-orders',
+      '/procurement/purchase-orders',
+      '/procurement/vendor-bills',
+      '/business-partners',
+    ],
+    modules: ['Business partners', 'Orders', 'Procurement'],
+    severity: 'S1 Critical',
+    priority: 'P0',
+    steps:
+      'New quote, sales order, purchase order or vendor bill; open the Customer or Vendor picker.',
+    expected: "The workspace's customers and vendors are offered.",
+    actual:
+      'No options (journeys B2, B4, C1, C2 blocked); Business partners shows "No records yet".',
+    evidence:
+      'Read-only 2026-11-03: control plane has 9 parties; the Business partners copy of the parties (party references) has 0; all 9 party.created.v1 control outbox events FAILED with UNSUPPORTED_CONTROL_OUTBOX_EVENT (2026-10-06 and 10-19); the api container (where the control outbox worker runs) has no BUSINESS_PARTNERS_RELAY_URL or relay key (only kernel-worker has them).',
+    cause:
+      'The release running in October could not relay Party facts, so the events were quarantined as permanent failures and never retried; and the relay settings were given to kernel-worker instead of the api service that runs the worker, so even new parties would fail.',
+    fix: 'compose.yaml gives api the Business partners relay URL and key; the worker re-queues, at start-up, Party facts that failed only for lack of a relay (Business partners applies them by version).',
+    files:
+      'infra/compose/compose.yaml; apps/playground-api/src/control-outbox.worker.ts; apps/playground-api/src/parties/party-projection-relay.service.ts',
+    wi: 'WI-OI-146',
+    found: '2026-11-03 · 213fde2d',
+    status: 'Fixed - in branch',
+    retest:
+      'After the deploy: party_references has 9 rows; the pickers list customers and vendors; journeys B2, B4, C1, C2.',
+  },
+  {
+    id: 'QA-047',
+    title: 'Organization delivery to Accounts receivable keeps failing ("fetch failed")',
+    routes: ['/settings/organization'],
+    modules: ['Set · Organization'],
+    severity: 'S4 Cosmetic',
+    priority: 'P3',
+    steps: 'Settings › Organization & hierarchy › Send to modules again; read the delivery jobs.',
+    expected:
+      'Every enabled module receives the organization, or a module that is not running is not sent to.',
+    actual:
+      'accounts-receivable.organization-sync in RETRY_WAIT with "fetch failed" (11 of 12 modules succeeded).',
+    evidence: 'Read-only kernel_job_runs 2026-11-03 02:41Z.',
+    cause: 'Accounts receivable is contained: its image is built but no container runs on UAT.',
+    fix: 'Skip delivery to modules that are not deployed, or run Accounts receivable.',
+    files: '—',
+    wi: 'WI-OI-147',
+    found: '2026-11-03 · 213fde2d',
+    status: 'Open',
+    retest: 'Send to modules again; no failing job.',
+  },
 ];
 
 /** Journey → the bugs behind its verdict, and the plan's estimate after the work (seconds). */
@@ -1583,12 +1686,12 @@ export const JOURNEY_BUGS = {
   S1: [],
   S2: ['QA-038'],
   S3: [],
-  B1: ['QA-001', 'QA-016', 'QA-017'],
-  B2: ['QA-001', 'QA-004', 'QA-015', 'QA-016', 'QA-017'],
+  B1: ['QA-038'],
+  B2: ['QA-046', 'QA-038'],
   B3: ['QA-003', 'QA-004'],
-  B4: ['QA-001', 'QA-015', 'QA-017'],
-  C1: ['QA-002', 'QA-014', 'QA-016'],
-  C2: ['QA-002', 'QA-004', 'QA-014', 'QA-016'],
+  B4: ['QA-046'],
+  C1: ['QA-046', 'QA-038'],
+  C2: ['QA-046', 'QA-038'],
   F1: [],
   F2: [],
   E1: [],

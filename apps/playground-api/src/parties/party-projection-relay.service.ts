@@ -29,20 +29,16 @@ interface ClaimedPartyEvent {
  */
 @Injectable()
 export class PartyProjectionRelayService {
+  /** True when this process has the Business partners relay address and signing key. */
+  isConfigured(): boolean {
+    return Boolean(this.relayConfig().outbound);
+  }
+
   async deliver(claimed: ClaimedPartyEvent): Promise<void> {
     if (!(PARTY_PROJECTION_EVENT_TYPES as readonly string[]).includes(claimed.eventType)) {
       throw new Error('PARTY_EVENT_UNSUPPORTED');
     }
-    const env = { ...process.env };
-    env.BUSINESS_PARTNERS_INBOX_PATH ||= '/business-partners/internal/v1/party-inbox';
-    const config = loadRelayConfig(env, {
-      inboxPublicKey: 'BUSINESS_PARTNERS_UNUSED_INBOX_PUBLIC_KEY',
-      targetUrl: 'BUSINESS_PARTNERS_RELAY_URL',
-      signingKey: 'BUSINESS_PARTNERS_INBOX_RELAY_PRIVATE_KEY_BASE64',
-      interval: 'BUSINESS_PARTNERS_RELAY_INTERVAL_MS',
-      peerService: 'module-host',
-      inboxPath: 'BUSINESS_PARTNERS_INBOX_PATH',
-    });
+    const config = this.relayConfig();
     if (!config.outbound) throw new Error('PARTY_RELAY_NOT_CONFIGURED');
 
     const event = await prisma.controlOutboxEvent.findUnique({
@@ -88,6 +84,19 @@ export class PartyProjectionRelayService {
         !['PROCESSED', 'DUPLICATE'].includes(String(outcome.status))) {
       throw new Error('PARTY_RELAY_ACK_INVALID');
     }
+  }
+
+  private relayConfig() {
+    const env = { ...process.env };
+    env.BUSINESS_PARTNERS_INBOX_PATH ||= '/business-partners/internal/v1/party-inbox';
+    return loadRelayConfig(env, {
+      inboxPublicKey: 'BUSINESS_PARTNERS_UNUSED_INBOX_PUBLIC_KEY',
+      targetUrl: 'BUSINESS_PARTNERS_RELAY_URL',
+      signingKey: 'BUSINESS_PARTNERS_INBOX_RELAY_PRIVATE_KEY_BASE64',
+      interval: 'BUSINESS_PARTNERS_RELAY_INTERVAL_MS',
+      peerService: 'module-host',
+      inboxPath: 'BUSINESS_PARTNERS_INBOX_PATH',
+    });
   }
 }
 

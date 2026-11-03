@@ -57,6 +57,10 @@ services:
       # WI-OI-141: the mobile safety adapter signs Safety Operations contexts. Without the key, mobile safety is unavailable.
       SAFETY_OPERATIONS_API_URL: http://module-host:4790/safety-operations
       SAFETY_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64: ${SAFETY_OPERATIONS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64-}
+      # WI-OI-146: the control outbox worker runs here and relays Party facts to Business partners (customer and
+      # vendor pickers). Without the key the facts stay queued and Business partners has no parties.
+      BUSINESS_PARTNERS_RELAY_URL: ${BUSINESS_PARTNERS_RELAY_URL:-http://module-host:4790}
+      BUSINESS_PARTNERS_INBOX_RELAY_PRIVATE_KEY_BASE64: ${BUSINESS_PARTNERS_INBOX_RELAY_PRIVATE_KEY_BASE64-}
       WORKFLOW_SCHEMA_VERSION: ${WORKFLOW_SCHEMA_VERSION:?WORKFLOW_SCHEMA_VERSION is required}
       WORKFLOW_COMPILER_VERSION: ${WORKFLOW_COMPILER_VERSION:?WORKFLOW_COMPILER_VERSION is required}
       WORKFLOW_PUBLISH_MAX_RETRIES: ${WORKFLOW_PUBLISH_MAX_RETRIES:?WORKFLOW_PUBLISH_MAX_RETRIES is required}

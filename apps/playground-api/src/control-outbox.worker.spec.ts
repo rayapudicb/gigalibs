@@ -214,6 +214,49 @@ describe('ControlOutboxWorker Party delivery', () => {
   });
 });
 
+// WI-OI-146: Party facts quarantined by an earlier release go back in the queue once this process can relay them.
+describe('ControlOutboxWorker undelivered Party facts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    database.controlOutboxEvent.updateMany.mockResolvedValue({ count: 9 });
+  });
+
+  function workerWithRelay(configured: boolean) {
+    return new ControlOutboxWorker(
+      { processSourceEvent: vi.fn() } as never,
+      {} as never,
+      { publish: vi.fn() } as never,
+      { applyForTenant: vi.fn() } as never,
+      { deliver: vi.fn(), isConfigured: () => configured } as never,
+      { deliver: vi.fn() } as never,
+    );
+  }
+
+  it('re-queues only Party facts that failed for lack of a relay', async () => {
+    await expect(workerWithRelay(true).requeueUndeliveredPartyEvents()).resolves.toBe(9);
+    expect(database.controlOutboxEvent.updateMany).toHaveBeenCalledWith({
+      where: {
+        status: 'FAILED',
+        eventType: {
+          in: ['party.created.v1', 'party.updated.v1', 'party.archived.v1', 'party.merged.v1', 'party.role.changed.v1'],
+        },
+        lastErrorCode: { in: ['UNSUPPORTED_CONTROL_OUTBOX_EVENT', 'PARTY_RELAY_NOT_CONFIGURED'] },
+      },
+      data: { status: 'PENDING', attempts: 0, availableAt: expect.any(Date), claimedAt: null, lastErrorCode: null },
+    });
+  });
+
+  it('leaves them quarantined while this process cannot relay', async () => {
+    await expect(workerWithRelay(false).requeueUndeliveredPartyEvents()).resolves.toBe(0);
+    expect(database.controlOutboxEvent.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('never stops the worker when the re-queue fails', async () => {
+    database.controlOutboxEvent.updateMany.mockRejectedValue(new Error('database down'));
+    await expect(workerWithRelay(true).requeueUndeliveredPartyEvents()).resolves.toBe(0);
+  });
+});
+
 // WI-OI-120f (F0.2): Platform Control Tower's entitlement change activates the enabled modules' windows.
 describe('ControlOutboxWorker module window activation', () => {
   const entitlementEvent = { ...event, aggregateId: 'tenant_01', eventType: 'tenant.entitlements.changed.v1' };

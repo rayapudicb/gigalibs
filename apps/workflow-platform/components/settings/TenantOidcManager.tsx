@@ -47,7 +47,9 @@ export function TenantOidcManager({ canUpdate }: { canUpdate: boolean }) {
       const response = await fetch('/api/control/auth/oidc/config', { cache: 'no-store' });
       if (!response.ok)
         throw new Error(await errorMessage(response, 'OIDC configuration failed to load.'));
-      const value = (await response.json()) as OidcConfiguration | null;
+      // WI-OI-146: a workspace without single sign-on gets 200 with an empty body (no configuration), not JSON.
+      const text = await response.text();
+      const value = (text ? JSON.parse(text) : null) as OidcConfiguration | null;
       setConfiguration(value);
       setIssuer(value?.issuer ?? '');
       setClientId(value?.clientId ?? '');
