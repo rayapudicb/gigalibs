@@ -553,6 +553,7 @@ export {
   createRecordClient,
   RecordClientError,
   type LookupOption,
+  type RecordActionOffer,
   type RecordClient,
   type RecordClientOptions,
   type RecordListRequest,

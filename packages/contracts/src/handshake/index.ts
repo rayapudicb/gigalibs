@@ -35,6 +35,8 @@ export const CmmsStaffingRequestedV1Schema = z.object({
   headcount: z.number().int().min(1).max(50),
   capabilityCodes: z.array(CapabilityCodeSchema).max(20),
   requestKey: z.string().uuid(),
+  /** WI-OI-167: the work order's owning organization unit, so Workforce owns the demand under the same unit. */
+  owningUnitId: z.string().min(1).max(64).nullable().optional(),
 });
 export type CmmsStaffingRequestedV1 = z.infer<typeof CmmsStaffingRequestedV1Schema>;
 
@@ -55,6 +57,8 @@ export const WorkforceHandshakeFactV1Schema = z.object({
   requirementId: z.string().uuid().optional(),
   resourceId: z.string().uuid().optional(),
   resourceName: z.string().max(200).optional(),
+  /** WI-OI-169: the booked person's login, so CMMS lets them execute the work order they are booked for. */
+  resourcePlatformUserId: z.string().min(1).max(128).nullable().optional(),
   startsAt: z.string().datetime({ offset: true }).optional(),
   endsAt: z.string().datetime({ offset: true }).optional(),
   from: z.string().optional(),
@@ -97,10 +101,15 @@ export interface CmmsWorkOrderBookingV1 {
   readonly bookingRef: string;
   readonly resourceRef: string;
   readonly resourceName: string | null;
+  /** WI-OI-169: the booked person's login, when they have one (they may execute the work order while booked). */
+  readonly resourceUserRef: string | null;
   readonly startsAt: string;
   readonly endsAt: string;
   readonly status: 'DRAFT' | 'CONFIRMED' | 'DISPATCHED' | 'ON_SITE' | 'COMPLETED' | 'CANCELLED';
   readonly updatedAt: string;
 }
+
+/** WI-OI-169: booking states in which the booked person may execute the work order. */
+export const CMMS_EXECUTING_BOOKING_STATUSES: readonly CmmsWorkOrderBookingV1['status'][] = ['CONFIRMED', 'DISPATCHED', 'ON_SITE'];
 
 export * from './commercial-operational.js';

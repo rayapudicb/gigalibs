@@ -73,3 +73,19 @@ Verified on UAT: QA-012 (Analytics catalog 200 on all three screens), QA-013 (Co
 UAT, 4 retest (need records or an operator login), 2 owner actions, 1 open (QA-038), 1 closed. Runs and screenshots:
 `Claude outputs/UX journeys 2026-11-02/` (`retest-38aa9017/`, `regression-38aa9017/`, `screenshots-2026-11-03-r3/`);
 bench `docs/plans/ux-benchmark-2026-11-03-r3/`. Queue item 0 is complete.
+
+## 2026-11-03 — retest and regression on UAT `bd852946` (milestone A, queue item 4a)
+
+| Suite | Result |
+|---|---|
+| Milestone A retest (`e2e/specs/uat-milestone-a.spec.ts`, 8 checks) | 8 pass: Master data area (six groups, counts), sidebar entry, Reference data tab (countries, currencies, languages, time zones 50+), reference pickers (India, INR, Japanese, Asia/…), workspace profile (member read), Settings › General (country, currency, language, time zone), Products › Units standard units button (not clicked), set-up guide country step |
+| Screen bench (136) | 5 with failing calls, the same as on `38aa9017` (Workflows ×4 while Workflow Studio is not in the stack — QA-009; Settings › General manifest 404 — QA-011); the 7 new Master data screens load; nothing never settles |
+| Journeys, dry (28) | 16 meet (new M1 Master data journey meets), 3 over, 5 too slow, 1 blocked (T4 starter absence types), 3 not run — no verdict changed |
+| Read-only e2e (50 tests) | 50 pass |
+
+Also verified read-only: all ten app containers on `bd852946-82b8998c28f0`, healthy, no errors in their logs since the
+restart; the owner's reference load ran (the pickers and the hub's reference counts answer from the loaded sets);
+`kernel-worker` no longer carries the party relay settings and `api` does (names only, WI-OI-160). Master facts
+(WI-OI-156 A) are written when a master next changes; agents do not read the UAT database. Runs:
+`Claude outputs/UX journeys 2026-11-02/regression-bd852946/`, `e2e/artifacts/retest/milestone-a-*`; bench
+`docs/plans/ux-benchmark-2026-11-03-r4/`; workbook sheet "Regression & retest". Queue item 4a is complete.

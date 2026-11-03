@@ -376,3 +376,46 @@ describe('RecordDispatcher field rules', () => {
     expect(await status(records.update(context(other), 'inventory.warehouses', String(saved.id), { name: 'X' }, '"1"'))).toBe(404);
   });
 });
+
+// WI-OI-163: record-level offers — one answer for web and mobile, from the same rules the commands use.
+describe('record action offers', () => {
+  const tickets = (offers?: RecordAdapter['offers']): RecordAdapter => ({
+    entityKey: 'demo.tickets',
+    permissions: { read: 'demo:read' },
+    fields: { status: { writable: false } },
+    async list() {
+      return { items: [], total: 0, limit: 25, offset: 0 } as never;
+    },
+    async get(_principal, id) {
+      return id === '00000000-0000-4000-8000-000000000001' ? { id, version: 1, status: 'OPEN' } : null;
+    },
+    actions: {
+      close: { permission: 'demo:close', run: async () => ({}) },
+      reopen: { permission: 'demo:reopen', run: async () => ({}) },
+      archive: { permission: 'demo:close', run: async () => ({}) },
+    },
+    ...(offers ? { offers } : {}),
+  });
+  const id = '00000000-0000-4000-8000-000000000001';
+
+  it('refuses an action without its permission, takes the adapter’s reason, and offers what it does not mention', async () => {
+    const offers = vi.fn(async () => ({ close: { offered: false as const, reason: 'DEMO_STATE', message: 'Not while open.' } }));
+    const records = new RecordDispatcher([tickets(offers)], [], new MemoryIdempotency());
+    const answer = await records.offers(principal('tenant-a', ['demo:read', 'demo:close']), 'demo.tickets', id);
+    expect(answer.actions).toEqual([
+      { action: 'close', offered: false, reason: 'DEMO_STATE', message: 'Not while open.' },
+      { action: 'reopen', offered: false, reason: 'RECORD_PERMISSION_DENIED', message: 'You do not have permission to do this.' },
+      { action: 'archive', offered: true, reason: null, message: null },
+    ]);
+  });
+
+  it('asks the adapter nothing when no action is permitted, and answers 404 for a record the person cannot read', async () => {
+    const offers = vi.fn(async () => ({}));
+    const records = new RecordDispatcher([tickets(offers)], [], new MemoryIdempotency());
+    const answer = await records.offers(principal('tenant-a', ['demo:read']), 'demo.tickets', id);
+    expect(answer.actions.every((action) => !action.offered)).toBe(true);
+    expect(offers).not.toHaveBeenCalled();
+    await expect(records.offers(principal('tenant-a', ['demo:read']), 'demo.tickets', '00000000-0000-4000-8000-000000000002')).rejects.toMatchObject({ status: 404 });
+    await expect(records.offers(principal('tenant-a', []), 'demo.tickets', id)).rejects.toMatchObject({ status: 403 });
+  });
+});

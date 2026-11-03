@@ -25,7 +25,7 @@ import {
 } from '@gigalibs/contracts';
 import type { PoolClient } from 'pg';
 import { type GigaOpsPrincipal, hasWorkforcePermission } from '../auth/authorization.js';
-import { peopleScopeClause } from '../common/scope.js';
+import { assertPersonInScope, limitedByUnit, peopleScopeClause } from '../common/scope.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 
 interface CommandContext {
@@ -134,9 +134,16 @@ export class WorkforceResourcesService {
     resourceId: string,
   ): Promise<WorkforceResourceDetailV1> {
     assertUuid(resourceId, 'resourceId');
-    return this.database.withTenantTransaction(principal.tenantId, async (client) =>
-      this.getResourceWithClient(client, principal.tenantId, resourceId),
-    );
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const detail = await this.getResourceWithClient(client, principal.tenantId, resourceId);
+      // WI-OI-167: someone else's full record only for one of the caller's people; otherwise it does not exist for them.
+      if (detail.platformUserId !== principal.subject) {
+        await assertPersonInScope(client, principal, resourceId).catch(() => {
+          throw new NotFoundException({ code: 'WORKFORCE_NOT_FOUND', message: 'The person was not found.' });
+        });
+      }
+      return detail;
+    });
   }
 
   async createResource(
@@ -186,6 +193,8 @@ export class WorkforceResourcesService {
     const changesLink = input.platformUserId !== undefined;
     if (changesLink) assertMayLinkLogin(context.principal);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
+      // WI-OI-167: only one of the caller's people.
+      await assertPersonInScope(client, context.principal, resourceId);
       try {
         // WI-OI-120n: the link before the change, for the audit record (who was linked, and to whom it now points).
         const previousLink = changesLink
@@ -267,6 +276,10 @@ export class WorkforceResourcesService {
     rawInput: unknown,
   ): Promise<CapabilityDefinitionV1> {
     const input = parse(CreateCapabilityDefinitionV1Schema, rawInput);
+    // WI-OI-167: capabilities are workspace master data; a manager limited to some places or units does not define them.
+    if (context.principal.spatialScope.mode === 'SCOPED_PLACES' || limitedByUnit(context.principal)) {
+      throw new ForbiddenException({ code: 'WORKFORCE_OUT_OF_SCOPE', message: 'Only a manager for the whole workspace defines capabilities.' });
+    }
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       try {
         const result = await client.query(
@@ -307,6 +320,8 @@ export class WorkforceResourcesService {
     const input = parse(AssignResourceCapabilityV1Schema, rawInput);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const linkedTo = await this.requireActiveResource(client, context.principal.tenantId, resourceId);
+      // WI-OI-167: qualifications only for one of the caller's people.
+      await assertPersonInScope(client, context.principal, resourceId);
       // Security review L3 (owner, L3a): someone else records your qualifications, as someone else decides your absence;
       // otherwise a supervisor could qualify themselves for work and pass the booking check.
       if (linkedTo !== null && linkedTo === context.principal.subject) {

@@ -32,7 +32,7 @@ import {
   recordMutation,
   translate,
 } from '../common/commands.js';
-import { peopleScopeClause } from '../common/scope.js';
+import { assertOtherPersonInScope, limitedByUnit, peopleScopeClause } from '../common/scope.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 
 export interface Interval {
@@ -98,7 +98,9 @@ export class AvailabilityService {
     const input = parse(CreateAvailabilityPatternV1Schema, rawInput);
     const tenantId = context.principal.tenantId;
     return this.database.withTenantTransaction(tenantId, async (client) => {
-      await assertPerson(client, tenantId, input.resourceId);
+      const person = await assertPerson(client, tenantId, input.resourceId);
+      // WI-OI-167: someone else's working week only for one of the caller's people.
+      await assertOtherPersonInScope(client, context.principal, input.resourceId, person.platformUserId);
       let id: string;
       try {
         const created = await client.query<{ id: string }>(
@@ -134,6 +136,7 @@ export class AvailabilityService {
       );
       const pattern = current.rows[0];
       if (!pattern) throw new NotFoundException('The working pattern was not found.');
+      await assertLimitedCallerReaches(client, context.principal, String(pattern.resource_id));
       if (Number(pattern.version) !== input.expectedVersion) conflict('working pattern');
       if (input.effectiveTo <= String(pattern.effective_from) || (pattern.effective_to && input.effectiveTo > String(pattern.effective_to))) {
         throw new BadRequestException({ code: 'WORKFORCE_VALIDATION_FAILED', message: 'The end must fall after the start and not extend the pattern.' });
@@ -262,6 +265,8 @@ export class AvailabilityService {
     const tenantId = context.principal.tenantId;
     {
       const person = await assertPerson(client, tenantId, input.resourceId);
+      // WI-OI-167: an absence for someone else only for one of the caller's people.
+      await assertOtherPersonInScope(client, context.principal, input.resourceId, person.platformUserId);
       const type = await client.query(`SELECT * FROM gigalibs_workforce.absence_types WHERE tenant_id = $1 AND id = $2`, [tenantId, input.absenceTypeId]);
       if (!type.rows[0]) throw new NotFoundException('The absence type was not found.');
       if (type.rows[0].status !== 'ACTIVE') throw new ConflictException({ code: 'WORKFORCE_ABSENCE_TYPE_INACTIVE', message: 'The absence type is inactive.' });
@@ -316,6 +321,7 @@ export class AvailabilityService {
     const tenantId = context.principal.tenantId;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const absence = await lockAbsence(client, tenantId, absenceId, input.expectedVersion);
+      await this.assertAbsenceInScope(client, context.principal, absence);
       if (absence.status !== 'REQUESTED') {
         throw new ConflictException({ code: 'WORKFORCE_ABSENCE_STATE', message: `The absence is already ${absence.status.toLowerCase()}.` });
       }
@@ -350,8 +356,14 @@ export class AvailabilityService {
     const input = parse(DecideAbsenceV1Schema, rawInput);
     return this.database.withTenantTransaction(context.principal.tenantId, async (client) => {
       const absence = await lockAbsence(client, context.principal.tenantId, absenceId, input.expectedVersion);
+      await this.assertAbsenceInScope(client, context.principal, absence);
       return this.cancelLocked(client, context, absence, input.reason);
     });
+  }
+
+  /** WI-OI-167: deciding or cancelling someone else's absence only for one of the caller's people. */
+  private async assertAbsenceInScope(client: PoolClient, principal: GigaOpsPrincipal, absence: any): Promise<void> {
+    await assertLimitedCallerReaches(client, principal, String(absence.resource_id));
   }
 
   private async cancelLocked(client: PoolClient, context: CommandContext, absence: any, reason: string | undefined): Promise<AbsenceV1> {
@@ -772,18 +784,32 @@ async function lockAbsence(client: PoolClient, tenantId: string, absenceId: stri
   return absence;
 }
 
+/** WI-OI-167: a caller limited by place or unit reaches someone else's person only when that person is theirs. */
+async function assertLimitedCallerReaches(client: PoolClient, principal: GigaOpsPrincipal, resourceId: string): Promise<void> {
+  if (principal.spatialScope.mode !== 'SCOPED_PLACES' && !limitedByUnit(principal)) return;
+  const linked = await client.query<{ platform_user_id: string | null }>(
+    `SELECT platform_user_id FROM gigalibs_workforce.workforce_resources WHERE tenant_id = $1 AND id = $2`,
+    [principal.tenantId, resourceId],
+  );
+  await assertOtherPersonInScope(client, principal, resourceId, linked.rows[0]?.platform_user_id ?? null);
+}
+
 /**
  * Security review M2 (owner, M2a): absence types apply to the whole workspace, so, as for the tenant-wide calendar, only a
  * manager not bound to some places changes them.
  */
 function assertWorkspaceWide(principal: GigaOpsPrincipal, what: string): void {
-  if (principal.spatialScope.mode === 'SCOPED_PLACES') {
+  // WI-OI-167: nor a manager limited by organization unit.
+  if (principal.spatialScope.mode === 'SCOPED_PLACES' || limitedByUnit(principal)) {
     throw new ForbiddenException({ code: 'WORKFORCE_OUT_OF_SCOPE', message: `Only a manager for the whole workspace changes ${what}.` });
   }
 }
 
 /** Site calendars follow place scope; only an unscoped manager maintains the tenant-wide calendar. */
 function assertCalendarScope(principal: GigaOpsPrincipal, siteRef: string | null): void {
+  if (siteRef === null && limitedByUnit(principal)) {
+    throw new ForbiddenException({ code: 'WORKFORCE_OUT_OF_SCOPE', message: 'Only a manager for the whole workspace maintains the workspace calendar.' });
+  }
   if (principal.spatialScope.mode !== 'SCOPED_PLACES') return;
   if (siteRef === null || !principal.spatialScope.place_ids.includes(siteRef)) {
     throw new ForbiddenException({ code: 'WORKFORCE_OUT_OF_SCOPE', message: 'You can only maintain calendars for your places.' });

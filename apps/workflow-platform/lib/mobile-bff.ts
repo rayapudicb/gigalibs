@@ -57,6 +57,9 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
   'GET contractors/pass/mine': '/api/v1/mobile/contractors/pass/mine',
   'POST contractors/pass/verify': '/api/v1/mobile/contractors/pass/verify',
   'GET contractors/roster': '/api/v1/mobile/contractors/roster',
+  // WI-OI-164: my work orders and the supervisor's sign-off queue.
+  'GET cmms/work-orders': '/api/v1/mobile/cmms/work-orders',
+  'GET cmms/work-orders/awaiting-sign-off': '/api/v1/mobile/cmms/work-orders/awaiting-sign-off',
   // WI-OI-142 M-LOTO.
   'GET permits/mine': '/api/v1/mobile/permits/mine',
   'GET permits/procedures': '/api/v1/mobile/permits/procedures',
@@ -66,9 +69,18 @@ const MOBILE_ROUTES: Readonly<Record<string, string>> = {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STEP_KEY = /^[a-z][a-z0-9-]{0,31}$/;
 
+const WORK_ORDER_ACTIONS = new Set(['start', 'hold', 'resume', 'complete', 'sign-off']);
+
 function mobileUpstreamPath(method: string, path: readonly string[]): string | undefined {
   const exact = MOBILE_ROUTES[`${method} ${path.join('/')}`];
   if (exact) return exact;
+  // WI-OI-164: one work order, its offered actions, and the actions.
+  if (path[0] === 'cmms' && path[1] === 'work-orders' && UUID.test(path[2] ?? '')) {
+    if (method === 'GET' && path.length === 3) return `/api/v1/mobile/cmms/work-orders/${path[2]}`;
+    if (method === 'GET' && path.length === 4 && path[3] === 'actions') return `/api/v1/mobile/cmms/work-orders/${path[2]}/actions`;
+    if (method === 'POST' && path.length === 5 && path[3] === 'actions' && WORK_ORDER_ACTIONS.has(path[4] ?? ''))
+      return `/api/v1/mobile/cmms/work-orders/${path[2]}/actions/${path[4]}`;
+  }
   if (method === 'GET' && path.length === 4 && path[0] === 'rounds' &&
       path[1] === 'assignments' && path[3] === 'bundle' && UUID.test(path[2] ?? ''))
     return `/api/v1/mobile/rounds/assignments/${path[2]}/bundle`;
@@ -165,9 +177,40 @@ export function mobileProblemResponse(code: MobileProblemCode): Response {
   });
 }
 
+/**
+ * WI-OI-164: the one exception to "no query": the work-order lists take the app's v1 list input as a query. Only these
+ * keys pass, each checked, and the query is rebuilt; anything else is refused.
+ */
+const LIST_QUERY: Readonly<Record<string, (value: string) => boolean>> = {
+  query: (value) => value.trim().length > 0 && value.length <= 200,
+  status: (value) => ['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED'].includes(value),
+  priority: (value) => ['LOW', 'MEDIUM', 'HIGH', 'EMERGENCY'].includes(value),
+  placeId: (value) => UUID.test(value),
+  cursor: (value) => value.trim().length > 0 && value.length <= 2_048,
+  pageSize: (value) => /^\d{1,3}$/.test(value) && Number(value) >= 1 && Number(value) <= 100,
+  lens: (value) => ['today', 'upcoming', 'previous'].includes(value),
+};
+const LISTS_WITH_QUERY = new Set(['cmms/work-orders', 'cmms/work-orders/awaiting-sign-off']);
+
+function listQuery(request: Request, path: readonly string[]): string | null | undefined {
+  const search = new URL(request.url).searchParams;
+  if (request.method !== 'GET' || !LISTS_WITH_QUERY.has(path.join('/'))) return search.size > 0 ? null : '';
+  const kept = new URLSearchParams();
+  for (const [key, value] of search) {
+    const valid = LIST_QUERY[key];
+    if (!valid || !valid(value) || kept.has(key)) return undefined;
+    kept.set(key, key === 'query' ? value.trim() : value);
+  }
+  return kept.size > 0 ? `?${kept.toString()}` : '';
+}
+
 export async function forwardMobileRequest(request: Request, path: readonly string[]): Promise<Response> {
-  const upstreamPath = mobileUpstreamPath(request.method, path);
-  if (!upstreamPath) return mobileProblemResponse('MOBILE_NOT_FOUND');
+  const route = mobileUpstreamPath(request.method, path);
+  if (!route) return mobileProblemResponse('MOBILE_NOT_FOUND');
+  const query = listQuery(request, path);
+  if (query === undefined) return mobileProblemResponse('MOBILE_REQUEST_INVALID');
+  // Any other route still takes no query: it is dropped, as before.
+  const upstreamPath = `${route}${query ?? ''}`;
 
   let body: string | undefined;
   if (request.method === 'POST') {

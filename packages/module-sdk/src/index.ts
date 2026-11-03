@@ -102,6 +102,7 @@ export {
   type LookupOption,
   type LookupResolver,
   type RecordAction,
+  type RecordActionOffer,
   type RecordAdapter,
   type RecordCommandContext,
   type RecordFieldPolicy,

@@ -53,3 +53,4 @@ export * from './speed/index.js';
 export * from './mobile/index.js';
 export * from './frontline/index.js';
 export * from './master-data/index.js';
+export * from './records/index.js';

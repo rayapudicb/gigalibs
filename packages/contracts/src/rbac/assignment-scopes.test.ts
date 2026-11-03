@@ -60,10 +60,14 @@ describe('assignment scopes and the transition rule', () => {
   });
 
   // WI-OI-120bk: asset-maintenance enforces units and places; mixed-module roles still refuse.
-  it('allows unit and place scope for pure CMMS permission sets; refuses workforce and platform codes', () => {
+  // WI-OI-167: Workforce enforces both too, so CMMS and Workforce codes together may be given at a scope.
+  it('allows unit and place scope for CMMS and Workforce permission sets; refuses pay and platform codes', () => {
     expect(explicitScopeRefusal(technician, 'units')).toBeNull();
     expect(explicitScopeRefusal(technician, 'places')).toBeNull();
-    expect(explicitScopeRefusal(worker, 'units')).toMatchObject({ code: expect.stringMatching(/^workforce/) });
+    expect(explicitScopeRefusal(worker, 'units')).toBeNull();
+    expect(explicitScopeRefusal([...worker, 'workforce.bookings.manage', 'workforce.timesheets.approve'], 'places')).toBeNull();
+    expect(explicitScopeRefusal([...worker, 'workforce.pay.approve'], 'units')).toMatchObject({ code: 'workforce.pay.approve', workspaceOnly: true });
+    expect(explicitScopeRefusal(['workforce.pay.read'], 'places')).toMatchObject({ workspaceOnly: true });
     expect(explicitScopeRefusal(['maps.nodes.read'], 'places')).toMatchObject({ owners: expect.arrayContaining(['platform']) });
     expect(explicitScopeRefusal(['finance:read'], 'units')).toMatchObject({
       owners: expect.arrayContaining(['platform']),
@@ -86,6 +90,7 @@ describe('assignment scopes and the transition rule', () => {
       'universal-procurement': { units: true, places: false },
       'universal-orders': { units: true, places: false },
       'financial-operations': { units: true, places: false },
+      gigaops: { units: true, places: true },
     });
   });
 });

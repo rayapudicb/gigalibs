@@ -582,6 +582,11 @@ export const SearchCmmsWorkOrdersV1Schema = z
     assetId: UuidSchema.optional(),
     siteRef: UuidSchema.optional(),
     assignedTo: CmmsPrincipalRefSchema.optional(),
+    /** WI-OI-164: work assigned to the caller or booked for them through Workforce (WI-OI-169). */
+    mine: z.boolean().optional(),
+    /** WI-OI-164: completed work not yet signed off (the supervisor's queue). */
+    awaitingSignOff: z.boolean().optional(),
+    dueFrom: DateTimeSchema.optional(),
     dueBefore: DateTimeSchema.optional(),
     sortField: z.enum(['woNumber', 'title', 'dueAt', 'createdAt']).optional(),
     sortDirection: SortDirectionSchema,

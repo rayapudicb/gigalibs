@@ -100,4 +100,15 @@ describe('custom role permissions', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  // WI-OI-167: a browser component whose checks only show or hide buttons may opt out of platform ownership; the marker
+  // counts only in a client file, so server code that enforces access cannot use it.
+  it('honours the display-only marker in client components only', async () => {
+    // @ts-expect-error -- a plain ES module shared with scripts/module-manifests.mjs
+    const scan = await import('../../../../scripts/lib/permission-scan.mjs');
+    const marker = '// permission-scan: display-only — the module API enforces';
+    expect(scan.isDisplayOnly(`'use client';\n\n${marker}\nhasPermission(p, 'workforce.time.manage');`)).toBe(true);
+    expect(scan.isDisplayOnly(`${marker}\nhasPermission(p, 'workforce.time.manage');`)).toBe(false);
+    expect(scan.isDisplayOnly(`'use client';\nhasPermission(p, 'workforce.time.manage');`)).toBe(false);
+  });
 });

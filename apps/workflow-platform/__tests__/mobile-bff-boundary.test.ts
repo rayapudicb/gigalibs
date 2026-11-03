@@ -159,6 +159,35 @@ describe('mobile v1 BFF front door', () => {
     expect(upstreamFetch).toHaveBeenCalledTimes(6);
   });
 
+  // WI-OI-164: my work orders, one work order and its offers, the actions, the sign-off queue; the lists are the one
+  // place a query passes, rebuilt from checked keys.
+  it('forwards the work-order routes, UUID-bound, and only a checked list query (WI-OI-164)', async () => {
+    const id = '10000000-0000-4000-8000-000000000001';
+    upstreamFetch.mockImplementation(async () => new Response('{}', { status: 200 }));
+    const auth = { headers: { Authorization: 'Bearer mobile-token' } };
+    const upstream = () => String(upstreamFetch.mock.calls.at(-1)?.[0]);
+    expect((await GET(mobileRequest('cmms/work-orders?lens=today&pageSize=25&query=%20pump%20', auth), context(['cmms', 'work-orders']))).status).toBe(200);
+    expect(upstream()).toBe('https://control.example.invalid/api/v1/mobile/cmms/work-orders?lens=today&pageSize=25&query=pump');
+    expect((await GET(mobileRequest('cmms/work-orders/awaiting-sign-off', auth), context(['cmms', 'work-orders', 'awaiting-sign-off']))).status).toBe(200);
+    for (const path of [`cmms/work-orders/${id}`, `cmms/work-orders/${id}/actions`])
+      expect((await GET(mobileRequest(path, auth), context(path.split('/')))).status).toBe(200);
+    for (const action of ['start', 'hold', 'resume', 'complete', 'sign-off']) {
+      const path = `cmms/work-orders/${id}/actions/${action}`;
+      expect((await POST(mobileRequest(path, { ...auth, method: 'POST', body: '{}' }), context(path.split('/')))).status).toBe(200);
+    }
+    expect(upstreamFetch).toHaveBeenCalledTimes(9);
+    // A key the list does not take, a bad value, an unknown action or a non-UUID id never reaches the control plane.
+    expect((await GET(mobileRequest('cmms/work-orders?tenant=other', auth), context(['cmms', 'work-orders']))).status).toBe(400);
+    expect((await GET(mobileRequest('cmms/work-orders?status=CLOSED', auth), context(['cmms', 'work-orders']))).status).toBe(400);
+    expect((await POST(mobileRequest(`cmms/work-orders/${id}/actions/delete`, { ...auth, method: 'POST', body: '{}' }),
+      context(['cmms', 'work-orders', id, 'actions', 'delete']))).status).toBe(404);
+    expect((await GET(mobileRequest('cmms/work-orders/not-a-uuid', auth), context(['cmms', 'work-orders', 'not-a-uuid']))).status).toBe(404);
+    expect(upstreamFetch).toHaveBeenCalledTimes(9);
+    // Elsewhere a query is still dropped.
+    await GET(mobileRequest('logbook/logbooks?tenant=other', auth), context(['logbook', 'logbooks']));
+    expect(upstream()).toBe('https://control.example.invalid/api/v1/mobile/logbook/logbooks');
+  });
+
   it('forwards the logbook routes, UUID-bound (WI-OI-137)', async () => {
     const id = '10000000-0000-4000-8000-000000000001';
     upstreamFetch.mockImplementation(async () => new Response('{}', { status: 200 }));

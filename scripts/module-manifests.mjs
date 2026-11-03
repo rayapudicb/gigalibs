@@ -880,6 +880,8 @@ for (const [name, manifest] of modules) {
       ? [
           { path: 'v1/records/{entity}', GET: recordsPermission, POST: recordsPermission },
           { path: 'v1/records/{entity}/{id}', GET: recordsPermission, PATCH: recordsPermission },
+          // WI-OI-163: the record's action offers (which actions the person may take now, and why not).
+          { path: 'v1/records/{entity}/{id}/actions', GET: recordsPermission },
           { path: 'v1/records/{entity}/{id}/actions/{key}', POST: recordsPermission },
           { path: 'v1/lookups/{key}', GET: recordsPermission },
         ]

@@ -94,6 +94,12 @@ export function createRecordController(options: {
       return record;
     }
 
+    /** WI-OI-163: which actions this person may take on the record now, and why not. */
+    @Get('records/:entity/:id/actions')
+    offers(@CurrentPrincipal() principal: ModulePrincipal, @Param('entity') entity: string, @Param('id') id: string) {
+      return this.records.offers(principal, entity, id);
+    }
+
     @Post('records/:entity/:id/actions/:action')
     @HttpCode(200)
     action(

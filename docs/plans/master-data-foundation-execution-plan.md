@@ -145,7 +145,7 @@ belongs to the card that names it. When one agent's session ends, the next agent
 | 2 | WI-OI-153 Reference data and workspace profile (slices A, B, C) | Built |
 | 3 | WI-OI-160 Relay wiring from manifests | Built (slice A; generation moved to item 13) |
 | 4 | WI-OI-156 slice A — product and master events | Built → **milestone A** (`bd852946`, deployed by the owner 2026-11-03) |
-| 4a | Retest of milestone A on UAT | Not a card. After the owner's deploy and reference load: hub, reference pickers, workspace profile, standard units, read-only e2e, journeys and bench (commands in `.pi/work/WI-OI-151.md`); workbook updated |
+| 4a | Retest of milestone A on UAT | Done (2026-11-03): 8 of 8 checks, bench, journeys and 50 read-only tests pass (`.pi/work/WI-OI-151.md`). Not a card. After the owner's deploy and reference load: hub, reference pickers, workspace profile, standard units, read-only e2e, journeys and bench (commands in `.pi/work/WI-OI-151.md`); workbook updated |
 | 5 | WI-OI-167 Workforce scope completion (security) | **Next card** (owner 2026-11-03, `docs/plans/all-modules-completion-plan.md`); finishes WI-OI-120ho |
 | 6 | WI-OI-168 Status truth on UAT for modules already running | Read-only; relabels rows by evidence; removes stale deploy instructions |
 | 7 | WI-OI-163 Record-level available actions (CMMS first) | From the mobile review; one answer for web and mobile |

@@ -210,6 +210,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "ar:read"
+        }
+      },
+      {
         "template": "v1/records/{entity}/{id}/actions/{key}",
         "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
         "methods": {
@@ -328,6 +335,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "business-partners.records.read",
           "PATCH": "business-partners.records.read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "business-partners.records.read"
         }
       },
       {
@@ -999,6 +1013,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "finance:read"
+        }
+      },
+      {
         "template": "v1/records/{entity}/{id}/actions/{key}",
         "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
         "methods": {
@@ -1503,6 +1524,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "workforce:read",
           "PATCH": "workforce:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "workforce:read"
         }
       },
       {
@@ -2870,6 +2898,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "cmms:read"
+        }
+      },
+      {
         "template": "v1/records/{entity}/{id}/actions/{key}",
         "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
         "methods": {
@@ -3215,6 +3250,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "speed:read"
+        }
+      },
+      {
         "template": "v1/records/{entity}/{id}/actions/{key}",
         "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
         "methods": {
@@ -3484,6 +3526,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "products:read",
           "PATCH": "products:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "products:read"
         }
       },
       {
@@ -4110,6 +4159,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "inventory.read"
+        }
+      },
+      {
         "template": "v1/records/{entity}/{id}/actions/{key}",
         "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
         "methods": {
@@ -4405,6 +4461,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         }
       },
       {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "orders:read"
+        }
+      },
+      {
         "template": "v1/records/{entity}/{id}/actions/{key}",
         "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions/[a-z][a-z0-9-]*$",
         "methods": {
@@ -4588,6 +4651,13 @@ export const generatedModuleGateways: Readonly<Record<string, GeneratedModuleGat
         "methods": {
           "GET": "procurement:read",
           "PATCH": "procurement:read"
+        }
+      },
+      {
+        "template": "v1/records/{entity}/{id}/actions",
+        "pattern": "^v1/records/[a-z][a-z0-9-]*(?:[.][a-z0-9-]+)*/[0-9a-fA-F-]{36}/actions$",
+        "methods": {
+          "GET": "procurement:read"
         }
       },
       {

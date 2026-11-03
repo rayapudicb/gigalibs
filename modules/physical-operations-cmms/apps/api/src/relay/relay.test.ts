@@ -185,7 +185,7 @@ describe('CMMS inbox', () => {
     await inbox.receive(body, JSON.stringify(body));
     const upsert = statements.find((statement) => statement.sql.includes('INSERT INTO gigalibs_cmms.work_order_bookings'))!;
     expect(upsert.sql).toContain('source_version < EXCLUDED.source_version');
-    expect(upsert.values.slice(-2)).toEqual(['CONFIRMED', 3]);
+    expect(upsert.values.slice(-3)).toEqual(['CONFIRMED', 3, null]); // WI-OI-169: the booked person's login comes last
   });
 
   it('refuses unknown event types and malformed envelopes before touching the database', async () => {

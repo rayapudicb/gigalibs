@@ -209,15 +209,41 @@ function RequirementPanel({ requirement, siteName, onChanged }: {
   onChanged: (requirement: WorkRequirementDetailV1) => Promise<void>;
 }) {
   const [candidates, setCandidates] = useState<readonly BookingCandidateV1[] | null>(null);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
   const [error, setError] = useState<WorkforceApiError | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // WI-OI-167: only the person's own people, found by name, a page at a time (qualified people first).
   useEffect(() => {
     setCandidates(null);
+    setNextOffset(null);
     setError(null);
     if (requirement.status !== 'OPEN') return;
-    workforceApi.candidates(requirement.id).then((result) => setCandidates(result.items), (reason) => setError(reason as WorkforceApiError));
-  }, [requirement.id, requirement.status, requirement.version]);
+    const term = search.trim();
+    const timer = setTimeout(() => {
+      workforceApi.candidates(requirement.id, term ? { search: term } : {}).then(
+        (page) => {
+          setCandidates(page.items);
+          setNextOffset(page.nextOffset ?? null);
+        },
+        (reason) => setError(reason as WorkforceApiError),
+      );
+    }, term ? 250 : 0);
+    return () => clearTimeout(timer);
+  }, [requirement.id, requirement.status, requirement.version, search]);
+
+  const showMore = () => {
+    if (nextOffset === null) return;
+    const term = search.trim();
+    workforceApi.candidates(requirement.id, { ...(term ? { search: term } : {}), offset: nextOffset }).then(
+      (page) => {
+        setCandidates((current) => [...(current ?? []), ...page.items]);
+        setNextOffset(page.nextOffset ?? null);
+      },
+      (reason) => setError(reason as WorkforceApiError),
+    );
+  };
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
@@ -260,8 +286,12 @@ function RequirementPanel({ requirement, siteName, onChanged }: {
       {requirement.status === 'OPEN' ? (
         <>
           <Heading level="h3" className="mt-5">Candidates</Heading>
+          <div className="mt-2 max-w-sm">
+            <Label htmlFor={`candidate-search-${requirement.id}`} size="small">Find a person</Label>
+            <Input id={`candidate-search-${requirement.id}`} size="small" placeholder="Name or reference" value={search} onChange={(event) => setSearch(event.target.value)} />
+          </div>
           {!candidates ? <Text size="small" className="mt-2 text-ui-fg-subtle">Checking qualifications and availability…</Text> : candidates.length === 0 ? (
-            <Text size="small" className="mt-2 text-ui-fg-subtle">No active people yet.</Text>
+            <Text size="small" className="mt-2 text-ui-fg-subtle">{search.trim() ? 'Nobody in your units and places matches.' : 'No active people in your units and places yet.'}</Text>
           ) : (
             <ul className="mt-2 space-y-2">
               {candidates.map((candidate) => {
@@ -296,6 +326,9 @@ function RequirementPanel({ requirement, siteName, onChanged }: {
               })}
             </ul>
           )}
+          {candidates && nextOffset !== null ? (
+            <Button size="small" variant="secondary" className="mt-2" onClick={showMore}>Show more people</Button>
+          ) : null}
           <form
             className="mt-5 flex flex-wrap gap-2 border-t border-ui-border-base pt-4"
             onSubmit={(event) => {

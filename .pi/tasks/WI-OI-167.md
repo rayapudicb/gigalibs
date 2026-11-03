@@ -51,9 +51,10 @@ that scope; the platform then allows Workforce roles to be given at units and pl
 5. **Workspace-wide codes:** capability definitions, absence types and working-calendar templates are workspace
    master data. Recommended (confirm with the owner at claim): reading them is allowed at any scope; changing them
    needs a workspace-wide role, so the scope rule refuses those codes at units or places.
-6. **Allow-list:** add `gigaops` to `SCOPE_ENFORCING_MODULES` (`{ units: true, places: true }`) and to
-   `PER_ASSIGNMENT_SCOPE_MODULES` as WI-OI-120ho step 3 says; the coverage test proves every code the Workforce API
-   checks is covered by the minted context's unit and place keys.
+6. **Allow-list:** add `gigaops` to `SCOPE_ENFORCING_MODULES` (`{ units: true, places: true }`). *Corrected while
+   building:* **not** to `PER_ASSIGNMENT_SCOPE_MODULES` (WI-OI-120ho step 3 said both): that list is for modules that
+   decide access per assignment, as CMMS does; Workforce reads the single organization and place claims, like the ERP
+   modules. The coverage test proves every code the Workforce API checks is owned by `gigaops`.
 7. Integration tests on a throwaway PostgreSQL 16 (as `scope.integration.test.ts`): North ≠ South by unit and by
    place for candidates, booking, requirement lists, timesheet approval and pay runs; workspace-wide still sees all.
 

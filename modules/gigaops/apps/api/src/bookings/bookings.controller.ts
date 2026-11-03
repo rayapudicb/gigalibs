@@ -36,8 +36,8 @@ export class WorkRequirementsController {
 
   @Get(':requirementId/candidates')
   @RequirePermissions('workforce.bookings.read')
-  candidates(@CurrentWorkforcePrincipal() principal: GigaOpsPrincipal, @Param('requirementId') requirementId: string) {
-    return this.bookings.candidates(principal, requirementId);
+  candidates(@CurrentWorkforcePrincipal() principal: GigaOpsPrincipal, @Param('requirementId') requirementId: string, @Query() query: unknown) {
+    return this.bookings.candidates(principal, requirementId, query);
   }
 
   /** 201 for a new requirement; 200 with `Idempotency-Replayed: true` for a repeated request key. */

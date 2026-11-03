@@ -194,6 +194,25 @@ export function actionKey(action: DictionaryActionV1, entityKey: string): string
 }
 
 /**
+ * WI-OI-163: the record's actions the server offers now, and — for the ones the person would otherwise have — why
+ * not. Without offers (an older module, or the call failing) every declared action shows, as before.
+ */
+export function offeredActions(
+  declared: readonly DictionaryActionV1[],
+  offers: readonly { readonly action: string; readonly offered: boolean; readonly reason: string | null; readonly message: string | null }[] | null,
+  entityKey: string,
+): { actions: DictionaryActionV1[]; blocked: { label: string; message: string }[] } {
+  const offerOf = (action: DictionaryActionV1) => offers?.find((offer) => offer.action === actionKey(action, entityKey));
+  return {
+    actions: declared.filter((action) => offerOf(action)?.offered !== false),
+    blocked: declared.flatMap((action) => {
+      const offer = offerOf(action);
+      return offer && !offer.offered && offer.reason !== 'RECORD_PERMISSION_DENIED' ? [{ label: action.label, message: offer.message ?? 'Not possible now.' }] : [];
+    }),
+  };
+}
+
+/**
  * WI-OI-149: money kept as a whole number of minor units (cents) — fields keyed `…-minor` or labelled "(minor)" /
  * "(minor units)" — is shown and typed in normal units (12.50) and stored as before (1250).
  */

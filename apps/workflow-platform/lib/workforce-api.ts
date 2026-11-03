@@ -202,7 +202,14 @@ export const workforceApi = {
     requestWorkforce<WorkRequirementDetailV1>('/work-requirements', jsonRequest('POST', input)),
   cancelRequirement: (id: string, input: { expectedVersion: number; reason: string }) =>
     requestWorkforce<WorkRequirementDetailV1>(`/work-requirements/${encodeURIComponent(id)}/cancel`, jsonRequest('POST', input)),
-  candidates: (id: string) => requestWorkforce<{ items: BookingCandidateV1[] }>(`/work-requirements/${encodeURIComponent(id)}/candidates`),
+  /** WI-OI-167: the caller's people only; find by name or reference code, a page at a time. */
+  candidates: (id: string, query: { search?: string; offset?: number } = {}) => {
+    const params = new URLSearchParams();
+    if (query.search) params.set('search', query.search);
+    if (query.offset) params.set('offset', String(query.offset));
+    const suffix = params.size > 0 ? `?${params.toString()}` : '';
+    return requestWorkforce<{ items: BookingCandidateV1[]; nextOffset?: number | null }>(`/work-requirements/${encodeURIComponent(id)}/candidates${suffix}`);
+  },
   createBooking: (input: CreateBookingV1) => requestWorkforce<BookingV1>('/bookings', jsonRequest('POST', input)),
   changeBookingStatus: (id: string, input: { expectedVersion: number; status: string; reason?: string }) =>
     requestWorkforce<BookingV1>(`/bookings/${encodeURIComponent(id)}/status`, jsonRequest('POST', input)),

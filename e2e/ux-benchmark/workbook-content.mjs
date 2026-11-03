@@ -2,7 +2,7 @@
 // the modules, the QA bug tracker and the UX user stories. Everything measured comes from the data files instead.
 
 /** The release each benchmark folder (docs/plans/ux-benchmark-<date>) measured on UAT. */
-export const BENCH_RELEASES = { '2026-11-02': 'c88a88d4', '2026-11-03': '213fde2d', '2026-11-03-r2': '02b3353a', '2026-11-03-r3': '38aa9017' };
+export const BENCH_RELEASES = { '2026-11-02': 'c88a88d4', '2026-11-03': '213fde2d', '2026-11-03-r2': '02b3353a', '2026-11-03-r3': '38aa9017', '2026-11-03-r4': 'bd852946' };
 
 /** route | persona | I want to … | so that … */
 const SCREEN_LINES = `
@@ -1791,6 +1791,10 @@ export const REGRESSION_RUNS = [
   { release: '38aa9017', date: '2026-11-03', suite: 'Persona journeys, dry (27)', checks: 27, passed: 15, failed: 9, result: 'Partly', notes: '15 meet (A4 now meets), 3 over target (A1, T1, S2), 5 too slow (B1, B2, B4, C1, C2: 10+ required fields), 1 blocked (T4: no absence types until the starter set is loaded — owner action QA-026), 3 not run (operator login; nothing to request).', bugs: 'QA-038, QA-026' },
   { release: '38aa9017', date: '2026-11-03', suite: 'Read-only e2e (5 specs, 50 tests)', checks: 50, passed: 50, failed: 0, result: 'Pass', notes: 'cross-tenant-isolation 4, uat-preview-modules 43, uat-screen-inventory 1, uat-tour-automate-intelligence 1, module-analytics-pilot 1 — all pass.', bugs: '' },
   { release: '38aa9017', date: '2026-11-03', suite: 'Retest of the fixes (uat-retest-wi146-150)', checks: 22, passed: 19, failed: 0, result: 'Pass', notes: 'All six retest fixes verified (QA-012, QA-013, QA-048, QA-049, QA-050; QA-031 by static scan). 3 not testable read-only: QA-022 dialogs need a quote, requisition and fulfillment on UAT.', bugs: 'QA-022' },
+  { release: 'bd852946', date: '2026-11-03', suite: 'Screen benchmark (bench.mjs)', checks: 136, passed: 131, failed: 5, result: 'Partly', notes: 'Milestone A adds the Master data screens (7 more screens, all load). No new failure; the same 5 as on 38aa9017: four Workflows screens answer 503 while Workflow Studio is not in the UAT stack (QA-009, owner decision) and the Settings › General configured-field manifest 404 handled on screen (QA-011). Screens faster (Settings › General 1.8 s → 0.8 s).', bugs: 'QA-009, QA-011' },
+  { release: 'bd852946', date: '2026-11-03', suite: 'Persona journeys, dry (28)', checks: 28, passed: 16, failed: 9, result: 'Partly', notes: '16 meet (new M1 Master data journey meets), 3 over target (A1, T1, S2), 5 too slow (B1, B2, B4, C1, C2), 1 blocked (T4: starter absence types — owner action QA-026), 3 not run (operator login; nothing to request). No verdict changed.', bugs: 'QA-038, QA-026' },
+  { release: 'bd852946', date: '2026-11-03', suite: 'Read-only e2e (5 specs, 50 tests)', checks: 50, passed: 50, failed: 0, result: 'Pass', notes: 'cross-tenant-isolation 4, uat-preview-modules 43, uat-screen-inventory 1, uat-tour-automate-intelligence 1, module-analytics-pilot 1 — all pass.', bugs: '' },
+  { release: 'bd852946', date: '2026-11-03', suite: 'Milestone A retest (uat-milestone-a)', checks: 8, passed: 8, failed: 0, result: 'Pass', notes: 'Master data area with six groups and counts; sidebar entry; Reference data tab (countries, currencies, languages, time zones 50+); reference pickers answer (India, INR, Japanese, Asia/…); workspace profile readable; Settings › General country, currency, language, time zone; Products › Units standard units button; set-up guide country step.', bugs: '' },
 ];
 
 /** Journey → the bugs behind its verdict, and the plan's estimate after the work (seconds). */

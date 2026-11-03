@@ -30,3 +30,4 @@
 000031_fleet_equipment_inspection.up.sql
 000032_request_portal_links.up.sql
 000033_lockout_permits.up.sql
+000034_booking_user_reference.up.sql

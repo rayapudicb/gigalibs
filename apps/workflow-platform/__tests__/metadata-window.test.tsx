@@ -18,6 +18,7 @@ const {
   gridColumns,
   holds,
   parameterLookup,
+  offeredActions,
   parentField,
   placedFields,
   recordActions,
@@ -240,6 +241,25 @@ describe('window model', () => {
 });
 
 describe('record client', () => {
+  // WI-OI-163: the record shows only the actions offered now, and why the others are not possible.
+  it('hides actions the server does not offer and says why; shows every declared action without offers', () => {
+    const declared = recordActions(model, 'inventory.receipts', { status: 'DRAFT' }, clerk);
+    expect(offeredActions(declared, null, 'inventory.receipts').actions.map((action) => action.actionKey)).toEqual(['complete']);
+    expect(
+      offeredActions(declared, [{ action: 'complete', offered: false, reason: 'INVENTORY_RECEIPT_EMPTY', message: 'Add a line first.' }], 'inventory.receipts'),
+    ).toEqual({ actions: [], blocked: [{ label: 'Complete receipt', message: 'Add a line first.' }] });
+    expect(
+      offeredActions(declared, [{ action: 'complete', offered: false, reason: 'RECORD_PERMISSION_DENIED', message: 'You do not have permission to do this.' }], 'inventory.receipts'),
+    ).toEqual({ actions: [], blocked: [] });
+  });
+
+  it('reads a record’s action offers through the gateway', async () => {
+    const send = vi.fn(async () => Response.json({ entity: 'cmms.work-orders', id: 'w-1', actions: [] }));
+    const client = createRecordClient({ basePath: '/api/cmms', fetch: send as never });
+    expect(await client.offers?.('cmms.work-orders', 'w-1')).toMatchObject({ actions: [] });
+    expect(send.mock.calls[0]?.[0]).toBe('/api/cmms/v1/records/cmms.work-orders/w-1/actions');
+  });
+
   it('calls the signed module gateway with paging, filters, If-Match and Idempotency-Key', async () => {
     const send = vi.fn(async (_input: string, _init?: RequestInit) => Response.json({ items: [], total: 0, page: 1, pageSize: 25 }));
     const client = createRecordClient({ basePath: '/api/universal-inventory/', lookupBasePaths: { 'catalogue-products': '/api/product-catalogue' }, fetch: send as never });

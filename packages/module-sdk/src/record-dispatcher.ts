@@ -67,6 +67,14 @@ export interface RecordAction {
 }
 
 /**
+ * WI-OI-163: whether an action is offered on a record now, from the same rules its command checks; when not, the code
+ * the command would refuse with and the plain-words reason. Never authority: the command re-checks everything.
+ */
+export type RecordActionOffer =
+  | { readonly offered: true }
+  | { readonly offered: false; readonly reason: string; readonly message: string };
+
+/**
  * WI-OI-120af: the module's REST route that each record operation mirrors, as `METHOD path` from the module manifest's
  * gateway routes (for example `POST v1/warehouses`), or null when no REST route does the same. The conversion check
  * (scripts/lib/conversion-check.mjs) compares the permissions, so the record API is never wider than REST.
@@ -102,6 +110,11 @@ export interface RecordAdapter {
   /** Throws RecordVersionConflict when `expectedVersion` is not the record's current version. */
   update?(context: RecordCommandContext, id: string, values: RecordValues, expectedVersion: number): Promise<RecordValues>;
   readonly actions?: Readonly<Record<string, RecordAction>>;
+  /**
+   * WI-OI-163: the offers for a record's actions, worked out together (one read of what the guards need). Actions it
+   * leaves out are offered on their permission alone, as before. Called only for a record the person may read.
+   */
+  offers?(principal: ModulePrincipal, id: string, record: RecordValues): Promise<Readonly<Record<string, RecordActionOffer>>>;
 }
 
 export interface LookupOption {
@@ -340,6 +353,38 @@ export class RecordDispatcher {
         throw this.stale(error);
       }
     });
+  }
+
+  /**
+   * WI-OI-163: every action of the record type, offered or not, for a record the person may read. An action whose
+   * permission the person lacks is not offered (`RECORD_PERMISSION_DENIED`); otherwise the adapter's own offer
+   * decides, and an action it does not mention is offered.
+   */
+  async offers(
+    principal: ModulePrincipal,
+    entityKey: string,
+    id: string,
+  ): Promise<{ entity: string; id: string; actions: Array<{ action: string; offered: boolean; reason: string | null; message: string | null }> }> {
+    const adapter = this.adapter(entityKey);
+    this.require(principal, adapter.permissions.read);
+    this.assertId(id);
+    const record = await adapter.get(principal, id);
+    if (!record) throw new NotFoundException({ code: 'RECORD_NOT_FOUND', message: 'The record was not found.' });
+    const actions = Object.entries(adapter.actions ?? {});
+    const permitted = actions.filter(([, action]) => holds(principal, action.permission));
+    const decided = permitted.length > 0 && adapter.offers ? await adapter.offers(principal, id, record) : {};
+    return {
+      entity: entityKey,
+      id,
+      actions: actions.map(([key, action]) => {
+        if (!holds(principal, action.permission))
+          return { action: key, offered: false, reason: 'RECORD_PERMISSION_DENIED', message: 'You do not have permission to do this.' };
+        const offer = decided[key];
+        return offer && !offer.offered
+          ? { action: key, offered: false, reason: offer.reason, message: offer.message }
+          : { action: key, offered: true, reason: null, message: null };
+      }),
+    };
   }
 
   /** A version conflict as 412 Precondition Failed; anything else unchanged. */

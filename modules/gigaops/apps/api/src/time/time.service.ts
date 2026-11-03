@@ -24,6 +24,7 @@ import {
 import type { PoolClient } from 'pg';
 import { hasWorkforcePermission, type GigaOpsPrincipal } from '../auth/authorization.js';
 import { type CommandContext, assertUuid, conflict, iso, parse, recordMutation } from '../common/commands.js';
+import { peopleUnitClause } from '../common/scope.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 import {
   ADMISSION_REFUSED,
@@ -405,6 +406,9 @@ export class TimeService {
                                    WHERE l.tenant_id = t.tenant_id AND l.timesheet_id = t.id
                                      AND (l.site_ref IS NULL OR NOT l.site_ref = ANY($${values.length}::uuid[])))`);
         }
+        // WI-OI-167: and, for a member limited by unit, only their units' people (or their own timesheet).
+        const unit = await peopleUnitClause(client, principal, (value) => bind(values, value), 't.resource_id', 't.tenant_id');
+        if (unit) where.push(`(${unit} OR r.platform_user_id = ${bind(values, principal.subject)})`);
       } else {
         values.push(principal.subject);
         where.push(`r.platform_user_id = $${values.length}`);
@@ -549,6 +553,9 @@ export class TimeService {
           const own = `r.platform_user_id = $${values.length}`;
           where.push(`(${own} OR ${sitePredicates(principal, values, 'e.').join(' AND ')})`);
         }
+        // WI-OI-167: and, for a member limited by unit, only their units' people (or their own exceptions).
+        const unit = await peopleUnitClause(client, principal, (value) => bind(values, value), 'e.resource_id', 'e.tenant_id');
+        if (unit) where.push(`(${unit} OR r.platform_user_id = ${bind(values, principal.subject)})`);
       } else {
         values.push(principal.subject);
         where.push(`r.platform_user_id = $${values.length}`);
@@ -578,7 +585,7 @@ export class TimeService {
     const tenantId = context.principal.tenantId;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const row = (await client.query(`${EXCEPTION_SELECT} WHERE e.tenant_id = $1 AND e.id = $2 FOR UPDATE OF e`, [tenantId, exceptionId])).rows[0];
-      if (!row || !inScope(context.principal, row.site_ref)) {
+      if (!row || !inScope(context.principal, row.site_ref) || !(await this.personInUnits(client, context.principal, row.resource_id))) {
         throw new NotFoundException({ code: 'WORKFORCE_NOT_FOUND', message: 'The exception was not found.' });
       }
       if (Number(row.version) !== input.expectedVersion) conflict('exception');
@@ -630,10 +637,19 @@ export class TimeService {
       [principal.tenantId, resourceId],
     )).rows[0];
     const own = row?.platform_user_id === principal.subject;
-    if (!row || (!own && !hasPermission(principal, permission))) {
+    if (!row || (!own && (!hasPermission(principal, permission) || !(await this.personInUnits(client, principal, row.id))))) {
       throw new NotFoundException({ code: 'WORKFORCE_NOT_FOUND', message: 'The person was not found.' });
     }
     return { resourceId: row.id, resourceName: row.display_name, own };
+  }
+
+  /** WI-OI-167: whether a person is one of the caller's units' people (always true for a member not limited by unit). */
+  private async personInUnits(client: PoolClient, principal: GigaOpsPrincipal, resourceId: string): Promise<boolean> {
+    const values: unknown[] = [principal.tenantId, resourceId];
+    const unit = await peopleUnitClause(client, principal, (value) => bind(values, value), 'r.id', 'r.tenant_id');
+    if (unit === null) return true;
+    const found = await client.query(`SELECT 1 FROM gigalibs_workforce.workforce_resources r WHERE r.tenant_id = $1 AND r.id = $2 AND ${unit}`, values);
+    return found.rows.length > 0;
   }
 
   private async week(client: PoolClient, tenantId: string, resourceId: string, periodStart: string): Promise<{ punches: EffectivePunch[]; week: WeekComputation }> {
@@ -655,8 +671,17 @@ export class TimeService {
     return { punches, week: computeWeek(punches, periodStart) };
   }
 
-  private async assertTimesheetScope(client: PoolClient, principal: GigaOpsPrincipal, row: { id: string; platform_user_id: string | null }): Promise<void> {
-    if (principal.spatialScope.mode !== 'SCOPED_PLACES' || row.platform_user_id === principal.subject) return;
+  private async assertTimesheetScope(
+    client: PoolClient,
+    principal: GigaOpsPrincipal,
+    row: { id: string; platform_user_id: string | null; resource_id: string },
+  ): Promise<void> {
+    if (row.platform_user_id === principal.subject) return;
+    // WI-OI-167: a member limited by unit decides only their units' people's time.
+    if (!(await this.personInUnits(client, principal, row.resource_id))) {
+      throw new NotFoundException({ code: 'WORKFORCE_NOT_FOUND', message: 'The timesheet was not found.' });
+    }
+    if (principal.spatialScope.mode !== 'SCOPED_PLACES') return;
     const lines = await client.query<{ site_ref: string | null }>(
       `SELECT site_ref FROM gigalibs_workforce.timesheet_lines WHERE tenant_id = $1 AND timesheet_id = $2`,
       [principal.tenantId, row.id],
@@ -818,4 +843,10 @@ function mapCorrection(row: any): TimeCorrectionV1 {
     createdBy: row.created_by,
     createdAt: iso(row.created_at),
   };
+}
+
+/** Binds a value into `values` and returns its placeholder. */
+function bind(values: unknown[], value: unknown): string {
+  values.push(value);
+  return `$${values.length}`;
 }

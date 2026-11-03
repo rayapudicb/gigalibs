@@ -27,6 +27,14 @@ export interface LookupOption {
   readonly attributes?: Readonly<Record<string, string>>;
 }
 
+/** WI-OI-163: one action of a record, offered or not, with the reason the command would refuse with. */
+export interface RecordActionOffer {
+  readonly action: string;
+  readonly offered: boolean;
+  readonly reason: string | null;
+  readonly message: string | null;
+}
+
 export interface RecordClient {
   list(entityKey: string, request?: RecordListRequest): Promise<RecordPage>;
   get(entityKey: string, id: string): Promise<RecordValues>;
@@ -35,6 +43,8 @@ export interface RecordClient {
   /** `version` is the version the user read; a newer one on the server answers 412. */
   update(entityKey: string, id: string, values: RecordValues, version: number): Promise<RecordValues>;
   action(entityKey: string, id: string, actionKey: string, parameters: RecordValues, idempotencyKey: string): Promise<RecordValues>;
+  /** WI-OI-163: which actions the person may take on the record now, and why not (`GET …/actions`). */
+  offers?(entityKey: string, id: string): Promise<{ readonly actions: readonly RecordActionOffer[] }>;
   lookup(resolverKey: string, request: { readonly search?: string; readonly ids?: readonly string[] }): Promise<readonly LookupOption[]>;
 }
 
@@ -127,6 +137,9 @@ export function createRecordClient(options: RecordClientOptions): RecordClient {
         headers: { 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify(parameters),
       })) as RecordValues;
+    },
+    async offers(entityKey, id) {
+      return (await call(records(entityKey, `/${encodeURIComponent(id)}/actions`))) as { readonly actions: readonly RecordActionOffer[] };
     },
     async lookup(resolverKey, request) {
       const lookupBase = (options.lookupBasePaths?.[resolverKey] ?? base).replace(/\/$/, '');

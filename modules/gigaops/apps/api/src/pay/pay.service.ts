@@ -381,7 +381,8 @@ function totals(lines: readonly CalculatedLine[]): { currency: string; amountMin
 
 /** Pay is tenant-wide; a place-scoped member cannot calculate, approve or read it. */
 function assertTenantWide(principal: GigaOpsPrincipal): void {
-  if (principal.spatialScope.mode === 'SCOPED_PLACES') {
+  // WI-OI-167: and a member limited by organization unit — a pay run covers the whole workspace's week.
+  if (principal.spatialScope.mode === 'SCOPED_PLACES' || (principal.organization !== undefined && principal.organization.mode !== 'TENANT')) {
     throw new ForbiddenException({ code: 'WORKFORCE_PAY_SCOPE', message: 'Pay needs tenant-wide authority.' });
   }
 }

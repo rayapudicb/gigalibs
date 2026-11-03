@@ -82,7 +82,7 @@ describe('CMMS screens reach their API through the gateway', () => {
   // (accepted as finding W1 by the W1 Security review, WI-OI-120be, 2026-10-16).
   const SDK_RECORD_ROUTES = [
     'GET v1/records/{entity}', 'POST v1/records/{entity}', 'GET v1/records/{entity}/{id}', 'PATCH v1/records/{entity}/{id}',
-    'POST v1/records/{entity}/{id}/actions/{key}', 'GET v1/lookups/{key}',
+    'GET v1/records/{entity}/{id}/actions', 'POST v1/records/{entity}/{id}/actions/{key}', 'GET v1/lookups/{key}',
   ];
   it('routes only paths the CMMS API serves, with the methods it serves', () => {
     const served = apiRoutes();

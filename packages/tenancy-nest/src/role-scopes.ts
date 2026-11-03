@@ -75,6 +75,13 @@ export async function resolveRoleScope(
 export function assertScopeEnforced(permissions: readonly string[], dimension: 'units' | 'places'): void {
   const refusal = explicitScopeRefusal(permissions, dimension);
   if (!refusal) return;
+  if (refusal.workspaceOnly) {
+    throw new UnprocessableEntityException({
+      code: 'ROLE_SCOPE_NOT_ENFORCED',
+      message: `${refusal.code} covers the whole workspace (for example a pay run covers everyone's week); give this role for the whole workspace.`,
+      permission: refusal.code,
+    });
+  }
   const owners = refusal.owners.map((owner) => (owner === 'platform' ? 'the platform' : platformModuleCatalog.find((module) => module.key === owner)?.name ?? owner));
   throw new UnprocessableEntityException({
     code: 'ROLE_SCOPE_NOT_ENFORCED',

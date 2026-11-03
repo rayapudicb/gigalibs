@@ -1,6 +1,6 @@
 import type { CompiledDictionaryManifestV1, DictionaryActionV1, DictionaryTabV1 } from '@gigalibs/contracts';
 import { type ComponentType, createContext, type FormEvent, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { type LookupOption, type RecordClient, RecordClientError, type RecordPage, type RecordValues } from './record-client.js';
+import { type LookupOption, type RecordActionOffer, type RecordClient, RecordClientError, type RecordPage, type RecordValues } from './record-client.js';
 import { usePublishedManifest } from './use-published-manifest.js';
 import { useWorkspaceDefaults } from './workspace-defaults.js';
 import {
@@ -16,6 +16,7 @@ import {
   parentField,
   placedFields,
   placedPanels,
+  offeredActions,
   recordActions,
   recordTitle,
   validateValues,
@@ -1109,6 +1110,22 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
     void load();
   }, [load]);
 
+  // WI-OI-163: the record's action offers, reread whenever its version moves. Without them (an older module, or the
+  // call failing) the actions show as before; the command re-checks everything either way.
+  const [offers, setOffers] = useState<readonly RecordActionOffer[] | null>(null);
+  const offersVersion = state.status === 'ready' ? String(state.record.version ?? '') : '';
+  useEffect(() => {
+    if (!client.offers || !offersVersion) return;
+    let current = true;
+    client.offers(entityKey, id).then(
+      (answer) => current && setOffers(answer.actions),
+      () => current && setOffers(null),
+    );
+    return () => {
+      current = false;
+    };
+  }, [client, entityKey, id, offersVersion]);
+
   if (state.status === 'loading') return <p className="text-sm text-ui-fg-muted">Loading…</p>;
   if (state.status === 'failed') {
     return <Notice tone="error" title="Could not open the record" text={state.message} action={<button type="button" className={button} onClick={onBack}>Back to the list</button>} />;
@@ -1116,7 +1133,8 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
   const record = state.record;
   const fields = placedFields(model, model.rootTab, record, permissions, 'READ');
   const canEdit = placedFields(model, model.rootTab, record, permissions, 'EDIT').some((placed) => !placed.readOnly);
-  const actions = recordActions(model, entityKey, record, permissions);
+  // WI-OI-163: only the actions offered now; `blocked` says why the others the person would have are not possible.
+  const { actions, blocked } = offeredActions(recordActions(model, entityKey, record, permissions), offers, entityKey);
   const child = model.childTabs.find((tab) => tab.tabKey === activeChild);
   const recordTab = model.recordTabs.find((tab) => tab.tabKey === activeRecordTab) ?? model.rootTab;
   const renderPanel = (panel: PlacedPanel) => (
@@ -1160,6 +1178,15 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
         </div>
       </div>
       {notice && <Notice tone={notice.tone} title={notice.tone === 'error' ? 'Not done' : 'Done'} text={notice.text} />}
+      {!editing && blocked.length > 0 && (
+        <ul className="space-y-1 text-sm text-ui-fg-subtle" aria-label="Actions not possible now">
+          {blocked.map((item) => (
+            <li key={item.label}>
+              <span className="font-medium text-ui-fg-base">{item.label}:</span> {item.message}
+            </li>
+          ))}
+        </ul>
+      )}
       {editing ? (
         <RecordForm
           model={model}

@@ -296,6 +296,10 @@ export const MOBILE_PROBLEMS = {
     status: 409,
     title: 'The permit moved on: a step is out of order, someone is still locked on, or the permit expired. Reload and check.',
   },
+  MOBILE_WORK_ORDER_CONFLICT: {
+    status: 409,
+    title: 'The work order changed or this step is not possible now. Reload it to see what you can do.',
+  },
   MOBILE_COMMISSIONING_CONFLICT: {
     status: 409,
     title: 'The tag is already bound, the walk is finished, or this capture was already used. Check and try again.',

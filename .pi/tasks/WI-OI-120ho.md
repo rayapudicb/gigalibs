@@ -1,6 +1,7 @@
 # WI-OI-120ho (R5 Workforce): unit & place scope on Workforce
 
 - **Status:** Enforcement built, both dimensions (2026-10-24) — unblocked; unit+place scope-by-assignment on all four person-centric reads (directory, picker, absence queue, working weeks), integration-tested North≠South by both place and unit. Open: the allow-list flip (gated on a reference-data decision), R5 Geospatial (separate module), the UAT journey.
+- **Finished by WI-OI-167 (2026-11-03):** the remaining gaps, the allow-list entry and the coverage test; see `.pi/work/WI-OI-167.md`.
 - **Work item:** WI-OI-120 (execution plan v3 Phase 2 step 2.7). Evidence in `.pi/work/WI-OI-120.md`.
 - **Size:** L
 

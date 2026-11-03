@@ -1,0 +1,2920 @@
+[
+ {
+  "module": "accounts-receivable",
+  "surface": "ar-customers",
+  "route": "/ar",
+  "label": "Customers",
+  "description": "Billing customers for accounts receivable.",
+  "fields": 5,
+  "writable": 4,
+  "required": 2,
+  "requiredLabels": [
+   "Legal name",
+   "Billing email"
+  ],
+  "types": {
+   "TEXT": 4
+  },
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "customers",
+    "label": "Customers",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 1,
+  "helpTexts": 2
+ },
+ {
+  "module": "accounts-receivable",
+  "surface": "ar-invoices",
+  "route": "/ar",
+  "label": "Invoices",
+  "description": "Draft and issued AR invoices for the tenant.",
+  "fields": 12,
+  "writable": 8,
+  "required": 6,
+  "requiredLabels": [
+   "Customer",
+   "Owning organization unit",
+   "Issue date",
+   "Due date",
+   "Line description",
+   "Line unit amount"
+  ],
+  "types": {
+   "TEXT": 5,
+   "DATE": 2,
+   "INTEGER": 1
+  },
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [
+   "Total (minor units)",
+   "Amount due (minor units)"
+  ],
+  "views": [
+   {
+    "key": "invoices",
+    "label": "Invoices",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 2,
+  "helpTexts": 6
+ },
+ {
+  "module": "business-partners",
+  "surface": "credit-exposure",
+  "route": "/business-partners",
+  "label": "Credit exposure",
+  "description": "Every active customer account with its credit limit, exposure, available credit and risk — highest utilisation first.",
+  "fields": 8,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [
+   "Credit limit (minor units)",
+   "Exposure (minor units)",
+   "Available (minor units)"
+  ],
+  "views": [
+   {
+    "key": "credit-exposure",
+    "label": "Credit exposure",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "business-partners",
+  "surface": "credit-holds",
+  "route": "/business-partners",
+  "label": "Credit holds",
+  "description": "Active credit holds across the tenant — triage and release with maker-checker.",
+  "fields": 9,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "credit-holds",
+    "label": "Credit holds",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "business-partners",
+  "surface": "credit-status",
+  "route": "/business-partners",
+  "label": "Credit gauge",
+  "description": "Live credit decision surface: limit, exposure, available and decision per customer position.",
+  "fields": 11,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "credit-status",
+    "label": "Credit gauge",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "business-partners",
+  "surface": "partner-netting",
+  "route": "/business-partners",
+  "label": "AR/AP netting",
+  "description": "Net receivable and payable positions per partner for settlement planning.",
+  "fields": 8,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "partner-netting",
+    "label": "AR/AP netting",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "business-partners",
+  "surface": "partners",
+  "route": "/business-partners",
+  "label": "Partners",
+  "description": "Customers, vendors and employees as one counterparty.",
+  "fields": 4,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "partners",
+    "label": "Partners",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "financial-operations",
+  "surface": "finance-accounts",
+  "route": "/finance",
+  "label": "Chart of accounts",
+  "description": "The accounts journals post to, by book.",
+  "fields": 10,
+  "writable": 10,
+  "required": 6,
+  "requiredLabels": [
+   "Book",
+   "Code",
+   "Name",
+   "Class",
+   "Subtype",
+   "Normal balance"
+  ],
+  "types": {
+   "REFERENCE": 2,
+   "TEXT": 2,
+   "SELECT": 3,
+   "BOOLEAN": 3
+  },
+  "pickers": [
+   {
+    "label": "Book",
+    "required": true,
+    "resolver": "finance-books",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Parent account",
+    "required": false,
+    "resolver": "finance-accounts",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 3,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "accounts",
+    "label": "Chart of accounts",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "financial-operations",
+  "surface": "finance-books",
+  "route": "/finance",
+  "label": "Books",
+  "description": "The books your organization keeps its ledger in.",
+  "fields": 6,
+  "writable": 6,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {
+   "TEXT": 2,
+   "REFERENCE": 1,
+   "SELECT": 2,
+   "BOOLEAN": 1
+  },
+  "pickers": [
+   {
+    "label": "Currency",
+    "required": false,
+    "resolver": "platform-currencies",
+    "target": null,
+    "createWith": false
+   }
+  ],
+  "valueLists": 2,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "books",
+    "label": "Accounting books",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 6
+ },
+ {
+  "module": "financial-operations",
+  "surface": "finance-journal-drafts",
+  "route": "/finance",
+  "label": "Journal entry",
+  "description": "Draft a journal, add its lines and submit it; a second person approves and posts it.",
+  "fields": 20,
+  "writable": 9,
+  "required": 4,
+  "requiredLabels": [
+   "Book",
+   "Posting date",
+   "Description",
+   "Account"
+  ],
+  "types": {
+   "REFERENCE": 2,
+   "DATE": 1,
+   "SELECT": 1,
+   "TEXT": 3,
+   "NUMBER": 2
+  },
+  "pickers": [
+   {
+    "label": "Book",
+    "required": true,
+    "resolver": "finance-books",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Account",
+    "required": true,
+    "resolver": "finance-accounts",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 1,
+  "requiredPickers": 2,
+  "labelIssues": [
+   "Total debits (minor units)",
+   "Total credits (minor units)",
+   "Debit (minor units)",
+   "Credit (minor units)"
+  ],
+  "views": [
+   {
+    "key": "journal-drafts",
+    "label": "Journal entry",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Submit for approval",
+   "Approve and post",
+   "Return to author",
+   "Remove line"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 3
+ },
+ {
+  "module": "financial-operations",
+  "surface": "finance-journals",
+  "route": "/finance",
+  "label": "Posted journals",
+  "description": "The journals in the ledger, with their lines; reverse a posted one.",
+  "fields": 18,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [
+   "Total debits (minor units)",
+   "Total credits (minor units)",
+   "Debit (minor units)",
+   "Credit (minor units)"
+  ],
+  "views": [
+   {
+    "key": "journals",
+    "label": "Posted journals",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Reverse"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "financial-operations",
+  "surface": "finance-periods",
+  "route": "/finance",
+  "label": "Periods",
+  "description": "Open, soft-close and lock the periods journals post to.",
+  "fields": 6,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "periods",
+    "label": "Fiscal periods",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Open",
+   "Soft-close",
+   "Lock"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "financial-operations",
+  "surface": "finance-product-standard-costs",
+  "route": "/finance",
+  "label": "Standard costs",
+  "description": "Per-product standard unit costs used when posting inventory receipts.",
+  "fields": 6,
+  "writable": 6,
+  "required": 4,
+  "requiredLabels": [
+   "Cost profile",
+   "Product",
+   "Standard unit cost",
+   "Effective from"
+  ],
+  "types": {
+   "TEXT": 3,
+   "NUMBER": 1,
+   "DATE": 2
+  },
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "product-standard-costs",
+    "label": "Product standard costs",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 4
+ },
+ {
+  "module": "gigaops",
+  "surface": "wf-absence-types",
+  "route": "/gigaops/availability",
+  "label": "Absence types",
+  "description": "The kinds of absence people can ask for, and whether each is paid and needs a decision.",
+  "fields": 5,
+  "writable": 4,
+  "required": 2,
+  "requiredLabels": [
+   "Code",
+   "Name"
+  ],
+  "types": {
+   "TEXT": 2,
+   "BOOLEAN": 2
+  },
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "absence-types",
+    "label": "Absence types",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Deactivate",
+   "Activate"
+  ],
+  "hasDefaults": 2,
+  "helpTexts": 2
+ },
+ {
+  "module": "gigaops",
+  "surface": "wf-absences",
+  "route": "/gigaops/availability",
+  "label": "Absence requests",
+  "description": "Everyone's absences, requests waiting for a decision first. Nobody decides their own.",
+  "fields": 10,
+  "writable": 5,
+  "required": 4,
+  "requiredLabels": [
+   "Person",
+   "Absence type",
+   "From",
+   "Until"
+  ],
+  "types": {
+   "REFERENCE": 2,
+   "DATETIME": 2,
+   "TEXTAREA": 1
+  },
+  "pickers": [
+   {
+    "label": "Person",
+    "required": true,
+    "resolver": "wf-resources",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Absence type",
+    "required": true,
+    "resolver": "wf-absence-types",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 2,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "absences",
+    "label": "Absences",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Approve",
+   "Reject",
+   "Cancel"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "gigaops",
+  "surface": "wf-bookings",
+  "route": "/gigaops/bookings",
+  "label": "Bookings",
+  "description": "Who is booked on which work, when and where. Bookings are made and moved on Scheduling & dispatch.",
+  "fields": 10,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "bookings",
+    "label": "Bookings",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "gigaops",
+  "surface": "wf-calendars",
+  "route": "/gigaops/availability",
+  "label": "Site calendars",
+  "description": "The workspace calendar and one per site; their closures take working time away.",
+  "fields": 4,
+  "writable": 3,
+  "required": 2,
+  "requiredLabels": [
+   "Code",
+   "Name"
+  ],
+  "types": {
+   "TEXT": 2,
+   "REFERENCE": 1
+  },
+  "pickers": [
+   {
+    "label": "Site",
+    "required": false,
+    "resolver": "workspace-sites",
+    "target": null,
+    "createWith": false
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "calendars",
+    "label": "Calendars",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "gigaops",
+  "surface": "wf-closures",
+  "route": "/gigaops/availability",
+  "label": "Closures",
+  "description": "Days a calendar closes; nobody on it is available then.",
+  "fields": 4,
+  "writable": 3,
+  "required": 3,
+  "requiredLabels": [
+   "Calendar",
+   "Date",
+   "Label"
+  ],
+  "types": {
+   "REFERENCE": 1,
+   "DATE": 1,
+   "TEXT": 1
+  },
+  "pickers": [
+   {
+    "label": "Calendar",
+    "required": true,
+    "resolver": "wf-calendars",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "closures",
+    "label": "Closures",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Withdraw"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "gigaops",
+  "surface": "wf-my-absences",
+  "route": "/gigaops/availability",
+  "label": "My absences",
+  "description": "Your own absences: ask for time off and follow the decision. Someone else decides.",
+  "fields": 9,
+  "writable": 4,
+  "required": 3,
+  "requiredLabels": [
+   "Absence type",
+   "From",
+   "Until"
+  ],
+  "types": {
+   "REFERENCE": 1,
+   "DATETIME": 2,
+   "TEXTAREA": 1
+  },
+  "pickers": [
+   {
+    "label": "Absence type",
+    "required": true,
+    "resolver": "wf-absence-types",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "my-absences",
+    "label": "My absences",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Cancel"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "gigaops",
+  "surface": "wf-resources",
+  "route": "/gigaops/resources",
+  "label": "People",
+  "description": "People, teams and resource pools in the workforce.",
+  "fields": 34,
+  "writable": 21,
+  "required": 14,
+  "requiredLabels": [
+   "Reference code",
+   "Display name",
+   "Type",
+   "Resource",
+   "Skill",
+   "Valid from",
+   "Person",
+   "Starts on",
+   "Time zone",
+   "Working hours",
+   "Person",
+   "Absence type",
+   "From",
+   "Until"
+  ],
+  "types": {
+   "TEXT": 6,
+   "SELECT": 2,
+   "REFERENCE": 6,
+   "DATE": 4,
+   "DATETIME": 2,
+   "TEXTAREA": 1
+  },
+  "pickers": [
+   {
+    "label": "Linked login",
+    "required": false,
+    "resolver": "workspace-members",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Resource",
+    "required": true,
+    "resolver": "wf-resources",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Skill",
+    "required": true,
+    "resolver": "wf-capabilities",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Person",
+    "required": true,
+    "resolver": "wf-resources",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Person",
+    "required": true,
+    "resolver": "wf-resources",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Absence type",
+    "required": true,
+    "resolver": "wf-absence-types",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 2,
+  "requiredPickers": 5,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "resources",
+    "label": "Resources",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Deactivate",
+   "Activate"
+  ],
+  "hasDefaults": 2,
+  "helpTexts": 8
+ },
+ {
+  "module": "gigaops",
+  "surface": "wf-working-weeks",
+  "route": "/gigaops/availability",
+  "label": "Working weeks",
+  "description": "Everyone's working weeks: the hours each person is available, from which date.",
+  "fields": 7,
+  "writable": 5,
+  "required": 4,
+  "requiredLabels": [
+   "Person",
+   "Starts on",
+   "Time zone",
+   "Working hours"
+  ],
+  "types": {
+   "REFERENCE": 1,
+   "DATE": 2,
+   "TEXT": 2
+  },
+  "pickers": [
+   {
+    "label": "Person",
+    "required": true,
+    "resolver": "wf-resources",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "working-weeks",
+    "label": "Working weeks",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "End"
+  ],
+  "hasDefaults": 2,
+  "helpTexts": 3
+ },
+ {
+  "module": "physical-operations-cmms",
+  "surface": "cmms-assets",
+  "route": "/cmms/assets",
+  "label": "Assets",
+  "description": "Equipment register, hierarchical twin, and engineering specifications.",
+  "fields": 31,
+  "writable": 20,
+  "required": 2,
+  "requiredLabels": [
+   "Asset tag",
+   "Asset name"
+  ],
+  "types": {
+   "TEXT": 8,
+   "TEXTAREA": 1,
+   "SELECT": 3,
+   "REFERENCE": 3,
+   "NUMBER": 2,
+   "DATE": 2,
+   "BOOLEAN": 1
+  },
+  "pickers": [
+   {
+    "label": "Parent asset",
+    "required": false,
+    "resolver": "cmms-assets",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "CAFM space",
+    "required": false,
+    "resolver": "cmms-spaces",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Classification",
+    "required": false,
+    "resolver": "cmms-classifications",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 3,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "assets",
+    "label": "Assets",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Archive asset"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "physical-operations-cmms",
+  "surface": "cmms-classifications",
+  "route": "/cmms/classifications",
+  "label": "Classifications",
+  "description": "Engineering taxonomies and specification schemas for equipment classes.",
+  "fields": 18,
+  "writable": 12,
+  "required": 5,
+  "requiredLabels": [
+   "Classification code",
+   "Classification name",
+   "Attribute code",
+   "Label",
+   "Data type"
+  ],
+  "types": {
+   "TEXT": 6,
+   "TEXTAREA": 1,
+   "REFERENCE": 1,
+   "SELECT": 1,
+   "BOOLEAN": 1,
+   "NUMBER": 2
+  },
+  "pickers": [
+   {
+    "label": "Parent classification",
+    "required": false,
+    "resolver": "cmms-classifications",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 1,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "classifications",
+    "label": "Classifications",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Delete classification"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "physical-operations-cmms",
+  "surface": "cmms-meters",
+  "route": "/cmms/meters",
+  "label": "Meters",
+  "description": "Asset counters, run hours and operational gauges.",
+  "fields": 15,
+  "writable": 10,
+  "required": 6,
+  "requiredLabels": [
+   "Meter name",
+   "Asset",
+   "Unit",
+   "Reading type",
+   "Reading value",
+   "Timestamp"
+  ],
+  "types": {
+   "TEXT": 2,
+   "TEXTAREA": 2,
+   "REFERENCE": 1,
+   "SELECT": 1,
+   "NUMBER": 3,
+   "DATETIME": 1
+  },
+  "pickers": [
+   {
+    "label": "Asset",
+    "required": true,
+    "resolver": "cmms-assets",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 1,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "meters",
+    "label": "Meters",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "physical-operations-cmms",
+  "surface": "cmms-parts",
+  "route": "/cmms/inventory",
+  "label": "MRO Parts",
+  "description": "Spare parts, inventory balances, and storeroom movements.",
+  "fields": 24,
+  "writable": 19,
+  "required": 5,
+  "requiredLabels": [
+   "Part number",
+   "Part name",
+   "Unit of measure",
+   "Movement type",
+   "Quantity change"
+  ],
+  "types": {
+   "TEXT": 7,
+   "TEXTAREA": 2,
+   "SELECT": 4,
+   "NUMBER": 5,
+   "BOOLEAN": 1
+  },
+  "pickers": [],
+  "valueLists": 4,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "parts",
+    "label": "MRO Parts",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "physical-operations-cmms",
+  "surface": "cmms-requests",
+  "route": "/cmms/requests",
+  "label": "Requests",
+  "description": "Intake, track and triage maintenance requests.",
+  "fields": 15,
+  "writable": 7,
+  "required": 2,
+  "requiredLabels": [
+   "Title",
+   "Priority"
+  ],
+  "types": {
+   "TEXT": 4,
+   "TEXTAREA": 1,
+   "SELECT": 1,
+   "REFERENCE": 1
+  },
+  "pickers": [
+   {
+    "label": "Asset",
+    "required": false,
+    "resolver": "cmms-assets",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 1,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "requests",
+    "label": "Maintenance requests",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Accept into work order",
+   "Reject request",
+   "Cancel request"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "physical-operations-cmms",
+  "surface": "cmms-schedules",
+  "route": "/cmms/schedules",
+  "label": "PM Schedules",
+  "description": "Manage recurring maintenance schedules and trigger preventive work orders.",
+  "fields": 15,
+  "writable": 13,
+  "required": 7,
+  "requiredLabels": [
+   "Schedule name",
+   "Asset",
+   "Frequency count",
+   "Frequency unit",
+   "Next due date",
+   "Work order title",
+   "Priority"
+  ],
+  "types": {
+   "TEXT": 3,
+   "TEXTAREA": 2,
+   "REFERENCE": 1,
+   "BOOLEAN": 2,
+   "NUMBER": 2,
+   "SELECT": 2,
+   "DATETIME": 1
+  },
+  "pickers": [
+   {
+    "label": "Asset",
+    "required": true,
+    "resolver": "cmms-assets",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 2,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "schedules",
+    "label": "PM Schedules",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Generate work order"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "physical-operations-cmms",
+  "surface": "cmms-spaces",
+  "route": "/cmms/spaces",
+  "label": "Spaces",
+  "description": "Manage facility spaces, architectural hierarchy, and located assets.",
+  "fields": 20,
+  "writable": 10,
+  "required": 3,
+  "requiredLabels": [
+   "Space code",
+   "Space name",
+   "Space type"
+  ],
+  "types": {
+   "TEXT": 4,
+   "TEXTAREA": 1,
+   "SELECT": 1,
+   "REFERENCE": 1,
+   "INTEGER": 1,
+   "NUMBER": 2
+  },
+  "pickers": [
+   {
+    "label": "Parent space",
+    "required": false,
+    "resolver": "cmms-spaces",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 1,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "spaces",
+    "label": "Spaces",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Delete space"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "physical-operations-cmms",
+  "surface": "cmms-work-orders",
+  "route": "/cmms/work-orders",
+  "label": "Work orders",
+  "description": "Raise, execute and complete maintenance work with evidence.",
+  "fields": 58,
+  "writable": 26,
+  "required": 10,
+  "requiredLabels": [
+   "Title",
+   "Type",
+   "Priority",
+   "Task description",
+   "Technician",
+   "Hours",
+   "Date performed",
+   "Part",
+   "Quantity",
+   "Note"
+  ],
+  "types": {
+   "TEXT": 6,
+   "TEXTAREA": 4,
+   "SELECT": 4,
+   "REFERENCE": 3,
+   "DATETIME": 1,
+   "NUMBER": 5,
+   "BOOLEAN": 2,
+   "DATE": 1
+  },
+  "pickers": [
+   {
+    "label": "Asset",
+    "required": false,
+    "resolver": "cmms-assets",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Assigned technician",
+    "required": false,
+    "resolver": "workspace-members",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Part",
+    "required": true,
+    "resolver": "cmms-parts",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 4,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "work-orders",
+    "label": "Work orders",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Start work",
+   "Put on hold",
+   "Resume work",
+   "Complete work",
+   "Cancel",
+   "Sign off"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "process-safety-screening",
+  "surface": "speed-criteria",
+  "route": "/speed",
+  "label": "Screening criteria",
+  "description": "The cited thresholds and ranges the screening engines apply.",
+  "fields": 7,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "criteria-sets",
+    "label": "Criteria sets",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Put in force"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "process-safety-screening",
+  "surface": "speed-library",
+  "route": "/speed",
+  "label": "Library",
+  "description": "The cited reference data the screening engines read: materials, interaction rules, reaction classes and energetic groups.",
+  "fields": 7,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "library-sets",
+    "label": "Library sets",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Put in force"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "process-safety-screening",
+  "surface": "speed-projects",
+  "route": "/speed",
+  "label": "Projects",
+  "description": "Process development projects and the routes screened in them.",
+  "fields": 18,
+  "writable": 7,
+  "required": 5,
+  "requiredLabels": [
+   "Project code",
+   "Name",
+   "Site",
+   "Project",
+   "Route"
+  ],
+  "types": {
+   "TEXT": 3,
+   "REFERENCE": 3,
+   "TEXTAREA": 1
+  },
+  "pickers": [
+   {
+    "label": "Site",
+    "required": true,
+    "resolver": "speed-sites",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Owner",
+    "required": false,
+    "resolver": "workspace-members",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Project",
+    "required": true,
+    "resolver": "speed-projects",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 2,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "projects",
+    "label": "Projects",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Archive"
+  ],
+  "hasDefaults": 1,
+  "helpTexts": 3
+ },
+ {
+  "module": "process-safety-screening",
+  "surface": "speed-routes",
+  "route": "/speed",
+  "label": "Routes",
+  "description": "Synthetic routes, step by step, screened before kilo-lab.",
+  "fields": 8,
+  "writable": 2,
+  "required": 2,
+  "requiredLabels": [
+   "Project",
+   "Route"
+  ],
+  "types": {
+   "REFERENCE": 1,
+   "TEXT": 1
+  },
+  "pickers": [
+   {
+    "label": "Project",
+    "required": true,
+    "resolver": "speed-projects",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "routes",
+    "label": "Routes",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Archive"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "process-safety-screening",
+  "surface": "speed-substances",
+  "route": "/speed",
+  "label": "Substances",
+  "description": "The substances your routes use, with formulas and molar masses.",
+  "fields": 12,
+  "writable": 6,
+  "required": 2,
+  "requiredLabels": [
+   "Name",
+   "Formula"
+  ],
+  "types": {
+   "TEXT": 3,
+   "NUMBER": 1,
+   "TEXTAREA": 1,
+   "REFERENCE": 1
+  },
+  "pickers": [
+   {
+    "label": "Library material",
+    "required": false,
+    "resolver": "speed-library-materials",
+    "target": null,
+    "createWith": false
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "substances",
+    "label": "Substances",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Archive"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 3
+ },
+ {
+  "module": "product-catalogue",
+  "surface": "catalogue-attributes",
+  "route": "/products",
+  "label": "Attributes",
+  "description": "The attributes products can carry.",
+  "fields": 9,
+  "writable": 9,
+  "required": 3,
+  "requiredLabels": [
+   "Code",
+   "Name",
+   "Value type"
+  ],
+  "types": {
+   "TEXT": 4,
+   "TEXTAREA": 1,
+   "SELECT": 1,
+   "BOOLEAN": 1,
+   "NUMBER": 2
+  },
+  "pickers": [],
+  "valueLists": 1,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "attributes",
+    "label": "Attributes",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 3
+ },
+ {
+  "module": "product-catalogue",
+  "surface": "catalogue-catalogue-versions",
+  "route": "/products",
+  "label": "Catalogue versions",
+  "description": "Build a catalogue version, then submit, approve and publish it.",
+  "fields": 14,
+  "writable": 8,
+  "required": 2,
+  "requiredLabels": [
+   "Catalogue",
+   "Product"
+  ],
+  "types": {
+   "REFERENCE": 2,
+   "DATE": 2,
+   "TEXTAREA": 1,
+   "TEXT": 1,
+   "INTEGER": 1,
+   "BOOLEAN": 1
+  },
+  "pickers": [
+   {
+    "label": "Catalogue",
+    "required": true,
+    "resolver": "catalogue-catalogues",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Product",
+    "required": true,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 2,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "catalogue-versions",
+    "label": "Catalogue versions",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Submit for approval",
+   "Approve",
+   "Publish"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "product-catalogue",
+  "surface": "catalogue-catalogues",
+  "route": "/products",
+  "label": "Catalogues",
+  "description": "Catalogues and their versions.",
+  "fields": 12,
+  "writable": 9,
+  "required": 2,
+  "requiredLabels": [
+   "Code",
+   "Name"
+  ],
+  "types": {
+   "TEXT": 4,
+   "TEXTAREA": 2,
+   "REFERENCE": 1,
+   "DATE": 2
+  },
+  "pickers": [
+   {
+    "label": "Catalogue",
+    "required": false,
+    "resolver": "catalogue-catalogues",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "catalogues",
+    "label": "Catalogues",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "product-catalogue",
+  "surface": "catalogue-categories",
+  "route": "/products",
+  "label": "Categories",
+  "description": "The category tree products are filed under.",
+  "fields": 5,
+  "writable": 5,
+  "required": 2,
+  "requiredLabels": [
+   "Code",
+   "Name"
+  ],
+  "types": {
+   "TEXT": 2,
+   "TEXTAREA": 1,
+   "REFERENCE": 1,
+   "BOOLEAN": 1
+  },
+  "pickers": [
+   {
+    "label": "Parent category",
+    "required": false,
+    "resolver": "catalogue-categories",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "categories",
+    "label": "Categories",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "product-catalogue",
+  "surface": "catalogue-price-list-versions",
+  "route": "/products",
+  "label": "Price-list versions",
+  "description": "Set prices in a version, then submit, approve and activate it.",
+  "fields": 17,
+  "writable": 11,
+  "required": 7,
+  "requiredLabels": [
+   "Price list",
+   "Effective from",
+   "Product",
+   "Unit",
+   "List price (minor units)",
+   "Standard price (minor units)",
+   "Limit price (minor units)"
+  ],
+  "types": {
+   "REFERENCE": 3,
+   "DATE": 2,
+   "TEXTAREA": 1,
+   "TEXT": 1,
+   "NUMBER": 4
+  },
+  "pickers": [
+   {
+    "label": "Price list",
+    "required": true,
+    "resolver": "catalogue-price-lists",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Product",
+    "required": true,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Unit",
+    "required": true,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 3,
+  "labelIssues": [
+   "List price (minor units)",
+   "Standard price (minor units)",
+   "Limit price (minor units)"
+  ],
+  "views": [
+   {
+    "key": "price-list-versions",
+    "label": "Price-list versions",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Submit for approval",
+   "Approve",
+   "Activate"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 3
+ },
+ {
+  "module": "product-catalogue",
+  "surface": "catalogue-price-lists",
+  "route": "/products",
+  "label": "Price lists",
+  "description": "Price lists and their versions.",
+  "fields": 15,
+  "writable": 12,
+  "required": 4,
+  "requiredLabels": [
+   "Code",
+   "Name",
+   "Currency",
+   "Effective from"
+  ],
+  "types": {
+   "TEXT": 3,
+   "TEXTAREA": 2,
+   "REFERENCE": 2,
+   "BOOLEAN": 2,
+   "INTEGER": 1,
+   "DATE": 2
+  },
+  "pickers": [
+   {
+    "label": "Currency",
+    "required": true,
+    "resolver": "platform-currencies",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Price list",
+    "required": false,
+    "resolver": "catalogue-price-lists",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "price-lists",
+    "label": "Price lists",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 3
+ },
+ {
+  "module": "product-catalogue",
+  "surface": "catalogue-products",
+  "route": "/products",
+  "label": "Products",
+  "description": "Products, services and resources other modules use by reference.",
+  "fields": 13,
+  "writable": 12,
+  "required": 4,
+  "requiredLabels": [
+   "Code",
+   "Name",
+   "Type",
+   "Base unit"
+  ],
+  "types": {
+   "TEXT": 3,
+   "TEXTAREA": 1,
+   "SELECT": 3,
+   "REFERENCE": 2,
+   "BOOLEAN": 3
+  },
+  "pickers": [
+   {
+    "label": "Base unit",
+    "required": true,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Category",
+    "required": false,
+    "resolver": "catalogue-categories",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 3,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "products",
+    "label": "Products",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Archive",
+   "Restore"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 3
+ },
+ {
+  "module": "product-catalogue",
+  "surface": "catalogue-units",
+  "route": "/products",
+  "label": "Units",
+  "description": "Units of measure and their conversions.",
+  "fields": 16,
+  "writable": 14,
+  "required": 6,
+  "requiredLabels": [
+   "Code",
+   "Name",
+   "Symbol",
+   "Dimension",
+   "To unit",
+   "Rate"
+  ],
+  "types": {
+   "TEXT": 5,
+   "SELECT": 1,
+   "INTEGER": 2,
+   "REFERENCE": 3,
+   "NUMBER": 1,
+   "DATE": 2
+  },
+  "pickers": [
+   {
+    "label": "From unit",
+    "required": false,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "To unit",
+    "required": true,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Only for product",
+    "required": false,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 1,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "units",
+    "label": "Units of measure",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 3
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-balances",
+  "route": "/inventory",
+  "label": "Balances",
+  "description": "Stock on hand, reserved and available by location.",
+  "fields": 8,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "balances",
+    "label": "Stock balances",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-cost-layers",
+  "route": "/inventory",
+  "label": "Cost layers",
+  "description": "Append-only valuation layers mirrored from stock ledger debits.",
+  "fields": 8,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "cost-layers",
+    "label": "Cost layers",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-items",
+  "route": "/inventory",
+  "label": "Items",
+  "description": "Products held in stock and how they are replenished and valued.",
+  "fields": 11,
+  "writable": 10,
+  "required": 1,
+  "requiredLabels": [
+   "Product"
+  ],
+  "types": {
+   "REFERENCE": 3,
+   "SELECT": 1,
+   "NUMBER": 3,
+   "INTEGER": 1,
+   "BOOLEAN": 2
+  },
+  "pickers": [
+   {
+    "label": "Product",
+    "required": true,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Default warehouse",
+    "required": false,
+    "resolver": "inventory-warehouses",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Default location",
+    "required": false,
+    "resolver": "inventory-locations",
+    "target": null,
+    "createWith": false
+   }
+  ],
+  "valueLists": 1,
+  "requiredPickers": 1,
+  "labelIssues": [
+   "Standard cost (minor units)"
+  ],
+  "views": [
+   {
+    "key": "items",
+    "label": "Stocked items",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-ledger",
+  "route": "/inventory",
+  "label": "Stock ledger",
+  "description": "Every posted stock movement. Reading entries needs inventory:ledger:read.",
+  "fields": 8,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "ledger",
+    "label": "Stock ledger",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-lots",
+  "route": "/inventory",
+  "label": "Lots",
+  "description": "Lot and batch traceability.",
+  "fields": 7,
+  "writable": 6,
+  "required": 2,
+  "requiredLabels": [
+   "Product",
+   "Lot number"
+  ],
+  "types": {
+   "REFERENCE": 1,
+   "TEXT": 3,
+   "DATE": 2
+  },
+  "pickers": [
+   {
+    "label": "Product",
+    "required": true,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "lots",
+    "label": "Lots and batches",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-posted-receipt-costs",
+  "route": "/inventory",
+  "label": "Posted costs",
+  "description": "Finance-posted receipt valuation received through the signed inbox.",
+  "fields": 11,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "posted-receipt-costs",
+    "label": "Posted receipt costs",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-receipts",
+  "route": "/inventory",
+  "label": "Receipts",
+  "description": "Receive goods into warehouse locations.",
+  "fields": 19,
+  "writable": 10,
+  "required": 4,
+  "requiredLabels": [
+   "Warehouse",
+   "Product",
+   "Unit",
+   "Expected quantity"
+  ],
+  "types": {
+   "REFERENCE": 4,
+   "TEXT": 3,
+   "TEXTAREA": 1,
+   "NUMBER": 1,
+   "DATE": 1
+  },
+  "pickers": [
+   {
+    "label": "Warehouse",
+    "required": true,
+    "resolver": "inventory-warehouses",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Product",
+    "required": true,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Unit",
+    "required": true,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Put-away location",
+    "required": false,
+    "resolver": "inventory-locations",
+    "target": null,
+    "createWith": false
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 3,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "receipts",
+    "label": "Goods receipts",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Complete receipt",
+   "Retry Finance posting"
+  ],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-reservations",
+  "route": "/inventory",
+  "label": "Reservations",
+  "description": "Demand allocations by warehouse and locator.",
+  "fields": 12,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "reservations",
+    "label": "Reservations",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-warehouse-map",
+  "route": "/inventory",
+  "label": "Warehouse map",
+  "description": "Locator grid with live quantities and lot expiry hints.",
+  "fields": 9,
+  "writable": 0,
+  "required": 0,
+  "requiredLabels": [],
+  "types": {},
+  "pickers": [],
+  "valueLists": 0,
+  "requiredPickers": 0,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "warehouse-map",
+    "label": "Warehouse map",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 0
+ },
+ {
+  "module": "universal-inventory",
+  "surface": "inventory-warehouses",
+  "route": "/inventory",
+  "label": "Warehouses",
+  "description": "Warehouses and their storage locations.",
+  "fields": 18,
+  "writable": 16,
+  "required": 7,
+  "requiredLabels": [
+   "Code",
+   "Name",
+   "Type",
+   "Owning organization unit",
+   "Code",
+   "Name",
+   "Type"
+  ],
+  "types": {
+   "TEXT": 9,
+   "SELECT": 2,
+   "REFERENCE": 2,
+   "TEXTAREA": 2,
+   "BOOLEAN": 1
+  },
+  "pickers": [
+   {
+    "label": "Owning organization unit",
+    "required": true,
+    "resolver": "organization-units",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Warehouse",
+    "required": false,
+    "resolver": "inventory-warehouses",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 2,
+  "requiredPickers": 1,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "warehouses",
+    "label": "Warehouses",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 2
+ },
+ {
+  "module": "universal-orders",
+  "surface": "orders-customer-credit-memos",
+  "route": "/orders",
+  "label": "Credit memos",
+  "description": "Issue customer credit memos for returns and billing adjustments.",
+  "fields": 12,
+  "writable": 9,
+  "required": 5,
+  "requiredLabels": [
+   "Customer",
+   "Reason",
+   "Line quantity",
+   "Line unit price (minor)",
+   "Line reason"
+  ],
+  "types": {
+   "REFERENCE": 5,
+   "TEXT": 2,
+   "NUMBER": 1,
+   "INTEGER": 1
+  },
+  "pickers": [
+   {
+    "label": "Customer",
+    "required": true,
+    "resolver": "business-partners-parties",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Sales order",
+    "required": false,
+    "resolver": "orders-sales-orders",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Customer invoice",
+    "required": false,
+    "resolver": "orders-customer-invoices",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Currency",
+    "required": false,
+    "resolver": "platform-currencies",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Line product",
+    "required": false,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 1,
+  "labelIssues": [
+   "Total (minor units)"
+  ],
+  "views": [
+   {
+    "key": "customer-credit-memos",
+    "label": "Credit memos",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 2,
+  "helpTexts": 5
+ },
+ {
+  "module": "universal-orders",
+  "surface": "orders-customer-invoices",
+  "route": "/orders",
+  "label": "Customer invoices",
+  "description": "Issue and review customer AR invoices against shipped order quantities.",
+  "fields": 8,
+  "writable": 3,
+  "required": 2,
+  "requiredLabels": [
+   "Sales order",
+   "Due date"
+  ],
+  "types": {
+   "REFERENCE": 1,
+   "DATETIME": 1,
+   "TEXT": 1
+  },
+  "pickers": [
+   {
+    "label": "Sales order",
+    "required": true,
+    "resolver": "orders-sales-orders",
+    "target": null,
+    "createWith": false
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 1,
+  "labelIssues": [
+   "Total (minor units)"
+  ],
+  "views": [
+   {
+    "key": "customer-invoices",
+    "label": "Customer invoices",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 0,
+  "helpTexts": 1
+ },
+ {
+  "module": "universal-orders",
+  "surface": "orders-fulfillment-orders",
+  "route": "/orders",
+  "label": "Fulfillment orders",
+  "description": "Create outbound fulfillment shipments against allocated sales order lines.",
+  "fields": 8,
+  "writable": 6,
+  "required": 4,
+  "requiredLabels": [
+   "Sales order",
+   "Ship-from warehouse",
+   "Order line",
+   "Shipped quantity"
+  ],
+  "types": {
+   "REFERENCE": 2,
+   "TEXT": 3,
+   "NUMBER": 1
+  },
+  "pickers": [
+   {
+    "label": "Sales order",
+    "required": true,
+    "resolver": "orders-sales-orders",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Ship-from warehouse",
+    "required": true,
+    "resolver": "inventory-warehouses",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 2,
+  "labelIssues": [],
+  "views": [
+   {
+    "key": "fulfillment-orders",
+    "label": "Fulfillment orders",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Dispatch shipment"
+  ],
+  "hasDefaults": 1,
+  "helpTexts": 2
+ },
+ {
+  "module": "universal-orders",
+  "surface": "orders-sales-orders",
+  "route": "/orders",
+  "label": "Sales orders",
+  "description": "Create and review customer sales orders.",
+  "fields": 17,
+  "writable": 14,
+  "required": 10,
+  "requiredLabels": [
+   "Organization unit",
+   "Customer",
+   "Customer name",
+   "Fulfillment warehouse",
+   "Line product",
+   "Line product code",
+   "Line product name",
+   "Line quantity",
+   "Line unit of measure",
+   "Line unit price (minor)"
+  ],
+  "types": {
+   "REFERENCE": 7,
+   "TEXT": 4,
+   "SELECT": 1,
+   "NUMBER": 1,
+   "INTEGER": 1
+  },
+  "pickers": [
+   {
+    "label": "Organization unit",
+    "required": true,
+    "resolver": "organization-units",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Customer",
+    "required": true,
+    "resolver": "business-partners-parties",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Fulfillment warehouse",
+    "required": true,
+    "resolver": "inventory-warehouses",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Currency",
+    "required": false,
+    "resolver": "platform-currencies",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Line product",
+    "required": true,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Line unit of measure",
+    "required": true,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Line warehouse",
+    "required": false,
+    "resolver": "inventory-warehouses",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 1,
+  "requiredPickers": 5,
+  "labelIssues": [
+   "Total (minor units)"
+  ],
+  "views": [
+   {
+    "key": "sales-orders",
+    "label": "Sales orders",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Confirm order",
+   "Allocate inventory",
+   "Issue customer invoice"
+  ],
+  "hasDefaults": 3,
+  "helpTexts": 3
+ },
+ {
+  "module": "universal-orders",
+  "surface": "orders-sales-quotes",
+  "route": "/orders",
+  "label": "Sales quotes",
+  "description": "Create and review customer sales quotations.",
+  "fields": 16,
+  "writable": 13,
+  "required": 10,
+  "requiredLabels": [
+   "Organization unit",
+   "Customer",
+   "Customer name",
+   "Valid until",
+   "Line product",
+   "Line product code",
+   "Line product name",
+   "Line quantity",
+   "Line unit of measure",
+   "Line unit price (minor)"
+  ],
+  "types": {
+   "REFERENCE": 5,
+   "TEXT": 4,
+   "DATETIME": 1,
+   "INTEGER": 2,
+   "NUMBER": 1
+  },
+  "pickers": [
+   {
+    "label": "Organization unit",
+    "required": true,
+    "resolver": "organization-units",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Customer",
+    "required": true,
+    "resolver": "business-partners-parties",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Currency",
+    "required": false,
+    "resolver": "platform-currencies",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Line product",
+    "required": true,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Line unit of measure",
+    "required": true,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 4,
+  "labelIssues": [
+   "Total (minor units)"
+  ],
+  "views": [
+   {
+    "key": "sales-quotes",
+    "label": "Sales quotes",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Accept quote",
+   "Convert to sales order"
+  ],
+  "hasDefaults": 3,
+  "helpTexts": 2
+ },
+ {
+  "module": "universal-procurement",
+  "surface": "procurement-debit-memos",
+  "route": "/procurement",
+  "label": "Debit memos",
+  "description": "Issue vendor debit memos against bills or purchase orders.",
+  "fields": 13,
+  "writable": 10,
+  "required": 6,
+  "requiredLabels": [
+   "Vendor",
+   "Reason",
+   "Line description",
+   "Line quantity",
+   "Line unit price (minor)",
+   "Line reason"
+  ],
+  "types": {
+   "REFERENCE": 3,
+   "TEXT": 5,
+   "NUMBER": 1,
+   "INTEGER": 1
+  },
+  "pickers": [
+   {
+    "label": "Vendor",
+    "required": true,
+    "resolver": "business-partners-parties",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Currency",
+    "required": false,
+    "resolver": "platform-currencies",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Line product",
+    "required": false,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 1,
+  "labelIssues": [
+   "Total (minor units)"
+  ],
+  "views": [
+   {
+    "key": "debit-memos",
+    "label": "Debit memos",
+    "columns": 0
+   }
+  ],
+  "actions": [],
+  "hasDefaults": 2,
+  "helpTexts": 2
+ },
+ {
+  "module": "universal-procurement",
+  "surface": "procurement-purchase-orders",
+  "route": "/procurement",
+  "label": "Purchase orders",
+  "description": "Create and review purchase order commitments to vendors.",
+  "fields": 15,
+  "writable": 12,
+  "required": 10,
+  "requiredLabels": [
+   "Organization unit",
+   "Vendor",
+   "Vendor name",
+   "Ship-to warehouse",
+   "Line product",
+   "Line product code",
+   "Line product name",
+   "Line quantity",
+   "Line unit of measure",
+   "Line unit price (minor)"
+  ],
+  "types": {
+   "REFERENCE": 7,
+   "TEXT": 3,
+   "NUMBER": 1,
+   "INTEGER": 1
+  },
+  "pickers": [
+   {
+    "label": "Organization unit",
+    "required": true,
+    "resolver": "organization-units",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Vendor",
+    "required": true,
+    "resolver": "business-partners-parties",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Ship-to warehouse",
+    "required": true,
+    "resolver": "inventory-warehouses",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Currency",
+    "required": false,
+    "resolver": "platform-currencies",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Line product",
+    "required": true,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Line unit of measure",
+    "required": true,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Line ship-to warehouse",
+    "required": false,
+    "resolver": "inventory-warehouses",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 5,
+  "labelIssues": [
+   "Total (minor units)"
+  ],
+  "views": [
+   {
+    "key": "purchase-orders",
+    "label": "Purchase orders",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Issue to vendor",
+   "Acknowledge receipt"
+  ],
+  "hasDefaults": 2,
+  "helpTexts": 3
+ },
+ {
+  "module": "universal-procurement",
+  "surface": "procurement-requisitions",
+  "route": "/procurement",
+  "label": "Requisitions",
+  "description": "Create and review internal purchase requisitions before PO conversion.",
+  "fields": 12,
+  "writable": 9,
+  "required": 7,
+  "requiredLabels": [
+   "Organization unit",
+   "Line product",
+   "Line product code",
+   "Line product name",
+   "Line quantity",
+   "Line unit of measure",
+   "Line estimated unit price (minor)"
+  ],
+  "types": {
+   "REFERENCE": 4,
+   "TEXT": 3,
+   "NUMBER": 1,
+   "INTEGER": 1
+  },
+  "pickers": [
+   {
+    "label": "Organization unit",
+    "required": true,
+    "resolver": "organization-units",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Currency",
+    "required": false,
+    "resolver": "platform-currencies",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Line product",
+    "required": true,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Line unit of measure",
+    "required": true,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 3,
+  "labelIssues": [
+   "Estimated total (minor units)"
+  ],
+  "views": [
+   {
+    "key": "requisitions",
+    "label": "Requisitions",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Submit for approval",
+   "Approve",
+   "Convert to purchase order"
+  ],
+  "hasDefaults": 2,
+  "helpTexts": 1
+ },
+ {
+  "module": "universal-procurement",
+  "surface": "procurement-vendor-bills",
+  "route": "/procurement",
+  "label": "Vendor bills",
+  "description": "Record vendor AP invoices for matching and approval.",
+  "fields": 13,
+  "writable": 11,
+  "required": 8,
+  "requiredLabels": [
+   "Vendor invoice #",
+   "Vendor",
+   "Invoice date",
+   "Due date",
+   "Line description",
+   "Line quantity",
+   "Line unit of measure",
+   "Line unit price (minor)"
+  ],
+  "types": {
+   "TEXT": 2,
+   "REFERENCE": 5,
+   "DATETIME": 2,
+   "NUMBER": 1,
+   "INTEGER": 1
+  },
+  "pickers": [
+   {
+    "label": "Vendor",
+    "required": true,
+    "resolver": "business-partners-parties",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Purchase order",
+    "required": false,
+    "resolver": "procurement-purchase-orders",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Currency",
+    "required": false,
+    "resolver": "platform-currencies",
+    "target": null,
+    "createWith": false
+   },
+   {
+    "label": "Line unit of measure",
+    "required": true,
+    "resolver": "catalogue-uoms",
+    "target": null,
+    "createWith": true
+   },
+   {
+    "label": "Line product",
+    "required": false,
+    "resolver": "catalogue-products",
+    "target": null,
+    "createWith": true
+   }
+  ],
+  "valueLists": 0,
+  "requiredPickers": 2,
+  "labelIssues": [
+   "Total (minor units)"
+  ],
+  "views": [
+   {
+    "key": "vendor-bills",
+    "label": "Vendor bills",
+    "columns": 0
+   }
+  ],
+  "actions": [
+   "Approve bill"
+  ],
+  "hasDefaults": 2,
+  "helpTexts": 3
+ }
+]

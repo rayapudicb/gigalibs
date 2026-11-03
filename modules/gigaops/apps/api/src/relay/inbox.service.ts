@@ -70,6 +70,7 @@ export class WorkforceInboxService {
       sourceType: 'CMMS_WORK_ORDER',
       sourceRef: request.workOrderId,
       siteRef: request.siteRef,
+      organizationUnitId: request.owningUnitId ?? null,
       startsAt: request.startsAt,
       endsAt: request.endsAt,
       headcount: request.headcount,

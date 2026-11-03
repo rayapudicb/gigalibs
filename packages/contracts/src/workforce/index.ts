@@ -860,6 +860,11 @@ export const CreateWorkRequirementV1Schema = z
     sourceType: WorkSourceTypeV1Schema.default('MANUAL'),
     sourceRef: z.string().trim().min(1).max(128).optional(),
     siteRef: z.string().uuid().nullable().optional(),
+    /**
+     * WI-OI-167: the organization unit that owns the demand. Omitted, a member limited to one unit gets that unit; a
+     * workspace-wide member gets none (shared demand, readable by everyone, changed only with workspace-wide access).
+     */
+    organizationUnitId: z.string().trim().min(1).max(64).nullable().optional(),
     startsAt: InstantSchema,
     endsAt: InstantSchema,
     headcount: z.number().int().min(1).max(500).default(1),
@@ -888,6 +893,19 @@ export const ListWorkRequirementsV1QuerySchema = z.object({
   from: InstantSchema.optional(),
   to: InstantSchema.optional(),
 });
+
+/**
+ * WI-OI-167: candidates for a requirement, limited to the caller's people and found by name or reference code; a page
+ * at a time, qualified people first, so nobody is out of reach because of their place in the alphabet.
+ */
+export const ListBookingCandidatesV1QuerySchema = z
+  .object({
+    search: z.string().trim().min(1).max(100).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).max(10_000).default(0),
+  })
+  .strict();
+export type ListBookingCandidatesV1Query = z.infer<typeof ListBookingCandidatesV1QuerySchema>;
 
 export const CreateBookingV1Schema = z
   .object({
@@ -945,6 +963,8 @@ export interface WorkRequirementV1 {
   readonly sourceType: WorkSourceTypeV1;
   readonly sourceRef: string | null;
   readonly siteRef: string | null;
+  /** WI-OI-167: the owning unit; null is shared demand. */
+  readonly organizationUnitId: string | null;
   readonly startsAt: string;
   readonly endsAt: string;
   readonly headcount: number;
@@ -969,6 +989,12 @@ export interface BookingCandidateV1 {
   readonly conflictingBooking: boolean;
   /** Minutes of the requirement window the person is available for. */
   readonly availableMinutes: number;
+}
+
+/** WI-OI-167: one page of candidates; `nextOffset` is null on the last page. */
+export interface BookingCandidatePageV1 {
+  readonly items: readonly BookingCandidateV1[];
+  readonly nextOffset: number | null;
 }
 
 // ─── Time and attendance (WI-OI-069, roadmap P7) ──────────────────────────────────────────────────────────

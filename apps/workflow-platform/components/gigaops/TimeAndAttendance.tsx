@@ -1,5 +1,8 @@
 'use client';
 
+// permission-scan: display-only — these checks only show or hide buttons; the Workforce API enforces every action
+// with the caller's unit and place scope (WI-OI-167).
+
 import { useAuthContext } from '@/components/auth/use-auth-context';
 import { SiteSelect, type useSites, useSitesFor } from '@/components/geospatial/SitePicker';
 import { hasPermission } from '@/lib/module-access';

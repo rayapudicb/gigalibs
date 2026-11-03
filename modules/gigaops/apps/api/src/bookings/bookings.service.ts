@@ -12,9 +12,11 @@ import {
   ChangeBookingStatusV1Schema,
   CreateBookingV1Schema,
   CreateWorkRequirementV1Schema,
+  ListBookingCandidatesV1QuerySchema,
   ListBookingsV1QuerySchema,
   ListWorkRequirementsV1QuerySchema,
   PROFICIENCY_RANK,
+  type BookingCandidatePageV1,
   type BookingCandidateV1,
   type BookingStatusV1,
   type BookingV1,
@@ -27,9 +29,9 @@ import type { PoolClient } from 'pg';
 import { hasWorkforcePermission, type GigaOpsPrincipal } from '../auth/authorization.js';
 import { AvailabilityService } from '../availability/availability.service.js';
 import { type CommandContext, assertUuid, bumpVersion, conflict, iso, parse, recordMutation, translate } from '../common/commands.js';
+import { assertPersonInScope, assertRequirementWrite, peopleScopeClause, requirementOwner, requirementScopePredicates } from '../common/scope.js';
 import { WorkforceDatabaseService } from '../database/database.service.js';
 
-const MAX_CANDIDATES = 200;
 
 /**
  * Demand requirements and bookings (WI-OI-067). A booking passes four guards inside one transaction: the
@@ -49,7 +51,7 @@ export class BookingsService {
     const query = parse(ListWorkRequirementsV1QuerySchema, rawQuery);
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
-      const where = ['r.tenant_id = $1', ...placePredicates(principal, values, 'r.')];
+      const where = ['r.tenant_id = $1', ...(await scopePredicates(client, principal, values))];
       if (query.status) {
         values.push(query.status);
         where.push(`r.status = $${values.length}`);
@@ -94,14 +96,15 @@ export class BookingsService {
     const existing = await client.query<{ id: string }>(`SELECT id FROM gigalibs_workforce.work_requirements WHERE tenant_id = $1 AND request_key = $2`, [tenantId, input.requestKey]);
     if (existing.rows[0]) return { ...(await this.requirementDetail(client, context.principal, existing.rows[0].id)), replayed: true };
     await assertCapabilitiesExist(client, tenantId, input.requiredCapabilities);
+    const organizationUnitId = await requirementOwner(client, context.principal, input.organizationUnitId);
     let id: string;
     try {
       await client.query('SAVEPOINT create_requirement');
       const created = await client.query<{ id: string }>(
         `INSERT INTO gigalibs_workforce.work_requirements
            (tenant_id, request_key, title, source_type, source_ref, site_ref, starts_at, ends_at, headcount, required_capabilities,
-            created_by, updated_by, correlation_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $11, $12) RETURNING id`,
+            created_by, updated_by, correlation_id, organization_unit_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $11, $12, $13) RETURNING id`,
         [
           tenantId,
           input.requestKey,
@@ -115,6 +118,7 @@ export class BookingsService {
           JSON.stringify(input.requiredCapabilities),
           context.principal.subject,
           context.correlationId,
+          organizationUnitId,
         ],
       );
       await client.query('RELEASE SAVEPOINT create_requirement');
@@ -128,6 +132,7 @@ export class BookingsService {
       sourceType: input.sourceType,
       sourceRef: input.sourceRef ?? null,
       siteRef,
+      organizationUnitId,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
       headcount: input.headcount,
@@ -155,6 +160,7 @@ export class BookingsService {
   ): Promise<WorkRequirementDetailV1> {
     const tenantId = context.principal.tenantId;
     const requirement = await this.lockRequirement(client, context.principal, requirementId);
+    await assertRequirementWrite(client, context.principal, requirement.organization_unit_id ?? null);
     if (expectedVersion !== null && Number(requirement.version) !== expectedVersion) conflict('requirement');
     if (requirement.status === 'CANCELLED') throw new ConflictException({ code: 'WORKFORCE_REQUIREMENT_STATE', message: 'The requirement is already cancelled.' });
     const onSite = await client.query<{ count: number }>(
@@ -184,22 +190,54 @@ export class BookingsService {
     return this.requirementDetail(client, context.principal, requirementId);
   }
 
-  /** Active people ranked by fit: qualified and fully available first, then by available minutes. */
-  async candidates(principal: GigaOpsPrincipal, requirementId: string): Promise<{ readonly items: readonly BookingCandidateV1[] }> {
+  /**
+   * The caller's people ranked by fit for a requirement (WI-OI-167): only people in the caller's units and places (by
+   * assignment), found by name or reference code, qualified people first, a page at a time. Availability and overlaps
+   * are worked out for the page only; booking re-checks everything.
+   */
+  async candidates(principal: GigaOpsPrincipal, requirementId: string, rawQuery: unknown = {}): Promise<BookingCandidatePageV1> {
     assertUuid(requirementId, 'requirementId');
+    const query = parse(ListBookingCandidatesV1QuerySchema, rawQuery);
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const requirement = await this.visibleRequirement(client, principal, requirementId);
       const startsAt = iso(requirement.starts_at);
       const endsAt = iso(requirement.ends_at);
       const windowMinutes = Math.round((Date.parse(endsAt) - Date.parse(startsAt)) / 60_000);
-      const people = await client.query<{ id: string; display_name: string }>(
-        `SELECT id, display_name FROM gigalibs_workforce.workforce_resources
-          WHERE tenant_id = $1 AND resource_type = 'HUMAN' AND status = 'ACTIVE' ORDER BY display_name LIMIT ${MAX_CANDIDATES}`,
-        [principal.tenantId],
-      );
       const required = (requirement.required_capabilities ?? []) as RequiredCapabilityV1[];
+      const values: unknown[] = [principal.tenantId];
+      const push = (value: unknown) => {
+        values.push(value);
+        return `$${values.length}`;
+      };
+      const where = [`r.tenant_id = $1`, `r.resource_type = 'HUMAN'`, `r.status = 'ACTIVE'`];
+      const scope = await peopleScopeClause(client, principal, push);
+      if (scope) where.push(scope);
+      if (query.search) {
+        const pattern = push(`%${query.search.replace(/[\\%_]/g, (character) => `\\${character}`)}%`);
+        where.push(`(r.display_name ILIKE ${pattern} OR r.reference_code ILIKE ${pattern})`);
+      }
+      const needs = push(JSON.stringify(required.map((need) => ({ id: need.capabilityDefinitionId, rank: PROFICIENCY_RANK[need.minimumProficiency] ?? 1 }))));
+      const from = push(startsAt);
+      const to = push(endsAt);
+      const rank = `CASE rc.proficiency ${Object.entries(PROFICIENCY_RANK).map(([level, value]) => `WHEN '${level}' THEN ${Number(value)}`).join(' ')} ELSE 0 END`;
+      const held = `(SELECT COUNT(DISTINCT rc.capability_definition_id)::int
+           FROM gigalibs_workforce.resource_capabilities rc
+           JOIN gigalibs_workforce.capability_definitions c ON c.tenant_id = rc.tenant_id AND c.id = rc.capability_definition_id
+           JOIN jsonb_to_recordset(${needs}::jsonb) AS need(id uuid, rank int) ON need.id = rc.capability_definition_id
+          WHERE rc.tenant_id = r.tenant_id AND rc.resource_id = r.id AND rc.status = 'ACTIVE' AND c.status = 'ACTIVE'
+            AND rc.valid_from <= ${from} AND (rc.expires_at IS NULL OR rc.expires_at >= ${to}) AND ${rank} >= need.rank)`;
+      const limit = push(query.limit + 1);
+      const offset = push(query.offset);
+      const people = await client.query<{ id: string; display_name: string }>(
+        `SELECT r.id, r.display_name FROM gigalibs_workforce.workforce_resources r
+          WHERE ${where.join(' AND ')}
+          ORDER BY (${held} = ${required.length}) DESC, r.display_name, r.id
+          LIMIT ${limit} OFFSET ${offset}`,
+        values,
+      );
+      const page = people.rows.slice(0, query.limit);
       const items: BookingCandidateV1[] = [];
-      for (const person of people.rows) {
+      for (const person of page) {
         const missing = await missingCapabilities(client, principal.tenantId, person.id, required, startsAt, endsAt);
         const window = await this.availability.availabilityWithClient(client, principal.tenantId, person.id, startsAt, endsAt);
         const overlap = await client.query<{ count: number }>(
@@ -223,7 +261,7 @@ export class BookingsService {
           Number(right.qualified) - Number(left.qualified) ||
           right.availableMinutes - left.availableMinutes,
       );
-      return { items };
+      return { items, nextOffset: people.rows.length > query.limit ? query.offset + query.limit : null };
     });
   }
 
@@ -232,7 +270,7 @@ export class BookingsService {
     const query = parse(ListBookingsV1QuerySchema, rawQuery);
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId];
-      const where = ['b.tenant_id = $1', ...placePredicates(principal, values, 'r.')];
+      const where = ['b.tenant_id = $1', ...(await scopePredicates(client, principal, values))];
       for (const [column, value] of [['resource_id', query.resourceId], ['requirement_id', query.requirementId]] as const) {
         if (value) {
           values.push(value);
@@ -257,7 +295,7 @@ export class BookingsService {
     assertUuid(bookingId, 'bookingId');
     return this.database.withTenantTransaction(principal.tenantId, async (client) => {
       const values: unknown[] = [principal.tenantId, bookingId];
-      const where = ['b.tenant_id = $1', 'b.id = $2', ...placePredicates(principal, values, 'r.')];
+      const where = ['b.tenant_id = $1', 'b.id = $2', ...(await scopePredicates(client, principal, values))];
       const result = await client.query(`${BOOKING_SELECT} WHERE ${where.join(' AND ')}`, values);
       if (!result.rows[0]) throw new NotFoundException('The booking was not found.');
       return mapBooking(result.rows[0]);
@@ -282,6 +320,7 @@ export class BookingsService {
       // Guard 1: the requirement is locked, live, and not yet fully staffed.
       const requirement = await this.lockRequirement(client, context.principal, input.requirementId);
       assertPlaceScope(context.principal, requirement.site_ref ?? null);
+      await assertRequirementWrite(client, context.principal, requirement.organization_unit_id ?? null);
       if (requirement.status !== 'OPEN') {
         throw new ConflictException({
           code: requirement.status === 'FILLED' ? 'WORKFORCE_REQUIREMENT_FILLED' : 'WORKFORCE_REQUIREMENT_STATE',
@@ -299,14 +338,16 @@ export class BookingsService {
       }
 
       // Guard 2: a person, qualified for the whole window.
-      const resource = await client.query<{ resource_type: string; status: string; display_name: string }>(
-        `SELECT resource_type, status, display_name FROM gigalibs_workforce.workforce_resources WHERE tenant_id = $1 AND id = $2`,
+      const resource = await client.query<{ resource_type: string; status: string; display_name: string; platform_user_id: string | null }>(
+        `SELECT resource_type, status, display_name, platform_user_id FROM gigalibs_workforce.workforce_resources WHERE tenant_id = $1 AND id = $2`,
         [tenantId, input.resourceId],
       );
       if (!resource.rows[0]) throw new NotFoundException('The person was not found.');
       if (resource.rows[0].resource_type !== 'HUMAN' || resource.rows[0].status !== 'ACTIVE') {
         throw new BadRequestException({ code: 'WORKFORCE_NOT_A_PERSON', message: 'Only an active person can be booked.' });
       }
+      // WI-OI-167: only one of the caller's people (by assignment, in their units and places).
+      await assertPersonInScope(client, context.principal, input.resourceId);
       const missing = await missingCapabilities(client, tenantId, input.resourceId, (requirement.required_capabilities ?? []) as RequiredCapabilityV1[], startsAt, endsAt);
       if (missing.length > 0) {
         throw new UnprocessableEntityException({
@@ -356,6 +397,8 @@ export class BookingsService {
         sourceRef: requirement.source_ref ?? null,
         resourceId: input.resourceId,
         resourceName: resource.rows[0].display_name,
+        // WI-OI-169: the booked person's login, so the source module lets them act on what they are booked for.
+        resourcePlatformUserId: resource.rows[0].platform_user_id ?? null,
         siteRef: requirement.site_ref ?? null,
         startsAt,
         endsAt,
@@ -372,15 +415,16 @@ export class BookingsService {
     const tenantId = context.principal.tenantId;
     return this.database.withTenantTransaction(tenantId, async (client) => {
       const values: unknown[] = [tenantId, bookingId];
-      const where = ['b.tenant_id = $1', 'b.id = $2', ...placePredicates(context.principal, values, 'r.')];
+      const where = ['b.tenant_id = $1', 'b.id = $2', ...(await scopePredicates(client, context.principal, values))];
       const locked = await client.query(
-        `SELECT b.*, r.site_ref FROM gigalibs_workforce.bookings b
+        `SELECT b.*, r.site_ref, r.organization_unit_id FROM gigalibs_workforce.bookings b
            JOIN gigalibs_workforce.work_requirements r ON r.tenant_id = b.tenant_id AND r.id = b.requirement_id
           WHERE ${where.join(' AND ')} FOR UPDATE OF b`,
         values,
       );
       const booking = locked.rows[0];
       if (!booking) throw new NotFoundException('The booking was not found.');
+      await assertRequirementWrite(client, context.principal, booking.organization_unit_id ?? null);
       if (Number(booking.version) !== input.expectedVersion) conflict('booking');
       if (!BOOKING_TRANSITIONS[booking.status as BookingStatusV1].includes(input.status)) {
         throw new ConflictException({ code: 'WORKFORCE_INVALID_TRANSITION', message: `A ${booking.status} booking cannot move to ${input.status}.` });
@@ -405,7 +449,7 @@ export class BookingsService {
     );
     const version = await bumpVersion(client, context, 'bookings', bookingId);
     const snapshot = await client.query(
-      `SELECT b.requirement_id, b.resource_id, b.starts_at, b.ends_at, r.source_type, r.source_ref, res.display_name
+      `SELECT b.requirement_id, b.resource_id, b.starts_at, b.ends_at, r.source_type, r.source_ref, res.display_name, res.platform_user_id
          FROM gigalibs_workforce.bookings b
          JOIN gigalibs_workforce.work_requirements r ON r.tenant_id = b.tenant_id AND r.id = b.requirement_id
          JOIN gigalibs_workforce.workforce_resources res ON res.tenant_id = b.tenant_id AND res.id = b.resource_id
@@ -422,6 +466,7 @@ export class BookingsService {
       sourceRef: row.source_ref ?? null,
       resourceId: row.resource_id,
       resourceName: row.display_name,
+      resourcePlatformUserId: row.platform_user_id ?? null,
       startsAt: iso(row.starts_at),
       endsAt: iso(row.ends_at),
     });
@@ -441,7 +486,7 @@ export class BookingsService {
   private async lockRequirement(client: PoolClient, principal: GigaOpsPrincipal, requirementId: string): Promise<any> {
     assertUuid(requirementId, 'requirementId');
     const values: unknown[] = [principal.tenantId, requirementId];
-    const where = ['r.tenant_id = $1', 'r.id = $2', ...placePredicates(principal, values, 'r.')];
+    const where = ['r.tenant_id = $1', 'r.id = $2', ...(await scopePredicates(client, principal, values))];
     const result = await client.query(`SELECT r.* FROM gigalibs_workforce.work_requirements r WHERE ${where.join(' AND ')} FOR UPDATE`, values);
     if (!result.rows[0]) throw new NotFoundException('The requirement was not found.');
     return result.rows[0];
@@ -449,7 +494,7 @@ export class BookingsService {
 
   private async visibleRequirement(client: PoolClient, principal: GigaOpsPrincipal, requirementId: string): Promise<any> {
     const values: unknown[] = [principal.tenantId, requirementId];
-    const where = ['r.tenant_id = $1', 'r.id = $2', ...placePredicates(principal, values, 'r.')];
+    const where = ['r.tenant_id = $1', 'r.id = $2', ...(await scopePredicates(client, principal, values))];
     const result = await client.query(`SELECT r.* FROM gigalibs_workforce.work_requirements r WHERE ${where.join(' AND ')}`, values);
     if (!result.rows[0]) throw new NotFoundException('The requirement was not found.');
     return result.rows[0];
@@ -457,7 +502,7 @@ export class BookingsService {
 
   private async requirementDetail(client: PoolClient, principal: GigaOpsPrincipal, requirementId: string): Promise<WorkRequirementDetailV1> {
     const values: unknown[] = [principal.tenantId, requirementId];
-    const where = ['r.tenant_id = $1', 'r.id = $2', ...placePredicates(principal, values, 'r.')];
+    const where = ['r.tenant_id = $1', 'r.id = $2', ...(await scopePredicates(client, principal, values))];
     const requirement = await client.query(`${REQUIREMENT_SELECT} WHERE ${where.join(' AND ')}`, values);
     if (!requirement.rows[0]) throw new NotFoundException('The requirement was not found.');
     const bookings = await client.query(`${BOOKING_SELECT} WHERE b.tenant_id = $1 AND b.requirement_id = $2 ORDER BY b.starts_at, b.id`, [principal.tenantId, requirementId]);
@@ -535,10 +580,12 @@ async function assertCapabilitiesExist(client: PoolClient, tenantId: string, req
   }
 }
 
-function placePredicates(principal: GigaOpsPrincipal, values: unknown[], alias: string): string[] {
-  if (principal.spatialScope.mode !== 'SCOPED_PLACES') return [];
-  values.push([...principal.spatialScope.place_ids]);
-  return [`${alias}site_ref = ANY($${values.length}::uuid[])`];
+/** Requirement scope (place and unit) as predicates on `r.`, binding into `values`. */
+function scopePredicates(client: PoolClient, principal: GigaOpsPrincipal, values: unknown[]): Promise<string[]> {
+  return requirementScopePredicates(client, principal, (value) => {
+    values.push(value);
+    return `$${values.length}`;
+  });
 }
 
 function assertPlaceScope(principal: GigaOpsPrincipal, siteRef: string | null): void {
@@ -558,6 +605,7 @@ function mapRequirement(row: any): WorkRequirementV1 {
     sourceType: row.source_type,
     sourceRef: row.source_ref ?? null,
     siteRef: row.site_ref ?? null,
+    organizationUnitId: row.organization_unit_id ?? null,
     startsAt: iso(row.starts_at),
     endsAt: iso(row.ends_at),
     headcount: Number(row.headcount),

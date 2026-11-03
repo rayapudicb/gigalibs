@@ -93,7 +93,19 @@ export const SCOPE_ENFORCING_MODULES: Readonly<Record<string, ScopeEnforcement>>
   'universal-procurement': { units: true, places: false },
   'universal-orders': { units: true, places: false },
   'financial-operations': { units: true, places: false },
+  // WI-OI-167 (R5 Workforce, finishing WI-OI-120ho): Workforce limits people, demand, bookings, time, absences and working
+  // weeks by unit and place (scope by assignment; proven by workforce-r5-context-coverage.spec.ts and
+  // modules/gigaops/apps/api/src/common/scope.integration.test.ts). It reads the single organization and place claims,
+  // like the ERP modules, so it is not in PER_ASSIGNMENT_SCOPE_MODULES. Workspace-wide operations (capability
+  // definitions, absence types, the workspace calendar, pay) refuse a limited member at run time.
+  gigaops: { units: true, places: true },
 };
+
+/**
+ * WI-OI-167: codes whose every use is workspace-wide, so a role holding them is given only for the whole workspace — a
+ * scope would promise a limit the operation cannot keep. Pay runs cover the whole workspace's week.
+ */
+export const WORKSPACE_ONLY_PERMISSIONS: readonly string[] = ['workforce.pay.read', 'workforce.pay.manage', 'workforce.pay.approve'];
 
 /**
  * Why `permissions` cannot be limited to units or places, or null when they can. A code checked by the platform (which
@@ -104,7 +116,9 @@ export function explicitScopeRefusal(
   permissions: readonly string[],
   dimension: keyof ScopeEnforcement,
   enforcing: Readonly<Record<string, ScopeEnforcement>> = SCOPE_ENFORCING_MODULES,
-): { readonly code: string; readonly owners: readonly string[] } | null {
+): { readonly code: string; readonly owners: readonly string[]; readonly workspaceOnly?: true } | null {
+  for (const code of WORKSPACE_ONLY_PERMISSIONS)
+    if (holdsPermission(permissions, code)) return { code, owners: modulePermissionCatalogue.find((entry) => entry.code === code)?.entries ?? [], workspaceOnly: true };
   for (const entry of modulePermissionCatalogue) {
     if (!holdsPermission(permissions, entry.code)) continue;
     if (entry.entries.some((owner) => owner === 'platform' || !enforcing[owner]?.[dimension])) return { code: entry.code, owners: entry.entries };

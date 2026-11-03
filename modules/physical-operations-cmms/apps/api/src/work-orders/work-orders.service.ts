@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
+  CMMS_EXECUTING_BOOKING_STATUSES,
   AddCmmsWorkOrderNoteV1Schema,
   AddCmmsWorkOrderTaskV1Schema,
   CMMS_WORK_ORDER_TRANSITIONS,
@@ -102,6 +103,19 @@ export class WorkOrdersService {
           where.push(`w.${column} = $${values.length}`);
         }
       }
+      // WI-OI-164: the caller's own work — assigned to them, or a live Workforce booking for them (WI-OI-169).
+      if (query.mine) {
+        values.push(principal.subject, [...CMMS_EXECUTING_BOOKING_STATUSES]);
+        where.push(`(w.assigned_to = $${values.length - 1} OR EXISTS (
+          SELECT 1 FROM gigalibs_cmms.work_order_bookings b
+           WHERE b.tenant_id = w.tenant_id AND b.work_order_id = w.id AND b.resource_user_ref = $${values.length - 1}
+             AND b.status = ANY($${values.length}::text[])))`);
+      }
+      if (query.awaitingSignOff) where.push(`w.status = 'COMPLETED' AND w.signed_off_at IS NULL`);
+      if (query.dueFrom) {
+        values.push(query.dueFrom);
+        where.push(`w.due_at >= $${values.length}`);
+      }
       if (query.dueBefore) {
         values.push(query.dueBefore);
         where.push(`w.due_at < $${values.length}`);
@@ -136,6 +150,29 @@ export class WorkOrdersService {
   async get(principal: CmmsPrincipal, workOrderId: string): Promise<CmmsWorkOrderDetailV1> {
     assertUuid(workOrderId, 'workOrderId');
     return this.database.withTenantTransaction(principal.tenantId, (client) => this.detailWithClient(client, principal, workOrderId));
+  }
+
+  /**
+   * WI-OI-163: what the action offers need beyond the work order itself — who completed it (sign-off is four-eyes) and
+   * its permits (the LOTO interlock) — read for a work order the person may see (`get` first proves that).
+   */
+  async actionFacts(principal: CmmsPrincipal, workOrderId: string): Promise<{ completedBy: string | null; permitsLive: number; permitsOpen: number }> {
+    assertUuid(workOrderId, 'workOrderId');
+    return this.database.withTenantTransaction(principal.tenantId, async (client) => {
+      const completer = await client.query<{ actor_subject: string }>(
+        `SELECT actor_subject FROM gigalibs_cmms.work_order_events
+          WHERE tenant_id = $1 AND work_order_id = $2 AND event_type = 'STATUS_CHANGED' AND to_status = 'COMPLETED'
+          ORDER BY occurred_at DESC LIMIT 1`,
+        [principal.tenantId, workOrderId],
+      );
+      const permits = (await client.query<{ live: number; open: number }>(
+        `SELECT count(*) FILTER (WHERE status = 'LIVE')::int AS live,
+                count(*) FILTER (WHERE status NOT IN ('CLOSED', 'CANCELLED'))::int AS open
+           FROM gigalibs_cmms.permits WHERE tenant_id = $1 AND work_order_id = $2`,
+        [principal.tenantId, workOrderId],
+      )).rows[0];
+      return { completedBy: completer.rows[0]?.actor_subject ?? null, permitsLive: permits?.live ?? 0, permitsOpen: permits?.open ?? 0 };
+    });
   }
 
   async history(principal: CmmsPrincipal, workOrderId: string): Promise<{ readonly items: readonly CmmsWorkOrderEventV1[] }> {
@@ -663,6 +700,8 @@ export class WorkOrdersService {
         headcount: input.headcount,
         capabilityCodes,
         requestKey,
+        // WI-OI-167: Workforce owns the demand under the work order's unit.
+        owningUnitId: current.department_id ?? null,
       };
       await recordMutation(client, context, {
         action: 'CMMS_STAFFING_REQUESTED',
@@ -735,7 +774,18 @@ export class WorkOrdersService {
           message: 'Permission cmms.work-orders.write or cmms.work-orders.execute-own is required.',
         });
       }
-      if (!current.assigned_to || current.assigned_to !== context.principal.subject) {
+      // WI-OI-169: the assignee, or a person with a live Workforce booking on this work order.
+      const assigned = current.assigned_to !== null && current.assigned_to === context.principal.subject;
+      const booked =
+        !assigned &&
+        (
+          await client.query(
+            `SELECT 1 FROM gigalibs_cmms.work_order_bookings
+              WHERE tenant_id = $1 AND work_order_id = $2 AND resource_user_ref = $3 AND status = ANY($4::text[]) LIMIT 1`,
+            [context.principal.tenantId, current.id, context.principal.subject, [...CMMS_EXECUTING_BOOKING_STATUSES]],
+          )
+        ).rows.length > 0;
+      if (!assigned && !booked) {
         throw new ForbiddenException({
           code: 'CMMS_OUT_OF_SCOPE',
           message: 'You can only execute work orders assigned to you.',
@@ -979,6 +1029,7 @@ function mapBooking(row: any): CmmsWorkOrderBookingV1 {
     bookingRef: row.booking_ref,
     resourceRef: row.resource_ref,
     resourceName: row.resource_name ?? null,
+    resourceUserRef: row.resource_user_ref ?? null,
     startsAt: iso(row.starts_at),
     endsAt: iso(row.ends_at),
     status: row.status,

@@ -8,6 +8,7 @@ import {
   LogCmmsLabourV1Schema,
   IssueCmmsPartV1Schema,
   AddCmmsWorkOrderNoteV1Schema,
+  CMMS_EXECUTING_BOOKING_STATUSES,
   holdsPermission,
   type CmmsWorkOrderDetailV1,
   type CmmsWorkOrderStatusV1,
@@ -31,6 +32,7 @@ import {
 import { shippedRecordRules } from '@gigalibs/configuration-core';
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { WorkOrdersService } from './work-orders.service.js';
+import { WORK_ORDER_ACTIONS, workOrderActionOffer } from './work-order-offers.js';
 import type { AssetsService } from '../assets/assets.service.js';
 import type { PartsService } from '../parts/parts.service.js';
 import type { RequestsService } from '../requests/requests.service.js';
@@ -111,7 +113,9 @@ export function assertCanExecute(principal: ModulePrincipal, workOrder: CmmsWork
       message: 'Permission cmms.work-orders.write or cmms.work-orders.execute-own is required.',
     });
   }
-  if (!workOrder.assignedTo || workOrder.assignedTo !== principal.subject) {
+  // WI-OI-169: the assignee, or a person with a live Workforce booking on this work order.
+  const booked = 'bookings' in workOrder && workOrder.bookings.some((booking) => CMMS_EXECUTING_BOOKING_STATUSES.includes(booking.status) && booking.resourceUserRef === principal.subject);
+  if ((!workOrder.assignedTo || workOrder.assignedTo !== principal.subject) && !booked) {
     throw new ForbiddenException({
       code: 'CMMS_OUT_OF_SCOPE',
       message: 'You can only execute work orders assigned to you.',
@@ -559,6 +563,30 @@ export function cmmsRecordDispatcher(deps: CmmsRecordDependencies, idempotency: 
         permission: 'cmms.work-orders.write',
         run: (context, id, params) => executeSignOff(deps, context, id, params),
       },
+    },
+    // WI-OI-163: the same guards as the commands, worked out once per record for every action.
+    offers: async (principal, id) => {
+      const current = await deps.workOrders.get(principal as any, id);
+      const facts = await deps.workOrders.actionFacts(principal as any, id);
+      const subject = { subject: principal.subject, permissions: principal.permissions };
+      return Object.fromEntries(
+        WORK_ORDER_ACTIONS.map((action) => [
+          action,
+          workOrderActionOffer(
+            action,
+            {
+              status: current.status,
+              assignedTo: current.assignedTo,
+              signedOffAt: current.signedOffAt,
+              bookedUsers: current.bookings.flatMap((booking) =>
+                CMMS_EXECUTING_BOOKING_STATUSES.includes(booking.status) && booking.resourceUserRef ? [booking.resourceUserRef] : [],
+              ),
+              ...facts,
+            },
+            subject,
+          ),
+        ]),
+      );
     },
   };
 

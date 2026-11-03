@@ -7,6 +7,9 @@
 //   `requiredPermissions: [...]`, and record adapters' `permissions: { read: 'x', create: 'y' }`);
 // - in `permissions.includes('x')` (any list named …permissions, granted or scopes).
 // Over-inclusion is harmless (a role may hold a code nothing checks); a miss refuses a real permission on save.
+// WI-OI-167: a browser component (`'use client'`) cannot enforce access; when its checks only decide what to show and
+// the module's API enforces them, it says so with a `// permission-scan: display-only` line and its codes are not
+// counted for the platform (which would refuse them at a unit or place scope). The marker counts only in a client file.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -52,15 +55,23 @@ function* sourceFiles(directory) {
   }
 }
 
+/** Whether a file is a client component whose permission checks only decide what to show (see the header). */
+export function isDisplayOnly(text) {
+  return /^\s*['"]use client['"];?/.test(text) && /^\/\/ permission-scan: display-only\b/m.test(text);
+}
+
 /** The permission codes every source file under the directories checks, with the files that name each. */
 export function scanPermissionCodes(directories) {
   const found = new Map();
   for (const directory of directories)
-    for (const file of sourceFiles(directory))
-      for (const code of permissionCodesIn(readFileSync(file, 'utf8'))) {
+    for (const file of sourceFiles(directory)) {
+      const text = readFileSync(file, 'utf8');
+      if (isDisplayOnly(text)) continue;
+      for (const code of permissionCodesIn(text)) {
         if (!found.has(code)) found.set(code, new Set());
         found.get(code).add(file);
       }
+    }
   return found;
 }
 

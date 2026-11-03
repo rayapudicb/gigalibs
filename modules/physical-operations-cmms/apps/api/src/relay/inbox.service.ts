@@ -130,15 +130,17 @@ export class CmmsInboxService {
     }
     const result = await client.query(
       `INSERT INTO gigalibs_cmms.work_order_bookings
-         (tenant_id, booking_ref, work_order_id, requirement_ref, resource_ref, resource_name, starts_at, ends_at, status, source_version)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         (tenant_id, booking_ref, work_order_id, requirement_ref, resource_ref, resource_name, starts_at, ends_at, status, source_version,
+          resource_user_ref)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        ON CONFLICT (tenant_id, booking_ref) DO UPDATE
          SET status = EXCLUDED.status, resource_name = EXCLUDED.resource_name, starts_at = EXCLUDED.starts_at,
-             ends_at = EXCLUDED.ends_at, source_version = EXCLUDED.source_version, updated_at = now()
+             ends_at = EXCLUDED.ends_at, source_version = EXCLUDED.source_version, updated_at = now(),
+             resource_user_ref = COALESCE(EXCLUDED.resource_user_ref, gigalibs_cmms.work_order_bookings.resource_user_ref)
          WHERE gigalibs_cmms.work_order_bookings.source_version < EXCLUDED.source_version
        RETURNING status`,
       [envelope.tenantId, envelope.aggregateId, fact.sourceRef, fact.requirementId, fact.resourceId, fact.resourceName ?? null,
-        fact.startsAt, fact.endsAt, status, envelope.aggregateVersion],
+        fact.startsAt, fact.endsAt, status, envelope.aggregateVersion, fact.resourcePlatformUserId ?? null],
     );
     return { booking: envelope.aggregateId, status, applied: (result.rowCount ?? 0) > 0 };
   }
