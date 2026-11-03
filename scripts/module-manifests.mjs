@@ -426,6 +426,107 @@ for (const moduleKey of [...new Set(windowBaselines.map((baseline) => baseline.d
   }
   windowEntitlementKeys[moduleKey] = entries[0].key;
 }
+// Master data registry (WI-OI-152, ADR-0037 §3): each module declares its masters in `spec.masters`, the core in
+// platform/core.yaml. A master counted from records must be one of the module's own windows, and takes that window's
+// read permission, so the hub can never show a master its screen would refuse; one counted from a platform lookup
+// names its permission. Every master opens on a screen its module (or the core) declares.
+const masterDataPath = 'packages/contracts/src/master-data/registry.generated.ts';
+const masterDataSource = readFileSync(join(root, 'packages/contracts/src/master-data/index.ts'), 'utf8');
+const masterDataGroups = [
+  ...(masterDataSource.match(/MASTER_DATA_GROUPS = \[([^\]]+)\]/)?.[1] ?? '').matchAll(/'([^']+)'/g),
+].map(([, value]) => value);
+const masterDataLevels = [
+  ...(masterDataSource.match(/export type MasterDataLevel =([^;]+);/)?.[1] ?? '').matchAll(/'([^']+)'/g),
+].map(([, value]) => value);
+const platformLookupKeys = [
+  ...(
+    readFileSync(join(root, 'packages/contracts/src/configuration/platform-lookups.ts'), 'utf8').match(
+      /PLATFORM_LOOKUPS = \{([\s\S]*?)\} as const;/,
+    )?.[1] ?? ''
+  ).matchAll(/^\s+'([a-z-]+)':/gm),
+].map(([, value]) => value);
+const masterData = [];
+const masterKeys = new Map();
+for (const [owner, manifest, where] of [
+  ['core', core, corePath],
+  ...[...modules].map(([name, manifest]) => [name, manifest, `modules/${name}/module.yaml`]),
+]) {
+  const declared = manifest?.spec?.masters ?? [];
+  if (!Array.isArray(declared)) {
+    fail(where, 'spec.masters must be a list');
+    continue;
+  }
+  const catalogEntries = manifest.spec.catalog ?? [];
+  const routes = new Set([
+    ...(manifest.spec.ui?.pages ?? []).map((page) => page.route),
+    ...catalogEntries.flatMap((entry) => [entry.route, ...(entry.menu ?? []).map((item) => item.path)]),
+  ]);
+  for (const [index, master] of declared.entries()) {
+    const at = `${where} spec.masters[${index}]`;
+    if (!isText(master?.label)) fail(at, 'label is required');
+    if (!masterDataGroups.includes(master?.group)) fail(at, `group must be one of ${masterDataGroups.join(', ')}`);
+    const level = master?.level ?? 'MODULE';
+    if (!masterDataLevels.includes(level)) fail(at, `level must be one of ${masterDataLevels.join(', ')}`);
+    if (!routes.has(master?.route)) fail(at, `route ${master?.route} is not a page or menu path this manifest declares`);
+    const catalogKey = owner === 'core' ? master?.catalogKey : (windowEntitlementKeys[owner] ?? catalogEntries[0]?.key);
+    const catalogEntry = catalogEntries.find((entry) => entry.key === catalogKey);
+    if (!catalogEntry) fail(at, `catalogKey ${catalogKey} is not a catalogue entry of this manifest`);
+    if (Boolean(master?.records) === Boolean(master?.lookup)) {
+      fail(at, 'name exactly one count source: records (a window entity) or lookup (a platform lookup)');
+      continue;
+    }
+    let count;
+    let readPermission = master.readPermission;
+    if (master.records) {
+      const window = windowBaselines.find(
+        (baseline) =>
+          baseline.definition.moduleKey === owner && baseline.definition.dictionary?.targetEntityKey === master.records,
+      );
+      if (!window) fail(at, `records ${master.records} is not the entity of a window this module ships`);
+      else if (readPermission !== undefined && readPermission !== window.window.readPermission)
+        fail(at, `readPermission must be the window's (${window.window.readPermission}) or left out`);
+      else readPermission = window.window.readPermission;
+      if (manifest.spec.gateway?.records !== true) fail(at, 'records needs spec.gateway.records: true');
+      count = { kind: 'records', basePath: manifest.spec.gateway?.basePaths?.[0], entity: master.records };
+    } else {
+      if (!platformLookupKeys.includes(master.lookup))
+        fail(at, `lookup ${master.lookup} is not a platform lookup (${platformLookupKeys.join(', ')})`);
+      if (!isText(readPermission)) fail(at, 'a lookup master names its readPermission');
+      count = { kind: 'lookup', basePath: '/api/control', resolver: master.lookup };
+    }
+    const key = master.key ?? master.records ?? master.lookup;
+    if (masterKeys.has(key)) fail(at, `master ${key} is also declared in ${masterKeys.get(key)}`);
+    masterKeys.set(key, at);
+    masterData.push({
+      key,
+      label: master.label,
+      group: master.group,
+      level,
+      moduleKey: owner,
+      catalogKey,
+      moduleLabel: catalogEntry?.navigationLabel ?? catalogKey,
+      route: master.route,
+      readPermission,
+      count,
+      importable: master.importable === true,
+      packSection: master.packSection ?? null,
+    });
+  }
+}
+masterData.sort(
+  (left, right) =>
+    masterDataGroups.indexOf(left.group) - masterDataGroups.indexOf(right.group) ||
+    left.moduleLabel.localeCompare(right.moduleLabel) ||
+    left.label.localeCompare(right.label),
+);
+const masterDataGenerated = [
+  '// Generated by `pnpm modules:catalog` (scripts/module-manifests.mjs) from `spec.masters` of platform/core.yaml and',
+  '// modules/*/module.yaml (WI-OI-152, ADR-0037 §3). Do not edit: change the owning manifest and regenerate.',
+  "import type { MasterDataEntryV1 } from './index.js';",
+  '',
+  `export const MASTER_DATA_REGISTRY: readonly MasterDataEntryV1[] = ${JSON.stringify(masterData, null, 2)};`,
+  '',
+].join('\n');
 // Panels (WI-OI-120bs, SPEED S2b): a module registers the panel components its windows may place, in
 // `spec.ui.panels`. The catalogue is generated for the dictionary compiler, which refuses any panel placement that is
 // not registered by the window's own module or whose props do not match (a closed catalogue, plan v3 GU3).
@@ -989,6 +1090,8 @@ let panelsCurrent =
 let moduleAnalyticsSourcesCurrent =
   existsSync(join(root, moduleAnalyticsSourcesPath)) &&
   readFileSync(join(root, moduleAnalyticsSourcesPath), 'utf8') === moduleAnalyticsSourcesGenerated;
+let masterDataCurrent =
+  existsSync(join(root, masterDataPath)) && readFileSync(join(root, masterDataPath), 'utf8') === masterDataGenerated;
 if (write && errors.length === 0) {
   if (!catalogueCurrent) writeFileSync(join(root, generatedPath), generated);
   for (const [path, content, current] of [
@@ -1001,6 +1104,7 @@ if (write && errors.length === 0) {
     [windowBaselinesPath, windowBaselinesGenerated, windowBaselinesCurrent],
     [panelsPath, panelsGenerated, panelsCurrent],
     [moduleAnalyticsSourcesPath, moduleAnalyticsSourcesGenerated, moduleAnalyticsSourcesCurrent],
+    [masterDataPath, masterDataGenerated, masterDataCurrent],
   ]) {
     if (current) continue;
     mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -1016,6 +1120,7 @@ if (write && errors.length === 0) {
   windowBaselinesCurrent = true;
   panelsCurrent = true;
   moduleAnalyticsSourcesCurrent = true;
+  masterDataCurrent = true;
 }
 if (!catalogueCurrent) fail(generatedPath, 'out of date; run `pnpm modules:catalog`');
 if (!gatewaysCurrent) fail(gatewaysPath, 'out of date; run `pnpm modules:catalog`');
@@ -1028,6 +1133,7 @@ if (!windowBaselinesCurrent) fail(windowBaselinesPath, 'out of date; run `pnpm m
 if (!panelsCurrent) fail(panelsPath, 'out of date; run `pnpm modules:catalog`');
 if (!moduleAnalyticsSourcesCurrent)
   fail(moduleAnalyticsSourcesPath, 'out of date; run `pnpm modules:catalog`');
+if (!masterDataCurrent) fail(masterDataPath, 'out of date; run `pnpm modules:catalog`');
 
 // Generated module runtime (WI-OI-085b): a module declaring `spec.runtime.generated` is built by the generic
 // `generated-module` image target and run from a Compose overlay generated here; its credentials live in

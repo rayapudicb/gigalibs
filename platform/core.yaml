@@ -214,3 +214,7 @@ spec:
       platformInspection: false
       reason: The tenant's plan and modules, from the kernel's entitlements (Settings, Plan). Platform operators enable modules in Platform Control. No purchasing or billing (ADR-0013).
       navigationOrder: 200
+  # WI-OI-152 (ADR-0037 §3): masters kept in the control plane, counted through platform lookups.
+  masters:
+    - { label: Organization units, group: organization-and-people, route: /settings/organization, lookup: organization-units, readPermission: 'users:read', catalogKey: tenant-access }
+    - { label: Members and logins, group: organization-and-people, route: /settings, lookup: workspace-members, readPermission: 'users:read', catalogKey: tenant-access }

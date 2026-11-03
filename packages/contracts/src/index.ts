@@ -52,3 +52,4 @@ export * from './agent/orchestrator.js';
 export * from './speed/index.js';
 export * from './mobile/index.js';
 export * from './frontline/index.js';
+export * from './master-data/index.js';

@@ -310,3 +310,8 @@ spec:
       - { path: 'v1/adjustments', GET: inventory.read, POST: inventory.adjust }
       - { path: 'v1/adjustments/{id}/approve', POST: 'inventory.adjust.approve' }
       - { path: 'v1/barcodes/resolve', POST: inventory.read }
+  # WI-OI-152 (ADR-0037 §3): the masters this module keeps, listed in the Master data area.
+  masters:
+    - { label: Warehouses, group: products-and-stock, route: /inventory, records: inventory.warehouses }
+    - { label: Stock items, group: products-and-stock, route: /inventory/items, records: inventory.items }
+    - { label: Lots and serials, group: products-and-stock, route: /inventory/lots, records: inventory.lots }

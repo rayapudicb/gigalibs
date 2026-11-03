@@ -208,3 +208,9 @@ spec:
       - { path: 'v1/pay-exports/{id}', GET: workforce.pay.read }
       - { path: 'v1/pay-exports/{id}/file|reconciliation', GET: workforce.pay.read }
       - { path: 'v1/pay-exports/{id}/acknowledge', POST: workforce.pay.manage }
+  # WI-OI-152 (ADR-0037 §3): the masters this module keeps, listed in the Master data area.
+  masters:
+    - { label: People (Workforce), group: organization-and-people, route: /gigaops/resources, records: wf.resources }
+    - { label: Absence types, group: organization-and-people, route: /gigaops/availability, records: wf.absence-types }
+    - { label: Site calendars, group: organization-and-people, route: /gigaops/availability, records: wf.calendars }
+    - { label: Working weeks, group: organization-and-people, route: /gigaops/availability, records: wf.availability-patterns }

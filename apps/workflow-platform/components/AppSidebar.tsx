@@ -13,8 +13,10 @@ import {
   type PlatformContextPersona,
   holdsAnyPermission,
   holdsPermission,
+  MASTER_DATA_GROUP_LABELS,
   platformModuleCatalog,
 } from '@gigalibs/contracts';
+import { MASTER_DATA_PERSONAS, masterGroups, readableMasters } from '@/lib/master-data';
 import { determinePersona } from '@/lib/persona-utils';
 import { moduleIcons } from '@/lib/module-icons';
 import {
@@ -32,6 +34,7 @@ import {
   Boxes,
   ChevronDown,
   ChevronRight,
+  Database,
   Gauge,
   Home,
   Lock,
@@ -164,6 +167,11 @@ export default function AppSidebar({
       };
     })
     .filter(({ modules }) => modules.length > 0);
+
+  // WI-OI-152 (ADR-0037 §3): the Master data area, for administrators, with one link per group they can read.
+  const masterDataGroups = MASTER_DATA_PERSONAS.includes(activePersona)
+    ? masterGroups(readableMasters({ ...session, uatPreview }))
+    : [];
 
   // The Settings sidebar (WI-OI-145, Medusa's settings layout): Settings entries sectioned by `area`.
   const settingsModules = platformModuleCatalog.filter(
@@ -326,6 +334,31 @@ export default function AppSidebar({
             </div>
           </div>
         ))}
+        {masterDataGroups.length > 0 ? (
+          <div className="space-y-1">
+            <span className="px-2 text-[10px] font-semibold uppercase tracking-wider text-ui-fg-muted">
+              Master data
+            </span>
+            <div className="mt-1 space-y-0.5">
+              <SidebarLink
+                href="/master-data"
+                label="All masters"
+                icon={Database}
+                pathname={pathname}
+                active={pathname === '/master-data'}
+              />
+              {masterDataGroups.map((group) => (
+                <SidebarLink
+                  key={group}
+                  href={`/master-data/${group}`}
+                  label={MASTER_DATA_GROUP_LABELS[group]}
+                  icon={Database}
+                  pathname={pathname}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
         {tenantApps.length > 0 ? (
           <div className="space-y-1">
             <span className="px-2 text-[10px] font-semibold uppercase tracking-wider text-ui-fg-muted">

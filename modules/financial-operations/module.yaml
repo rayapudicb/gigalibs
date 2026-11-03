@@ -318,3 +318,9 @@ spec:
       - { path: 'v1/close/forecasting/generate', POST: 'finance:journals:manage' }
       - { path: 'v1/close/financial-health', GET: 'finance:reports:view' }
       - { path: 'v1/close/drill-through', POST: 'finance:reports:view' }
+  # WI-OI-152 (ADR-0037 §3): the masters this module keeps, listed in the Master data area.
+  masters:
+    - { label: Chart of accounts, group: finance, route: /finance/accounts, records: finance.accounts }
+    - { label: Accounting books, group: finance, route: /finance/books, records: finance.books }
+    - { label: Fiscal periods, group: finance, route: /finance/periods, records: finance.periods }
+    - { label: Standard costs, group: finance, route: /finance/standard-costs, records: finance.product-standard-costs }

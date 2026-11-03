@@ -117,3 +117,6 @@ spec:
       - { path: 'v1/partners/{id}/bank-accounts', GET: business-partners.accounts.read, POST: business-partners.accounts.manage }
       - { path: 'v1/partners/{id}/netting', GET: business-partners.credit.read }
       - { path: 'v1/credit-check', POST: business-partners.credit.read }
+  # WI-OI-152 (ADR-0037 §3): the masters this module keeps, listed in the Master data area.
+  masters:
+    - { label: Customers and vendors, group: partners, route: /business-partners, records: business-partners.partners }

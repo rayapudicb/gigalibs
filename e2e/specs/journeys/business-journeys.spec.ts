@@ -53,6 +53,8 @@ export const JOURNEYS: readonly JourneyDefinition[] = [
   { id: 'F2', persona: 'Accountant', module: 'General ledger', outcome: 'Read the trial balance', targetSeconds: 10, route: '/finance/reports', kind: 'view' },
   { id: 'E1', persona: 'Executive', module: 'Executive Control Tower', outcome: "See today's position", targetSeconds: 10, route: '/dashboard', kind: 'view' },
   { id: 'X1', persona: 'Chemist', module: 'Process safety (SPEED)', outcome: 'Start a screening project', targetSeconds: 30, route: '/speed/projects', kind: 'create' },
+  // WI-OI-152: the Master data area (outside the 27-journey plan; the workbook keeps the plan's list).
+  { id: 'M1', persona: 'Workspace admin', module: 'Master data', outcome: 'Find and open a master', targetSeconds: 10, route: '/master-data', kind: 'view' },
 ];
 
 const results: JourneyResult[] = [];

@@ -57,3 +57,6 @@ spec:
       reason: The tenant-isolated place hierarchy (sites, zones, node types and jurisdiction) is available for controlled local evaluation under WI-OI-063; map drawing, distance and CMMS dispatch remain unavailable.
       navigationOrder: 240
       personas: [OPERATIONS_SUPERVISOR]
+  # WI-OI-152: places are the master for sites, buildings, zones and areas (ADR-0037 §1).
+  masters:
+    - { label: Places (sites and zones), group: assets-and-places, route: /maps, lookup: workspace-sites, readPermission: 'maps.nodes.read' }

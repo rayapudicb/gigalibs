@@ -439,3 +439,10 @@ spec:
       - { path: 'v1/job-plans/{id}', GET: cmms.assets.read, PATCH: cmms.assets.write }
       - { path: 'v1/job-plans/{id}/apply-to-work-order/{id}', POST: cmms.assets.write }
       - { path: 'v1/work-orders/{id}/failure-attribution', POST: cmms.assets.write }
+  # WI-OI-152 (ADR-0037 §3): the masters this module keeps, listed in the Master data area.
+  masters:
+    - { label: Assets, group: assets-and-places, route: /cmms/assets, records: cmms.assets }
+    - { label: Spaces, group: assets-and-places, route: /cmms/spaces, records: cmms.spaces }
+    - { label: Asset classes, group: assets-and-places, route: /cmms/classifications, records: cmms.classifications }
+    - { label: Meters, group: assets-and-places, route: /cmms/meters, records: cmms.meters }
+    - { label: Spare parts (MRO), group: products-and-stock, route: /cmms/inventory, records: cmms.parts }

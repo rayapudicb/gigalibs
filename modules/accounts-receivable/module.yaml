@@ -144,3 +144,6 @@ spec:
       - { path: 'v1/work-sources/{id}/summary', GET: ar:read }
       - { path: 'v1/work-sources/{id}/generate-invoice', POST: ar:write }
       - { path: 'v1/work-sources/{id}/family', GET: ar:read }
+  # WI-OI-152 (ADR-0037 §3): the masters this module keeps, listed in the Master data area.
+  masters:
+    - { label: Billing customers, group: partners, route: /ar, records: ar.customers }

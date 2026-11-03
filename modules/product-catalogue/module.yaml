@@ -228,3 +228,11 @@ spec:
       - { path: 'v1/prices/resolve', POST: pricing:read }
       - { path: 'v1/organization/versions/{id}/units', POST: 'organization:activate' }
       - { path: 'v1/organization/versions/{id}/complete', POST: 'organization:activate' }
+  # WI-OI-152 (ADR-0037 §3): the masters this module keeps, listed in the Master data area.
+  masters:
+    - { label: Products, group: products-and-stock, route: /products, records: catalogue.products }
+    - { label: Units of measure, group: products-and-stock, route: /products/units, records: catalogue.uoms }
+    - { label: Product categories, group: products-and-stock, route: /products/categories, records: catalogue.categories }
+    - { label: Product attributes, group: products-and-stock, route: /products/attributes, records: catalogue.attributes }
+    - { label: Catalogues, group: products-and-stock, route: /products/catalogues, records: catalogue.catalogues }
+    - { label: Price lists, group: products-and-stock, route: /products/price-lists, records: catalogue.price-lists }
