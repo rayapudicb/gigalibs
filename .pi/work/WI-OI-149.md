@@ -33,3 +33,13 @@ Action dialogs that ask for UUIDs ("Fulfillment warehouse UUID", "Inventory issu
 memo order and invoice typed as ids; Inventory "Owning organization unit" free text; organization unit default (the
 picker needs `organization:read`, which module roles cannot grant); date defaults; create-from (quote → order,
 PO → receipt → bill); one-click approvals.
+
+## 2026-11-03 — dialogs, documents, defaults, one-click actions
+
+- QA-022: action parameters may name a lookup (`referenceKey`); the dialog draws the picker and fills named parameters
+  (convert-to-PO: vendor + name, ship-to warehouse; convert-to-order: warehouse; dispatch uses the recorded issue).
+- QA-023: lookups `orders-sales-orders`, `orders-customer-invoices`, `procurement-purchase-orders` over the windows' own
+  scoped reads; credit memo, invoice, fulfillment and vendor bill pick documents; an invoice fills its order and customer.
+- QA-024: warehouse owning unit is a picker.
+- QA-038: a required picker with exactly one option takes it; parameterless record actions run from the list row.
+`pnpm verify` PASS (2026-11-03).

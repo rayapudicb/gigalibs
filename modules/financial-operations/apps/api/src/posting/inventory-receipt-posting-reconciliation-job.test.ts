@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { inventoryReceiptCompletedPostingPolicyV1 } from '@gigalibs/posting-rules';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -68,5 +69,20 @@ describe('runInventoryReceiptPostingReconciliationSweep', () => {
       runInventoryReceiptPostingReconciliationSweep(database as never, { enabled: false, intervalMs: 60_000 }),
     ).resolves.toEqual({ tenantsChecked: 0, unbalancedTenants: 0 });
     expect(database.relayCall).not.toHaveBeenCalled();
+  });
+});
+
+// WI-OI-146 (QA-033): Nest must be able to build the job with its database; it was built with none.
+describe('InventoryReceiptPostingReconciliationJob wiring', () => {
+  it('is injectable and asks Nest for the DatabaseService by token', async () => {
+    const { INJECTABLE_WATERMARK, SELF_DECLARED_DEPS_METADATA } = await import('@nestjs/common/constants.js');
+    const { DatabaseService } = await import('../database.service.js');
+    const { InventoryReceiptPostingReconciliationJob } = await import('./inventory-receipt-posting-reconciliation-job.js');
+    expect(Reflect.getMetadata(INJECTABLE_WATERMARK, InventoryReceiptPostingReconciliationJob)).toBe(true);
+    const deps = Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, InventoryReceiptPostingReconciliationJob) as Array<{
+      index: number;
+      param: unknown;
+    }>;
+    expect(deps.find((dependency) => dependency.index === 0)?.param).toBe(DatabaseService);
   });
 });

@@ -6,7 +6,11 @@
  */
 
 import { AuthService } from '@gigalibs/auth-nest';
-import { OrgHierarchyActivatedEventV1Schema, OrgHierarchySyncRequestedEventV1Schema } from '@gigalibs/contracts';
+import {
+  OrgHierarchyActivatedEventV1Schema,
+  OrgHierarchySyncRequestedEventV1Schema,
+  platformModuleCatalog,
+} from '@gigalibs/contracts';
 import { prisma } from '@gigalibs/db';
 import { JobRegistry, KernelJobs, PostgresJobStore } from '@gigalibs/jobs';
 import { Inject, Injectable, Logger, type OnModuleDestroy, Optional } from '@nestjs/common';
@@ -17,6 +21,20 @@ import type { PackJobs } from './kernel-pack-applications.service.js';
 export const KERNEL_ORGANIZATION_JOBS = Symbol('KERNEL_ORGANIZATION_JOBS');
 
 export const ORGANIZATION_SYNC_EVENT_TYPES = ['organization.hierarchy.activated.v1', 'organization.hierarchy.sync-requested.v1'] as const;
+
+/**
+ * WI-OI-146 (QA-034): a delivery keeps trying for about 2¾ hours (30 s doubling to 30 min between attempts), so a module
+ * that is restarting or slow to start still receives the organization instead of the job giving up after 7½ minutes.
+ */
+export const ORGANIZATION_SYNC_MAX_ATTEMPTS = 12;
+
+/**
+ * WI-OI-147 (QA-047): modules the catalogue marks CONTAINED do not run in the stack, so a delivery to them can only
+ * fail. They receive the organization once they leave containment (Send to modules again).
+ */
+export const ORGANIZATION_SYNC_MODULE_KEYS = Object.keys(ORGANIZATION_SYNC_OPERATIONS).filter(
+  (moduleKey) => platformModuleCatalog.find((entry) => entry.key === moduleKey)?.readiness !== 'CONTAINED',
+);
 
 @Injectable()
 export class KernelOrganizationSyncService implements OnModuleDestroy {
@@ -53,7 +71,7 @@ export class KernelOrganizationSyncService implements OnModuleDestroy {
     const entitled = await prisma.tenantModuleEntitlement.findMany({
       where: {
         tenantId,
-        moduleKey: { in: Object.keys(ORGANIZATION_SYNC_OPERATIONS) },
+        moduleKey: { in: ORGANIZATION_SYNC_MODULE_KEYS },
         status: 'ENABLED',
         startsAt: { lte: now },
         OR: [{ endsAt: null }, { endsAt: { gt: now } }],
@@ -73,6 +91,7 @@ export class KernelOrganizationSyncService implements OnModuleDestroy {
         ownerAuthVersion: owner.authVersion,
         correlationId: `organization:${reason}`,
         idempotencyKey: `organization-sync:${reason}:${moduleKey}`,
+        maxAttempts: ORGANIZATION_SYNC_MAX_ATTEMPTS,
       });
       queued.push({ moduleKey, jobId: job.id });
     }

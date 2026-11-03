@@ -5,6 +5,7 @@ import {
   type SpeedLibrarySetV1,
   holdsPermission,
 } from '@gigalibs/contracts';
+import { PageTabs } from '@gigalibs/web-sdk';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { CriteriaValuesView } from './CriteriaValuesPanel.js';
 import { LibraryEntriesView, type LibraryKind } from './LibraryEntriesPanel.js';
@@ -74,20 +75,7 @@ export function InForceView({ kind, set, libraryKind, onLibraryKind, t }: InForc
       </header>
       {set && 'library' in set ? (
         <>
-          <div role="tablist" className="flex flex-wrap gap-1 border-b border-ui-border-base">
-            {LIBRARY_KINDS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                role="tab"
-                aria-selected={option === libraryKind}
-                className={`border-b-2 px-3 py-1.5 text-sm ${option === libraryKind ? 'border-ui-fg-base font-semibold text-ui-fg-base' : 'border-transparent text-ui-fg-subtle hover:text-ui-fg-base'}`}
-                onClick={() => onLibraryKind(option)}
-              >
-                {t(`speed.inForce.kind.${option}`)}
-              </button>
-            ))}
-          </div>
+          <PageTabs label={t('speed.inForce.kind.label')} value={libraryKind} onChange={onLibraryKind} tabs={LIBRARY_KINDS.map((option) => ({ key: option, label: t(`speed.inForce.kind.${option}`) }))} />
           <div className="overflow-x-auto">
             <LibraryEntriesView set={set} kind={libraryKind} t={t} />
           </div>

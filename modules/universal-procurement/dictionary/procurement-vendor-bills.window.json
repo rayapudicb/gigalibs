@@ -86,13 +86,14 @@
           "fieldKey": "purchase-order-id",
           "entityKey": "procurement.vendor-bills",
           "label": "Purchase order",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": false,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Optional PO UUID to link the bill.",
+          "referenceKey": "purchase-order-ref",
+          "helpText": "The purchase order this bill is for; its vendor fills in.",
           "writePermission": "procurement:bills:manage"
         },
         {
@@ -203,6 +204,14 @@
           "referenceKey": "vendor-ref",
           "referenceType": "SEARCH_LOOKUP",
           "resolverKey": "business-partners-parties"
+        },
+        {
+          "referenceKey": "purchase-order-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "procurement-purchase-orders",
+          "fills": {
+            "vendor-id": "vendor-id"
+          }
         },
         {
           "referenceKey": "vendor-bill-statuses",
@@ -352,7 +361,7 @@
                   "fieldKey": "purchase-order-id",
                   "position": 4,
                   "span": 6,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "source"
                 },
                 {

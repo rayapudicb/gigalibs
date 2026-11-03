@@ -21,6 +21,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { MODULE_REQUEST_RESOURCE, type ModuleRequestAuditRow, openModuleRequests } from './module-requests.js';
 import {
   assertEligibleModuleKeys,
   configuredTenantBaseDomain,
@@ -819,6 +820,13 @@ const platformTenantSelection = {
       updatedAt: true,
     },
   },
+  // WI-OI-147 (QA-035): the modules the workspace asked for, answered by enabling them.
+  auditLogs: {
+    where: { resource: MODULE_REQUEST_RESOURCE },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+    select: { resourceId: true, createdAt: true, user: { select: { email: true, name: true } } },
+  },
   isolationBinding: {
     select: {
       requestedMode: true,
@@ -905,14 +913,23 @@ function presentPlatformUser<T extends { passwordHash: string | null }>(user: T)
   return { ...safe, hasLocalPassword: !!passwordHash };
 }
 
-function presentPlatformTenant<T extends { members: unknown[]; trialEndsAt: Date | null }>(
-  tenant: T,
-) {
-  const { members, ...rest } = tenant;
+function presentPlatformTenant<
+  T extends {
+    members: unknown[];
+    trialEndsAt: Date | null;
+    auditLogs: ModuleRequestAuditRow[];
+    moduleEntitlements: { moduleKey: string; status: string }[];
+  },
+>(tenant: T) {
+  const { members, auditLogs, ...rest } = tenant;
   return {
     ...rest,
     owner: members[0] ?? null,
     trialExpired: !!tenant.trialEndsAt && tenant.trialEndsAt.getTime() <= Date.now(),
+    moduleRequests: openModuleRequests(
+      auditLogs,
+      tenant.moduleEntitlements.filter((entitlement) => entitlement.status === 'ENABLED').map((entitlement) => entitlement.moduleKey),
+    ),
   };
 }
 

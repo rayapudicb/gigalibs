@@ -125,8 +125,26 @@ function WorkforceWindow({
         text={state.message}
       />
     );
-  return <MetadataWindow manifest={state.manifest} client={client} permissions={permissions} />;
+  return <MetadataWindow manifest={state.manifest} client={client} permissions={permissions} starter={STARTERS[surface]} />;
 }
+
+/**
+ * WI-OI-148 (QA-026): a new workspace has no absence types, so nobody can request time off; the empty list offers a
+ * typical set in one click (each can be changed or archived afterwards).
+ */
+const STARTERS: Readonly<Record<string, { label: string; records: Record<string, unknown>[] }>> = {
+  'wf-absence-types': {
+    label: 'Start with the standard absence types',
+    records: [
+      { code: 'VACATION', name: 'Vacation', paid: true, 'requires-approval': true },
+      { code: 'SICK', name: 'Sick leave', paid: true, 'requires-approval': false },
+      { code: 'PERSONAL', name: 'Personal leave', paid: false, 'requires-approval': true },
+      { code: 'TRAINING', name: 'Training', paid: true, 'requires-approval': true },
+      { code: 'PARENTAL', name: 'Parental leave', paid: true, 'requires-approval': true },
+      { code: 'UNPAID', name: 'Unpaid leave', paid: false, 'requires-approval': true },
+    ],
+  },
+};
 
 function Notice({ title, text }: { title: string; text: string }) {
   return (

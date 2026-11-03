@@ -9,6 +9,7 @@ import {
 } from '@gigalibs/contracts';
 import {
   type IdempotencyStore,
+  type LookupResolver,
   type ModulePrincipal,
   type RecordAdapter,
   RecordDispatcher,
@@ -581,8 +582,43 @@ export function procurementRecordDispatcher(deps: { procurement: ProcurementServ
 
   return new RecordDispatcher(
     [requisitions, purchaseOrders, vendorBills, debitMemos],
-    [],
+    [purchaseOrderLookup(purchaseOrders)],
     idempotency,
     shippedRecordRules('universal-procurement'),
   );
+}
+
+/**
+ * WI-OI-149 (QA-023): a purchase order picked by its number and vendor, through the window's own scoped read, instead
+ * of a typed id; the option carries the vendor so a vendor bill fills it.
+ */
+function purchaseOrderLookup(adapter: RecordAdapter): LookupResolver {
+  return {
+    key: 'procurement-purchase-orders',
+    permission: 'procurement:read',
+    async resolve(principal, request) {
+      const records = request.ids?.length
+        ? (await Promise.all(request.ids.map((id) => adapter.get(principal, id).catch(() => null)))).filter(
+            (record): record is RecordValues => record !== null,
+          )
+        : (
+            await adapter.list(principal, {
+              page: 1,
+              pageSize: request.limit,
+              ...(request.search ? { search: request.search } : {}),
+              sortDirection: 'DESC',
+              filters: {},
+            })
+          ).items;
+      return records.map((record) => {
+        const number = typeof record['order-number'] === 'string' ? (record['order-number'] as string) : String(record.id);
+        const vendor = typeof record['vendor-name'] === 'string' ? (record['vendor-name'] as string) : '';
+        const attributes: Record<string, string> = {};
+        for (const field of ['vendor-id', 'vendor-name']) {
+          if (typeof record[field] === 'string' && record[field]) attributes[field] = record[field] as string;
+        }
+        return { value: String(record.id), label: vendor ? `${number} (${vendor})` : number, attributes };
+      });
+    },
+  };
 }

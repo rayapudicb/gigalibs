@@ -148,7 +148,7 @@
         {
           "fieldKey": "meter-id",
           "entityKey": "cmms.meter-readings",
-          "label": "Meter ID",
+          "label": "Meter",
           "type": "TEXT",
           "required": false,
           "readOnly": true,

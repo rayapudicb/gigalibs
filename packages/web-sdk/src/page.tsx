@@ -1,6 +1,8 @@
 'use client';
 
 import { Button, Text } from '@medusajs/ui';
+// React in scope: tests compile this source with the classic JSX transform (the app uses the automatic one).
+import * as React from 'react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -61,10 +63,12 @@ export interface PageTabsProps<K extends string> {
   readonly onChange: (key: K) => void;
   /** What the tabs switch between, for assistive technology. */
   readonly label: string;
+  /** WI-OI-150 (QA-040): ids `<prefix>-tab-<key>`, controlling `<prefix>-panel-<key>`, when panels name their tab. */
+  readonly idPrefix?: string;
 }
 
 /** Views inside one screen, in the same underline style as the module tab bar (never rounded buttons). */
-export function PageTabs<K extends string>({ tabs, value, onChange, label }: PageTabsProps<K>) {
+export function PageTabs<K extends string>({ tabs, value, onChange, label, idPrefix }: PageTabsProps<K>) {
   return (
     <div role="tablist" aria-label={label} className="flex flex-nowrap overflow-x-auto overflow-y-hidden border-b border-ui-border-base [scrollbar-width:thin]">
       {tabs.map((tab) => {
@@ -75,6 +79,7 @@ export function PageTabs<K extends string>({ tabs, value, onChange, label }: Pag
             type="button"
             role="tab"
             aria-selected={selected}
+            {...(idPrefix ? { id: `${idPrefix}-tab-${tab.key}`, 'aria-controls': `${idPrefix}-panel-${tab.key}` } : {})}
             onClick={() => onChange(tab.key)}
             className={`shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm transition-colors ${
               selected ? 'border-ui-fg-interactive font-medium text-ui-fg-base' : 'border-transparent text-ui-fg-subtle hover:text-ui-fg-base'

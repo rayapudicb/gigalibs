@@ -45,6 +45,8 @@ interface TenantRecord {
     source: string;
     endsAt: string | null;
   }>;
+  /** WI-OI-147 (QA-035): modules the workspace administrator asked for; enabling one answers it. */
+  moduleRequests?: Array<{ moduleKey: string; requestedAt: string; requestedBy: string | null }>;
   isolationBinding: {
     requestedMode: string;
     effectiveMode: string | null;
@@ -284,19 +286,19 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
               href="/platform-admin"
               className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-blue-700 border border-blue-200"
             >
-              🏢 Tenant Workspaces & Licensing
+              Tenant Workspaces & Licensing
             </a>
             <a
               href="/platform-admin/users"
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition"
             >
-              👥 Global Users & Platform RBAC
+              Global Users & Platform RBAC
             </a>
             <a
               href="/platform-admin/infra"
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition"
             >
-              ⚙️ Infrastructure
+              Infrastructure
             </a>
           </div>
 
@@ -342,7 +344,7 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                 : 'border-transparent text-zinc-500 hover:text-zinc-900'
             }`}
           >
-            <span>🏢 Tenant Directory</span>
+            <span>Tenant Directory</span>
             <span className="rounded-full bg-zinc-200/80 px-2 py-0.5 text-[10px] text-zinc-700">
               {filteredTenants.length}
             </span>
@@ -356,7 +358,7 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                 : 'border-transparent text-zinc-500 hover:text-zinc-900'
             }`}
           >
-            <span>⚙️ Tenant Management & Entitlements</span>
+            <span>Tenant Management & Entitlements</span>
             {selected && (
               <span className="rounded-md bg-blue-100 px-1.5 py-0.5 font-mono text-[10px] text-blue-800">
                 {selected.name}
@@ -372,7 +374,7 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                 : 'border-transparent text-zinc-500 hover:text-zinc-900'
             }`}
           >
-            <span>➕ Provision New Trial Tenant</span>
+            <span>Provision New Trial Tenant</span>
           </button>
         </div>
 
@@ -382,7 +384,6 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
             {/* Search and Filters Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
               <div className="flex flex-1 items-center gap-2 min-w-[280px]">
-                <span className="text-zinc-400">🔍</span>
                 <input
                   type="text"
                   placeholder="Search by organization name, slug, or owner email…"
@@ -475,6 +476,11 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                           <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
                             {activeModCount} modules
                           </span>
+                          {t.moduleRequests?.length ? (
+                            <span className="ml-1.5 inline-flex items-center rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                              {t.moduleRequests.length} requested
+                            </span>
+                          ) : null}
                         </td>
                         <td className="px-4 py-3.5 text-right">
                           <button
@@ -563,10 +569,10 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                       </p>
                     </div>
 
-                    <Field label="Audit Reason (Mandatory for Compliance)">
+                    <Field label="Note for the audit log (optional)">
                       <input
                         value={reason}
-                        minLength={3}
+                        placeholder="Platform administrator review"
                         onChange={(event) => setReason(event.target.value)}
                         className={inputClass}
                       />
@@ -588,12 +594,12 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                           void tenantMutation(
                             'trial-extension',
                             'POST',
-                            { extensionDays: 14, reason },
+                            { extensionDays: 14, reason: auditNote(reason) },
                             'Trial extension',
                           )
                         }
                       >
-                        ⏱️ Extend 14 Days
+                        Extend 14 Days
                       </ActionButton>
                       <ActionButton
                         disabled={!canMutate || busy !== null}
@@ -601,12 +607,12 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                           void tenantMutation(
                             'status',
                             'PATCH',
-                            { status: 'ACTIVE', plan: 'ENTERPRISE', reason, billingReference },
+                            { status: 'ACTIVE', plan: 'ENTERPRISE', reason: auditNote(reason), billingReference },
                             'Convert to paid enterprise plan',
                           )
                         }
                       >
-                        💳 Convert to Paid
+                        Convert to Paid
                       </ActionButton>
                       <ActionButton
                         disabled={!canMutate || busy !== null}
@@ -616,13 +622,13 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                             'PATCH',
                             {
                               status: selected.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED',
-                              reason,
+                              reason: auditNote(reason),
                             },
                             `${selected.status === 'SUSPENDED' ? 'Activate' : 'Suspend'} workspace`,
                           )
                         }
                       >
-                        {selected.status === 'SUSPENDED' ? '🔓 Reactivate' : '🛑 Suspend Workspace'}
+                        {selected.status === 'SUSPENDED' ? 'Reactivate' : 'Suspend Workspace'}
                       </ActionButton>
                     </div>
                   </div>
@@ -668,12 +674,12 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                           void tenantMutation(
                             'isolation-requests',
                             'POST',
-                            { isolationMode, region, reason },
+                            { isolationMode, region, reason: auditNote(reason) },
                             'Request isolation upgrade',
                           )
                         }
                       >
-                        🚀 Apply Infrastructure Mode
+                        Apply Infrastructure Mode
                       </ActionButton>
                     </div>
                   </div>
@@ -694,6 +700,7 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                     selected={editModules}
                     onChange={setEditModules}
                     disabled={!canMutate}
+                    requests={selected.moduleRequests ?? []}
                   />
                   <div className="mt-6 border-t border-zinc-100 pt-4">
                     <button
@@ -705,7 +712,7 @@ export default function PlatformTenantControl({ session }: { session: VerifiedSe
                           'PUT',
                           {
                             moduleKeys: editModules,
-                            reason: `${reason} (Licensed entitlements updated)`,
+                            reason: entitlementReason(reason, enabledModuleKeys(selected), editModules),
                           },
                           'Update module licenses',
                         )
@@ -922,14 +929,17 @@ function ModuleChecklist({
   onChange,
   compact = false,
   disabled = false,
+  requests = [],
 }: {
   modules: ModuleDefinition[];
   selected: string[];
   onChange: (value: string[]) => void;
   compact?: boolean;
   disabled?: boolean;
+  requests?: ReadonlyArray<{ moduleKey: string; requestedAt: string; requestedBy: string | null }>;
 }) {
   const selectedSet = new Set(selected);
+  const requested = new Map(requests.map((request) => [request.moduleKey, request]));
   const visible = compact ? modules.filter((module) => module.entitlementEligible) : modules;
   return (
     <div className={`mt-3 grid gap-2 ${compact ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3'}`}>
@@ -963,6 +973,12 @@ function ModuleChecklist({
             <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-zinc-400">
               {module.area}
             </span>
+            {requested.has(module.key) ? (
+              <span className="mt-1 block text-[10px] font-semibold text-amber-800">
+                Requested {new Date(requested.get(module.key)!.requestedAt).toLocaleDateString('en-GB')}
+                {requested.get(module.key)!.requestedBy ? ` by ${requested.get(module.key)!.requestedBy}` : ''}
+              </span>
+            ) : null}
           </span>
         </label>
       ))}
@@ -988,3 +1004,24 @@ const primaryButton =
   'inline-flex h-9 items-center justify-center rounded-lg bg-zinc-950 px-4 text-xs font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50';
 const secondaryButton =
   'inline-flex h-9 items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50';
+
+function enabledModuleKeys(tenant: { moduleEntitlements: { moduleKey: string; status: string }[] }): string[] {
+  return tenant.moduleEntitlements.filter((entitlement) => entitlement.status === 'ENABLED').map((entitlement) => entitlement.moduleKey);
+}
+
+/**
+ * WI-OI-147 (QA-036): the audit reason is never typed to enable a module. The operator's note is optional; the record
+ * always says which modules were turned on and off.
+ */
+export function entitlementReason(note: string, before: readonly string[], after: readonly string[]): string {
+  const enabled = after.filter((key) => !before.includes(key));
+  const disabled = before.filter((key) => !after.includes(key));
+  const change = `modules on: ${enabled.join(', ') || 'none'}; off: ${disabled.join(', ') || 'none'}`;
+  return `${auditNote(note)} (${change})`.slice(0, 500);
+}
+
+/** The operator's note, or a default, always 3–500 characters as the control plane requires. */
+export function auditNote(note: string): string {
+  const trimmed = note.trim();
+  return (trimmed.length >= 3 ? trimmed : 'Platform administrator review').slice(0, 500);
+}

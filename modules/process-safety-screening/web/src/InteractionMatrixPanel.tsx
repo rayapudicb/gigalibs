@@ -1,6 +1,7 @@
 'use client';
 
 import type { MetadataPanelProps } from '@gigalibs/configuration-react';
+import { PageTabs } from '@gigalibs/web-sdk';
 import {
   type SpeedLibrarySetV1,
   type SpeedRouteDetailV1,
@@ -85,20 +86,7 @@ export function InteractionMatrixView(props: InteractionMatrixViewProps) {
     route.steps.find((candidate) => candidate.id === selectedStepId) ?? route.steps[0] ?? null;
   return (
     <section aria-label={t('speed.haz.label')} className="space-y-4">
-      <div role="tablist" className="flex flex-wrap gap-1">
-        {route.steps.map((candidate) => (
-          <button
-            key={candidate.id}
-            type="button"
-            role="tab"
-            aria-selected={candidate.id === step?.id}
-            onClick={() => onSelect(candidate.id)}
-            className={`rounded-full border px-3 py-1 text-sm ${candidate.id === step?.id ? 'border-ui-border-interactive bg-ui-bg-base text-ui-fg-base' : 'border-ui-border-base text-ui-fg-subtle'}`}
-          >
-            {t('speed.haz.pill', { position: candidate.position, count: highCount(candidate) })}
-          </button>
-        ))}
-      </div>
+      <PageTabs label={t('speed.haz.label')} value={step?.id ?? ''} onChange={onSelect} tabs={route.steps.map((candidate) => ({ key: candidate.id, label: t('speed.haz.pill', { position: candidate.position, count: highCount(candidate) }) }))} />
       {editable ? (
         <label className="block max-w-sm text-sm text-ui-fg-subtle">
           {t('speed.workbench.reason')}

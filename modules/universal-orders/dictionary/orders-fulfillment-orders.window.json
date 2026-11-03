@@ -47,12 +47,14 @@
           "fieldKey": "order-id",
           "entityKey": "orders.fulfillment-orders",
           "label": "Sales order",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "referenceKey": "sales-order-ref",
+          "helpText": "The sales order to pick, pack and ship.",
           "writePermission": "orders:fulfill"
         },
         {
@@ -177,6 +179,11 @@
             "surfaceKey": "inventory-warehouses",
             "permission": "inventory:warehouses:manage"
           }
+        },
+        {
+          "referenceKey": "sales-order-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "orders-sales-orders"
         }
       ],
       "validationRules": [],
@@ -247,7 +254,7 @@
                   "fieldKey": "order-id",
                   "position": 2,
                   "span": 8,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "source"
                 },
                 {
@@ -304,9 +311,9 @@
           "parameters": [
             {
               "key": "issue-id",
-              "label": "Inventory issue UUID",
+              "label": "Inventory issue reference (only when the fulfillment has none)",
               "type": "TEXT",
-              "required": true
+              "required": false
             }
           ],
           "visibilityCondition": {

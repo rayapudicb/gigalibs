@@ -274,7 +274,6 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
                 <StatusBadge color={invoice.status === 'ISSUED' ? 'green' : 'orange'}>
                   {invoice.status}
                 </StatusBadge>
-                <Badge color="blue" size="small">WI-OI-035</Badge>
                 <span className="text-xs text-ui-fg-muted font-mono">Version {invoice.version}</span>
               </div>
               <Heading level="h1" className="text-2xl font-bold text-ui-fg-base mt-1.5">
@@ -288,7 +287,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
                 size="small"
                 onClick={() => window.print()}
               >
-                🖨️ Print / Save PDF
+                Print / Save PDF
               </Button>
               <Button
                 variant="secondary"

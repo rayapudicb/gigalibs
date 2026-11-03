@@ -106,7 +106,8 @@ describe('organization hierarchy contracts', () => {
         clientsMayNarrowScopeOnly: true,
       },
     });
-    const knownOperations = new Set(ORGANIZATION_ROUTES.map((route) => route.operationId));
+    // WI-OI-147 (QA-025): the member-readable unit picker options are not a phone and tablet capability.
+    const knownOperations = new Set(ORGANIZATION_ROUTES.filter((route) => route.permission !== 'users:read').map((route) => route.operationId));
     const advertisedOperations = ORGANIZATION_CLIENT_MANIFEST_V1.capabilities.map((capability) => capability.operationId);
     expect(new Set(advertisedOperations)).toEqual(knownOperations);
     expect(new Set(advertisedOperations).size).toBe(advertisedOperations.length);

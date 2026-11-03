@@ -243,7 +243,6 @@ export function PrintableInvoiceSheet({ invoice }: { invoice: Invoice | null }) 
       <div className="mb-6 p-4 rounded border-2 border-slate-800 bg-slate-50 break-inside-avoid">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm">🔒</span>
             <span className="text-xs font-black uppercase tracking-wider text-slate-900">
               FIPS 180-4 Cryptographic Ledger Seal Certificate
             </span>
@@ -298,7 +297,7 @@ export function PrintableInvoiceSheet({ invoice }: { invoice: Invoice | null }) 
 
       {/* ─── PRINT FOOTER ─── */}
       <div className="mt-8 pt-4 border-t border-slate-200 text-center text-[10px] text-slate-400 font-mono">
-        Generated via GigaLibs AR Ledger Engine (WI-OI-035) • FIPS 180-4 Tamper-Proof Cryptographic System • Page 1 of 1
+        Generated via GigaLibs AR Ledger Engine • FIPS 180-4 Tamper-Proof Cryptographic System • Page 1 of 1
       </div>
     </div>
   );

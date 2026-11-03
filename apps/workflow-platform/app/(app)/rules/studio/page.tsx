@@ -666,11 +666,11 @@ export default function NoCodeRuleStudioPage() {
                       onChange={(e) => setSelectedAction(e.target.value as UniversalActionType)}
                       className="text-xs font-bold border border-ui-border-base rounded-md px-2.5 py-2 bg-ui-bg-field text-ui-fg-base"
                     >
-                      <option value="BLOCK_DROP">⛔ BLOCK_DROP (Reject / Drop)</option>
-                      <option value="HOLD_TRANSACTION">⏸️ HOLD_TRANSACTION (ERP Hold & Alert)</option>
-                      <option value="REROUTE_TOPIC">🔀 REROUTE_TOPIC (Divert to Topic/DLQ)</option>
-                      <option value="MUTATE_ENRICH">✨ MUTATE_ENRICH (Inject Tags/Headers)</option>
-                      <option value="PASS">✅ PASS (Allow Clean Execution)</option>
+                      <option value="BLOCK_DROP">BLOCK_DROP (Reject / Drop)</option>
+                      <option value="HOLD_TRANSACTION">HOLD_TRANSACTION (ERP Hold & Alert)</option>
+                      <option value="REROUTE_TOPIC">REROUTE_TOPIC (Divert to Topic/DLQ)</option>
+                      <option value="MUTATE_ENRICH">MUTATE_ENRICH (Inject Tags/Headers)</option>
+                      <option value="PASS">PASS (Allow Clean Execution)</option>
                     </select>
 
                     <input

@@ -270,6 +270,8 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
       m('accounts', 'Chart of accounts', '/finance/accounts', 'layers'),
       m('periods', 'Periods', '/finance/periods', 'calendar'),
       m('books', 'Books', '/finance/books', 'database'),
+      // WI-OI-148 (QA-039): the standard costs window gets its screen.
+      m('standard-costs', 'Standard costs', '/finance/standard-costs', 'coins'),
       m('reports', 'Reports', '/finance/reports', 'bar-chart'),
       m('set-up', 'Set up a book', '/finance/set-up', 'settings', ['finance:books:manage']),
     ],

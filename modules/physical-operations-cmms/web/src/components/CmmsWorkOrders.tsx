@@ -1410,10 +1410,10 @@ function FailureAnalysisCard({
     const plan = jobPlans.find((p) => p.id === selectedJobPlan);
     if (plan) {
       const notes: string[] = [];
-      if (plan.safetyGuidelines) notes.push(`📋 Safety guidelines: ${plan.safetyGuidelines}`);
+      if (plan.safetyGuidelines) notes.push(`Safety guidelines: ${plan.safetyGuidelines}`);
       const safetyTasks = plan.tasks.filter((t) => t.taskType === 'SAFETY_CHECK');
       for (const t of safetyTasks) {
-        notes.push(`⚠️ LOTO/Safety check required: ${t.label} (${t.estimatedMinutes} min)`);
+        notes.push(`LOTO and safety check required: ${t.label} (${t.estimatedMinutes} min)`);
       }
       setSafetyNotes(notes);
     } else {
@@ -1580,7 +1580,7 @@ function FailureAnalysisCard({
                 {safetyNotes.length > 0 ? (
                   <div className="rounded-md border border-ui-tag-orange-border bg-ui-tag-orange-bg p-3 space-y-1">
                     <Text size="small" weight="plus" className="text-ui-tag-orange-text">
-                      ⚠️ Safety & LOTO requirements
+                      Safety and LOTO requirements
                     </Text>
                     {safetyNotes.map((note, i) => (
                       <Text key={i} size="xsmall" className="text-ui-tag-orange-text">{note}</Text>

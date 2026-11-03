@@ -53,7 +53,8 @@ import {
 // docs/contracts/organization are generated from it (scripts/write-organization-contracts.mjs); tests keep the
 // controller, this table and the committed documents identical.
 
-export type OrganizationPermission = OrganizationClientPermission;
+/** WI-OI-147 (QA-025): `users:read` guards only the unit picker options, which every workspace member may read. */
+export type OrganizationPermission = OrganizationClientPermission | 'users:read';
 
 export interface OrganizationRoute {
   method: 'get' | 'post' | 'patch';
@@ -84,6 +85,8 @@ export const ORGANIZATION_ROUTES: readonly OrganizationRoute[] = [
   { method: 'post', path: '/unit-types/{unitTypeId}/archive', operationId: 'archiveOrgUnitType', permission: 'organization:draft', summary: 'Archive a unit type with no units', status: 200, body: StatusChange, response: UnitType },
   { method: 'post', path: '/unit-types/{unitTypeId}/restore', operationId: 'restoreOrgUnitType', permission: 'organization:draft', summary: 'Restore a unit type', status: 200, body: StatusChange, response: UnitType },
   { method: 'get', path: '/units', operationId: 'listOrgUnits', permission: 'organization:read', summary: 'Search units', status: 200, query: OrgUnitListQuerySchema, response: named('OrgUnitPage', orgPageSchema(OrgUnitV1Schema)) },
+  // WI-OI-147 (QA-025): unit names and codes for pickers, readable by every workspace member.
+  { method: 'get', path: '/unit-options', operationId: 'listOrgUnitOptions', permission: 'users:read', summary: 'Units to pick as a record owner (id, name, code, status)', status: 200, query: OrgUnitListQuerySchema, response: named('OrgUnitOptionPage', orgPageSchema(OrgUnitV1Schema.pick({ id: true, name: true, code: true, status: true }))) },
   { method: 'get', path: '/units/{unitId}', operationId: 'getOrgUnit', permission: 'organization:read', summary: 'Read a unit (ETag carries its version)', status: 200, response: Unit },
   { method: 'post', path: '/units', operationId: 'createOrgUnit', permission: 'organization:draft', summary: 'Create a unit (not placed in any tree)', status: 201, body: named('CreateOrgUnit', CreateOrgUnitV1Schema), response: Unit },
   { method: 'patch', path: '/units/{unitId}', operationId: 'updateOrgUnit', permission: 'organization:draft', summary: 'Change a unit', status: 200, body: named('UpdateOrgUnit', UpdateOrgUnitV1Schema), response: Unit },
@@ -136,7 +139,13 @@ export const ORGANIZATION_CLIENT_MANIFEST_V1 = OrganizationClientManifestV1Schem
   scopeClaim: 'PlatformContextV1.organization',
   ownership: { primaryField: 'organizationUnitId', legacyAlias: 'departmentId', tenantSharedMarker: 'tenantShared' },
   limits: { maxDepth: MAX_ORG_DEPTH, maxUnits: MAX_ORG_UNITS, maxGrantRootsPerMember: MAX_ORG_GRANTS_PER_MEMBER },
-  capabilities: ORGANIZATION_ROUTES.map(({ operationId, method, path, permission }) => ({ operationId, method, path, permission })),
+  // The picker options (users:read) are not an organization capability of the phone and tablet clients.
+  capabilities: ORGANIZATION_ROUTES.filter((route) => route.permission !== 'users:read').map(({ operationId, method, path, permission }) => ({
+    operationId,
+    method,
+    path,
+    permission: permission as OrganizationClientPermission,
+  })),
   surfaces: [
     {
       key: 'structure', title: 'Structure', readPermission: 'organization:read', phoneLayout: 'STEP_FLOW', tabletLayout: 'TREE_DETAIL',

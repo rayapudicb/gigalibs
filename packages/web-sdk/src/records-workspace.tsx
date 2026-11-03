@@ -33,7 +33,7 @@ async function call<T>(url: string, init: RequestInit = {}): Promise<T> {
         ? (problem.message as Record<string, unknown>)
         : problem;
     const detail = [nested.message, problem.title].find((value) => typeof value === 'string');
-    throw new Error((detail as string | undefined) ?? `Request failed (${response.status}).`);
+    throw new Error((detail as string | undefined) ?? 'The request could not be completed. Try again.');
   }
   return body as T;
 }

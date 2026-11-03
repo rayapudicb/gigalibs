@@ -81,6 +81,24 @@ describe('KernelJobs', () => {
     await expect(jobs.schedule(command(), new Date(NOW.getTime() + 1_000))).resolves.toBeTruthy();
   });
 
+  it('lets a caller give one job more attempts than its definition, within bounds', async () => {
+    const inputs: StoredJobInput[] = [];
+    const store = stubStore({
+      enqueue: async (input) => {
+        inputs.push(input);
+        return { job: makeJob({ payload: input.payload, payloadSha256: input.payloadSha256 }), created: true };
+      },
+    });
+    const jobs = new KernelJobs({ store, registry: registryWith(makeDefinition()), clock: () => NOW, idFactory: () => 'job-fixed' });
+
+    await jobs.enqueue(command({ maxAttempts: 12 }));
+    await jobs.enqueue(command());
+    expect(inputs[0]?.maxAttempts).toBe(12);
+    expect(inputs[1]?.maxAttempts).toBe(makeDefinition().maxAttempts);
+    await expect(jobs.enqueue(command({ maxAttempts: 0 }))).rejects.toThrow(/maxAttempts/);
+    await expect(jobs.enqueue(command({ maxAttempts: 51 }))).rejects.toThrow(/maxAttempts/);
+  });
+
   it('executes a PostgreSQL job with its tenant-bound owner context', async () => {
     let executionContext: unknown;
     const definition = makeDefinition(async (context) => {

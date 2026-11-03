@@ -602,7 +602,7 @@ export function windowSource(builderFor) {
     field(MTR, 'max-threshold', 'Max threshold', 'NUMBER'),
   ];
   const mrdf = [
-    field(MRD, 'meter-id', 'Meter ID', 'TEXT', { readOnly: true }),
+    field(MRD, 'meter-id', 'Meter', 'TEXT', { readOnly: true }),
     field(MRD, 'value', 'Reading value', 'NUMBER', { required: true }),
     field(MRD, 'read-at', 'Timestamp', 'DATETIME', { required: true }),
     field(MRD, 'notes', 'Notes', 'TEXTAREA'),
@@ -676,13 +676,13 @@ export function windowSource(builderFor) {
     field(PRT, 'barcode', 'Barcode / UPC', 'TEXT'),
   ];
   const pmvf = [
-    field(PMV, 'part-id', 'Part ID', 'TEXT', { readOnly: true }),
+    field(PMV, 'part-id', 'Part', 'TEXT', { readOnly: true }),
     field(PMV, 'movement-type', 'Movement type', 'SELECT', { required: true, ref: 'movement-types' }),
     field(PMV, 'quantity-delta', 'Quantity change', 'NUMBER', { required: true }),
     field(PMV, 'balance-after', 'Balance after', 'NUMBER', { readOnly: true }),
     field(PMV, 'unit-cost', 'Unit cost', 'NUMBER'),
     field(PMV, 'currency-code', 'Currency', 'SELECT', { ref: 'currencies' }),
-    field(PMV, 'storeroom-id', 'Storeroom ID', 'TEXT'),
+    field(PMV, 'storeroom-id', 'Storeroom', 'TEXT'),
     field(PMV, 'bin-location', 'Bin location', 'TEXT'),
     field(PMV, 'reason', 'Reason', 'TEXTAREA'),
     field(PMV, 'created-by', 'Transacted by', 'TEXT', { readOnly: true }),
@@ -776,9 +776,9 @@ export function windowSource(builderFor) {
     field(AST, 'updated-at', 'Updated at', 'DATETIME', { readOnly: true }),
   ];
   const aspf = [
-    field(ASP, 'asset-id', 'Asset ID', 'TEXT', { readOnly: true }),
-    field(ASP, 'spec-definition-id', 'Spec definition ID', 'TEXT', { readOnly: true }),
-    field(ASP, 'attribute-key', 'Attribute key', 'TEXT', { readOnly: true }),
+    field(ASP, 'asset-id', 'Asset', 'TEXT', { readOnly: true }),
+    field(ASP, 'spec-definition-id', 'Specification', 'TEXT', { readOnly: true }),
+    field(ASP, 'attribute-key', 'Attribute', 'TEXT', { readOnly: true }),
     field(ASP, 'label', 'Specification', 'TEXT', { readOnly: true }),
     field(ASP, 'data-type', 'Data type', 'TEXT', { readOnly: true }),
     field(ASP, 'uom', 'Unit', 'TEXT', { readOnly: true }),
@@ -888,7 +888,7 @@ export function windowSource(builderFor) {
     field(SPC, 'updated-at', 'Updated at', 'DATETIME', { readOnly: true }),
   ];
   const spaf = [
-    field(SPA, 'space-id', 'Space ID', 'TEXT', { readOnly: true }),
+    field(SPA, 'space-id', 'Space', 'TEXT', { readOnly: true }),
     field(SPA, 'asset-tag', 'Asset tag', 'TEXT', { readOnly: true }),
     field(SPA, 'name', 'Asset name', 'TEXT', { readOnly: true }),
     field(SPA, 'category', 'Category', 'TEXT', { readOnly: true }),
@@ -980,8 +980,8 @@ export function windowSource(builderFor) {
     field(CLS, 'updated-at', 'Updated at', 'DATETIME', { readOnly: true }),
   ];
   const sdff = [
-    field(SDF, 'classification-id', 'Classification ID', 'TEXT', { readOnly: true }),
-    field(SDF, 'attribute-key', 'Attribute key', 'TEXT', { required: true, writePermission: 'cmms.assets.write' }),
+    field(SDF, 'classification-id', 'Classification', 'TEXT', { readOnly: true }),
+    field(SDF, 'attribute-key', 'Attribute code', 'TEXT', { required: true, help: 'A short code for the attribute, for example rated-power.', writePermission: 'cmms.assets.write' }),
     field(SDF, 'label', 'Label', 'TEXT', { required: true, writePermission: 'cmms.assets.write' }),
     field(SDF, 'data-type', 'Data type', 'SELECT', { required: true, ref: 'spec-data-types', default: 'TEXT', writePermission: 'cmms.assets.write' }),
     field(SDF, 'uom', 'Unit of measure', 'TEXT', { writePermission: 'cmms.assets.write' }),

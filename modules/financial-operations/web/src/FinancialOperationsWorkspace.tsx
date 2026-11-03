@@ -12,7 +12,15 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useSta
 
 const BASE_PATH = '/api/financial-operations';
 
-type Tab = 'finance-journal-drafts' | 'finance-journals' | 'finance-accounts' | 'finance-periods' | 'finance-books' | 'setup' | 'reports';
+type Tab =
+  | 'finance-journal-drafts'
+  | 'finance-journals'
+  | 'finance-accounts'
+  | 'finance-periods'
+  | 'finance-books'
+  | 'finance-product-standard-costs'
+  | 'setup'
+  | 'reports';
 
 const field =
   'w-full rounded-md border border-ui-border-base bg-ui-bg-field px-2 py-1.5 text-sm text-ui-fg-base focus:border-ui-border-interactive focus:outline-none';
@@ -21,7 +29,15 @@ const primary =
 const box = 'rounded-lg border border-ui-border-base bg-ui-bg-base p-4';
 
 /** The general ledger's screens: one tab in the module tab bar, one sidebar entry and one route each (WI-OI-145). */
-export type FinanceSection = 'journal-entries' | 'posted-journals' | 'accounts' | 'periods' | 'books' | 'reports' | 'set-up';
+export type FinanceSection =
+  | 'journal-entries'
+  | 'posted-journals'
+  | 'accounts'
+  | 'periods'
+  | 'books'
+  | 'standard-costs'
+  | 'reports'
+  | 'set-up';
 
 export const FINANCE_SECTIONS: Readonly<Record<FinanceSection, { readonly title: string; readonly view: Tab }>> = {
   'journal-entries': { title: 'Journal entries', view: 'finance-journal-drafts' },
@@ -29,6 +45,8 @@ export const FINANCE_SECTIONS: Readonly<Record<FinanceSection, { readonly title:
   accounts: { title: 'Chart of accounts', view: 'finance-accounts' },
   periods: { title: 'Periods', view: 'finance-periods' },
   books: { title: 'Books', view: 'finance-books' },
+  // WI-OI-148 (QA-039): the standard costs window was defined but on no screen.
+  'standard-costs': { title: 'Standard costs', view: 'finance-product-standard-costs' },
   reports: { title: 'Reports', view: 'reports' },
   'set-up': { title: 'Set up a book', view: 'setup' },
 };

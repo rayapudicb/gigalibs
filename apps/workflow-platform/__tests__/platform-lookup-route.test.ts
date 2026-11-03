@@ -111,7 +111,7 @@ describe('platform lookup route', () => {
     ]);
     expect(upstream).toHaveBeenLastCalledWith(
       'control',
-      '/api/v1/tenants/current/organization/units?limit=200&q=main',
+      '/api/v1/tenants/current/organization/unit-options?limit=200&q=main',
     );
     upstream.mockResolvedValue(json(units));
     expect(await (await call('organization-units', '?ids=unit-2')).json()).toEqual([
@@ -119,7 +119,7 @@ describe('platform lookup route', () => {
     ]);
     expect(upstream).toHaveBeenLastCalledWith(
       'control',
-      '/api/v1/tenants/current/organization/units?limit=200&ids=unit-2',
+      '/api/v1/tenants/current/organization/unit-options?limit=200&ids=unit-2',
     );
   });
 

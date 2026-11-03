@@ -771,7 +771,7 @@ export function CryptographicEsignWorkbench() {
                   <div><strong>Signed At:</strong> {signSuccess.signedAt}</div>
                   {signSuccess.envelopeCompleted && (
                     <div className="text-amber-400 font-bold pt-2">
-                      ★ ENVELOPE FULLY COMPLETED — Court-Admissible PKI Certificate Generated!
+                      Envelope fully completed — Court-Admissible PKI Certificate Generated!
                     </div>
                   )}
                 </div>
@@ -874,7 +874,7 @@ export function CryptographicEsignWorkbench() {
                           className="w-full h-28 cursor-crosshair"
                         />
                         <div className="absolute bottom-2 left-3 text-[10px] text-zinc-400 font-mono select-none pointer-events-none">
-                          ✍ Sign above using mouse or touch pen
+                          Sign above using mouse or touch pen
                         </div>
                       </div>
                       <div className="flex justify-between items-center text-xs">

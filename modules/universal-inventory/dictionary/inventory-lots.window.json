@@ -42,7 +42,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "referenceKey": "product-ref"
+          "referenceKey": "product-ref",
+          "helpText": "The product this lot or batch is of."
         },
         {
           "fieldKey": "lot-number",
@@ -53,7 +54,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "The number printed on the goods, used for traceability and recalls."
         },
         {
           "fieldKey": "batch-code",

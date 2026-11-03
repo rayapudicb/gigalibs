@@ -4,7 +4,7 @@ import {
   holdsPermission,
   type ModuleAnalyticsSourceContractV1,
 } from '@gigalibs/contracts';
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import type { AnalyticsPrincipal } from './authorization.js';
 
@@ -33,6 +33,7 @@ const BLOCKED_LIFECYCLES = new Set(['UNAVAILABLE', 'QUARANTINED']);
 
 @Injectable()
 export class SourceAccessService {
+  private readonly logger = new Logger(SourceAccessService.name);
   private readonly contractsByCatalog = new Map(
     generatedModuleAnalyticsSources.map((contract) => [contract.catalogModuleKey, contract]),
   );
@@ -262,6 +263,11 @@ export class SourceAccessService {
         });
       }
       if (!holdsPermission(principal.permissions, contract.requiredReadPermission)) {
+        // WI-OI-146 (QA-012): a workspace administrator holding the permission was refused on UAT; this records what the
+        // request carried (counts only, no codes) so the cause can be seen in the log.
+        this.logger.warn(
+          `Module source refused: needs ${contract.requiredReadPermission}; the context carried ${principal.permissions.length} permissions, family wildcard ${holdsPermission(principal.permissions, `${contract.requiredReadPermission.split(/[:.]/)[0]}:*`) ? 'held' : 'not held'}.`,
+        );
         throw new ForbiddenException({
           code: 'ANALYTICS_SOURCE_PERMISSION',
           message: "Your role does not include this module's data. Ask your workspace administrator for access.",

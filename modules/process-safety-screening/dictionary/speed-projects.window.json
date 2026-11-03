@@ -170,7 +170,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "referenceKey": "project-ref"
+          "referenceKey": "project-ref",
+          "helpText": "The screening project this route belongs to."
         },
         {
           "fieldKey": "name",
@@ -181,7 +182,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "A name for the synthesis route, for example \"Route B \u2013 telescoped\"."
         },
         {
           "fieldKey": "route-version",

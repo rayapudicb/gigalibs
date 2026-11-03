@@ -293,7 +293,7 @@ async function responseFailure(response: Response): Promise<RuntimeFailure> {
   return {
     message: Array.isArray(payload?.message)
       ? payload.message.join(' ')
-      : (payload?.message ?? payload?.detail ?? `Request failed (${response.status}).`),
+      : (payload?.message ?? payload?.detail ?? 'The request could not be completed. Try again.'),
     errors: payload?.errors ?? {},
     ...(payload?.code === undefined ? {} : { code: payload.code }),
     retryable: payload?.retryable ?? response.status >= 500,

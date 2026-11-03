@@ -46,7 +46,7 @@
         {
           "fieldKey": "party-id",
           "entityKey": "business-partners.credit-holds",
-          "label": "Party id",
+          "label": "Partner",
           "type": "TEXT",
           "required": false,
           "readOnly": true,

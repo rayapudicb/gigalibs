@@ -91,6 +91,8 @@ MODULE_MIGRATIONS=(
   operator-rounds-migrations
   safety-operations-migrations
   workforce-migrations
+  # WI-OI-146 (QA-008): Geospatial was built on every deploy but never started, so every place picker failed (502).
+  geospatial-migrations
 )
 
 if [[ "${SKIP_MODULE_MIGRATIONS:-}" == "1" ]]; then
@@ -104,7 +106,7 @@ else
   done
 fi
 
-APP_SERVICES=(connector-hub-api analytics-api cmms-api iot-api module-host api kernel-worker workforce-api web)
+APP_SERVICES=(connector-hub-api analytics-api cmms-api iot-api module-host api kernel-worker workforce-api geospatial-api web)
 
 # A container started by hand (docker run) under a service's Compose name has no project label, so Compose cannot
 # recreate it ("name already in use"). Remove only such unlabelled containers; Compose-managed ones are recreated.

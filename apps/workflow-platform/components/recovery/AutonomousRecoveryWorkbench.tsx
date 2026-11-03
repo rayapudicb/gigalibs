@@ -246,7 +246,7 @@ export function AutonomousRecoveryWorkbench() {
               SOURCE REQUIRED
             </Badge>
             <Badge color="purple" size="small">
-              WI-OI-027 REVIEW
+              In review
             </Badge>
           </div>
 

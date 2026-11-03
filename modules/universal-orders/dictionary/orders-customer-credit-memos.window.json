@@ -61,24 +61,28 @@
           "fieldKey": "order-id",
           "entityKey": "orders.customer-credit-memos",
           "label": "Sales order",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": false,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "referenceKey": "sales-order-ref",
+          "helpText": "Filled from the invoice when you pick one.",
           "writePermission": "orders:credit-memos:manage"
         },
         {
           "fieldKey": "invoice-id",
           "entityKey": "orders.customer-credit-memos",
           "label": "Customer invoice",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": false,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "referenceKey": "invoice-ref",
+          "helpText": "The invoice this credit corrects; its order and customer fill in.",
           "writePermission": "orders:credit-memos:manage"
         },
         {
@@ -213,6 +217,20 @@
               "label": "Cancelled"
             }
           ]
+        },
+        {
+          "referenceKey": "sales-order-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "orders-sales-orders"
+        },
+        {
+          "referenceKey": "invoice-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "orders-customer-invoices",
+          "fills": {
+            "order-id": "order-id",
+            "customer-id": "customer-id"
+          }
         }
       ],
       "validationRules": [],
@@ -305,14 +323,14 @@
                   "fieldKey": "order-id",
                   "position": 4,
                   "span": 6,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "source"
                 },
                 {
                   "fieldKey": "invoice-id",
                   "position": 5,
                   "span": 6,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "source"
                 },
                 {

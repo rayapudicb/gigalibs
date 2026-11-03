@@ -11,6 +11,7 @@ import {
 } from '@xyflow/react';
 import { Alert, Badge, Button, Container, Heading, Input, Label, StatusBadge, Text } from '@medusajs/ui';
 import { ArrowPath, PlaySolid, CheckCircleSolid, XCircleSolid, Plus, ChevronRight } from '@medusajs/icons';
+import { BarChart3, BookOpen, Bot, Brain, CheckCircle2, ClipboardList, Coins, CreditCard, GitBranch, Globe, Hourglass, Inbox, Link2, Pencil, Receipt, RefreshCw, Repeat, Rocket, Scale, Search, Settings, Sparkles, Tag, TrendingUp, Upload, Wallet, Zap, type LucideIcon } from 'lucide-react';
 
 interface CanvasNodeData extends Record<string, unknown> {
   label: string; name: string; nodeType: string;
@@ -18,35 +19,35 @@ interface CanvasNodeData extends Record<string, unknown> {
 }
 type CanvasNode = Node<CanvasNodeData>;
 
-const NODE_PALETTE: Record<string, { bg: string; border: string; icon: string }> = {
-  SCHEMA_VALIDATE:    { bg: '#eff6ff', border: '#3b82f6', icon: '🔍' },
-  FX_NORMALIZATION:   { bg: '#f5f3ff', border: '#8b5cf6', icon: '💱' },
-  RULE_EVALUATION:    { bg: '#fffbeb', border: '#f59e0b', icon: '📋' },
-  TAX_ASSESS:         { bg: '#f0fdf4', border: '#10b981', icon: '🧾' },
-  LEDGER_DISPATCH:    { bg: '#eef2ff', border: '#6366f1', icon: '📒' },
-  BUDGET_CHECK:       { bg: '#fefce8', border: '#eab308', icon: '💰' },
-  TOLERANCE_MATCH:    { bg: '#f0fdfa', border: '#14b8a6', icon: '⚖️' },
-  APPROVAL_DISPATCH:  { bg: '#fdf2f8', border: '#ec4899', icon: '✅' },
-  DATA_INGEST:        { bg: '#ecfeff', border: '#06b6d4', icon: '📥' },
-  ML_CLASSIFY:        { bg: '#fef2f2', border: '#ef4444', icon: '🤖' },
-  PORTFOLIO_INGEST:   { bg: '#f5f3ff', border: '#7c3aed', icon: '📊' },
-  QUANT_EVAL:         { bg: '#f0fdf4', border: '#059669', icon: '📈' },
-  EXECUTION_DISPATCH: { bg: '#f8fafc', border: '#64748b', icon: '🚀' },
-  HTTP_REQUEST:       { bg: '#eff6ff', border: '#2563eb', icon: '🌐' },
-  CODE_JS:            { bg: '#fefce8', border: '#ca8a04', icon: '⚡' },
-  IF_CONDITION:       { bg: '#f5f3ff', border: '#9333ea', icon: '🔀' },
-  SWITCH:             { bg: '#fff7ed', border: '#ea580c', icon: '🔄' },
-  SET_FIELDS:         { bg: '#f0fdf4', border: '#16a34a', icon: '✏️' },
-  LOOP:               { bg: '#f0fdfa', border: '#0d9488', icon: '🔁' },
-  MERGE:              { bg: '#eef2ff', border: '#4f46e5', icon: '🔗' },
-  WAIT:               { bg: '#f9fafb', border: '#6b7280', icon: '⏳' },
-  CREDIT_SWEEP:       { bg: '#f0fdf4', border: '#22c55e', icon: '💳' },
-  LLM_INFERENCE:      { bg: '#fdf4ff', border: '#a855f7', icon: '🧠' },
-  AI_EXTRACT:         { bg: '#fdf4ff', border: '#9333ea', icon: '📤' },
-  AI_CLASSIFY:        { bg: '#eef2ff', border: '#4f46e5', icon: '🏷️' },
-  AI_TRANSFORM:       { bg: '#f0fdf4', border: '#16a34a', icon: '✨' },
+const NODE_PALETTE: Record<string, { bg: string; border: string; icon: LucideIcon }> = {
+  SCHEMA_VALIDATE:    { bg: '#eff6ff', border: '#3b82f6', icon: Search },
+  FX_NORMALIZATION:   { bg: '#f5f3ff', border: '#8b5cf6', icon: Coins },
+  RULE_EVALUATION:    { bg: '#fffbeb', border: '#f59e0b', icon: ClipboardList },
+  TAX_ASSESS:         { bg: '#f0fdf4', border: '#10b981', icon: Receipt },
+  LEDGER_DISPATCH:    { bg: '#eef2ff', border: '#6366f1', icon: BookOpen },
+  BUDGET_CHECK:       { bg: '#fefce8', border: '#eab308', icon: Wallet },
+  TOLERANCE_MATCH:    { bg: '#f0fdfa', border: '#14b8a6', icon: Scale },
+  APPROVAL_DISPATCH:  { bg: '#fdf2f8', border: '#ec4899', icon: CheckCircle2 },
+  DATA_INGEST:        { bg: '#ecfeff', border: '#06b6d4', icon: Inbox },
+  ML_CLASSIFY:        { bg: '#fef2f2', border: '#ef4444', icon: Bot },
+  PORTFOLIO_INGEST:   { bg: '#f5f3ff', border: '#7c3aed', icon: BarChart3 },
+  QUANT_EVAL:         { bg: '#f0fdf4', border: '#059669', icon: TrendingUp },
+  EXECUTION_DISPATCH: { bg: '#f8fafc', border: '#64748b', icon: Rocket },
+  HTTP_REQUEST:       { bg: '#eff6ff', border: '#2563eb', icon: Globe },
+  CODE_JS:            { bg: '#fefce8', border: '#ca8a04', icon: Zap },
+  IF_CONDITION:       { bg: '#f5f3ff', border: '#9333ea', icon: GitBranch },
+  SWITCH:             { bg: '#fff7ed', border: '#ea580c', icon: RefreshCw },
+  SET_FIELDS:         { bg: '#f0fdf4', border: '#16a34a', icon: Pencil },
+  LOOP:               { bg: '#f0fdfa', border: '#0d9488', icon: Repeat },
+  MERGE:              { bg: '#eef2ff', border: '#4f46e5', icon: Link2 },
+  WAIT:               { bg: '#f9fafb', border: '#6b7280', icon: Hourglass },
+  CREDIT_SWEEP:       { bg: '#f0fdf4', border: '#22c55e', icon: CreditCard },
+  LLM_INFERENCE:      { bg: '#fdf4ff', border: '#a855f7', icon: Brain },
+  AI_EXTRACT:         { bg: '#fdf4ff', border: '#9333ea', icon: Upload },
+  AI_CLASSIFY:        { bg: '#eef2ff', border: '#4f46e5', icon: Tag },
+  AI_TRANSFORM:       { bg: '#f0fdf4', border: '#16a34a', icon: Sparkles },
 };
-function getNodeStyle(t: string) { return NODE_PALETTE[t] ?? { bg: '#f8fafc', border: '#94a3b8', icon: '⚙️' }; }
+function getNodeStyle(t: string) { return NODE_PALETTE[t] ?? { bg: '#f8fafc', border: '#94a3b8', icon: Settings }; }
 
 function GigaNode({ data, selected }: NodeProps) {
   const nd = data as CanvasNodeData;
@@ -56,7 +57,7 @@ function GigaNode({ data, selected }: NodeProps) {
       <Handle type="target" position={Position.Left} style={{ background: s.border, width: 10, height: 10, border: '2px solid white' }} />
       <div style={{ padding: '10px 12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-          <span style={{ fontSize: 16 }}>{s.icon}</span>
+          <s.icon aria-hidden="true" style={{ width: 16, height: 16 }} />
           <span style={{ fontSize: 11, fontWeight: 700, color: '#1e293b', flex: 1, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{nd.name}</span>
         </div>
         <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', background: s.border + '18', color: s.border, borderRadius: 4, padding: '2px 5px' }}>{nd.nodeType.replace(/_/g, ' ')}</span>
@@ -224,7 +225,7 @@ export default function WorkflowCanvasPage() {
   );
 
   if (loading && !workflow) {
-    return <div className="flex h-screen items-center justify-center bg-white"><div className="text-center"><div className="text-3xl mb-2">⚡</div><Text size="small" className="text-ui-fg-muted">Loading canvas…</Text></div></div>;
+    return <div className="flex h-screen items-center justify-center bg-white"><div className="text-center"><Zap className="mx-auto mb-2 h-8 w-8 text-ui-fg-muted" aria-hidden="true" /><Text size="small" className="text-ui-fg-muted">Loading canvas…</Text></div></div>;
   }
 
   return (
@@ -234,7 +235,7 @@ export default function WorkflowCanvasPage() {
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/workflows" className="text-xs text-ui-fg-muted hover:text-ui-fg-base transition font-medium">← Pipelines</Link>
           <span className="text-ui-border-strong">|</span>
-          <span className="text-base">⚡</span>
+          <Zap className="h-4 w-4 text-ui-fg-muted" aria-hidden="true" />
           <Heading level="h1" className="truncate text-sm font-semibold text-ui-fg-base">{workflow?.name ?? workflowId}</Heading>
           {workflow && <StatusBadge color={workflow.status === 'ACTIVE' ? 'green' : 'orange'}>{workflow.status.toLowerCase()}</StatusBadge>}
         </div>
@@ -255,7 +256,7 @@ export default function WorkflowCanvasPage() {
                         style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, background:'transparent', border:'none', cursor:'pointer', textAlign:'left' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
-                        <span style={{ fontSize:14, color:s.border }}>{s.icon}</span>
+                        <s.icon aria-hidden="true" style={{ width: 14, height: 14, color: s.border }} />
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ fontSize:12, fontWeight:600, color:'#1e293b' }}>{item.label}</div>
                           <div style={{ fontSize:10, color:'#64748b' }}>{item.service}</div>
@@ -267,7 +268,7 @@ export default function WorkflowCanvasPage() {
               </div>
             )}
           </div>
-          <Button type="button" variant="secondary" size="small" onClick={handleSaveDag} isLoading={saving}>💾 Save</Button>
+          <Button type="button" variant="secondary" size="small" onClick={handleSaveDag} isLoading={saving}>Save</Button>
           <Button type="button" variant="primary" size="small" onClick={() => setShowRunModal(true)}><PlaySolid className="w-3.5 h-3.5 mr-1" /> Run</Button>
         </div>
       </header>
@@ -298,7 +299,7 @@ export default function WorkflowCanvasPage() {
           {selected ? (
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div style={{ paddingBottom:12, borderBottom:'1px solid #e2e8f0', display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontSize:18 }}>{getNodeStyle(selected.data.nodeType).icon}</span>
+                {React.createElement(getNodeStyle(selected.data.nodeType).icon, { "aria-hidden": true, style: { width: 18, height: 18 } })}
                 <div><Text size="xsmall" weight="plus" className="uppercase text-ui-fg-muted">Inspector</Text>
                   <div style={{ fontFamily:'monospace', fontSize:10, color:'#64748b' }}>{selected.id}</div></div>
               </div>
@@ -343,7 +344,7 @@ export default function WorkflowCanvasPage() {
                         style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, background:'transparent', border:'none', cursor:'pointer', textAlign:'left', width:'100%' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
-                        <span style={{ fontSize:14 }}>{s.icon}</span>
+                        <s.icon aria-hidden="true" style={{ width: 14, height: 14 }} />
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ fontSize:11, fontWeight:600, color:'#1e293b', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{n.data.name}</div>
                           <div style={{ fontSize:9, color:'#64748b', textTransform:'uppercase', letterSpacing:'0.05em' }}>{n.data.nodeType.replace(/_/g,' ')}</div>
@@ -373,7 +374,7 @@ export default function WorkflowCanvasPage() {
                 style={{ width:'100%', borderRadius:10, border:'1px solid #e2e8f0', background:'#f8fafc', padding:12, fontFamily:'monospace', fontSize:12, outline:'none', marginBottom:12, boxSizing:'border-box', resize:'vertical' }} />
               {executionResult && (
                 <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:10, marginBottom:12 }}>
-                  <div style={{ fontSize:12, fontWeight:600, color:'#166534' }}>✅ Run Complete</div>
+                  <div style={{ fontSize:12, fontWeight:600, color:'#166534' }}>Run complete</div>
                   <div style={{ fontFamily:'monospace', fontSize:10, color:'#15803d', marginTop:4 }}>
                     ID: {executionResult.run?.id} · {executionResult.run?.duration_ms}ms
                   </div>

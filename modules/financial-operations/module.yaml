@@ -73,6 +73,11 @@ spec:
         props:
           section: books
         sessionPermissions: true
+      - route: /finance/standard-costs
+        component: FinancialOperationsWorkspace
+        props:
+          section: standard-costs
+        sessionPermissions: true
       - route: /finance/reports
         component: FinancialOperationsWorkspace
         props:
@@ -181,6 +186,10 @@ spec:
           label: Books
           path: /finance/books
           icon: database
+        - key: standard-costs
+          label: Standard costs
+          path: /finance/standard-costs
+          icon: coins
         - key: reports
           label: Reports
           path: /finance/reports

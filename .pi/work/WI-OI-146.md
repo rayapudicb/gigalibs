@@ -91,3 +91,15 @@ Backup note: `infra/compose/scripts/backup.sh` dumps the `gigalibs-postgres` con
 UAT; the 2026-11-02 dumps are not UAT backups. UAT backup taken directly:
 `infra/compose/backups/uat_postgres_gigalibs_20261103_024610Z.dump` (sha256 e02a1100…, 764 tables, `pg_restore --list`
 checked).
+
+## 2026-11-03 — P1/P2/P3 batch (owner: fix all, then deploy, retest, regression)
+
+- QA-008: `up-convergence-full-uat.sh` starts `geospatial-api` (and runs `geospatial-migrations`, already at 8 on UAT).
+- QA-009/QA-013: the Workflow Studio proxy answers 503 "not running here" at once for a minute after a failure
+  (`lib/workflow-studio-reachability.ts`); Connections no longer waits on it.
+- QA-012 (open): admin holds `cmms.analytics.read` and `workforce.positions.read` (auth context) yet Analytics refuses;
+  a diagnostic log line (counts only) is added to read the cause after the deploy; Workforce supervisor gains
+  `workforce.positions.read`; refusals name the roles that grant access.
+- QA-033: `InventoryReceiptPostingReconciliationJob` is `@Injectable` with `@Inject(DatabaseService)` (test checks the
+  Nest metadata).
+`pnpm verify` PASS (2026-11-03, all steps that ran).

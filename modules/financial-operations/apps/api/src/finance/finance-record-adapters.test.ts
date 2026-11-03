@@ -109,3 +109,18 @@ describe('Finance record adapters (U12)', () => {
     expect(deps.drafts.approve).not.toHaveBeenCalled();
   });
 });
+
+// WI-OI-148 (QA-039): the standard cost window types a decimal; the costing service stores it scaled by 1,000,000.
+describe('standard unit cost conversion', () => {
+  it('scales a typed decimal and shows a stored one as a decimal', async () => {
+    const { scaledUnitCost, decimalUnitCost } = await import('./finance-record-adapters.js');
+    expect(scaledUnitCost('1.25')).toBe('1250000');
+    expect(scaledUnitCost('3')).toBe('3000000');
+    expect(scaledUnitCost('0.000005')).toBe('5');
+    expect(decimalUnitCost('1250000')).toBe('1.25');
+    expect(decimalUnitCost('3000000')).toBe('3');
+    expect(decimalUnitCost('5')).toBe('0.000005');
+    expect(() => scaledUnitCost('1.2345678')).toThrow(/at most six decimals/);
+    expect(() => scaledUnitCost('-1')).toThrow();
+  });
+});

@@ -77,12 +77,22 @@ export function windowSource(builderFor) {
     tabs,
   });
 
-  const WAREHOUSE_ID_PARAM = [{ key: 'warehouse-id', label: 'Fulfillment warehouse UUID', type: 'TEXT', required: true }];
+  // WI-OI-149 (QA-022): the warehouse is picked, not typed as a UUID.
+  const WAREHOUSE_ID_PARAM = [{ key: 'warehouse-id', label: 'Fulfillment warehouse', type: 'REFERENCE', required: true, referenceKey: 'warehouse-ref' }];
   const INVOICE_DUE_PARAM = [{ key: 'due-date', label: 'Invoice due date', type: 'DATETIME', required: true }];
-  const INVENTORY_ISSUE_PARAM = [{ key: 'issue-id', label: 'Inventory issue UUID', type: 'TEXT', required: true }];
+  // WI-OI-149 (QA-022): dispatch uses the inventory issue recorded on the fulfillment; a reference is asked for only
+  // when none was recorded (the service says so).
+  const INVENTORY_ISSUE_PARAM = [
+    { key: 'issue-id', label: 'Inventory issue reference (only when the fulfillment has none)', type: 'TEXT', required: false },
+  ];
 
   const ORG_UNIT_REF = lookup('org-unit-ref', 'organization-units');
   const WAREHOUSE_REF = lookup('warehouse-ref', 'inventory-warehouses');
+  // WI-OI-149 (QA-023): documents picked by number and customer; an invoice fills its order and customer.
+  const SALES_ORDER_REF = lookup('sales-order-ref', 'orders-sales-orders');
+  const INVOICE_REF = lookup('invoice-ref', 'orders-customer-invoices', {
+    fills: { 'order-id': 'order-id', 'customer-id': 'customer-id' },
+  });
   // WI-OI-149: picking a product fills its code, name and base unit; picking the customer (from Business partners)
   // fills its name, instead of a typed party UUID and re-typed names.
   const PRODUCT_REF = lookup('product-ref', 'catalogue-products', {
@@ -136,7 +146,7 @@ export function windowSource(builderFor) {
   const FO = 'orders.fulfillment-orders';
   const foFields = [
     field(FO, 'fulfillment-number', 'Fulfillment number', 'TEXT', { readOnly: true }),
-    field(FO, 'order-id', 'Sales order', 'TEXT', { required: true, writePermission: 'orders:fulfill' }),
+    field(FO, 'order-id', 'Sales order', 'REFERENCE', { required: true, ref: 'sales-order-ref', help: 'The sales order to pick, pack and ship.', writePermission: 'orders:fulfill' }),
     field(FO, 'warehouse-id', 'Ship-from warehouse', 'REFERENCE', { required: true, ref: 'warehouse-ref', writePermission: 'orders:fulfill' }),
     field(FO, 'carrier', 'Carrier', 'TEXT', { writePermission: 'orders:fulfill' }),
     field(FO, 'tracking-number', 'Tracking number', 'TEXT', { writePermission: 'orders:fulfill' }),
@@ -149,8 +159,8 @@ export function windowSource(builderFor) {
   const cmFields = [
     field(CM, 'credit-memo-number', 'Credit memo number', 'TEXT', { readOnly: true }),
     field(CM, 'customer-id', 'Customer', 'REFERENCE', { required: true, ref: 'customer-ref', help: 'The customer, chosen from Business partners.', writePermission: 'orders:credit-memos:manage' }),
-    field(CM, 'order-id', 'Sales order', 'TEXT', { writePermission: 'orders:credit-memos:manage' }),
-    field(CM, 'invoice-id', 'Customer invoice', 'TEXT', { writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'order-id', 'Sales order', 'REFERENCE', { ref: 'sales-order-ref', help: 'Filled from the invoice when you pick one.', writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'invoice-id', 'Customer invoice', 'REFERENCE', { ref: 'invoice-ref', help: 'The invoice this credit corrects; its order and customer fill in.', writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'reason', 'Reason', 'TEXT', { required: true, writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'credit-memo-statuses' }),
@@ -164,7 +174,7 @@ export function windowSource(builderFor) {
   const CI = 'orders.customer-invoices';
   const ciFields = [
     field(CI, 'invoice-number', 'Invoice number', 'TEXT', { readOnly: true }),
-    field(CI, 'order-id', 'Sales order', 'TEXT', { required: true, help: 'Sales order UUID to bill shipped quantities.', writePermission: 'orders:invoices:manage' }),
+    field(CI, 'order-id', 'Sales order', 'REFERENCE', { required: true, ref: 'sales-order-ref', help: 'The sales order whose shipped quantities are billed.', writePermission: 'orders:invoices:manage' }),
     field(CI, 'customer-name', 'Customer name', 'TEXT', { readOnly: true }),
     field(CI, 'currency-code', 'Currency', 'TEXT', { readOnly: true }),
     field(CI, 'due-date', 'Due date', 'DATETIME', { required: true, writePermission: 'orders:invoices:manage' }),
@@ -186,6 +196,7 @@ export function windowSource(builderFor) {
         CUSTOMER_REF,
         PRODUCT_REF,
         UOM_REF,
+        WAREHOUSE_REF,
       ], [
         view('sales-quotes', 'Sales quotes', [
           tab('sq-header', 'Quote', 0, SQ, [
@@ -314,6 +325,7 @@ export function windowSource(builderFor) {
       dictionary('orders-fulfillment-orders', 'Fulfillment orders', FO, [entity(FO, 'Fulfillment orders')], foFields, [], [
         values('fulfillment-statuses', FULFILLMENT_STATUS),
         WAREHOUSE_REF,
+        SALES_ORDER_REF,
       ], [
         view('fulfillment-orders', 'Fulfillment orders', [
           tab('fo-header', 'Shipment', 0, FO, [
@@ -355,6 +367,8 @@ export function windowSource(builderFor) {
       dictionary('orders-customer-credit-memos', 'Credit memos', CM, [entity(CM, 'Customer credit memos')], cmFields, [], [
         CUSTOMER_ONLY_REF,
         values('credit-memo-statuses', CREDIT_MEMO_STATUS),
+        SALES_ORDER_REF,
+        INVOICE_REF,
       ], [
         view('customer-credit-memos', 'Credit memos', [
           tab('cm-header', 'Credit memo', 0, CM, [
@@ -390,6 +404,7 @@ export function windowSource(builderFor) {
       'orders:read',
       dictionary('orders-customer-invoices', 'Customer invoices', CI, [entity(CI, 'Customer invoices')], ciFields, [], [
         values('invoice-statuses', INVOICE_STATUS),
+        SALES_ORDER_REF,
       ], [
         view('customer-invoices', 'Customer invoices', [
           tab('inv-header', 'Invoice', 0, CI, [

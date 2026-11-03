@@ -6,7 +6,6 @@ import {
   baseRoleAdditions,
   holdsPermission,
   type OrgUnitV1,
-  PERMISSION_CATALOGUE,
   SCOPE_ENFORCING_MODULES,
   type SpatialNodeV1,
 } from '@gigalibs/contracts';
@@ -27,16 +26,10 @@ import { withInvite } from '@/lib/invitation-link';
 import { MfaAssistedRecoveryManager } from './MfaAssistedRecoveryManager';
 import { TenantDataExportManager } from './TenantDataExportManager';
 import { TenantOidcManager } from './TenantOidcManager';
+import { PermissionPicker } from './PermissionPicker';
 
 const ROLES = ['TENANT_ADMIN', 'MANAGER', 'MEMBER', 'VIEWER', 'GUEST'] as const;
 const STATUSES = ['ACTIVE', 'SUSPENDED'] as const;
-// WI-OI-120q (R1): the permissions a role may hold are those some screen, route or service checks, grouped by family.
-const PERMISSION_GROUPS = Object.entries(
-  PERMISSION_CATALOGUE.reduce<Record<string, string[]>>((groups, entry) => {
-    (groups[entry.family] ??= []).push(entry.code);
-    return groups;
-  }, {}),
-);
 type AssignableMemberRole = (typeof ROLES)[number];
 type MemberRole = AssignableMemberRole | 'SUPER_ADMIN';
 type MemberStatus = (typeof STATUSES)[number];
@@ -552,37 +545,6 @@ function MemberRoles({
  * The catalogue by family. A role's whole-area grants (`cmms:*`) and any older code it holds that is not in the list
  * are shown too, so editing the role keeps them unless they are deselected.
  */
-function PermissionOptions({ held }: { held: readonly string[] }) {
-  const listed = new Set(PERMISSION_CATALOGUE.map((entry) => entry.code));
-  const wholeAreas = held.filter((code) => /^[a-z][a-z0-9-]*[:.]\*$/.test(code));
-  const unlisted = held.filter((code) => !listed.has(code) && !wholeAreas.includes(code));
-  return (
-    <>
-      {wholeAreas.length > 0 ? (
-        <optgroup label="Whole areas this role holds">
-          {wholeAreas.map((code) => (
-            <option key={code}>{code}</option>
-          ))}
-        </optgroup>
-      ) : null}
-      {PERMISSION_GROUPS.map(([family, codes]) => (
-        <optgroup key={family} label={family}>
-          {codes.map((code) => (
-            <option key={code}>{code}</option>
-          ))}
-        </optgroup>
-      ))}
-      {unlisted.length > 0 ? (
-        <optgroup label="Also held by this role (another spelling, or not in the list)">
-          {unlisted.map((code) => (
-            <option key={code}>{code}</option>
-          ))}
-        </optgroup>
-      ) : null}
-    </>
-  );
-}
-
 function selectedPermissions(event: ChangeEvent<HTMLSelectElement>): string[] {
   return Array.from(event.target.selectedOptions, (option) => option.value);
 }
@@ -697,16 +659,8 @@ function CustomRoleRow({
           onChange={(event) => setDescription(event.target.value)}
         />
       </label>
-      <label className="text-xs font-medium text-zinc-700">
-        Effective additions ({permissions.length})
-        <select
-          multiple
-          className="mt-1 h-28 w-full rounded-md border border-zinc-200 bg-white p-2 font-mono"
-          value={permissions}
-          onChange={(event) => setPermissions(selectedPermissions(event))}
-        >
-          <PermissionOptions held={permissions} />
-        </select>
+      <div className="text-xs font-medium text-zinc-700">
+        <PermissionPicker label="Effective additions" value={permissions} onChange={setPermissions} />
         <span className="mt-2 block font-normal">Includes (it also grants what they grant)</span>
         <select
           multiple
@@ -724,7 +678,7 @@ function CustomRoleRow({
             ))}
         </select>
         <span className="mt-1 block font-normal text-ui-fg-muted">Grants {total} permission(s) in total</span>
-      </label>
+      </div>
       <label className="text-xs font-medium text-zinc-700">
         Change reason
         <input
@@ -1455,17 +1409,27 @@ export function TenantAccessManager({
                   onChange={(event) => setNewRoleDescription(event.target.value)}
                 />
               </label>
-              <label className="text-xs font-medium text-zinc-700">
-                Permission additions ({newRolePermissions.length})
-                <select
-                  multiple
-                  className="mt-1 h-28 w-full rounded-md border border-zinc-200 bg-white p-2 font-mono"
-                  value={newRolePermissions}
-                  onChange={(event) => setNewRolePermissions(selectedPermissions(event))}
-                >
-                  <PermissionOptions held={newRolePermissions} />
-                </select>
-              </label>
+              <div className="text-xs font-medium text-zinc-700">
+                <label className="mb-2 block">
+                  Start from a built-in role
+                  <select
+                    className="mt-1 h-9 w-full rounded-md border border-zinc-200 bg-white px-2"
+                    value=""
+                    onChange={(event) => {
+                      const source = customRoles.find((candidate) => candidate.id === event.target.value);
+                      if (source) setNewRolePermissions([...new Set([...newRolePermissions, ...source.permissions])]);
+                    }}
+                  >
+                    <option value="">Pick a role to copy its permissions…</option>
+                    {customRoles.map((candidate) => (
+                      <option key={candidate.id} value={candidate.id}>
+                        {candidate.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <PermissionPicker label="Permission additions" value={newRolePermissions} onChange={setNewRolePermissions} />
+              </div>
               <Button className="self-end" type="submit" variant="primary" isLoading={creatingRole}>
                 Create role
               </Button>

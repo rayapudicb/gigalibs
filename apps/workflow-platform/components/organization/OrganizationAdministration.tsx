@@ -1,6 +1,7 @@
 'use client';
 
 import type { OrgUnitTypeV1 } from '@gigalibs/contracts';
+import { PageTabs } from '@gigalibs/web-sdk';
 import { Container, Heading, Text } from '@medusajs/ui';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -81,24 +82,7 @@ export function OrganizationAdministration({ grantedPermissions, userId, isAdmin
           Your own levels, units and tree. Changes go through a draft that a second person approves, and take effect only when activated.
         </Text>
       </div>
-      <div role="tablist" aria-label="Organization sections" className="flex flex-wrap gap-1 border-b border-ui-border-base">
-        {SECTIONS.map((item) => (
-          <button
-            key={item.key}
-            id={`organization-tab-${item.key}`}
-            type="button"
-            role="tab"
-            aria-selected={section === item.key}
-            aria-controls={`organization-panel-${item.key}`}
-            onClick={() => choose(item.key)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm focus:outline-none focus-visible:shadow-borders-focus ${
-              section === item.key ? 'border-ui-fg-base text-ui-fg-base' : 'border-transparent text-ui-fg-subtle hover:text-ui-fg-base'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <PageTabs label="Organization sections" idPrefix="organization" value={section} onChange={choose} tabs={SECTIONS.map((item) => ({ key: item.key, label: item.label }))} />
       <OrgErrorAlert error={error} onRetry={() => void loadShared()} onReload={() => void loadShared()} />
       <div role="tabpanel" id={`organization-panel-${section}`} aria-labelledby={`organization-tab-${section}`}>
         {section === 'structure' && <OrgStructurePanel permissions={permissions} userId={userId} userNames={userNames} onChanged={() => void loadShared()} />}

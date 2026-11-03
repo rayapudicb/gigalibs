@@ -119,13 +119,13 @@ const SOURCES: Readonly<Record<PlatformLookupKey, Source>> = {
         ];
       }),
   },
-  // organization:read.
+  // users:read (every member; WI-OI-147, QA-025): unit names and codes for pickers, not the structure.
   'organization-units': {
     load: ({ search, ids }) => {
       const query = new URLSearchParams({ limit: '200' });
       if (ids?.length) query.set('ids', ids.join(','));
       else if (search) query.set('q', search);
-      return control(`/api/v1/tenants/current/organization/units?${query.toString()}`);
+      return control(`/api/v1/tenants/current/organization/unit-options?${query.toString()}`);
     },
     options: (body) =>
       itemsOf<Unit>(body).flatMap((unit) => {

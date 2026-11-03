@@ -334,6 +334,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "icon": "database"
     },
     {
+      "key": "standard-costs",
+      "label": "Standard costs",
+      "path": "/finance/standard-costs",
+      "icon": "coins"
+    },
+    {
       "key": "reports",
       "label": "Reports",
       "path": "/finance/reports",

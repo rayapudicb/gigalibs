@@ -5,6 +5,7 @@ import {
   type ConfigurationValues,
   FormEngineConfigurationForm,
 } from '@gigalibs/configuration-react';
+import { PageTabs } from '@gigalibs/web-sdk';
 
 import {
   type ConfigurationSurface,
@@ -48,7 +49,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import {
-  type KeyboardEvent,
   type ReactNode,
   useCallback,
   useEffect,
@@ -222,23 +222,6 @@ export function ConfigurationStudioWorkbench({
   const canExport = hasPermission(permissions, 'configuration:export');
   const canImport = hasPermission(permissions, 'configuration:import');
 
-  const moveTabFocus = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    let nextIndex: number | null = null;
-    if (event.key === 'ArrowRight') nextIndex = (index + 1) % WORKFLOW_TABS.length;
-    if (event.key === 'ArrowLeft') {
-      nextIndex = (index - 1 + WORKFLOW_TABS.length) % WORKFLOW_TABS.length;
-    }
-    if (event.key === 'Home') nextIndex = 0;
-    if (event.key === 'End') nextIndex = WORKFLOW_TABS.length - 1;
-    if (nextIndex === null) return;
-    event.preventDefault();
-    const nextTab = WORKFLOW_TABS[nextIndex]?.[0];
-    if (!nextTab) return;
-    setTab(nextTab);
-    requestAnimationFrame(() => {
-      document.getElementById(`configuration-tab-${nextTab}`)?.focus();
-    });
-  };
 
   const load = useCallback(async () => {
     const [draftResponse, publishedResponse, activationResponse, surfaceResponse] =
@@ -502,24 +485,7 @@ export function ConfigurationStudioWorkbench({
         </div>
       </header>
 
-      <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Configuration workflow">
-        {WORKFLOW_TABS.map(([key, label], index) => (
-          <button
-            key={key}
-            type="button"
-            id={`configuration-tab-${key}`}
-            role="tab"
-            aria-selected={tab === key}
-            aria-controls={`configuration-panel-${key}`}
-            tabIndex={tab === key ? 0 : -1}
-            onClick={() => setTab(key)}
-            onKeyDown={(event) => moveTabFocus(event, index)}
-            className={`rounded-lg border px-4 py-2 text-sm font-medium ${tab === key ? 'border-ui-border-interactive bg-ui-bg-base text-ui-fg-base shadow-xs' : 'border-ui-border-base bg-transparent text-ui-fg-subtle hover:bg-ui-bg-base'}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <div className="mb-5"><PageTabs label="Configuration workflow" idPrefix="configuration" value={tab} onChange={setTab} tabs={WORKFLOW_TABS.map(([key, label]) => ({ key, label }))} /></div>
 
       <section
         id={`configuration-panel-${tab}`}
@@ -1195,7 +1161,7 @@ function FieldOptionsEditor({
         </div>
       ) : (
         <p className="text-[11px] text-amber-600 font-medium">
-          ⚠️ At least one option is required for dropdown fields.
+          At least one option is required for dropdown fields.
         </p>
       )}
 
@@ -2256,7 +2222,7 @@ async function responseMessage(response: Response) {
     detail?: string;
   } | null;
   if (Array.isArray(payload?.message)) return payload.message.join(' ');
-  return payload?.message ?? payload?.detail ?? `Request failed (${response.status}).`;
+  return payload?.message ?? payload?.detail ?? 'The request could not be completed. Try again.';
 }
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'The request could not be completed.';

@@ -339,6 +339,7 @@ export const SPEED_EN_US: Readonly<Record<string, string>> = {
     'No criteria set is in force yet, so every result is a data gap. An administrator imports a criteria pack below and puts it in force.',
   'speed.inForce.none.library':
     'No library is in force yet, so thermal and interaction results are data gaps. An administrator imports a library pack below and puts it in force.',
+  'speed.inForce.kind.label': 'Library entries',
   'speed.inForce.kind.MATERIALS': 'Materials',
   'speed.inForce.kind.RULES': 'Interaction rules',
   'speed.inForce.kind.REACTION_CLASSES': 'Reaction classes',

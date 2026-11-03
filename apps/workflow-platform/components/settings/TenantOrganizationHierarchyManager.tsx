@@ -269,7 +269,7 @@ export function TenantOrganizationHierarchyManager({ tenantId, canManage, curren
     <div className="space-y-6">
       {error && (
         <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-800 rounded-lg flex items-center justify-between">
-          <span>⚠️ {error}</span>
+          <span>{error}</span>
           <button type="button" onClick={() => setError(null)} className="font-bold ml-2">×</button>
         </div>
       )}
@@ -408,7 +408,7 @@ export function TenantOrganizationHierarchyManager({ tenantId, canManage, curren
                               Parent: <strong className="text-ui-fg-base">{parentDept.name}</strong>
                             </span>
                           ) : (
-                            <span className="text-blue-600 font-medium">★ Top-Level Division</span>
+                            <span className="text-blue-600 font-medium">Top-level division</span>
                           )}
                           {dept.manager && (
                             <span>

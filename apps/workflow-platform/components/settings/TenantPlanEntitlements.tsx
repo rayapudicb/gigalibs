@@ -3,11 +3,35 @@
 import React from 'react';
 import Link from 'next/link';
 import type { VerifiedSession } from '@/lib/verified-session';
-import { canUseTenantModule } from '@/lib/module-access';
+import { canUseTenantModule, hasPermission } from '@/lib/module-access';
 import { platformModuleCatalog } from '@gigalibs/contracts';
 import { MaturityBadge } from '@/components/modules/MaturityBadge';
 
 const TRIAL_DATE = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeZone: 'UTC' });
+const MODULE_REQUESTS_URL = '/api/control/tenants/current/module-requests';
+
+/** WI-OI-147 (QA-035): a module this workspace asked a platform operator to turn on. */
+interface ModuleRequest {
+  readonly moduleKey: string;
+  readonly requestedAt: string;
+  readonly requestedBy: string | null;
+}
+
+async function readRequests(response: Response): Promise<ModuleRequest[]> {
+  const text = await response.text();
+  if (!response.ok) {
+    const message = (() => {
+      try {
+        return (JSON.parse(text) as { message?: unknown }).message;
+      } catch {
+        return undefined;
+      }
+    })();
+    throw new Error(typeof message === 'string' ? message : 'The request could not be sent. Try again.');
+  }
+  const value: unknown = text ? JSON.parse(text) : [];
+  return Array.isArray(value) ? (value as ModuleRequest[]) : [];
+}
 
 interface TenantPlanEntitlementsProps {
   session: VerifiedSession;
@@ -32,6 +56,39 @@ export function TenantPlanEntitlements({
     : null;
   const isExpired = daysRemaining !== null && daysRemaining <= 0;
   const enabledModuleKeys = new Set(session.tenant?.features ?? []);
+  const canRequest = hasPermission(session.permissions, 'tenant:update');
+  const [requests, setRequests] = React.useState<ModuleRequest[]>([]);
+  const [requesting, setRequesting] = React.useState<string | null>(null);
+  const [requestError, setRequestError] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (!hasPermission(session.permissions, 'tenant:read')) return;
+    let cancelled = false;
+    void fetch(MODULE_REQUESTS_URL, { cache: 'no-store' })
+      .then(readRequests)
+      .then((value) => {
+        if (!cancelled) setRequests(value);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [session.permissions]);
+  const requestModule = async (moduleKey: string) => {
+    setRequesting(moduleKey);
+    setRequestError(null);
+    try {
+      const response = await fetch(MODULE_REQUESTS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moduleKey }),
+      });
+      setRequests(await readRequests(response));
+    } catch (failure) {
+      setRequestError(failure instanceof Error ? failure.message : 'The request could not be sent. Try again.');
+    } finally {
+      setRequesting(null);
+    }
+  };
   const entitledModules = platformModuleCatalog.filter(
     (module) => module.entitlementEligible && enabledModuleKeys.has(module.key),
   );
@@ -129,6 +186,11 @@ export function TenantPlanEntitlements({
           </p>
         </div>
 
+        {requestError ? (
+          <p role="alert" className="text-xs text-ui-fg-error">
+            {requestError}
+          </p>
+        ) : null}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {platformModuleCatalog.filter((module) => module.entitlementEligible).map((module) => {
             const isEntitled = enabledModuleKeys.has(module.key);
@@ -144,7 +206,7 @@ export function TenantPlanEntitlements({
                 className={`p-4 rounded-xl border transition-all ${
                   isEntitled
                     ? 'border-blue-200 bg-blue-50/40 hover:border-blue-300'
-                    : 'border-ui-border-base bg-ui-bg-subtle opacity-60'
+                    : 'border-ui-border-base bg-ui-bg-subtle'
                 } space-y-2`}
               >
                 <div className="flex items-center justify-between">
@@ -154,11 +216,35 @@ export function TenantPlanEntitlements({
                       isEntitled ? 'bg-blue-100 text-blue-800' : 'bg-zinc-200 text-zinc-600'
                     }`}
                   >
-                    {isEntitled ? (canOpen ? 'ENTITLED' : 'NO ACCESS') : 'NOT ENTITLED'}
+                    {isEntitled ? (canOpen ? 'In your plan' : 'No access for your role') : 'Not in your plan'}
                   </span>
                 </div>
                 <MaturityBadge maturity={module.maturity} />
-                <p className="text-[11px] text-ui-fg-subtle">{module.reason}</p>
+                {!isEntitled && module.readiness !== 'CONTAINED' && (
+                  <div className="pt-1">
+                    {(() => {
+                      const request = requests.find((candidate) => candidate.moduleKey === module.key);
+                      if (request) {
+                        return (
+                          <p className="text-[11px] text-ui-fg-subtle">
+                            Requested {TRIAL_DATE.format(new Date(request.requestedAt))}
+                            {request.requestedBy ? ` by ${request.requestedBy}` : ''}. A platform operator turns it on.
+                          </p>
+                        );
+                      }
+                      return canRequest ? (
+                        <button
+                          type="button"
+                          disabled={requesting !== null}
+                          onClick={() => void requestModule(module.key)}
+                          className="text-[11px] font-semibold text-ui-fg-interactive hover:text-ui-fg-interactive-hover disabled:opacity-50"
+                        >
+                          {requesting === module.key ? 'Sending…' : 'Request this module'}
+                        </button>
+                      ) : null;
+                    })()}
+                  </div>
+                )}
                 {canOpen && (
                   <div className="pt-1">
                     <Link

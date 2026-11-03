@@ -242,7 +242,6 @@ export default function NewInvoicePage() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Badge color="blue" size="small">WI-OI-035</Badge>
               <Badge color="green" size="small">FIPS 180-4 Chained Ledger Engine</Badge>
             </div>
             <Heading level="h1" className="text-2xl font-bold text-ui-fg-base mt-2">Create Enterprise Invoice</Heading>
@@ -344,7 +343,7 @@ export default function NewInvoicePage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-ui-bg-base text-ui-fg-interactive border border-ui-border-base shadow-xs">
-                🏛️ Multi-Tier Scaled Tax Engine (Zero-Float Precision)
+                Tax
               </span>
               <Heading level="h3" className="text-sm font-bold text-ui-fg-base mt-1.5">Tax Nexus &amp; Compound Surcharge Rules</Heading>
             </div>

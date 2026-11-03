@@ -129,7 +129,7 @@ async function responseMessage(response: Response): Promise<string> {
   } | null;
   if (Array.isArray(payload?.message)) return payload.message.join(' ');
   return (
-    payload?.message ?? payload?.detail ?? `Request failed (${response.status}).`
+    payload?.message ?? payload?.detail ?? 'The request could not be completed. Try again.'
   );
 }
 

@@ -168,10 +168,11 @@ export function windowSource(builderFor) {
   // 6. Per-product standard costs (WI-OI-120bq H3)
   const PSC = 'finance.product-standard-costs';
   const pscf = [
-    field(PSC, 'cost-profile-id', 'Cost profile', 'TEXT', { required: true }),
-    field(PSC, 'product-id', 'Product', 'TEXT', { required: true }),
-    field(PSC, 'standard-unit-cost-scaled', 'Standard unit cost (scaled)', 'TEXT', { required: true }),
-    field(PSC, 'effective-from', 'Effective from', 'DATE', { required: true }),
+    field(PSC, 'cost-profile-id', 'Cost profile', 'TEXT', { help: 'The cost profile (book and currency) this standard cost belongs to.', required: true }),
+    field(PSC, 'product-id', 'Product', 'TEXT', { help: 'The product this standard cost values.', required: true }),
+    // WI-OI-148 (QA-039): typed and shown as a decimal (1.25); the record adapter stores it scaled by 1,000,000.
+    field(PSC, 'standard-unit-cost-scaled', 'Standard unit cost', 'NUMBER', { help: 'The cost of one unit, for example 1.25, used to value stock and cost of goods sold.', required: true, scale: 6 }),
+    field(PSC, 'effective-from', 'Effective from', 'DATE', { help: 'The first day this cost applies; earlier stock keeps its previous cost.', required: true }),
     field(PSC, 'effective-to', 'Effective to', 'DATE'),
     field(PSC, 'change-reason', 'Change reason', 'TEXT'),
   ];

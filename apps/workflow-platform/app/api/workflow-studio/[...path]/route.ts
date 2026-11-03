@@ -4,12 +4,18 @@ import { readBoundedBody } from '@/lib/authenticated-upstream';
 import { canUseTenantModule, hasPermission } from '@/lib/module-access';
 import { hasSameOrigin } from '@/lib/same-origin';
 import { verifiedSession } from '@/lib/verified-session';
+import {
+  markWorkflowStudioUnreachable,
+  WORKFLOW_STUDIO_NOT_RUNNING as NOT_RUNNING,
+  workflowStudioUnreachable,
+} from '@/lib/workflow-studio-reachability';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
 
 export const GET = (request: Request, context: RouteContext) => proxyWorkflowStudio(request, context);
 export const POST = (request: Request, context: RouteContext) => proxyWorkflowStudio(request, context);
@@ -48,6 +54,7 @@ async function proxyWorkflowStudio(request: Request, context: RouteContext): Pro
     return problem(403, 'Cross-site request rejected.');
   }
 
+  if (workflowStudioUnreachable()) return problem(503, NOT_RUNNING);
   try {
     const baseUrl = configuredWorkflowStudioBaseUrl();
     const body = MUTATING_METHODS.has(method) ? await readBoundedBody(request) : undefined;
@@ -77,7 +84,7 @@ async function proxyWorkflowStudio(request: Request, context: RouteContext): Pro
       ...(body ? { body } : {}),
       cache: 'no-store',
       redirect: 'error',
-      signal: AbortSignal.timeout(3_000),
+      signal: AbortSignal.timeout(2_000),
     });
 
     const response = new NextResponse(upstream.body, { status: upstream.status });
@@ -89,9 +96,10 @@ async function proxyWorkflowStudio(request: Request, context: RouteContext): Pro
     return response;
   } catch (error) {
     if (error instanceof Error && error.message.includes('WORKFLOW_STUDIO_API_URL')) {
-      return problem(503, error.message);
+      return problem(503, NOT_RUNNING);
     }
-    return problem(502, 'The Workflow Studio service is temporarily unavailable.');
+    markWorkflowStudioUnreachable();
+    return problem(503, NOT_RUNNING);
   }
 }
 

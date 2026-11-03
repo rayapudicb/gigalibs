@@ -51,7 +51,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "A short unique code, used in imports, reports and integrations."
         },
         {
           "fieldKey": "name",
@@ -62,7 +63,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "The name people see in lists and pickers."
         },
         {
           "fieldKey": "description",

@@ -470,6 +470,15 @@ export type VerifyTenantDomainDto = z.infer<typeof VerifyTenantDomainSchema>;
 export type RevokeTenantDomainDto = z.infer<typeof RevokeTenantDomainSchema>;
 export type UpdateTenantDto = z.infer<typeof UpdateTenantSchema>;
 export type ChangeTenantStatusDto = z.infer<typeof ChangeTenantStatusSchema>;
+
+/** WI-OI-147 (QA-035): a workspace administrator asks a platform operator to turn on a module. */
+export const RequestTenantModuleSchema = z
+  .object({
+    moduleKey: z.string().trim().min(1).max(100),
+    note: z.string().trim().max(300).optional(),
+  })
+  .strict();
+export type RequestTenantModuleDto = z.infer<typeof RequestTenantModuleSchema>;
 export type TenantMemberRole = z.infer<typeof TenantMemberRoleSchema>;
 export type CreateTenantInviteDto = z.infer<typeof CreateTenantInviteSchema>;
 

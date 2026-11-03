@@ -42,6 +42,7 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "helpText": "The customer\u2019s registered name, as it appears on invoices.",
           "writePermission": "ar:write"
         },
         {
@@ -54,6 +55,7 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "helpText": "Where invoices and reminders are sent.",
           "writePermission": "ar:write"
         },
         {

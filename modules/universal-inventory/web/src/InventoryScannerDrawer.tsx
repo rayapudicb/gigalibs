@@ -1,6 +1,7 @@
 'use client';
 
 import type { BarcodeResolutionResultV1, StockBalanceV1 } from '@gigalibs/contracts';
+import { PageTabs } from '@gigalibs/web-sdk';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
 const BASE = '/api/universal-inventory/v1';
@@ -172,13 +173,7 @@ export function InventoryScannerDrawer({ onClose }: { onClose(): void }) {
           <button type="button" className="text-ui-fg-subtle" onClick={() => { stopCamera(); onClose(); }}>Close</button>
         </div>
         <p className="mt-2 text-sm text-ui-fg-subtle">Use the camera, a connected scanner, or type the printed code. Every stock action is checked by Inventory.</p>
-        <div className="mt-4 flex gap-2" role="tablist" aria-label="Scanner action">
-          {(['PUTAWAY', 'PICK'] as const).map((option) => (
-            <button key={option} role="tab" aria-selected={mode === option} type="button" className={`rounded-md px-4 py-2 text-sm ${mode === option ? 'bg-ui-button-inverted text-ui-fg-on-inverted' : 'border border-ui-border-base text-ui-fg-base'}`} onClick={() => { setMode(option); setFailure(null); setSuccess(null); }}>
-              {option === 'PUTAWAY' ? 'Putaway' : 'Pick'}
-            </button>
-          ))}
-        </div>
+        <div className="mt-4"><PageTabs label="Scanner action" value={mode} onChange={setMode} tabs={[{ key: 'PUTAWAY', label: 'Putaway' }, { key: 'PICK', label: 'Pick' }]} /></div>
         <video ref={videoRef} playsInline muted className={cameraTarget ? 'mt-4 w-full rounded-md' : 'hidden'} aria-label="Camera barcode preview" />
         {cameraTarget ? <button type="button" className="mt-2 text-sm text-ui-fg-base" onClick={stopCamera}>Stop camera</button> : null}
         <form className="mt-5 space-y-4" onSubmit={(event) => void submit(event)}>

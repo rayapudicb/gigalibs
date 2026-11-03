@@ -78,7 +78,7 @@ function OAuthCallbackContent() {
 
       {status === 'error' && (
         <div className="space-y-3">
-          <div className="text-3xl text-red-600">⚠</div>
+          <div className="text-3xl font-semibold text-red-600" aria-hidden="true">!</div>
           <h2 className="text-lg font-bold text-red-700">OAuth Exchange Failed</h2>
           <p className="text-xs text-red-600 font-mono bg-red-50 p-3 rounded-lg border border-red-200">
             {errorDetails}

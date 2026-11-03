@@ -17,6 +17,7 @@ const {
   describeFailure,
   gridColumns,
   holds,
+  parameterLookup,
   parentField,
   placedFields,
   recordActions,
@@ -167,6 +168,15 @@ describe('window model', () => {
     const warehouse = '6d3f1a52-7f5b-4f2a-9a61-1f0b8c1d2e3f';
     expect(metadataWindowModel.recordTitle(model, { id: 'r-1', 'receipt-number': 'GR-7', status: 'DRAFT', 'warehouse-id': warehouse })).toBe('GR-7');
     expect(metadataWindowModel.recordTitle(model, { id: 'r-1', status: 'DRAFT', 'warehouse-id': warehouse })).toBe('r-1');
+  });
+
+  it('offers an action parameter that names a lookup as a picker, and a typed one as a text box (WI-OI-149, QA-022)', () => {
+    const picker = parameterLookup(model, { key: 'warehouse-id', label: 'Warehouse', type: 'REFERENCE', required: true, referenceKey: 'warehouses' });
+    expect(picker?.resolverKey).toBe('warehouses');
+    expect(picker?.field.label).toBe('Warehouse');
+    expect(picker?.required).toBe(true);
+    expect(parameterLookup(model, { key: 'reason', label: 'Reason', type: 'TEXTAREA', required: true })).toBeNull();
+    expect(parameterLookup(model, { key: 'x', label: 'X', type: 'REFERENCE', required: false, referenceKey: 'no-such-reference' })).toBeNull();
   });
 
   it('offers an action only on its own entity, when permitted and visible for the record', () => {

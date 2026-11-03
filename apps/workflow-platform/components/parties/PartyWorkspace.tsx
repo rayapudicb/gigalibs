@@ -767,7 +767,7 @@ export function PartyWorkspace() {
 
                 {activeTab === 'orgScope' && (
                   <div className="space-y-3">
-                    <div className="text-xs font-medium text-ui-fg-subtle">WI-OI-109 Organization Assignments</div>
+                    <div className="text-xs font-medium text-ui-fg-subtle">Organization assignments</div>
                     {partyDetail.orgAssignments.length === 0 ? (
                       <div className="text-xs text-ui-fg-muted italic py-4">
                         Global within tenant (no unit restrictions).

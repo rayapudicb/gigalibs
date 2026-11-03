@@ -149,6 +149,31 @@ const DRAFT_LINE_FIELDS: readonly FieldSpec[] = [
   { key: 'memo', writable: true },
   { key: 'draft-status' },
 ];
+/**
+ * WI-OI-148 (QA-039): the standard cost window types and shows a decimal (1.25); the costing service keeps it scaled
+ * by 1,000,000 (six decimal places), so the record adapter converts both ways.
+ */
+const UNIT_COST_DECIMALS = 6;
+export function scaledUnitCost(decimal: string): string {
+  const match = /^(\d+)(?:\.(\d{1,6}))?$/.exec(decimal.trim());
+  if (!match) {
+    throw new BadRequestException({
+      code: 'FINANCE_VALIDATION_FAILED',
+      message: 'Standard unit cost must be an amount such as 1.25, with at most six decimals.',
+    });
+  }
+  return BigInt(`${match[1]}${(match[2] ?? '').padEnd(UNIT_COST_DECIMALS, '0')}`).toString();
+}
+export function decimalUnitCost(scaled: string): string {
+  const digits = BigInt(scaled).toString().padStart(UNIT_COST_DECIMALS + 1, '0');
+  const whole = digits.slice(0, -UNIT_COST_DECIMALS);
+  const fraction = digits.slice(-UNIT_COST_DECIMALS).replace(/0+$/, '');
+  return fraction ? `${whole}.${fraction}` : whole;
+}
+function standardCostToWindow(row: { readonly standardUnitCostScaled: string } & Readonly<Record<string, unknown>>): RecordValues {
+  return toWindow(PRODUCT_STANDARD_COST_FIELDS, { ...row, standardUnitCostScaled: decimalUnitCost(row.standardUnitCostScaled), version: 1 });
+}
+
 const PRODUCT_STANDARD_COST_FIELDS: readonly FieldSpec[] = [
   { key: 'cost-profile-id', writable: true },
   { key: 'product-id', writable: true },
@@ -369,7 +394,7 @@ export function financeRecordDispatcher(deps: FinanceRecordDependencies, idempot
       const offset = (query.page - 1) * query.pageSize;
       const pageItems = items.slice(offset, offset + query.pageSize);
       return {
-        items: pageItems.map((row) => toWindow(PRODUCT_STANDARD_COST_FIELDS, { ...row, version: 1 })),
+        items: pageItems.map((row) => standardCostToWindow(row)),
         total,
         page: query.page,
         pageSize: query.pageSize,
@@ -377,7 +402,7 @@ export function financeRecordDispatcher(deps: FinanceRecordDependencies, idempot
     },
     async get(principal, id) {
       const row = await deps.costing.getProductStandardCost(principal.tenantId, id);
-      return row ? toWindow(PRODUCT_STANDARD_COST_FIELDS, { ...row, version: 1 }) : null;
+      return row ? standardCostToWindow(row) : null;
     },
     async create(context, values) {
       const input = toDomain(PRODUCT_STANDARD_COST_FIELDS, values) as {
@@ -387,6 +412,7 @@ export function financeRecordDispatcher(deps: FinanceRecordDependencies, idempot
         effectiveFrom?: string;
         changeReason?: string;
       };
+      if (input.standardUnitCostScaled !== undefined) input.standardUnitCostScaled = scaledUnitCost(String(input.standardUnitCostScaled));
       if (!input.costProfileId || !input.productId || !input.standardUnitCostScaled || !input.effectiveFrom) {
         throw new BadRequestException({ code: 'FINANCE_VALIDATION_FAILED', message: 'Cost profile, product, standard cost and effective from are required.' });
       }

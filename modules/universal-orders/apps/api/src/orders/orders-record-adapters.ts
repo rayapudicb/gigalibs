@@ -12,6 +12,7 @@ import {
 } from '@gigalibs/contracts';
 import {
   type IdempotencyStore,
+  type LookupResolver,
   type ModulePrincipal,
   type RecordAdapter,
   RecordDispatcher,
@@ -587,11 +588,10 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
       dispatch: {
         permission: 'orders:fulfill',
         run: async (context, id, parameters) => {
-          const issueId = parameters['issue-id'];
-          if (typeof issueId !== 'string' || issueId.trim().length === 0) {
-            throw new BadRequestException('issue-id is required to dispatch a fulfillment.');
-          }
-          return fulfillmentOrderToWindow(await deps.orders.dispatchFulfillment(context.principal, id, issueId.trim()));
+          // WI-OI-149 (QA-022): without a reference the service uses the issue recorded on the fulfillment and says so
+          // when there is none.
+          const issueId = typeof parameters['issue-id'] === 'string' ? parameters['issue-id'].trim() : '';
+          return fulfillmentOrderToWindow(await deps.orders.dispatchFulfillment(context.principal, id, issueId || undefined));
         },
       },
     },
@@ -671,8 +671,47 @@ export function ordersRecordDispatcher(deps: { orders: OrderService }, idempoten
 
   return new RecordDispatcher(
     [salesQuotes, salesOrders, fulfillmentOrders, customerInvoices, customerCreditMemos],
-    [],
+    [
+      documentLookup('orders-sales-orders', salesOrders, 'order-number'),
+      documentLookup('orders-customer-invoices', customerInvoices, 'invoice-number'),
+    ],
     idempotency,
     shippedRecordRules('universal-orders'),
   );
+}
+
+/**
+ * WI-OI-149 (QA-023): a sales order or customer invoice picked by its number and customer, through the window's own
+ * scoped reads (organization units apply as on its list), instead of a typed id. The option carries the order and
+ * customer so a credit memo fills them from the invoice.
+ */
+function documentLookup(key: string, adapter: RecordAdapter, numberField: string): LookupResolver {
+  return {
+    key,
+    permission: 'orders:read',
+    async resolve(principal, request) {
+      const records = request.ids?.length
+        ? (await Promise.all(request.ids.map((id) => adapter.get(principal, id).catch(() => null)))).filter(
+            (record): record is RecordValues => record !== null,
+          )
+        : (
+            await adapter.list(principal, {
+              page: 1,
+              pageSize: request.limit,
+              ...(request.search ? { search: request.search } : {}),
+              sortDirection: 'DESC',
+              filters: {},
+            })
+          ).items;
+      return records.map((record) => {
+        const number = typeof record[numberField] === 'string' ? (record[numberField] as string) : String(record.id);
+        const customer = typeof record['customer-name'] === 'string' ? (record['customer-name'] as string) : '';
+        const attributes: Record<string, string> = {};
+        for (const field of ['order-id', 'customer-id', 'customer-name']) {
+          if (typeof record[field] === 'string' && record[field]) attributes[field] = record[field] as string;
+        }
+        return { value: String(record.id), label: customer ? `${number} (${customer})` : number, attributes };
+      });
+    },
+  };
 }

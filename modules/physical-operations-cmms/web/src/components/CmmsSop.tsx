@@ -97,7 +97,7 @@ function Overview({ can, onNew, onOpen, onRun }: { can: Can; onNew: () => void; 
             <Table.Body>
               {procedures.map((item) => (
                 <Table.Row key={item.id}>
-                  <Table.Cell>{item.code}{item.safetyCritical ? ' ⚠' : ''}</Table.Cell>
+                  <Table.Cell>{item.code}{item.safetyCritical ? ' (safety critical)' : ''}</Table.Cell>
                   <Table.Cell>{item.title}</Table.Cell>
                   <Table.Cell>r{item.revision}</Table.Cell>
                   <Table.Cell><StatusBadge color={statusColor[item.status]}>{item.status.replace('_', ' ')}</StatusBadge></Table.Cell>

@@ -370,6 +370,11 @@ export const DictionaryActionParameterSchema = z
     label: z.string().trim().min(1).max(160),
     type: DictionaryFieldTypeSchema,
     required: z.boolean().default(false),
+    /**
+     * WI-OI-149 (QA-022): a reference of the dictionary whose lookup the dialog offers, so the person picks a warehouse
+     * or a vendor instead of typing its id. The action receives the same id as before.
+     */
+    referenceKey: ConfigurationKeySchema.optional(),
   })
   .strict();
 

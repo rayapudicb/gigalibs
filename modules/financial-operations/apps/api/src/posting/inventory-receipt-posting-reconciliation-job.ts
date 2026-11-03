@@ -1,8 +1,15 @@
 import { inventoryReceiptCompletedPostingPolicyV1 } from '@gigalibs/posting-rules';
-import { Logger, type OnApplicationBootstrap, type OnApplicationShutdown } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  Optional,
+  type OnApplicationBootstrap,
+  type OnApplicationShutdown,
+} from '@nestjs/common';
 import type { PoolClient } from 'pg';
 import { SCHEMA } from '../config.js';
-import type { DatabaseService } from '../database.service.js';
+import { DatabaseService } from '../database.service.js';
 import {
   reconcileInventoryReceiptPosting,
   type InventoryReceiptPostingReconciliationV1,
@@ -109,7 +116,14 @@ async function recordReconciliationGapAudit(
   );
 }
 
-/** Schedules {@link runInventoryReceiptPostingReconciliationSweep} on a fixed interval. */
+export const INVENTORY_RECEIPT_POSTING_RECONCILIATION_CONFIG = Symbol('INVENTORY_RECEIPT_POSTING_RECONCILIATION_CONFIG');
+
+/**
+ * Schedules {@link runInventoryReceiptPostingReconciliationSweep} on a fixed interval. WI-OI-146 (QA-033): injectable
+ * with an explicit DatabaseService token; without them Nest built the job with no database and every sweep failed with
+ * "Cannot read properties of undefined (reading 'getPool')".
+ */
+@Injectable()
 export class InventoryReceiptPostingReconciliationJob
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
@@ -117,10 +131,16 @@ export class InventoryReceiptPostingReconciliationJob
   private timer?: NodeJS.Timeout;
   private running = false;
 
+  private readonly jobConfig: InventoryReceiptPostingReconciliationJobConfig;
+
   constructor(
-    private readonly database: DatabaseService,
-    private readonly jobConfig: InventoryReceiptPostingReconciliationJobConfig = loadInventoryReceiptPostingReconciliationJobConfig(),
-  ) {}
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(INVENTORY_RECEIPT_POSTING_RECONCILIATION_CONFIG)
+    jobConfig?: InventoryReceiptPostingReconciliationJobConfig,
+  ) {
+    this.jobConfig = jobConfig ?? loadInventoryReceiptPostingReconciliationJobConfig();
+  }
 
   onApplicationBootstrap(): void {
     if (!this.jobConfig.enabled) {

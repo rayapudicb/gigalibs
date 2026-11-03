@@ -247,6 +247,24 @@
             "surfaceKey": "catalogue-units",
             "permission": "uoms:manage"
           }
+        },
+        {
+          "referenceKey": "vendor-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "business-partners-parties",
+          "fills": {
+            "name": "vendor-name"
+          }
+        },
+        {
+          "referenceKey": "warehouse-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "inventory-warehouses",
+          "createWith": {
+            "moduleKey": "universal-inventory",
+            "surfaceKey": "inventory-warehouses",
+            "permission": "inventory:warehouses:manage"
+          }
         }
       ],
       "validationRules": [],
@@ -433,9 +451,10 @@
           "parameters": [
             {
               "key": "vendor-id",
-              "label": "Vendor party UUID",
-              "type": "TEXT",
-              "required": true
+              "label": "Vendor",
+              "type": "REFERENCE",
+              "required": true,
+              "referenceKey": "vendor-ref"
             },
             {
               "key": "vendor-name",
@@ -445,9 +464,10 @@
             },
             {
               "key": "destination-warehouse-id",
-              "label": "Ship-to warehouse UUID",
-              "type": "TEXT",
-              "required": true
+              "label": "Ship-to warehouse",
+              "type": "REFERENCE",
+              "required": true,
+              "referenceKey": "warehouse-ref"
             }
           ],
           "visibilityCondition": {

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resetWorkflowStudioReachability, WORKFLOW_STUDIO_NOT_RUNNING } from '../lib/workflow-studio-reachability';
 import { GET as getWorkflowStudio, POST as postWorkflowStudio, PATCH as patchWorkflowStudio } from '../app/api/workflow-studio/[...path]/route';
 import { moduleTenantBindingId } from '../lib/ar-tenant-binding';
 import { canUseTenantModule, hasPermission } from '../lib/module-access';
@@ -36,6 +37,7 @@ describe('Workflow Studio tenant binding and access control', () => {
 
 describe('Workflow Studio Route Security Boundary', () => {
   beforeEach(() => {
+    resetWorkflowStudioReachability();
     vi.clearAllMocks();
     vi.stubEnv('WORKFLOW_STUDIO_API_URL', 'http://127.0.0.1:4000');
     vi.stubEnv('BFF_MAX_REQUEST_BYTES', '1048576');
@@ -247,9 +249,15 @@ describe('Workflow Studio Route Security Boundary', () => {
     const context = { params: Promise.resolve({ path: ['workflows'] }) };
 
     const res = await getWorkflowStudio(req, context);
-    expect(res.status).toBe(502);
+    expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.title).toBe('The Workflow Studio service is temporarily unavailable.');
+    expect(body.title).toBe(WORKFLOW_STUDIO_NOT_RUNNING);
+    // WI-OI-146 (QA-013): the next call is answered at once, without asking the unreachable service again.
+    globalFetch.mockClear();
+    const again = await getWorkflowStudio(new Request(req.url, { method: 'GET' }), context);
+    expect(again.status).toBe(503);
+    expect(globalFetch).not.toHaveBeenCalled();
+    resetWorkflowStudioReachability();
 
     globalFetch.mockRestore();
   });

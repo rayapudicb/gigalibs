@@ -30,23 +30,23 @@ export function windowSource(builderFor) {
   const INV = 'ar.invoices';
   const invoiceFields = [
     field(INV, 'invoice-number', 'Invoice number', 'TEXT', { readOnly: true }),
-    field(INV, 'customer-id', 'Customer', 'TEXT', { required: true, writePermission: 'ar:write' }),
-    field(INV, 'org-unit-id', 'Owning organization unit', 'TEXT', { required: true, writePermission: 'ar:write' }),
+    field(INV, 'customer-id', 'Customer', 'TEXT', { help: 'The billing customer this invoice is for.', required: true, writePermission: 'ar:write' }),
+    field(INV, 'org-unit-id', 'Owning organization unit', 'TEXT', { help: 'The unit that owns this invoice and its revenue.', required: true, writePermission: 'ar:write' }),
     field(INV, 'currency', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'ar:write' }),
-    field(INV, 'issue-date', 'Issue date', 'DATE', { required: true, writePermission: 'ar:write' }),
-    field(INV, 'due-date', 'Due date', 'DATE', { required: true, writePermission: 'ar:write' }),
+    field(INV, 'issue-date', 'Issue date', 'DATE', { help: 'The date printed on the invoice.', required: true, writePermission: 'ar:write' }),
+    field(INV, 'due-date', 'Due date', 'DATE', { help: 'When payment is due; reminders follow this date.', required: true, writePermission: 'ar:write' }),
     field(INV, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'invoice-statuses' }),
     field(INV, 'total-minor', 'Total (minor units)', 'INTEGER', { readOnly: true }),
     field(INV, 'amount-due-minor', 'Amount due (minor units)', 'INTEGER', { readOnly: true }),
-    field(INV, 'line-description', 'Line description', 'TEXT', { required: true, writePermission: 'ar:write' }),
+    field(INV, 'line-description', 'Line description', 'TEXT', { help: 'What was sold or done, as the customer will read it.', required: true, writePermission: 'ar:write' }),
     field(INV, 'line-quantity', 'Line quantity', 'TEXT', { defaultValue: '1', writePermission: 'ar:write' }),
-    field(INV, 'line-unit-amount-minor', 'Line unit amount (minor)', 'INTEGER', { required: true, writePermission: 'ar:write' }),
+    field(INV, 'line-unit-amount-minor', 'Line unit amount', 'INTEGER', { help: 'The price of one unit, for example 12.50.', required: true, writePermission: 'ar:write' }),
   ];
 
   const CUST = 'ar.customers';
   const customerFields = [
-    field(CUST, 'legal-name', 'Legal name', 'TEXT', { required: true, writePermission: 'ar:write' }),
-    field(CUST, 'billing-email', 'Billing email', 'TEXT', { required: true, writePermission: 'ar:write' }),
+    field(CUST, 'legal-name', 'Legal name', 'TEXT', { help: 'The customer’s registered name, as it appears on invoices.', required: true, writePermission: 'ar:write' }),
+    field(CUST, 'billing-email', 'Billing email', 'TEXT', { help: 'Where invoices and reminders are sent.', required: true, writePermission: 'ar:write' }),
     field(CUST, 'currency', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'ar:write' }),
     field(CUST, 'external-reference', 'External reference', 'TEXT', { writePermission: 'ar:write' }),
     field(CUST, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'customer-statuses' }),

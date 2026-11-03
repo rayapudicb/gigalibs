@@ -35,5 +35,26 @@ export function CmmsWindow({
       </div>
     );
   }
-  return <MetadataWindow manifest={state.manifest} client={client} permissions={permissions} />;
+  return <MetadataWindow manifest={state.manifest} client={client} permissions={permissions} starter={STARTERS[surface]} />;
 }
+
+/**
+ * WI-OI-148 (QA-027): a new workspace has no asset classes; the empty list offers a typical set in one click (each can
+ * be changed, extended with specifications or archived afterwards).
+ */
+const STARTERS: Readonly<Record<string, { label: string; records: Record<string, unknown>[] }>> = {
+  'cmms-classifications': {
+    label: 'Start with the common asset classes',
+    records: [
+      { code: 'PUMP', name: 'Pumps' },
+      { code: 'MOTOR', name: 'Electric motors' },
+      { code: 'HVAC', name: 'Heating, ventilation and air conditioning' },
+      { code: 'ELEC', name: 'Electrical panels and switchgear' },
+      { code: 'CONV', name: 'Conveyors' },
+      { code: 'COMP', name: 'Compressors' },
+      { code: 'VEH', name: 'Vehicles and mobile equipment' },
+      { code: 'BLDG', name: 'Buildings and structures' },
+      { code: 'IT', name: 'IT and control equipment' },
+    ],
+  },
+};

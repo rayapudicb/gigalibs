@@ -160,6 +160,8 @@ test.describe('Business journeys (timed)', () => {
           await journey.step('Open the New form', ['open'], async () => {
             // The create button: New…, or Add / Register / Request … on hand-written screens (never a submit button).
             const button = frame.locator('button:not([type=submit])').filter({ hasText: /^\s*(\+\s*)?(New|Add|Register|Request)\b/ }).first();
+            // QA-032: a window's New button appears once its manifest has loaded; wait for it instead of looking once.
+            await button.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => undefined);
             if (!(await button.count())) throw new Error('No create button on the screen.');
             await button.click();
             await page.waitForTimeout(400);

@@ -150,7 +150,7 @@
         {
           "fieldKey": "classification-id",
           "entityKey": "cmms.spec-definitions",
-          "label": "Classification ID",
+          "label": "Classification",
           "type": "TEXT",
           "required": false,
           "readOnly": true,
@@ -161,13 +161,14 @@
         {
           "fieldKey": "attribute-key",
           "entityKey": "cmms.spec-definitions",
-          "label": "Attribute key",
+          "label": "Attribute code",
           "type": "TEXT",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "helpText": "A short code for the attribute, for example rated-power.",
           "writePermission": "cmms.assets.write"
         },
         {

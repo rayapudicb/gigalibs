@@ -294,7 +294,7 @@
         {
           "fieldKey": "asset-id",
           "entityKey": "cmms.asset-specs",
-          "label": "Asset ID",
+          "label": "Asset",
           "type": "TEXT",
           "required": false,
           "readOnly": true,
@@ -305,7 +305,7 @@
         {
           "fieldKey": "spec-definition-id",
           "entityKey": "cmms.asset-specs",
-          "label": "Spec definition ID",
+          "label": "Specification",
           "type": "TEXT",
           "required": false,
           "readOnly": true,
@@ -316,7 +316,7 @@
         {
           "fieldKey": "attribute-key",
           "entityKey": "cmms.asset-specs",
-          "label": "Attribute key",
+          "label": "Attribute",
           "type": "TEXT",
           "required": false,
           "readOnly": true,

@@ -41,7 +41,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "The cost profile (book and currency) this standard cost belongs to."
         },
         {
           "fieldKey": "product-id",
@@ -52,18 +53,21 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "The product this standard cost values."
         },
         {
           "fieldKey": "standard-unit-cost-scaled",
           "entityKey": "finance.product-standard-costs",
-          "label": "Standard unit cost (scaled)",
-          "type": "TEXT",
+          "label": "Standard unit cost",
+          "type": "NUMBER",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "scale": 6,
+          "helpText": "The cost of one unit, for example 1.25, used to value stock and cost of goods sold."
         },
         {
           "fieldKey": "effective-from",
@@ -74,7 +78,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "The first day this cost applies; earlier stock keeps its previous cost."
         },
         {
           "fieldKey": "effective-to",
@@ -134,7 +139,7 @@
                   "fieldKey": "standard-unit-cost-scaled",
                   "position": 2,
                   "span": 4,
-                  "componentKey": "text-input"
+                  "componentKey": "number-input"
                 },
                 {
                   "fieldKey": "effective-from",

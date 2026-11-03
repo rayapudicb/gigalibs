@@ -16,3 +16,14 @@
 Module request from Plan & entitlements (A3), one switch per module with an optional reason (P2), starter data on
 enable (with WI-OI-148), the per-module delivery state on Settings › Organization, the role permission picker, and P1/P2
 journeys (need a platform operator login on the test stack).
+
+## 2026-11-03 — module request, enabling, roles, delivery
+
+- QA-035: `GET|POST /tenants/current/module-requests` (tenant:read / tenant:update); a request is an audit entry
+  (`tenant-module-request`), open until the module is enabled; Plan & entitlements has "Request this module"; Platform
+  Control Tower shows "N requested" and "Requested … by …" on the module.
+- QA-036: optional audit note with a default; the entitlement reason lists modules turned on and off.
+- QA-037: `PermissionPicker` (grouped by module, plain names, search, select all) for new and edited roles; start from a
+  built-in role.
+- QA-034/QA-047: per-job `maxAttempts` (1–50) in `@gigalibs/jobs`; organization sync uses 12 and skips CONTAINED modules.
+- QA-025: member-readable `organization/unit-options` (users:read) behind every organization-unit picker.

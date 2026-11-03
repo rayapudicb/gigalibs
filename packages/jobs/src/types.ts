@@ -103,6 +103,11 @@ export interface EnqueueJobCommand {
   readonly correlationId: string;
   readonly idempotencyKey: string;
   readonly availableAt?: Date;
+  /**
+   * WI-OI-146: attempts for this job instead of the definition's, for callers whose job must outlast a longer outage
+   * (an organization delivery to a module that is restarting). 1–50.
+   */
+  readonly maxAttempts?: number;
 }
 
 export interface StoredJobInput {

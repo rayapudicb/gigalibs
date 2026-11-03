@@ -62,7 +62,7 @@ export function windowSource(builderFor) {
   // 2. Categories
   const G = 'catalogue.categories';
   const gf = [
-    field(G, 'code', 'Code', 'TEXT', { required: true }), field(G, 'name', 'Name', 'TEXT', { required: true }), field(G, 'description', 'Description', 'TEXTAREA'),
+    field(G, 'code', 'Code', 'TEXT', { help: 'A short unique code, used in imports, reports and integrations.', required: true }), field(G, 'name', 'Name', 'TEXT', { help: 'The name people see in lists and pickers.', required: true }), field(G, 'description', 'Description', 'TEXTAREA'),
     field(G, 'parent-category-id', 'Parent category', 'REFERENCE', { ref: 'category-ref' }), field(G, 'is-default', 'Default category', 'BOOLEAN'),
   ];
   windows['catalogue-categories'] = window('catalogue-categories', 'Product categories', 'Categories', 'The category tree products are filed under.', 'products:read',
@@ -75,7 +75,7 @@ export function windowSource(builderFor) {
   // 3. Attributes
   const A = 'catalogue.attributes';
   const af = [
-    field(A, 'code', 'Code', 'TEXT', { required: true }), field(A, 'name', 'Name', 'TEXT', { required: true }), field(A, 'description', 'Description', 'TEXTAREA'),
+    field(A, 'code', 'Code', 'TEXT', { help: 'A short unique code, used in imports, reports and integrations.', required: true }), field(A, 'name', 'Name', 'TEXT', { help: 'The name people see in lists and pickers.', required: true }), field(A, 'description', 'Description', 'TEXTAREA'),
     field(A, 'value-type', 'Value type', 'SELECT', { required: true, ref: 'value-types' }), field(A, 'is-required', 'Required', 'BOOLEAN'),
     field(A, 'unit', 'Unit'), field(A, 'allowed-values', 'Allowed values', 'TEXT', { help: 'For a list of values: the values, separated by commas.' }),
     field(A, 'min-value', 'Minimum', 'NUMBER', { scale: 6 }), field(A, 'max-value', 'Maximum', 'NUMBER', { scale: 6 }),
@@ -92,7 +92,7 @@ export function windowSource(builderFor) {
   // 4. Products, with archive and restore
   const P = 'catalogue.products';
   const pf = [
-    field(P, 'code', 'Code', 'TEXT', { required: true }), field(P, 'name', 'Name', 'TEXT', { required: true }), field(P, 'display-name', 'Display name'),
+    field(P, 'code', 'Code', 'TEXT', { help: 'A short unique code, used in imports, reports and integrations.', required: true }), field(P, 'name', 'Name', 'TEXT', { help: 'The name people see in lists and pickers.', required: true }), field(P, 'display-name', 'Display name'),
     field(P, 'description', 'Description', 'TEXTAREA'), field(P, 'product-type', 'Type', 'SELECT', { required: true, ref: 'product-types' }),
     field(P, 'status', 'Status', 'SELECT', { ref: 'product-statuses', help: 'A new product starts as Draft. Use Archive to retire it.' }),
     field(P, 'base-uom-id', 'Base unit', 'REFERENCE', { required: true, ref: 'uom-ref' }), field(P, 'category-id', 'Category', 'REFERENCE', { ref: 'category-ref' }),
@@ -119,7 +119,7 @@ export function windowSource(builderFor) {
   const K = 'catalogue.catalogues';
   const KV = 'catalogue.catalogue-versions';
   const kf = [
-    field(K, 'code', 'Code', 'TEXT', { required: true }), field(K, 'name', 'Name', 'TEXT', { required: true }), field(K, 'description', 'Description', 'TEXTAREA'),
+    field(K, 'code', 'Code', 'TEXT', { help: 'A short unique code, used in imports, reports and integrations.', required: true }), field(K, 'name', 'Name', 'TEXT', { help: 'The name people see in lists and pickers.', required: true }), field(K, 'description', 'Description', 'TEXTAREA'),
     field(K, 'purpose', 'Purpose'), field(K, 'audience', 'Audience'), field(K, 'is-active', 'Active', 'BOOLEAN', { readOnly: true }),
     field(KV, 'catalogue-id', 'Catalogue', 'REFERENCE', { ref: 'catalogue-ref' }), field(KV, 'version-number', 'Version', 'INTEGER', { readOnly: true }),
     field(KV, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'catalogue-statuses' }), field(KV, 'effective-from', 'Effective from', 'DATE'),
@@ -168,7 +168,7 @@ export function windowSource(builderFor) {
   const L = 'catalogue.price-lists';
   const LV = 'catalogue.price-list-versions';
   const lf = [
-    field(L, 'code', 'Code', 'TEXT', { required: true }), field(L, 'name', 'Name', 'TEXT', { required: true }), field(L, 'description', 'Description', 'TEXTAREA'),
+    field(L, 'code', 'Code', 'TEXT', { help: 'A short unique code, used in imports, reports and integrations.', required: true }), field(L, 'name', 'Name', 'TEXT', { help: 'The name people see in lists and pickers.', required: true }), field(L, 'description', 'Description', 'TEXTAREA'),
     field(L, 'currency-code', 'Currency', 'TEXT', { required: true, help: 'Three-letter code, for example USD.' }),
     field(L, 'is-tax-included', 'Prices include tax', 'BOOLEAN'), field(L, 'enforce-price-limit', 'Enforce the limit price', 'BOOLEAN'),
     field(L, 'price-precision', 'Decimal places', 'INTEGER'), field(L, 'audience', 'Audience'), field(L, 'is-active', 'Active', 'BOOLEAN', { readOnly: true }),

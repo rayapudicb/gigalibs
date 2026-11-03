@@ -47,13 +47,14 @@
           "fieldKey": "order-id",
           "entityKey": "orders.customer-invoices",
           "label": "Sales order",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Sales order UUID to bill shipped quantities.",
+          "referenceKey": "sales-order-ref",
+          "helpText": "The sales order whose shipped quantities are billed.",
           "writePermission": "orders:invoices:manage"
         },
         {
@@ -157,6 +158,11 @@
               "label": "Disputed"
             }
           ]
+        },
+        {
+          "referenceKey": "sales-order-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "orders-sales-orders"
         }
       ],
       "validationRules": [],
@@ -235,7 +241,7 @@
                   "fieldKey": "order-id",
                   "position": 3,
                   "span": 8,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "source"
                 },
                 {

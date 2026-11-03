@@ -49,6 +49,38 @@ export interface PlacedField {
   readonly fills?: Readonly<Record<string, string>>;
 }
 
+/**
+ * WI-OI-149 (QA-022): an action parameter that names a lookup reference, drawn as the same picker a form field uses;
+ * null for a typed parameter or a reference without a resolver (the dialog then keeps a text box).
+ */
+export function parameterLookup(
+  model: WindowModel,
+  parameter: NonNullable<DictionaryActionV1['parameters']>[number],
+): PlacedField | null {
+  if (!parameter.referenceKey) return null;
+  const reference = model.manifest.references.find((candidate) => candidate.referenceKey === parameter.referenceKey);
+  if (!reference || reference.referenceType === 'VALUE_LIST' || !reference.resolverKey) return null;
+  return {
+    placement: { fieldKey: parameter.key } as DictionaryFieldPlacementV1,
+    field: {
+      fieldKey: parameter.key,
+      entityKey: model.rootTab.targetEntityKey,
+      label: parameter.label,
+      type: 'REFERENCE',
+      required: parameter.required,
+      readOnly: false,
+      isSystemLocked: false,
+      classification: 'INTERNAL',
+      maskOnDisplay: false,
+      referenceKey: parameter.referenceKey,
+    } as DictionaryFieldV1,
+    readOnly: false,
+    required: parameter.required,
+    resolverKey: reference.resolverKey,
+    ...(reference.fills ? { fills: reference.fills } : {}),
+  };
+}
+
 /** No permission named means open; otherwise the one permission rule (WI-OI-120q, `permissionMatches`). */
 export function holds(permissions: readonly string[], permission: string | undefined): boolean {
   return !permission || holdsPermission(permissions, permission);

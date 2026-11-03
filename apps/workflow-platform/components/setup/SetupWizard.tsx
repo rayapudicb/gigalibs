@@ -7,6 +7,7 @@
 // and role counts are fetched here.
 
 import { Button } from '@/components/ui/button';
+import { CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   SETUP_STEPS,
@@ -115,9 +116,7 @@ export function SetupWizard({ companyName, companyNamed, enabledModuleCount }: S
       {progress.allRequiredDone ? (
         <Card>
           <CardContent className="flex items-center gap-3 py-5">
-            <span className="text-2xl" aria-hidden>
-              ✅
-            </span>
+            <CheckCircle2 className="h-7 w-7 text-ui-fg-interactive" aria-hidden="true" />
             <div>
               <p className="font-semibold text-ui-fg-base">You're all set.</p>
               <p className="text-sm text-ui-fg-subtle">

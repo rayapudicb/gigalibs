@@ -202,7 +202,7 @@
         {
           "fieldKey": "space-id",
           "entityKey": "cmms.space-assets",
-          "label": "Space ID",
+          "label": "Space",
           "type": "TEXT",
           "required": false,
           "readOnly": true,

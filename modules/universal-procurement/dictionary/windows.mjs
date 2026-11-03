@@ -63,10 +63,11 @@ export function windowSource(builderFor) {
     tabs,
   });
 
+  // WI-OI-149 (QA-022): the vendor and warehouse are picked (the vendor's name fills in), not typed as UUIDs.
   const CONVERT_REQ_PARAMS = [
-    { key: 'vendor-id', label: 'Vendor party UUID', type: 'TEXT', required: true },
+    { key: 'vendor-id', label: 'Vendor', type: 'REFERENCE', required: true, referenceKey: 'vendor-ref' },
     { key: 'vendor-name', label: 'Vendor name', type: 'TEXT', required: true },
-    { key: 'destination-warehouse-id', label: 'Ship-to warehouse UUID', type: 'TEXT', required: true },
+    { key: 'destination-warehouse-id', label: 'Ship-to warehouse', type: 'REFERENCE', required: true, referenceKey: 'warehouse-ref' },
   ];
 
   const ORG_UNIT_REF = lookup('org-unit-ref', 'organization-units');
@@ -80,6 +81,8 @@ export function windowSource(builderFor) {
   const VENDOR_REF = lookup('vendor-ref', 'business-partners-parties', { fills: { name: 'vendor-name' } });
   const VENDOR_ONLY_REF = lookup('vendor-ref', 'business-partners-parties');
   const UOM_REF = lookup('uom-ref', 'catalogue-uoms');
+  // WI-OI-149 (QA-023): a vendor bill picks its purchase order, which fills the vendor.
+  const PURCHASE_ORDER_REF = lookup('purchase-order-ref', 'procurement-purchase-orders', { fills: { 'vendor-id': 'vendor-id' } });
 
   const PO = 'procurement.purchase-orders';
   const poFields = [
@@ -122,7 +125,7 @@ export function windowSource(builderFor) {
     field(VB, 'vendor-id', 'Vendor', 'REFERENCE', { required: true, ref: 'vendor-ref', help: 'The vendor, chosen from Business partners.', writePermission: 'procurement:bills:manage' }),
     field(VB, 'invoice-date', 'Invoice date', 'DATETIME', { required: true, writePermission: 'procurement:bills:manage' }),
     field(VB, 'due-date', 'Due date', 'DATETIME', { required: true, writePermission: 'procurement:bills:manage' }),
-    field(VB, 'purchase-order-id', 'Purchase order', 'TEXT', { writePermission: 'procurement:bills:manage', help: 'Optional PO UUID to link the bill.' }),
+    field(VB, 'purchase-order-id', 'Purchase order', 'REFERENCE', { ref: 'purchase-order-ref', writePermission: 'procurement:bills:manage', help: 'The purchase order this bill is for; its vendor fills in.' }),
     field(VB, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:bills:manage' }),
     field(VB, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'vendor-bill-statuses' }),
     field(VB, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
@@ -200,6 +203,8 @@ export function windowSource(builderFor) {
         ORG_UNIT_REF,
         PRODUCT_FILL_REF,
         UOM_REF,
+        VENDOR_REF,
+        WAREHOUSE_REF,
       ], [
         view('requisitions', 'Requisitions', [
           tab('req-header', 'Requisition', 0, REQ, [
@@ -260,6 +265,7 @@ export function windowSource(builderFor) {
       'procurement:read',
       dictionary('procurement-vendor-bills', 'Vendor bills', VB, [entity(VB, 'Vendor bills')], vbFields, [], [
         VENDOR_ONLY_REF,
+        PURCHASE_ORDER_REF,
         values('vendor-bill-statuses', VENDOR_BILL_STATUS),
         PRODUCT_REF,
         UOM_REF,

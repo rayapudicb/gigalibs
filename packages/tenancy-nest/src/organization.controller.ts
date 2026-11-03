@@ -133,6 +133,24 @@ export class OrganizationController {
     return this.organization.listUnits(tenantId, query);
   }
 
+  /**
+   * WI-OI-147 (QA-025): the units a person can pick as a record's owner (id, name, code, status only), for every
+   * workspace member, so a module role can fill an organization unit; the structure itself still needs
+   * organization:read.
+   */
+  @Get('unit-options')
+  @RequirePermissions('users:read')
+  async unitOptions(
+    @CurrentTenant('tenantId') tenantId: string,
+    @Query(new ZodValidationPipe(OrgUnitListQuerySchema)) query: OrgUnitListQuery,
+  ) {
+    const units = await this.organization.listUnits(tenantId, query);
+    return {
+      ...units,
+      items: units.items.map((unit) => ({ id: unit.id, name: unit.name, code: unit.code, status: unit.status })),
+    };
+  }
+
   @Get('units/:unitId')
   @RequirePermissions('organization:read')
   async getUnit(

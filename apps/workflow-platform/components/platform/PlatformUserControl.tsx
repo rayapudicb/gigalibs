@@ -259,19 +259,19 @@ export function PlatformUserControl({ session }: { session: VerifiedSession }) {
             href="/platform-admin"
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition"
           >
-            🏢 Tenant Workspaces & Licensing
+            Tenant Workspaces & Licensing
           </a>
           <a
             href="/platform-admin/users"
             className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-blue-700 border border-blue-200"
           >
-            👥 Global Users & Platform RBAC
+            Global Users & Platform RBAC
           </a>
           <a
             href="/platform-admin/infra"
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition"
           >
-            ⚙️ Infrastructure
+            Infrastructure
           </a>
         </div>
 
@@ -312,7 +312,7 @@ export function PlatformUserControl({ session }: { session: VerifiedSession }) {
                 : 'border-transparent text-zinc-500 hover:text-zinc-900'
             }`}
           >
-            <span>👥 User Directory</span>
+            <span>User Directory</span>
             <span className="rounded-full bg-zinc-200/80 px-2 py-0.5 text-[10px] text-zinc-700">
               {filteredUsers.length}
             </span>
@@ -326,7 +326,7 @@ export function PlatformUserControl({ session }: { session: VerifiedSession }) {
                 : 'border-transparent text-zinc-500 hover:text-zinc-900'
             }`}
           >
-            <span>⚙️ User Inspector & Authority</span>
+            <span>User Inspector & Authority</span>
             {selected && (
               <span className="rounded-md bg-blue-100 px-1.5 py-0.5 font-mono text-[10px] text-blue-800">
                 {selected.name}
@@ -341,7 +341,6 @@ export function PlatformUserControl({ session }: { session: VerifiedSession }) {
             {/* Search and Filters Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
               <form className="flex flex-1 items-center gap-2 min-w-[280px]" onSubmit={applySearch}>
-                <span className="text-zinc-400">🔍</span>
                 <input
                   type="text"
                   placeholder="Search by full name or email address…"
@@ -419,7 +418,7 @@ export function PlatformUserControl({ session }: { session: VerifiedSession }) {
                           <div className="flex flex-wrap gap-1">
                             {effectivePlatformRoles.map((r) => (
                               <span key={r.id} className="rounded-md bg-amber-100 px-1.5 py-0.5 font-bold text-[10px] text-amber-900 border border-amber-200">
-                                ★ {r.role}
+                                {r.role}
                               </span>
                             ))}
                             {effectivePlatformRoles.length === 0 && (
@@ -531,19 +530,19 @@ export function PlatformUserControl({ session }: { session: VerifiedSession }) {
 
                     <div className="flex flex-wrap gap-2 pt-1">
                       <button className={secondaryButton} disabled={!canMutate || busy !== null} onClick={() => void changeStatus('ACTIVE')} type="button">
-                        🔓 Activate
+                        Activate
                       </button>
                       <button className={secondaryButton} disabled={!canMutate || busy !== null} onClick={() => void changeStatus('SUSPENDED')} type="button">
-                        ⏸️ Suspend
+                        Suspend
                       </button>
                       <button className={dangerButton} disabled={!canMutate || busy !== null} onClick={() => void changeStatus('DEACTIVATED')} type="button">
-                        🛑 Deactivate
+                        Deactivate
                       </button>
                     </div>
 
                     <div className="pt-2 border-t border-zinc-100">
                       <button className={secondaryButton} disabled={!canMutate || busy !== null} onClick={() => void issueReset()} type="button">
-                        🔑 Issue Single-Use Password Recovery Link
+                        Issue Single-Use Password Recovery Link
                       </button>
                       {!canMutate && <p className="mt-2 text-xs text-zinc-500">Auditor authority is read-only.</p>}
                     </div>

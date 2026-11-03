@@ -81,12 +81,14 @@
           "fieldKey": "org-unit-id",
           "entityKey": "inventory.warehouses",
           "label": "Owning organization unit",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "referenceKey": "org-unit-ref",
+          "helpText": "The unit that owns this warehouse and its stock."
         },
         {
           "fieldKey": "description",
@@ -340,6 +342,11 @@
             "surfaceKey": "inventory-warehouses",
             "permission": "inventory:warehouses:manage"
           }
+        },
+        {
+          "referenceKey": "org-unit-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "organization-units"
         }
       ],
       "validationRules": [],
@@ -404,7 +411,7 @@
                   "fieldKey": "org-unit-id",
                   "position": 3,
                   "span": 4,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "main"
                 },
                 {

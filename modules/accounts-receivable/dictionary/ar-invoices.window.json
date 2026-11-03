@@ -53,6 +53,7 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "helpText": "The billing customer this invoice is for.",
           "writePermission": "ar:write"
         },
         {
@@ -65,6 +66,7 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "helpText": "The unit that owns this invoice and its revenue.",
           "writePermission": "ar:write"
         },
         {
@@ -90,6 +92,7 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "helpText": "The date printed on the invoice.",
           "writePermission": "ar:write"
         },
         {
@@ -102,6 +105,7 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "helpText": "When payment is due; reminders follow this date.",
           "writePermission": "ar:write"
         },
         {
@@ -148,6 +152,7 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "helpText": "What was sold or done, as the customer will read it.",
           "writePermission": "ar:write"
         },
         {
@@ -166,13 +171,14 @@
         {
           "fieldKey": "line-unit-amount-minor",
           "entityKey": "ar.invoices",
-          "label": "Line unit amount (minor)",
+          "label": "Line unit amount",
           "type": "INTEGER",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "helpText": "The price of one unit, for example 12.50.",
           "writePermission": "ar:write"
         }
       ],

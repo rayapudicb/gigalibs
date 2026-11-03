@@ -157,7 +157,8 @@ export default function WorkflowsPage() {
       setRuns([]);
       setStats(null);
       setSelectedWfCode('');
-      setError(`Workflow Studio is not available: ${reason instanceof Error ? reason.message : 'no answer'}`);
+      // WI-OI-146 (QA-009): the proxy's plain answer ("Workflows are not running on this instance yet …") as it is.
+      setError(reason instanceof Error && reason.message ? reason.message : 'Workflows did not answer. Try again shortly.');
     } finally {
       setLoading(false);
     }

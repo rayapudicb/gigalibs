@@ -133,7 +133,7 @@ export class KernelJobs {
       ownerAuthVersion: command.ownerAuthVersion,
       correlationId: command.correlationId,
       idempotencyKey: command.idempotencyKey,
-      maxAttempts: definition.maxAttempts,
+      maxAttempts: command.maxAttempts ?? definition.maxAttempts,
       backoffBaseMs: definition.backoff.baseMs,
       backoffMaxMs: definition.backoff.maxMs,
       availableAt,
@@ -238,6 +238,12 @@ function validateCommand(command: EnqueueJobCommand): void {
   requireBoundedIdentifier(command.idempotencyKey, 'idempotencyKey', 200);
   if (!Number.isSafeInteger(command.ownerAuthVersion) || command.ownerAuthVersion < 0) {
     throw new JobDefinitionError('ownerAuthVersion must be a non-negative safe integer.');
+  }
+  if (
+    command.maxAttempts !== undefined &&
+    (!Number.isSafeInteger(command.maxAttempts) || command.maxAttempts < 1 || command.maxAttempts > 50)
+  ) {
+    throw new JobDefinitionError('maxAttempts must be an integer from 1 to 50.');
   }
 }
 

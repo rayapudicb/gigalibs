@@ -45,6 +45,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "helpText": "The customer’s registered name, as it appears on invoices.",
             "writePermission": "ar:write"
           },
           {
@@ -57,6 +58,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "helpText": "Where invoices and reminders are sent.",
             "writePermission": "ar:write"
           },
           {
@@ -252,6 +254,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "helpText": "The billing customer this invoice is for.",
             "writePermission": "ar:write"
           },
           {
@@ -264,6 +267,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "helpText": "The unit that owns this invoice and its revenue.",
             "writePermission": "ar:write"
           },
           {
@@ -289,6 +293,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "helpText": "The date printed on the invoice.",
             "writePermission": "ar:write"
           },
           {
@@ -301,6 +306,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "helpText": "When payment is due; reminders follow this date.",
             "writePermission": "ar:write"
           },
           {
@@ -347,6 +353,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "helpText": "What was sold or done, as the customer will read it.",
             "writePermission": "ar:write"
           },
           {
@@ -365,13 +372,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "line-unit-amount-minor",
             "entityKey": "ar.invoices",
-            "label": "Line unit amount (minor)",
+            "label": "Line unit amount",
             "type": "INTEGER",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "helpText": "The price of one unit, for example 12.50.",
             "writePermission": "ar:write"
           }
         ],
@@ -819,7 +827,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "party-id",
             "entityKey": "business-partners.credit-holds",
-            "label": "Party id",
+            "label": "Partner",
             "type": "TEXT",
             "required": false,
             "readOnly": true,
@@ -3745,7 +3753,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The cost profile (book and currency) this standard cost belongs to."
           },
           {
             "fieldKey": "product-id",
@@ -3756,18 +3765,21 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The product this standard cost values."
           },
           {
             "fieldKey": "standard-unit-cost-scaled",
             "entityKey": "finance.product-standard-costs",
-            "label": "Standard unit cost (scaled)",
-            "type": "TEXT",
+            "label": "Standard unit cost",
+            "type": "NUMBER",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "scale": 6,
+            "helpText": "The cost of one unit, for example 1.25, used to value stock and cost of goods sold."
           },
           {
             "fieldKey": "effective-from",
@@ -3778,7 +3790,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The first day this cost applies; earlier stock keeps its previous cost."
           },
           {
             "fieldKey": "effective-to",
@@ -3838,7 +3851,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "standard-unit-cost-scaled",
                     "position": 2,
                     "span": 4,
-                    "componentKey": "text-input"
+                    "componentKey": "number-input"
                   },
                   {
                     "fieldKey": "effective-from",
@@ -6756,7 +6769,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "asset-id",
             "entityKey": "cmms.asset-specs",
-            "label": "Asset ID",
+            "label": "Asset",
             "type": "TEXT",
             "required": false,
             "readOnly": true,
@@ -6767,7 +6780,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "spec-definition-id",
             "entityKey": "cmms.asset-specs",
-            "label": "Spec definition ID",
+            "label": "Specification",
             "type": "TEXT",
             "required": false,
             "readOnly": true,
@@ -6778,7 +6791,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "attribute-key",
             "entityKey": "cmms.asset-specs",
-            "label": "Attribute key",
+            "label": "Attribute",
             "type": "TEXT",
             "required": false,
             "readOnly": true,
@@ -7397,7 +7410,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "classification-id",
             "entityKey": "cmms.spec-definitions",
-            "label": "Classification ID",
+            "label": "Classification",
             "type": "TEXT",
             "required": false,
             "readOnly": true,
@@ -7408,13 +7421,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "attribute-key",
             "entityKey": "cmms.spec-definitions",
-            "label": "Attribute key",
+            "label": "Attribute code",
             "type": "TEXT",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "helpText": "A short code for the attribute, for example rated-power.",
             "writePermission": "cmms.assets.write"
           },
           {
@@ -7863,7 +7877,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "meter-id",
             "entityKey": "cmms.meter-readings",
-            "label": "Meter ID",
+            "label": "Meter",
             "type": "TEXT",
             "required": false,
             "readOnly": true,
@@ -8301,7 +8315,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "part-id",
             "entityKey": "cmms.part-movements",
-            "label": "Part ID",
+            "label": "Part",
             "type": "TEXT",
             "required": false,
             "readOnly": true,
@@ -8369,7 +8383,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "storeroom-id",
             "entityKey": "cmms.part-movements",
-            "label": "Storeroom ID",
+            "label": "Storeroom",
             "type": "TEXT",
             "required": false,
             "readOnly": false,
@@ -9883,7 +9897,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "fieldKey": "space-id",
             "entityKey": "cmms.space-assets",
-            "label": "Space ID",
+            "label": "Space",
             "type": "TEXT",
             "required": false,
             "readOnly": true,
@@ -12531,7 +12545,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "referenceKey": "project-ref"
+            "referenceKey": "project-ref",
+            "helpText": "The screening project this route belongs to."
           },
           {
             "fieldKey": "name",
@@ -12542,7 +12557,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "A name for the synthesis route, for example \"Route B – telescoped\"."
           },
           {
             "fieldKey": "route-version",
@@ -12922,7 +12938,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "referenceKey": "project-ref"
+            "referenceKey": "project-ref",
+            "helpText": "The screening project this route belongs to."
           },
           {
             "fieldKey": "name",
@@ -12933,7 +12950,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "A name for the synthesis route, for example \"Route B – telescoped\"."
           },
           {
             "fieldKey": "route-version",
@@ -13742,7 +13760,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "A short unique code, used in imports, reports and integrations."
           },
           {
             "fieldKey": "name",
@@ -13753,7 +13772,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The name people see in lists and pickers."
           },
           {
             "fieldKey": "description",
@@ -14482,7 +14502,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "A short unique code, used in imports, reports and integrations."
           },
           {
             "fieldKey": "name",
@@ -14493,7 +14514,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The name people see in lists and pickers."
           },
           {
             "fieldKey": "description",
@@ -14804,7 +14826,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "A short unique code, used in imports, reports and integrations."
           },
           {
             "fieldKey": "name",
@@ -14815,7 +14838,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The name people see in lists and pickers."
           },
           {
             "fieldKey": "description",
@@ -15521,7 +15545,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "A short unique code, used in imports, reports and integrations."
           },
           {
             "fieldKey": "name",
@@ -15532,7 +15557,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The name people see in lists and pickers."
           },
           {
             "fieldKey": "description",
@@ -15895,7 +15921,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "A short unique code, used in imports, reports and integrations."
           },
           {
             "fieldKey": "name",
@@ -15906,7 +15933,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The name people see in lists and pickers."
           },
           {
             "fieldKey": "display-name",
@@ -17975,7 +18003,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "referenceKey": "product-ref"
+            "referenceKey": "product-ref",
+            "helpText": "The product this lot or batch is of."
           },
           {
             "fieldKey": "lot-number",
@@ -17986,7 +18015,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The number printed on the goods, used for traceability and recalls."
           },
           {
             "fieldKey": "batch-code",
@@ -19651,12 +19681,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "org-unit-id",
             "entityKey": "inventory.warehouses",
             "label": "Owning organization unit",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "referenceKey": "org-unit-ref",
+            "helpText": "The unit that owns this warehouse and its stock."
           },
           {
             "fieldKey": "description",
@@ -19910,6 +19942,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "surfaceKey": "inventory-warehouses",
               "permission": "inventory:warehouses:manage"
             }
+          },
+          {
+            "referenceKey": "org-unit-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "organization-units"
           }
         ],
         "validationRules": [],
@@ -19974,7 +20011,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "org-unit-id",
                     "position": 3,
                     "span": 4,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "main"
                   },
                   {
@@ -20143,24 +20180,28 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "order-id",
             "entityKey": "orders.customer-credit-memos",
             "label": "Sales order",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "sales-order-ref",
+            "helpText": "Filled from the invoice when you pick one.",
             "writePermission": "orders:credit-memos:manage"
           },
           {
             "fieldKey": "invoice-id",
             "entityKey": "orders.customer-credit-memos",
             "label": "Customer invoice",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "invoice-ref",
+            "helpText": "The invoice this credit corrects; its order and customer fill in.",
             "writePermission": "orders:credit-memos:manage"
           },
           {
@@ -20295,6 +20336,20 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                 "label": "Cancelled"
               }
             ]
+          },
+          {
+            "referenceKey": "sales-order-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "orders-sales-orders"
+          },
+          {
+            "referenceKey": "invoice-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "orders-customer-invoices",
+            "fills": {
+              "order-id": "order-id",
+              "customer-id": "customer-id"
+            }
           }
         ],
         "validationRules": [],
@@ -20387,14 +20442,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "order-id",
                     "position": 4,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "source"
                   },
                   {
                     "fieldKey": "invoice-id",
                     "position": 5,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "source"
                   },
                   {
@@ -20499,13 +20554,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "order-id",
             "entityKey": "orders.customer-invoices",
             "label": "Sales order",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Sales order UUID to bill shipped quantities.",
+            "referenceKey": "sales-order-ref",
+            "helpText": "The sales order whose shipped quantities are billed.",
             "writePermission": "orders:invoices:manage"
           },
           {
@@ -20609,6 +20665,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                 "label": "Disputed"
               }
             ]
+          },
+          {
+            "referenceKey": "sales-order-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "orders-sales-orders"
           }
         ],
         "validationRules": [],
@@ -20687,7 +20748,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "order-id",
                     "position": 3,
                     "span": 8,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "source"
                   },
                   {
@@ -20778,12 +20839,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "order-id",
             "entityKey": "orders.fulfillment-orders",
             "label": "Sales order",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "sales-order-ref",
+            "helpText": "The sales order to pick, pack and ship.",
             "writePermission": "orders:fulfill"
           },
           {
@@ -20908,6 +20971,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "surfaceKey": "inventory-warehouses",
               "permission": "inventory:warehouses:manage"
             }
+          },
+          {
+            "referenceKey": "sales-order-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "orders-sales-orders"
           }
         ],
         "validationRules": [],
@@ -20978,7 +21046,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "order-id",
                     "position": 2,
                     "span": 8,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "source"
                   },
                   {
@@ -21035,9 +21103,9 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "parameters": [
               {
                 "key": "issue-id",
-                "label": "Inventory issue UUID",
+                "label": "Inventory issue reference (only when the fulfillment has none)",
                 "type": "TEXT",
-                "required": true
+                "required": false
               }
             ],
             "visibilityCondition": {
@@ -21971,6 +22039,16 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "surfaceKey": "catalogue-units",
               "permission": "uoms:manage"
             }
+          },
+          {
+            "referenceKey": "warehouse-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
           }
         ],
         "validationRules": [],
@@ -22174,9 +22252,10 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "parameters": [
               {
                 "key": "warehouse-id",
-                "label": "Fulfillment warehouse UUID",
-                "type": "TEXT",
-                "required": true
+                "label": "Fulfillment warehouse",
+                "type": "REFERENCE",
+                "required": true,
+                "referenceKey": "warehouse-ref"
               }
             ],
             "visibilityCondition": {
@@ -23358,6 +23437,24 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "surfaceKey": "catalogue-units",
               "permission": "uoms:manage"
             }
+          },
+          {
+            "referenceKey": "vendor-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "business-partners-parties",
+            "fills": {
+              "name": "vendor-name"
+            }
+          },
+          {
+            "referenceKey": "warehouse-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "inventory-warehouses",
+            "createWith": {
+              "moduleKey": "universal-inventory",
+              "surfaceKey": "inventory-warehouses",
+              "permission": "inventory:warehouses:manage"
+            }
           }
         ],
         "validationRules": [],
@@ -23544,9 +23641,10 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "parameters": [
               {
                 "key": "vendor-id",
-                "label": "Vendor party UUID",
-                "type": "TEXT",
-                "required": true
+                "label": "Vendor",
+                "type": "REFERENCE",
+                "required": true,
+                "referenceKey": "vendor-ref"
               },
               {
                 "key": "vendor-name",
@@ -23556,9 +23654,10 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               },
               {
                 "key": "destination-warehouse-id",
-                "label": "Ship-to warehouse UUID",
-                "type": "TEXT",
-                "required": true
+                "label": "Ship-to warehouse",
+                "type": "REFERENCE",
+                "required": true,
+                "referenceKey": "warehouse-ref"
               }
             ],
             "visibilityCondition": {
@@ -23660,13 +23759,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "purchase-order-id",
             "entityKey": "procurement.vendor-bills",
             "label": "Purchase order",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Optional PO UUID to link the bill.",
+            "referenceKey": "purchase-order-ref",
+            "helpText": "The purchase order this bill is for; its vendor fills in.",
             "writePermission": "procurement:bills:manage"
           },
           {
@@ -23777,6 +23877,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "referenceKey": "vendor-ref",
             "referenceType": "SEARCH_LOOKUP",
             "resolverKey": "business-partners-parties"
+          },
+          {
+            "referenceKey": "purchase-order-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "procurement-purchase-orders",
+            "fills": {
+              "vendor-id": "vendor-id"
+            }
           },
           {
             "referenceKey": "vendor-bill-statuses",
@@ -23926,7 +24034,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "purchase-order-id",
                     "position": 4,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "source"
                   },
                   {

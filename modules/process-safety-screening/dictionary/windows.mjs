@@ -31,8 +31,8 @@ export function windowSource(builderFor) {
   // Routes, shared by the Routes window and the Projects window's "Routes" tab.
   const R = 'speed.routes';
   const rf = [
-    field(R, 'project-id', 'Project', 'REFERENCE', { required: true, ref: 'project-ref' }),
-    field(R, 'name', 'Route', 'TEXT', { required: true }),
+    field(R, 'project-id', 'Project', 'REFERENCE', { help: 'The screening project this route belongs to.', required: true, ref: 'project-ref' }),
+    field(R, 'name', 'Route', 'TEXT', { help: 'A name for the synthesis route, for example "Route B – telescoped".', required: true }),
     field(R, 'route-version', 'Version', 'INTEGER', { readOnly: true }),
     field(R, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'route-statuses' }),
     field(R, 'author-subject', 'Author', 'REFERENCE', { readOnly: true, ref: 'member-ref' }),

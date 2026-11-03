@@ -191,7 +191,7 @@
         {
           "fieldKey": "part-id",
           "entityKey": "cmms.part-movements",
-          "label": "Part ID",
+          "label": "Part",
           "type": "TEXT",
           "required": false,
           "readOnly": true,
@@ -259,7 +259,7 @@
         {
           "fieldKey": "storeroom-id",
           "entityKey": "cmms.part-movements",
-          "label": "Storeroom ID",
+          "label": "Storeroom",
           "type": "TEXT",
           "required": false,
           "readOnly": false,

@@ -37,6 +37,7 @@ export function windowSource(builderFor) {
   });
   // Lookups are resolved by the module's registered resolver; they name no target entity, so any window can use them.
   const WAREHOUSE_REF = lookup('warehouse-ref', 'inventory-warehouses');
+  const ORG_UNIT_REF = lookup('org-unit-ref', 'organization-units');
   const LOCATION_REF = lookup('location-ref', 'inventory-locations');
   const PRODUCT_REF = lookup('product-ref', 'catalogue-products');
   const UOM_REF = lookup('uom-ref', 'catalogue-uoms');
@@ -48,7 +49,8 @@ export function windowSource(builderFor) {
   const wf = [
     field(W, 'code', 'Code', 'TEXT', { required: true, help: 'Short unique code, for example WH-MAIN.' }), field(W, 'name', 'Name', 'TEXT', { required: true }),
     field(W, 'warehouse-type', 'Type', 'SELECT', { required: true, ref: 'warehouse-types' }),
-    field(W, 'org-unit-id', 'Owning organization unit', 'TEXT', { required: true }), field(W, 'description', 'Description', 'TEXTAREA'),
+    // WI-OI-149 (QA-024): picked from the organization, not typed.
+    field(W, 'org-unit-id', 'Owning organization unit', 'REFERENCE', { required: true, ref: 'org-unit-ref', help: 'The unit that owns this warehouse and its stock.' }), field(W, 'description', 'Description', 'TEXTAREA'),
     field(W, 'address', 'Address', 'TEXTAREA'), field(W, 'is-active', 'Active', 'BOOLEAN', { readOnly: true }),
     field(L, 'warehouse-id', 'Warehouse', 'REFERENCE', { ref: 'warehouse-ref' }), field(L, 'code', 'Code', 'TEXT', { required: true }), field(L, 'name', 'Name', 'TEXT', { required: true }),
     field(L, 'location-type', 'Type', 'SELECT', { required: true, ref: 'location-types' }), field(L, 'aisle', 'Aisle'), field(L, 'rack', 'Rack'),
@@ -57,7 +59,7 @@ export function windowSource(builderFor) {
   ];
   windows['inventory-warehouses'] = window('inventory-warehouses', 'Warehouses and locations', 'Warehouses', 'Warehouses and their storage locations.', 'inventory:read',
     dictionary('inventory-warehouses', 'Warehouses and locations', W, [entity(W, 'Warehouses'), entity(L, 'Locations')], wf,
-      [relationship('warehouse-locations', W, L, 'warehouse-id')], [values('warehouse-types', WH_TYPES), values('location-types', LOC_TYPES), WAREHOUSE_REF], [
+      [relationship('warehouse-locations', W, L, 'warehouse-id')], [values('warehouse-types', WH_TYPES), values('location-types', LOC_TYPES), WAREHOUSE_REF, ORG_UNIT_REF], [
         view('warehouses', 'Warehouses', [
           tab('warehouse', 'Warehouse', 0, W, [
             ['code', 4, 'main'], ['name', 8, 'main'], ['warehouse-type', 4, 'main'], ['org-unit-id', 4, 'main'],
@@ -94,7 +96,7 @@ export function windowSource(builderFor) {
   // 3. Lots
   const O = 'inventory.lots';
   const lf = [
-    field(O, 'product-id', 'Product', 'REFERENCE', { required: true, ref: 'product-ref' }), field(O, 'lot-number', 'Lot number', 'TEXT', { required: true }),
+    field(O, 'product-id', 'Product', 'REFERENCE', { help: 'The product this lot or batch is of.', required: true, ref: 'product-ref' }), field(O, 'lot-number', 'Lot number', 'TEXT', { help: 'The number printed on the goods, used for traceability and recalls.', required: true }),
     field(O, 'batch-code', 'Batch code'), field(O, 'supplier-lot-number', 'Supplier lot number'), field(O, 'manufactured-date', 'Manufactured', 'DATE'),
     field(O, 'expiry-date', 'Expires', 'DATE'), field(O, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'stock-statuses' }),
   ];

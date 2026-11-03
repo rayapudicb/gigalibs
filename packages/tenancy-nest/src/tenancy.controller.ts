@@ -16,6 +16,8 @@ import {
   RevokeMemberRoleSchema,
   type ChangeTenantStatusDto,
   ChangeTenantStatusSchema,
+  type RequestTenantModuleDto,
+  RequestTenantModuleSchema,
   type CreateCustomRoleDto,
   CreateCustomRoleSchema,
   type CreateDepartmentDto,
@@ -101,6 +103,23 @@ export class TenancyController {
   @RequirePermissions('tenant:read')
   getCurrent(@CurrentTenant('tenantId') tenantId: string, @CurrentUser('sub') userId: string) {
     return this.tenancyService.getTenantForUser(tenantId, userId);
+  }
+
+  // WI-OI-147 (QA-035): a workspace administrator asks a platform operator to turn on a module.
+  @Get('current/module-requests')
+  @RequirePermissions('tenant:read')
+  listModuleRequests(@CurrentTenant('tenantId') tenantId: string) {
+    return this.tenancyService.moduleRequests(tenantId);
+  }
+
+  @Post('current/module-requests')
+  @RequirePermissions('tenant:update')
+  requestModule(
+    @CurrentTenant('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Body(new ZodValidationPipe(RequestTenantModuleSchema)) dto: RequestTenantModuleDto,
+  ) {
+    return this.tenancyService.requestModule(tenantId, userId, dto);
   }
 
   @Patch('current/status')

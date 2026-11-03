@@ -50,11 +50,11 @@ const CATEGORY_COLORS: Record<string, 'blue' | 'orange' | 'green' | 'purple' | '
 };
 
 const TRIGGER_ICONS: Record<string, string> = {
-  EVENT_WEBHOOK: '⚡',
-  WEBHOOK_OR_EVENT: '⚡',
-  SCHEDULED_CRON: '⏰',
-  MANUAL: '▶',
-  API_TRIGGER: '🔌',
+  EVENT_WEBHOOK: 'Event',
+  WEBHOOK_OR_EVENT: 'Event',
+  SCHEDULED_CRON: 'Schedule',
+  MANUAL: 'Manual',
+  API_TRIGGER: 'API',
 };
 
 export default function WorkflowTemplatesPage() {
@@ -170,7 +170,7 @@ export default function WorkflowTemplatesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{TRIGGER_ICONS[wf.trigger_type] ?? '▶'}</span>
+                      <span className="text-xs font-medium text-ui-fg-subtle">{TRIGGER_ICONS[wf.trigger_type] ?? 'Manual'}</span>
                       <Heading level="h2" className="text-sm font-semibold text-ui-fg-base">{wf.name}</Heading>
                     </div>
                     <code className="font-mono text-[10px] text-ui-fg-interactive">{wf.workflow_code}</code>

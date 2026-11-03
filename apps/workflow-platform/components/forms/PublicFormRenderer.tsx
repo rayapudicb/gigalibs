@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { Star } from 'lucide-react';
 import {
   isFormFieldVisible,
   type FormFieldDefinition,
@@ -263,8 +264,9 @@ export function PublicFormRenderer({ form }: PublicFormRendererProps) {
                       className={`text-2xl transition ${
                         (formData[field.id] || 0) >= star ? 'text-amber-400 scale-110' : 'text-slate-300 hover:text-amber-200'
                       }`}
+                      aria-label={`${star} of 5`}
                     >
-                      ★
+                      <Star className="h-6 w-6" fill={(formData[field.id] || 0) >= star ? 'currentColor' : 'none'} aria-hidden="true" />
                     </button>
                   ))}
                   {formData[field.id] && (

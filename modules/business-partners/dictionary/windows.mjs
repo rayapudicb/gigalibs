@@ -112,7 +112,7 @@ export function windowSource(builderFor) {
   const HOLDS = 'business-partners.credit-holds';
   const holdFields = [
     field(HOLDS, 'partner-name', 'Partner', 'TEXT', { readOnly: true }),
-    field(HOLDS, 'party-id', 'Party id', 'TEXT', { readOnly: true }),
+    field(HOLDS, 'party-id', 'Partner', 'TEXT', { readOnly: true }),
     field(HOLDS, 'org-unit-id', 'Owning unit', 'TEXT', { readOnly: true }),
     field(HOLDS, 'currency', 'Currency', 'TEXT', { readOnly: true }),
     field(HOLDS, 'origin', 'Origin', 'SELECT', { readOnly: true, ref: 'hold-origins' }),

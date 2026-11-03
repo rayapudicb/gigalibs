@@ -18,6 +18,7 @@ import type {
   UpdateDepartmentDto,
   UpdateTenantMemberDto,
   UpdateTenantOrganizationSettingsDto,
+  RequestTenantModuleDto,
 } from '@gigalibs/contracts';
 import {
   CONTROL_PLANE_PERMISSIONS,
@@ -28,6 +29,7 @@ import {
   MAX_MEMBER_ROLE_ASSIGNMENTS,
   type ModuleDefaultRole,
   moduleDefaultRoles,
+  platformModuleCatalog,
   uncataloguedAdditions,
   validateBulkPeopleAdd,
   validateBulkPeopleGrant,
@@ -42,6 +44,7 @@ import {
 import { primaryVersionInForce } from '@gigalibs/auth-nest';
 import { type Prisma, prisma } from '@gigalibs/db';
 import { recordEntitlementsChanged } from './entitlement-events.js';
+import { MODULE_REQUEST_RESOURCE, openModuleRequests } from './module-requests.js';
 import { PlatformSettingsEngine } from '@gigalibs/platform-settings';
 import {
   BadRequestException,
@@ -248,6 +251,52 @@ export class TenancyService {
       throw new ForbiddenException('You are not an active member of this tenant.');
     }
     return { ...membership.tenant, membershipRole: membership.role };
+  }
+
+  /** WI-OI-147 (QA-035): the modules this workspace asked for that are still not on. */
+  async moduleRequests(tenantId: string) {
+    const [rows, enabled] = await Promise.all([
+      prisma.auditLog.findMany({
+        where: { tenantId, resource: MODULE_REQUEST_RESOURCE },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        select: { resourceId: true, createdAt: true, user: { select: { email: true, name: true } } },
+      }),
+      prisma.tenantModuleEntitlement.findMany({ where: { tenantId, status: 'ENABLED' }, select: { moduleKey: true } }),
+    ]);
+    return openModuleRequests(rows, enabled.map((entitlement) => entitlement.moduleKey));
+  }
+
+  /** Records the request once (asking again while it is open changes nothing); a platform operator answers it. */
+  async requestModule(tenantId: string, userId: string, dto: RequestTenantModuleDto) {
+    const entry = platformModuleCatalog.find((module) => module.key === dto.moduleKey && module.entitlementEligible);
+    if (!entry) {
+      throw new BadRequestException({ code: 'MODULE_NOT_REQUESTABLE', message: 'This module cannot be requested.' });
+    }
+    const on = await prisma.tenantModuleEntitlement.findFirst({
+      where: { tenantId, moduleKey: dto.moduleKey, status: 'ENABLED' },
+      select: { id: true },
+    });
+    if (on) {
+      throw new ConflictException({
+        code: 'MODULE_ALREADY_ON',
+        message: `${entry.navigationLabel ?? entry.name} is already on in this workspace.`,
+      });
+    }
+    const open = await this.moduleRequests(tenantId);
+    if (!open.some((request) => request.moduleKey === dto.moduleKey)) {
+      await prisma.auditLog.create({
+        data: {
+          action: 'CREATE',
+          resource: MODULE_REQUEST_RESOURCE,
+          resourceId: dto.moduleKey,
+          userId,
+          tenantId,
+          after: { moduleKey: dto.moduleKey, note: dto.note ?? null },
+        },
+      });
+    }
+    return this.moduleRequests(tenantId);
   }
 
   async changeStatus(tenantId: string, userId: string, dto: ChangeTenantStatusDto) {

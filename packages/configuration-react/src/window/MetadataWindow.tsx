@@ -22,6 +22,7 @@ import {
   fieldLabel,
   isMinorMoney,
   moneyFromMinor,
+  parameterLookup,
   submittedValues,
   valueWhileTyping,
   type WindowModel,
@@ -65,6 +66,11 @@ export interface MetadataWindowProps {
   readonly panels?: MetadataPanelRegistry;
   /** WI-OI-120ce: called after an action on one of the window's records succeeds (a page's summary can refresh). */
   readonly onChanged?: () => void;
+  /**
+   * WI-OI-148 (QA-026, QA-027): a typical set of first records (absence types, asset classes) the empty list offers in
+   * one click to someone who may create them. Nothing is created until they click.
+   */
+  readonly starter?: { readonly label: string; readonly records: readonly RecordValues[] };
 }
 
 /** A window opened from a picker, over the current one: create a record, or open the chosen one. */
@@ -105,7 +111,7 @@ function newKey(): string {
   return globalThis.crypto.randomUUID();
 }
 
-export function MetadataWindow({ manifest, client, permissions, viewKey, clients, panels, onChanged }: MetadataWindowProps) {
+export function MetadataWindow({ manifest, client, permissions, viewKey, clients, panels, onChanged, starter }: MetadataWindowProps) {
   const model = useMemo(() => windowModel(manifest, viewKey), [manifest, viewKey]);
   const [screen, setScreen] = useState<Screen>({ kind: 'list' });
   const [dialogs, setDialogs] = useState<readonly QuickDialog[]>([]);
@@ -136,6 +142,7 @@ export function MetadataWindow({ manifest, client, permissions, viewKey, clients
           permissions={permissions}
           onOpen={(id) => setScreen({ kind: 'record', id })}
           onNew={canCreate(model, model.rootTab, permissions) ? () => setScreen({ kind: 'create' }) : undefined}
+          starter={canCreate(model, model.rootTab, permissions) ? starter : undefined}
         />
       )}
       {screen.kind === 'create' && (
@@ -256,12 +263,65 @@ function Notice({ tone, title, text, action }: { tone: 'error' | 'info'; title: 
   );
 }
 
+/**
+ * WI-OI-148 (QA-029): what a new record needs first (its required pickers), so an empty list names the masters to have
+ * ready; each picker offers "Add new" or says where those records are made.
+ */
+function prerequisites(model: WindowModel, tab: DictionaryTabV1, permissions: readonly string[]): string {
+  const needs = placedFields(model, tab, {}, permissions, 'CREATE')
+    .filter((placed) => placed.required && !placed.readOnly && placed.resolverKey)
+    .map((placed) => fieldLabel(placed.field).toLowerCase());
+  if (needs.length === 0) return '';
+  const list = needs.length === 1 ? needs[0] : `${needs.slice(0, -1).join(', ')} and ${needs.at(-1)}`;
+  return ` Each one needs a ${list}.`;
+}
+
+/** The record's actions that take no parameters (a click and, at most, a confirmation). */
+function rowActions(model: WindowModel, entityKey: string, record: RecordValues, permissions: readonly string[]): DictionaryActionV1[] {
+  return recordActions(model, entityKey, record, permissions).filter((action) => (action.parameters ?? []).length === 0);
+}
+
+function StarterButton({
+  starter,
+  onAdd,
+}: {
+  starter: NonNullable<MetadataWindowProps['starter']>;
+  onAdd: (records: readonly RecordValues[]) => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  return (
+    <span className="flex flex-col gap-1">
+      <button
+        type="button"
+        className={button}
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setFailure(null);
+          try {
+            await onAdd(starter.records);
+          } catch (error) {
+            setFailure(failureOf(error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? 'Adding…' : `${starter.label} (${starter.records.length})`}
+      </button>
+      {failure ? <span className="text-xs text-ui-fg-error">{failure}</span> : null}
+    </span>
+  );
+}
+
 function RecordList({
   model,
   client,
   permissions,
   onOpen,
   onNew,
+  starter,
   tab = model.rootTab,
   parentId,
 }: {
@@ -270,6 +330,7 @@ function RecordList({
   permissions: readonly string[];
   onOpen?: ((id: string) => void) | undefined;
   onNew?: (() => void) | undefined;
+  starter?: MetadataWindowProps['starter'] | undefined;
   tab?: DictionaryTabV1;
   parentId?: string;
 }) {
@@ -282,6 +343,8 @@ function RecordList({
     status: 'loading',
   });
 
+  // WI-OI-149 (QA-038): actions that need nothing more than a click (approve, release) run from the row itself.
+  const [acting, setActing] = useState<string | null>(null);
   const load = useCallback(async () => {
     setState({ status: 'loading' });
     try {
@@ -308,6 +371,8 @@ function RecordList({
   const searchable = isRoot && (view.searchFields?.length ?? 0) > 0;
   const lastPage = state.status === 'ready' ? Math.max(1, Math.ceil(state.page.total / PAGE_SIZE)) : 1;
 
+  const quick =
+    state.status === 'ready' && state.page.items.some((record) => rowActions(model, tab.targetEntityKey, record, permissions).length > 0);
   return (
     <div className="space-y-3">
       {isRoot && (
@@ -340,7 +405,22 @@ function RecordList({
         <Notice tone="error" title={state.kind === 'FORBIDDEN' ? 'No access' : 'Could not load records'} text={state.message} action={<button type="button" className={button} onClick={() => void load()}>Try again</button>} />
       )}
       {state.status === 'ready' && state.page.items.length === 0 && (
-        <Notice tone="info" title="No records yet" text={onNew ? 'Use New to create the first one.' : 'Nothing has been recorded here yet.'} />
+        <Notice
+          tone="info"
+          title="No records yet"
+          text={onNew ? `${starter ? `${starter.label} adds a typical set you can change, or use` : 'Use'} New to create the first one.${prerequisites(model, tab, permissions)}` : 'Nothing has been recorded here yet.'}
+          action={
+            starter ? (
+              <StarterButton
+                starter={starter}
+                onAdd={async (records) => {
+                  for (const values of records) await client.create(tab.targetEntityKey, values, newKey());
+                  await load();
+                }}
+              />
+            ) : undefined
+          }
+        />
       )}
       {state.status === 'ready' && state.page.items.length > 0 && (
         <div className={`${box} overflow-x-auto`}>
@@ -362,6 +442,7 @@ function RecordList({
                     )}
                   </th>
                 ))}
+                {quick ? <th scope="col" className="px-3 py-2 font-medium"><span className="sr-only">Actions</span></th> : null}
               </tr>
             </thead>
             <tbody>
@@ -376,6 +457,35 @@ function RecordList({
                       <DisplayValue placed={placed} value={record[placed.field.fieldKey]} label={labels[placed.field.fieldKey]?.[String(record[placed.field.fieldKey])]} />
                     </td>
                   ))}
+                  {quick ? (
+                    <td className="px-3 py-2 text-right" onClick={(event) => event.stopPropagation()}>
+                      <span className="inline-flex gap-2">
+                        {rowActions(model, tab.targetEntityKey, record, permissions).map((action) => (
+                          <button
+                            key={action.actionKey}
+                            type="button"
+                            className={button}
+                            disabled={acting !== null}
+                            onClick={async () => {
+                              if (action.confirmationPrompt && !globalThis.confirm(action.confirmationPrompt)) return;
+                              setActing(`${String(record.id)}:${action.actionKey}`);
+                              try {
+                                const read = typeof record.version === 'number' ? { expectedVersion: record.version } : {};
+                                await client.action(tab.targetEntityKey, String(record.id), actionKey(action, tab.targetEntityKey), read, newKey());
+                                await load();
+                              } catch (error) {
+                                globalThis.alert(failureOf(error).message);
+                              } finally {
+                                setActing(null);
+                              }
+                            }}
+                          >
+                            {acting === `${String(record.id)}:${action.actionKey}` ? `${action.label}…` : action.label}
+                          </button>
+                        ))}
+                      </span>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -704,6 +814,18 @@ function SelectInput({ id, placed, value, disabled, onChange }: { id: string; pl
   );
 }
 
+/**
+ * WI-OI-148 (QA-028): where the masters of a picker without "Add new" are created, so an empty picker is never a dead
+ * end (organization units and sites in Settings, skills on their Workforce screen, places on the map).
+ */
+const MASTER_HOMES: Readonly<Record<string, { readonly href: string; readonly label: string }>> = {
+  'organization-units': { href: '/settings/organization', label: 'Settings › Organization & hierarchy' },
+  'speed-sites': { href: '/settings/organization', label: 'Settings › Organization & hierarchy' },
+  'workspace-sites': { href: '/maps', label: 'Places & maps' },
+  'wf-capabilities': { href: '/gigaops/capabilities', label: 'Workforce › Skills & qualifications' },
+  'finance-books': { href: '/finance/set-up', label: 'General ledger › Set up a book' },
+};
+
 function LookupInput({
   id,
   placed,
@@ -747,6 +869,27 @@ function LookupInput({
       live = false;
     };
   }, [client, resolverKey, current, chosen]);
+  // WI-OI-149 (QA-038): a required picker with exactly one choice (one unit, one book, one warehouse) takes it at once,
+  // so the person never picks the only option; anything else waits for the person.
+  useEffect(() => {
+    if (!resolverKey || current || disabled || !placed.required) return;
+    let live = true;
+    client
+      .lookup(resolverKey, {})
+      .then((found) => {
+        if (!live || found.length !== 1) return;
+        const only = found[0]!;
+        setChosen(only);
+        if (onPick) onPick(only);
+        else onChange(only.value);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+    // Once per field: the first answer decides.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client, resolverKey]);
   // The options, while the list is open; a short pause after typing before each search.
   useEffect(() => {
     if (!resolverKey || !open) return;
@@ -862,6 +1005,15 @@ function LookupInput({
             {options.length === 0 && !failure ? (
               <li className="px-2 py-1.5 text-sm text-ui-fg-muted">
                 {search.trim() ? `No ${label} matches “${search.trim()}”.` : `No ${label} records yet.`}
+                {!search.trim() && !target && resolverKey && MASTER_HOMES[resolverKey] ? (
+                  <>
+                    {' '}
+                    <a className="text-ui-fg-interactive hover:underline" href={MASTER_HOMES[resolverKey]!.href}>
+                      Add them in {MASTER_HOMES[resolverKey]!.label}
+                    </a>
+                    .
+                  </>
+                ) : null}
               </li>
             ) : null}
           </ul>
@@ -969,6 +1121,8 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
               <ActionButton
                 key={action.actionKey}
                 action={action}
+                model={model}
+                client={client}
                 waiting={refreshing}
                 run={async (parameters) => {
                   // WI-OI-120g: the action carries the version the user read, so a stale screen cannot act.
@@ -1068,11 +1222,16 @@ function RecordDetail({ model, client, permissions, id, onBack }: { model: Windo
 
 function ActionButton({
   action,
+  model,
+  client,
   run,
   onFailure,
   waiting = false,
 }: {
   action: DictionaryActionV1;
+  /** WI-OI-149 (QA-022): the window, so a parameter that names a reference is offered as a picker. */
+  model: WindowModel;
+  client: RecordClient;
   run: (parameters: RecordValues) => Promise<void>;
   onFailure: (message: string) => void;
   /** The record is being reread; the action waits for the current version. */
@@ -1128,7 +1287,27 @@ function ActionButton({
             {parameter.label}
             {parameter.required ? ' *' : ''}
           </span>
-          {parameter.type === 'TEXTAREA' ? (
+          {parameterLookup(model, parameter) ? (
+            <LookupInput
+              id={`${action.actionKey}-${parameter.key}`}
+              placed={parameterLookup(model, parameter) as PlacedField}
+              value={values[parameter.key] ?? ''}
+              disabled={busy}
+              client={client}
+              onChange={(input) => setValues((current) => ({ ...current, [parameter.key]: input }))}
+              onPick={(option) =>
+                setValues((current) => {
+                  // The pick fills the dialog's other parameters it names (the vendor's name), as a form does.
+                  const next = { ...current, [parameter.key]: option.value };
+                  for (const [attribute, target] of Object.entries(parameterLookup(model, parameter)?.fills ?? {})) {
+                    const filled = option.attributes?.[attribute];
+                    if (filled && parameters.some((candidate) => candidate.key === target)) next[target] = filled;
+                  }
+                  return next;
+                })
+              }
+            />
+          ) : parameter.type === 'TEXTAREA' ? (
             <textarea className={inputClass} value={values[parameter.key] ?? ''} onChange={(event) => setValues({ ...values, [parameter.key]: event.target.value })} />
           ) : (
             <input className={inputClass} value={values[parameter.key] ?? ''} onChange={(event) => setValues({ ...values, [parameter.key]: event.target.value })} />

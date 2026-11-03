@@ -2,103 +2,11 @@
   "workItem": "WI-OI-145",
   "note": "Counts may only go down; new files must have none.",
   "files": {
-    "apps/workflow-platform/app/(app)/ar/invoices/[invoiceId]/page.tsx": {
-      "emoji": 1,
-      "dev-text": 1
-    },
-    "apps/workflow-platform/app/(app)/ar/invoices/new/page.tsx": {
-      "emoji": 1,
-      "dev-text": 1
-    },
-    "apps/workflow-platform/app/(app)/cmms/calendar/page.tsx": {
-      "dev-text": 1
-    },
-    "apps/workflow-platform/app/(app)/connections/oauth-callback/page.tsx": {
-      "emoji": 1
-    },
-    "apps/workflow-platform/app/(app)/rules/studio/page.tsx": {
-      "emoji": 5
-    },
-    "apps/workflow-platform/app/(app)/workflows/[wfId]/canvas/page.tsx": {
-      "emoji": 31
-    },
-    "apps/workflow-platform/app/(app)/workflows/templates/page.tsx": {
-      "emoji": 6
-    },
-    "apps/workflow-platform/components/ar/PrintableInvoiceSheet.tsx": {
-      "emoji": 1,
-      "dev-text": 1
-    },
-    "apps/workflow-platform/components/configuration/ConfigurationStudioWorkbench.tsx": {
-      "tablist": 1,
-      "emoji": 1,
-      "dev-text": 1
-    },
-    "apps/workflow-platform/components/configuration/StudioMode.tsx": {
-      "dev-text": 1
-    },
-    "apps/workflow-platform/components/configuration/TenantApplicationWorkbench.tsx": {
-      "dev-text": 2
-    },
-    "apps/workflow-platform/components/esign/CryptographicEsignWorkbench.tsx": {
-      "emoji": 2
-    },
-    "apps/workflow-platform/components/forms/PublicFormRenderer.tsx": {
-      "emoji": 1
-    },
-    "apps/workflow-platform/components/organization/OrganizationAdministration.tsx": {
-      "tablist": 1
-    },
-    "apps/workflow-platform/components/parties/PartyWorkspace.tsx": {
-      "dev-text": 1
-    },
-    "apps/workflow-platform/components/platform/PlatformTenantControl.tsx": {
-      "emoji": 12
-    },
-    "apps/workflow-platform/components/platform/PlatformUserControl.tsx": {
-      "emoji": 11
-    },
-    "apps/workflow-platform/components/recovery/AutonomousRecoveryWorkbench.tsx": {
-      "dev-text": 1
-    },
-    "apps/workflow-platform/components/settings/ConfiguredTenantFields.tsx": {
-      "dev-text": 1
-    },
-    "apps/workflow-platform/components/settings/TenantOrganizationHierarchyManager.tsx": {
-      "emoji": 2
-    },
-    "apps/workflow-platform/components/settings/UserProfileSecurityView.tsx": {
-      "emoji": 1
-    },
-    "apps/workflow-platform/components/setup/SetupWizard.tsx": {
-      "emoji": 1
-    },
-    "modules/physical-operations-cmms/web/src/components/CmmsSop.tsx": {
-      "emoji": 1
-    },
-    "modules/physical-operations-cmms/web/src/components/CmmsWorkOrders.tsx": {
-      "emoji": 3
-    },
     "modules/process-safety-screening/web/src/GateWorkbenchPanel.tsx": {
-      "tablist": 1
-    },
-    "modules/process-safety-screening/web/src/InteractionMatrixPanel.tsx": {
-      "tablist": 1
-    },
-    "modules/process-safety-screening/web/src/SetsPage.tsx": {
-      "tablist": 1
-    },
-    "modules/process-safety-screening/web/src/ThermalPanel.tsx": {
-      "tablist": 1
-    },
-    "modules/universal-inventory/web/src/InventoryScannerDrawer.tsx": {
       "tablist": 1
     },
     "packages/configuration-react/src/window/MetadataWindow.tsx": {
       "tablist": 2
-    },
-    "packages/web-sdk/src/records-workspace.tsx": {
-      "dev-text": 1
     }
   }
 }
