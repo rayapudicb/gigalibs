@@ -27,6 +27,11 @@
      a read of the owner at the consolidation date).
    - **People:** a person party is the master person record. A login (user/member) and a Workforce resource link to it
      (`party_id`); names and contact details live on the party.
+   - **Stock (amendment, owner 2026-11-03):** Universal Inventory owns every stock quantity and movement (balances,
+     reservations, issues, returns, receipts). CMMS spare parts stop keeping their own balances and movements: a work
+     order reserves and issues parts from Inventory, and CMMS keeps what is its own — which part fits which asset
+     (spares lists and diagrams) and the parts used on each work order. Found in the review of the mobile capability
+     atlas: CMMS storerooms and part balances run next to the Inventory ledger today.
 2. **Three levels of master data** (with ADR-0038): platform reference data (kernel, read-only), pack-provided data
    (copied into the workspace on creation, editable) and module masters (created by the workspace).
 3. **Master data hub.** Each module declares its masters in `module.yaml` (`spec.masters`); a generated registry drives
@@ -37,6 +42,8 @@
 ## Consequences
 
 - Links are added, never merges of tables; each slice is additive with a backfill (WI-OI-157).
+- Stock is the exception that moves data: CMMS part balances are reconciled into Inventory once, then CMMS reads and
+  writes stock through Inventory (WI-OI-157 slice 5); until then no mobile work-parts flow is switched on.
 - Reports can join location, asset and person across modules through the links.
 - The hub is generated, so a new module's masters appear without hand-written navigation.
 

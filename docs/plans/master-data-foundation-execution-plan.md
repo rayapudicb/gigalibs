@@ -4,7 +4,8 @@
   set by the owner). Independent Architecture review of ADR-0037–0040 pending.
 - **Decisions:** ADR-0037 (ownership, overlaps, hub), ADR-0038 (reference data, baseline, packs), ADR-0039 (reference
   integrity), ADR-0040 (model-first entities). **Analysis:** `docs/plans/master-data-and-platform-architecture-analysis.md`.
-- **Cards:** `.pi/tasks/WI-OI-152.md` … `WI-OI-162.md`. **Hand-over brief for agents:**
+- **Cards:** `.pi/tasks/WI-OI-152.md` … `WI-OI-166.md` (163–166 added from the mobile review, 2026-11-03).
+  **Order:** the one ordered queue, §6a. **Hand-over brief for agents:**
   `.pi/handoff/MASTER-DATA-FOUNDATION-HANDOFF-2026-11-03.md`.
 
 ## 1. Why, and where it sits in the order of work
@@ -127,11 +128,45 @@ adds new entries and never overwrites ones the workspace edited.
 (`reference()` generates replica consumers). 161 → 156. 162 → 159 and 155. 152 has none; its pack and import columns
 fill in as 154 and 155 land.
 
-**Running in parallel:** 152, 153 and 160 touch different areas and may run at the same time with one agent each; 155
-and 156 may run in parallel in phase 1; cards that change the same files never run together.
-
 **Country packs after India** are one slice each in the owner's order (§4.3); each needs its country reviewer named
 before it is marked On UAT.
+
+### 6a. The one ordered queue (owner, 2026-11-03)
+
+**No parallel work.** Every agent — Claude, Codex, Cursor or any other — works this list top to bottom, **one card
+at a time**, on branch `feat/frontline-suite` in `~/dev/gigalibs-rounds` (not `~/dev/gigalibs`, which is an older
+release line with other sessions' work). The mobile app (`~/dev/gigalibs_mobile`) has no queue of its own: its work
+belongs to the card that names it. When one agent's session ends, the next agent continues from the same place.
+
+| # | Item | Notes |
+|---|---|---|
+| 0 | Retest of the deploy `38aa9017` (retest fixes) | Not a card. After the owner's deploy: `e2e/specs/uat-retest-wi146-150.spec.ts`, the dry journeys and the bench (commands in `.pi/work/WI-OI-151.md`), update `e2e/ux-benchmark/workbook-content.mjs` and regenerate the workbook |
+| 1 | WI-OI-152 Master data hub | Phase 0 |
+| 2 | WI-OI-153 Reference data and workspace profile (slices A, B, C) | Phase 0 |
+| 3 | WI-OI-160 Relay wiring from manifests | Phase 0 |
+| 4 | WI-OI-156 slice A — product and master events | Phase 0 → **milestone A** |
+| 5 | WI-OI-163 Record-level available actions (CMMS first) | From the mobile review; one answer for web and mobile |
+| 6 | WI-OI-164 Mobile CMMS work: read, execute and complete, sign-off | Needs 163; no parts or stock flows |
+| 7 | WI-OI-165 Frontline journeys 133–143 proven on a device against UAT | Includes the contractor feature key and profiles |
+| 8 | WI-OI-154 Packs: generic baseline, India, manufacturing industry | Phase 1 |
+| 9 | WI-OI-155 Import and export kit | Phase 1 |
+| 10 | WI-OI-156 slices B–C — reference replicas and validation | Phase 1 → **milestone B** (new module cards may start) |
+| 11 | WI-OI-159 Model-first entities and service factory | Confirm with the owner first |
+| 12 | WI-OI-158 Classic masters | Confirm first |
+| 13 | WI-OI-157 Overlapping masters, including stock (slice 5) | Confirm first; mobile parts flows wait for slice 5 |
+| 14 | WI-OI-166 One service request, several work orders | Confirm first |
+| 15 | WI-OI-154 remaining country packs: JP, US, AE and SA, EU and UK, CN, RU, ZA, NG and KE | One slice each, in this order |
+| 16 | WI-OI-161 Workflow steps with compensation | Confirm first |
+| 17 | WI-OI-162 Simple metadata UI and Additional details | Confirm first; low priority |
+
+**How a card is taken, so two agents can never build at once:**
+1. Take the first item not yet Built. Read `.pi/NOW.md` and the card; if it says "confirm first", ask the owner.
+2. Claim it: set its row in `.pi/WORK_ITEMS.md` to In Progress with your name in the Owner column, and put its id in
+   `config/sdlc-governance.json` → `workInProgressLimits.activeImplementationWorkItems`. The list holds one id at most;
+   `audit:sdlc` (part of `pnpm verify`) fails when a second is added or the row is not In Progress.
+3. If the slot already holds another card, stop: someone else is building it. Do not start anything else.
+4. Finish: `pnpm verify` green, evidence in `.pi/work/WI-OI-NNN.md`, row to Built, id removed from the slot,
+   `.pi/NOW.md` updated with the next item. Commit only when the owner says "commit"; the owner deploys.
 
 ## 7. Rules for every card
 

@@ -1,8 +1,8 @@
-# WI-OI-157: Overlapping masters reconciled — places, assets, exchange rates, people
+# WI-OI-157: Overlapping masters reconciled — places, assets, exchange rates, people, stock
 
 - **Status:** Proposed — approved in the execution plan (owner, 2026-11-03); confirm this card with the owner before it starts. Phase 2; needs WI-OI-156 B/C.
 - **Work item:** WI-OI-157. Evidence goes in `.pi/work/WI-OI-157.md`.
-- **Size:** L, four slices. **Decisions:** ADR-0037 §1.
+- **Size:** L, five slices. **Decisions:** ADR-0037 §1.
 
 ## Goal
 
@@ -32,11 +32,15 @@ ADR-0037; analysis §3.6; ADR-0018; the Geospatial, CMMS spaces, Inventory locat
 3. Exchange rates: consolidation and modules read rates from the owner at a date; the other rate tables become
    read-through with a conversion, retired in a later card.
 4. People: person party created when a member is invited or a resource is created; links backfilled.
+5. Stock (ADR-0037 amendment): reconcile CMMS storeroom balances into Universal Inventory once (a reviewed
+   variance report first, nothing posted without the owner's OK), then CMMS reserves, issues and returns parts
+   through Inventory; CMMS keeps part-to-asset links and parts used per work order.
 
 ## Done when
 
 - [ ] Every link exists and is validated through the reference replicas (WI-OI-156)
 - [ ] One report joins an asset to its fixed asset and a stock location to its site
+- [ ] A work order's part issue moves stock only in Inventory; CMMS shows the same quantity
 - [ ] `pnpm verify` passes; `audit:layers` classifies every new model, `audit:design-tokens` and `audit:ui-shell` pass
 - [ ] Evidence is recorded in `.pi/work/WI-OI-157.md`, and `.pi/NOW.md` is updated
 

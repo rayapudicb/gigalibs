@@ -40,12 +40,24 @@ from day one.
 - Country packs `au`, `eu`, `gb`, `in`, `jp`, `us` exist but carry only Workforce rules; Geospatial place types live in
   industry packs.
 
-## Order
+## Order — one queue, one card at a time
 
-Phase 0 now: **WI-OI-152**, **WI-OI-153**, **WI-OI-160**, **WI-OI-156 slice A** (one agent each; they do not share files).
-Phase 1 after milestone A: **WI-OI-154** (India and manufacturing first), **WI-OI-155**, **WI-OI-156 slices B–C**.
-New module cards wait for milestone B. Phase 2 (WI-OI-159, 158, 157) and phase 3 (WI-OI-162, 161) are confirmed with
-the owner card by card before they start.
+Follow **§6a "The one ordered queue"** in `docs/plans/master-data-foundation-execution-plan.md`. There is no
+parallel work: whoever is working (Claude, Codex or another agent) takes the first unfinished item, claims the single
+active slot, finishes it, then moves on. Cards WI-OI-163–166 (record-level actions, mobile CMMS work, frontline device
+proof, request → several work orders) came from the review of the mobile capability atlas and sit in that queue.
+
+## Taking over from another agent (for example Codex when Claude's session ends)
+
+1. Work in `~/dev/gigalibs-rounds` on branch `feat/frontline-suite`. Do **not** read status from `~/dev/gigalibs`:
+   it is an older release line, and reading it made the mobile atlas think the frontline producers did not exist.
+2. Read `.pi/NOW.md` (what is current) and §6a (what is next).
+3. Look at `config/sdlc-governance.json` → `workInProgressLimits.activeImplementationWorkItems`:
+   - one id listed: that card is being built — continue it only if NOW.md says its owner stopped; otherwise wait;
+   - empty: claim the first unfinished item (its row In Progress with your name, its id in the slot).
+4. Mobile code goes in `~/dev/gigalibs_mobile` only as part of the card that names it.
+5. Finish exactly as the card says, then hand the owner one clear next step. No deploys; commit only on the owner's
+   "commit".
 
 ## Rules you must keep
 

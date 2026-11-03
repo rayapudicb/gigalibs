@@ -2,7 +2,10 @@
 
 ## Active task
 
-**Master Data Foundation and Platform Kit — approved (owner, 2026-11-03).** Before further modules: ADR-0037–0040, [execution plan](../docs/plans/master-data-foundation-execution-plan.md), cards WI-OI-152–162, [hand-over](handoff/MASTER-DATA-FOUNDATION-HANDOFF-2026-11-03.md). **Next:** phase 0 — WI-OI-152 hub, WI-OI-153 reference data and workspace profile, WI-OI-160 relay wiring, WI-OI-156 slice A product events. New module cards wait for milestone B.
+**One ordered queue (owner, 2026-11-03) — no parallel work.** Every agent (Claude, Codex, others) follows §6a of [the execution plan](../docs/plans/master-data-foundation-execution-plan.md), one card at a time, claiming the single active slot (`config/sdlc-governance.json` → `activeImplementationWorkItems`). Work here, in `~/dev/gigalibs-rounds` on `feat/frontline-suite`. Take-over steps: [hand-over](handoff/MASTER-DATA-FOUNDATION-HANDOFF-2026-11-03.md).
+- **Now (item 0):** owner deploys `38aa9017`, then the retest of the six fixes (Claude; anyone can continue it).
+- **Next (item 1):** WI-OI-152 Master data hub — slot is free.
+- Cards WI-OI-152–166 (163–166 from the mobile atlas review: record-level actions, mobile CMMS work, frontline device proof, request → several work orders); ADR-0037–0040 (0037 now also makes Inventory the owner of stock).
 
 **WI-OI-146–151 P1–P3 batch:** `02b3353a` on UAT 5180; retest and regression done 2026-11-03 (bench failing screens 15 → 8; 48 of 50 read-only e2e; retest 14 pass, 2 fail, 3 not testable). Six retest fixes in branch (QA-012 Analytics pipeline permission, QA-013 Connections, QA-048 Inventory unit picker, QA-049, QA-050, QA-031), `pnpm verify` PASS; awaiting the owner's "commit" and one deploy. Evidence `.pi/work/WI-OI-151.md`; workbook sheet "Regression & retest".
 
