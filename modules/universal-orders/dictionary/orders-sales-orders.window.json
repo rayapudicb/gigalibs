@@ -113,12 +113,13 @@
           "fieldKey": "currency-code",
           "entityKey": "orders.sales-orders",
           "label": "Currency",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": false,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "referenceKey": "currency-ref",
           "writePermission": "orders:manage",
           "defaultValue": "USD"
         },
@@ -251,6 +252,11 @@
       ],
       "relationships": [],
       "references": [
+        {
+          "referenceKey": "currency-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "platform-currencies"
+        },
         {
           "referenceKey": "order-types",
           "referenceType": "VALUE_LIST",
@@ -475,7 +481,7 @@
                   "fieldKey": "currency-code",
                   "position": 8,
                   "span": 3,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "delivery"
                 },
                 {

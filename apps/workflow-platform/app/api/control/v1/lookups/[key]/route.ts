@@ -5,7 +5,7 @@ import {
   unavailable,
 } from '@/lib/authenticated-upstream';
 import { proxyGeospatial } from '@/lib/geospatial-proxy';
-import { type PlatformLookupKey, isPlatformLookupKey } from '@gigalibs/contracts';
+import { PLATFORM_REFERENCE_LOOKUP_SETS, type PlatformLookupKey, isPlatformLookupKey } from '@gigalibs/contracts';
 import { NextResponse } from 'next/server';
 
 // WI-OI-120u (M-WF1): the platform lookups of the metadata windows (PLATFORM_LOOKUPS in @gigalibs/contracts). Each reads
@@ -19,6 +19,8 @@ const MAX_IDS = 100;
 /** A window page names at most this many places; more is refused rather than silently dropped. */
 const MAX_PLACE_IDS = 25;
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
+/** Reference codes may hold `/` and `+` (time zones such as America/New_York or Etc/GMT+1). */
+const REFERENCE_CODE = /^[A-Za-z0-9_+/-]{1,64}$/;
 
 interface Option {
   readonly value: string;
@@ -62,6 +64,27 @@ const itemsOf = <T>(body: unknown): T[] =>
     ? (body as { items: T[] }).items
     : [];
 const control = (path: string) => authenticatedUpstream('control', path);
+
+interface ReferenceEntry {
+  readonly code?: unknown;
+  readonly name?: unknown;
+}
+
+/** WI-OI-153: a platform reference set as picker options (code and name), read from the public reference read. */
+function referenceSource(setKey: string, label: (code: string, name: string) => string): Source {
+  return {
+    load: () => control(`/api/v1/platform-reference/${setKey}`),
+    options: (body) =>
+      (body && typeof body === 'object' && Array.isArray((body as { entries?: unknown }).entries)
+        ? ((body as { entries: ReferenceEntry[] }).entries)
+        : []
+      ).flatMap((entry) => {
+        const code = text(entry.code);
+        const name = text(entry.name);
+        return code ? [{ value: code, label: label(code, name ?? code), active: true }] : [];
+      }),
+  };
+}
 
 /** Geospatial's own route, through the signed proxy the Maps screens use (maps.nodes.read, the Geospatial entitlement). */
 const geospatial = (request: Request, path: readonly string[], query = '') =>
@@ -138,6 +161,11 @@ const SOURCES: Readonly<Record<PlatformLookupKey, Source>> = {
         ];
       }),
   },
+  // WI-OI-153 (ADR-0038 §1): platform reference data, the same for every workspace.
+  'platform-countries': referenceSource(PLATFORM_REFERENCE_LOOKUP_SETS['platform-countries'], (code, name) => `${name} (${code})`),
+  'platform-currencies': referenceSource(PLATFORM_REFERENCE_LOOKUP_SETS['platform-currencies'], (code, name) => `${code} — ${name}`),
+  'platform-languages': referenceSource(PLATFORM_REFERENCE_LOOKUP_SETS['platform-languages'], (code, name) => `${name} (${code})`),
+  'platform-time-zones': referenceSource(PLATFORM_REFERENCE_LOOKUP_SETS['platform-time-zones'], (code) => code),
   // maps.nodes.read, through Geospatial's signed proxy. Sites and the places within them.
   'workspace-sites': {
     load: ({ search, ids }, request) => {
@@ -163,13 +191,14 @@ const SOURCES: Readonly<Record<PlatformLookupKey, Source>> = {
   },
 };
 
-function lookupRequest(url: URL): LookupRequest | string {
+function lookupRequest(url: URL, key: PlatformLookupKey): LookupRequest | string {
   const search = url.searchParams.get('search')?.trim();
   const ids = url.searchParams.get('ids');
   if (search && search.length > 100) return 'search is at most 100 characters.';
   if (ids) {
     const list = ids.split(',');
-    if (list.length > MAX_IDS || list.some((id) => !ID.test(id)))
+    const pattern = key in PLATFORM_REFERENCE_LOOKUP_SETS ? REFERENCE_CODE : ID;
+    if (list.length > MAX_IDS || list.some((id) => !pattern.test(id)))
       return `ids must be up to ${MAX_IDS} comma-separated ids.`;
     return { ids: list };
   }
@@ -200,7 +229,7 @@ export async function GET(request: Request, context: { params: Promise<{ key: st
         { detail: 'Unknown lookup.' },
         { status: 404, headers: { 'Cache-Control': 'no-store' } },
       );
-    const lookup = lookupRequest(new URL(request.url));
+    const lookup = lookupRequest(new URL(request.url), key);
     if (
       typeof lookup !== 'string' &&
       key === 'workspace-sites' &&

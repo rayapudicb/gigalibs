@@ -81,12 +81,13 @@
           "fieldKey": "currency-code",
           "entityKey": "catalogue.price-lists",
           "label": "Currency",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": true,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "referenceKey": "currency-ref",
           "helpText": "Three-letter code, for example USD."
         },
         {
@@ -254,6 +255,11 @@
             "surfaceKey": "catalogue-price-lists",
             "permission": "pricing:draft"
           }
+        },
+        {
+          "referenceKey": "currency-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "platform-currencies"
         }
       ],
       "validationRules": [],
@@ -289,7 +295,7 @@
                   "fieldKey": "currency-code",
                   "position": 2,
                   "span": 3,
-                  "componentKey": "text-input"
+                  "componentKey": "lookup"
                 },
                 {
                   "fieldKey": "price-precision",

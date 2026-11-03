@@ -2,6 +2,7 @@
 
 import { ModulePage } from '@gigalibs/web-sdk';
 import { createRecordClient, MetadataWindow, type RecordClient, usePublishedManifest } from '@gigalibs/configuration-react';
+import { PLATFORM_LOOKUP_BASE_PATHS } from '@gigalibs/contracts';
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
 // WI-OI-120l (U12, ADR-0033 D1): the general ledger on metadata windows over Financial Operations' record dispatcher.
@@ -61,7 +62,8 @@ export interface FinancialOperationsWorkspaceProps {
 export function FinancialOperationsWorkspace({ permissions = [], section = 'journal-entries' }: FinancialOperationsWorkspaceProps = {}) {
   const screen = FINANCE_SECTIONS[section];
   const tab = screen.view;
-  const client = useMemo(() => createRecordClient({ basePath: BASE_PATH }), []);
+  // WI-OI-153: platform lookups (the book currency picker) are answered by the control plane.
+  const client = useMemo(() => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: PLATFORM_LOOKUP_BASE_PATHS }), []);
   return (
     <ModulePage title={screen.title}>
       {tab === 'setup' ? <SetUpBook /> : tab === 'reports' ? <Reports /> : <FinanceWindow key={tab} surface={tab} client={client} permissions={permissions} />}

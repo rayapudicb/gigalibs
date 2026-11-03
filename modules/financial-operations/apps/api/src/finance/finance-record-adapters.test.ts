@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { HttpException } from '@nestjs/common';
+import { isPlatformLookupKey } from '@gigalibs/contracts';
 import type { IdempotencyStore, ModulePrincipal, RecordCommandContext } from '@gigalibs/module-sdk';
 import { describe, expect, it, vi } from 'vitest';
 import { financeRecordDispatcher, type FinanceRecordDependencies } from './finance-record-adapters.js';
@@ -50,7 +51,12 @@ describe('Finance record adapters (U12)', () => {
       const definition = window.definition.dictionary;
       for (const entity of definition.entities) expect(registry.entities).toContain(entity.entityKey);
       for (const action of definition.actions) expect(registry.actions).toContain(action.handlerKey);
-      for (const reference of definition.references.filter((entry: { resolverKey?: string }) => entry.resolverKey)) expect(registry.resolvers).toContain(reference.resolverKey);
+      // Platform lookups (organization units, reference data such as currencies) are answered by the control plane,
+      // not by Finance (WI-OI-153); every other picker is one Finance registers.
+      for (const reference of definition.references.filter(
+        (entry: { resolverKey?: string }) => entry.resolverKey && !isPlatformLookupKey(entry.resolverKey),
+      ))
+        expect(registry.resolvers).toContain(reference.resolverKey);
     }
   });
 

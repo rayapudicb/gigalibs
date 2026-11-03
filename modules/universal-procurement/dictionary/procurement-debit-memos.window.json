@@ -85,12 +85,13 @@
           "fieldKey": "currency-code",
           "entityKey": "procurement.debit-memos",
           "label": "Currency",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": false,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "referenceKey": "currency-ref",
           "writePermission": "procurement:debit-memos:manage",
           "defaultValue": "USD"
         },
@@ -196,6 +197,11 @@
       ],
       "relationships": [],
       "references": [
+        {
+          "referenceKey": "currency-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "platform-currencies"
+        },
         {
           "referenceKey": "vendor-ref",
           "referenceType": "SEARCH_LOOKUP",
@@ -342,7 +348,7 @@
                   "fieldKey": "currency-code",
                   "position": 6,
                   "span": 3,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "terms"
                 },
                 {

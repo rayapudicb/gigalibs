@@ -81,6 +81,8 @@ export function windowSource(builderFor) {
   const VENDOR_REF = lookup('vendor-ref', 'business-partners-parties', { fills: { name: 'vendor-name' } });
   const VENDOR_ONLY_REF = lookup('vendor-ref', 'business-partners-parties');
   const UOM_REF = lookup('uom-ref', 'catalogue-uoms');
+  // WI-OI-153 (ADR-0038 §1): currencies come from platform reference data; the stored value stays the ISO code.
+  const CURRENCY_REF = lookup('currency-ref', 'platform-currencies');
   // WI-OI-149 (QA-023): a vendor bill picks its purchase order, which fills the vendor.
   const PURCHASE_ORDER_REF = lookup('purchase-order-ref', 'procurement-purchase-orders', { fills: { 'vendor-id': 'vendor-id' } });
 
@@ -91,7 +93,7 @@ export function windowSource(builderFor) {
     field(PO, 'vendor-id', 'Vendor', 'REFERENCE', { required: true, ref: 'vendor-ref', help: 'The vendor, chosen from Business partners.', writePermission: 'procurement:orders:manage' }),
     field(PO, 'vendor-name', 'Vendor name', 'TEXT', { required: true, writePermission: 'procurement:orders:manage' }),
     field(PO, 'destination-warehouse-id', 'Ship-to warehouse', 'REFERENCE', { required: true, ref: 'warehouse-ref', writePermission: 'procurement:orders:manage' }),
-    field(PO, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:orders:manage' }),
+    field(PO, 'currency-code', 'Currency', 'REFERENCE', { ref: 'currency-ref', defaultValue: 'USD', writePermission: 'procurement:orders:manage' }),
     field(PO, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'po-statuses' }),
     field(PO, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
     field(PO, 'line-product-id', 'Line product', 'REFERENCE', { required: true, ref: 'product-ref', writePermission: 'procurement:orders:manage', help: 'First line only in this window slice.' }),
@@ -108,7 +110,7 @@ export function windowSource(builderFor) {
     field(REQ, 'requisition-number', 'Requisition number', 'TEXT', { readOnly: true }),
     field(REQ, 'org-unit-id', 'Organization unit', 'REFERENCE', { required: true, ref: 'org-unit-ref', writePermission: 'procurement:requisitions:manage' }),
     field(REQ, 'description', 'Description', 'TEXT', { writePermission: 'procurement:requisitions:manage' }),
-    field(REQ, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:requisitions:manage' }),
+    field(REQ, 'currency-code', 'Currency', 'REFERENCE', { ref: 'currency-ref', defaultValue: 'USD', writePermission: 'procurement:requisitions:manage' }),
     field(REQ, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'requisition-statuses' }),
     field(REQ, 'total-estimated', 'Estimated total (minor units)', 'TEXT', { readOnly: true }),
     field(REQ, 'line-product-id', 'Line product', 'REFERENCE', { required: true, ref: 'product-ref', writePermission: 'procurement:requisitions:manage', help: 'First line only in this window slice.' }),
@@ -126,7 +128,7 @@ export function windowSource(builderFor) {
     field(VB, 'invoice-date', 'Invoice date', 'DATETIME', { required: true, writePermission: 'procurement:bills:manage' }),
     field(VB, 'due-date', 'Due date', 'DATETIME', { required: true, writePermission: 'procurement:bills:manage' }),
     field(VB, 'purchase-order-id', 'Purchase order', 'REFERENCE', { ref: 'purchase-order-ref', writePermission: 'procurement:bills:manage', help: 'The purchase order this bill is for; its vendor fills in.' }),
-    field(VB, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:bills:manage' }),
+    field(VB, 'currency-code', 'Currency', 'REFERENCE', { ref: 'currency-ref', defaultValue: 'USD', writePermission: 'procurement:bills:manage' }),
     field(VB, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'vendor-bill-statuses' }),
     field(VB, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
     field(VB, 'line-description', 'Line description', 'TEXT', { required: true, writePermission: 'procurement:bills:manage', help: 'First line only in this window slice.' }),
@@ -142,7 +144,7 @@ export function windowSource(builderFor) {
     field(DM, 'vendor-id', 'Vendor', 'REFERENCE', { required: true, ref: 'vendor-ref', help: 'The vendor, chosen from Business partners.', writePermission: 'procurement:debit-memos:manage' }),
     field(DM, 'vendor-bill-id', 'Vendor bill', 'TEXT', { writePermission: 'procurement:debit-memos:manage' }),
     field(DM, 'purchase-order-id', 'Purchase order', 'TEXT', { writePermission: 'procurement:debit-memos:manage' }),
-    field(DM, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'procurement:debit-memos:manage' }),
+    field(DM, 'currency-code', 'Currency', 'REFERENCE', { ref: 'currency-ref', defaultValue: 'USD', writePermission: 'procurement:debit-memos:manage' }),
     field(DM, 'reason', 'Reason', 'TEXT', { required: true, writePermission: 'procurement:debit-memos:manage' }),
     field(DM, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'debit-memo-statuses' }),
     field(DM, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
@@ -161,6 +163,7 @@ export function windowSource(builderFor) {
       'Issue vendor debit memos against bills or purchase orders.',
       'procurement:read',
       dictionary('procurement-debit-memos', 'Debit memos', DM, [entity(DM, 'Debit memos')], dmFields, [], [
+        CURRENCY_REF,
         VENDOR_ONLY_REF,
         values('debit-memo-statuses', DEBIT_MEMO_STATUS),
         PRODUCT_REF,
@@ -199,6 +202,7 @@ export function windowSource(builderFor) {
       'Create and review internal purchase requisitions before PO conversion.',
       'procurement:read',
       dictionary('procurement-requisitions', 'Requisitions', REQ, [entity(REQ, 'Requisitions')], reqFields, [], [
+        CURRENCY_REF,
         values('requisition-statuses', REQUISITION_STATUS),
         ORG_UNIT_REF,
         PRODUCT_FILL_REF,
@@ -264,6 +268,7 @@ export function windowSource(builderFor) {
       'Record vendor AP invoices for matching and approval.',
       'procurement:read',
       dictionary('procurement-vendor-bills', 'Vendor bills', VB, [entity(VB, 'Vendor bills')], vbFields, [], [
+        CURRENCY_REF,
         VENDOR_ONLY_REF,
         PURCHASE_ORDER_REF,
         values('vendor-bill-statuses', VENDOR_BILL_STATUS),
@@ -313,6 +318,7 @@ export function windowSource(builderFor) {
       'Create and review purchase order commitments to vendors.',
       'procurement:read',
       dictionary('procurement-purchase-orders', 'Purchase orders', PO, [entity(PO, 'Purchase orders')], poFields, [], [
+        CURRENCY_REF,
         VENDOR_REF,
         values('po-statuses', PO_STATUS),
         ORG_UNIT_REF,

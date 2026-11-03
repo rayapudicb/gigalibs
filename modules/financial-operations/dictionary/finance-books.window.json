@@ -60,12 +60,13 @@
           "fieldKey": "currency-code",
           "entityKey": "finance.books",
           "label": "Currency",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": false,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "referenceKey": "currency-ref",
           "helpText": "The currency the book is kept in, for example INR or USD."
         },
         {
@@ -140,6 +141,11 @@
               "label": "Inactive"
             }
           ]
+        },
+        {
+          "referenceKey": "currency-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "platform-currencies"
         }
       ],
       "validationRules": [],
@@ -175,7 +181,7 @@
                   "fieldKey": "currency-code",
                   "position": 2,
                   "span": 3,
-                  "componentKey": "text-input"
+                  "componentKey": "lookup"
                 },
                 {
                   "fieldKey": "costing-method",

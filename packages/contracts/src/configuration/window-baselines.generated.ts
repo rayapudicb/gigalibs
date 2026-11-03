@@ -2162,12 +2162,13 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "currency-code",
             "entityKey": "finance.books",
             "label": "Currency",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "currency-ref",
             "helpText": "The currency the book is kept in, for example INR or USD."
           },
           {
@@ -2242,6 +2243,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                 "label": "Inactive"
               }
             ]
+          },
+          {
+            "referenceKey": "currency-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "platform-currencies"
           }
         ],
         "validationRules": [],
@@ -2277,7 +2283,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "currency-code",
                     "position": 2,
                     "span": 3,
-                    "componentKey": "text-input"
+                    "componentKey": "lookup"
                   },
                   {
                     "fieldKey": "costing-method",
@@ -15581,12 +15587,13 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "currency-code",
             "entityKey": "catalogue.price-lists",
             "label": "Currency",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": true,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "currency-ref",
             "helpText": "Three-letter code, for example USD."
           },
           {
@@ -15754,6 +15761,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
               "surfaceKey": "catalogue-price-lists",
               "permission": "pricing:draft"
             }
+          },
+          {
+            "referenceKey": "currency-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "platform-currencies"
           }
         ],
         "validationRules": [],
@@ -15789,7 +15801,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "currency-code",
                     "position": 2,
                     "span": 3,
-                    "componentKey": "text-input"
+                    "componentKey": "lookup"
                   },
                   {
                     "fieldKey": "price-precision",
@@ -20214,12 +20226,13 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "currency-code",
             "entityKey": "orders.customer-credit-memos",
             "label": "Currency",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "currency-ref",
             "writePermission": "orders:credit-memos:manage",
             "defaultValue": "USD"
           },
@@ -20314,6 +20327,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         ],
         "relationships": [],
         "references": [
+          {
+            "referenceKey": "currency-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "platform-currencies"
+          },
           {
             "referenceKey": "customer-ref",
             "referenceType": "SEARCH_LOOKUP",
@@ -20474,7 +20492,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "currency-code",
                     "position": 6,
                     "span": 3,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "terms"
                   },
                   {
@@ -21259,12 +21277,13 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "currency-code",
             "entityKey": "orders.sales-orders",
             "label": "Currency",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "currency-ref",
             "writePermission": "orders:manage",
             "defaultValue": "USD"
           },
@@ -21397,6 +21416,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         ],
         "relationships": [],
         "references": [
+          {
+            "referenceKey": "currency-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "platform-currencies"
+          },
           {
             "referenceKey": "order-types",
             "referenceType": "VALUE_LIST",
@@ -21621,7 +21645,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "currency-code",
                     "position": 8,
                     "span": 3,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "delivery"
                   },
                   {
@@ -21844,12 +21868,13 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "currency-code",
             "entityKey": "orders.sales-quotes",
             "label": "Currency",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "currency-ref",
             "writePermission": "orders:quotes:manage",
             "defaultValue": "USD"
           },
@@ -21993,6 +22018,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         ],
         "relationships": [],
         "references": [
+          {
+            "referenceKey": "currency-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "platform-currencies"
+          },
           {
             "referenceKey": "quote-statuses",
             "referenceType": "VALUE_LIST",
@@ -22169,7 +22199,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "currency-code",
                     "position": 6,
                     "span": 3,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "terms"
                   },
                   {
@@ -22377,12 +22407,13 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "currency-code",
             "entityKey": "procurement.debit-memos",
             "label": "Currency",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "currency-ref",
             "writePermission": "procurement:debit-memos:manage",
             "defaultValue": "USD"
           },
@@ -22488,6 +22519,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         ],
         "relationships": [],
         "references": [
+          {
+            "referenceKey": "currency-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "platform-currencies"
+          },
           {
             "referenceKey": "vendor-ref",
             "referenceType": "SEARCH_LOOKUP",
@@ -22634,7 +22670,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "currency-code",
                     "position": 6,
                     "span": 3,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "terms"
                   },
                   {
@@ -22791,12 +22827,13 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "currency-code",
             "entityKey": "procurement.purchase-orders",
             "label": "Currency",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "currency-ref",
             "writePermission": "procurement:orders:manage",
             "defaultValue": "USD"
           },
@@ -22917,6 +22954,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         ],
         "relationships": [],
         "references": [
+          {
+            "referenceKey": "currency-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "platform-currencies"
+          },
           {
             "referenceKey": "vendor-ref",
             "referenceType": "SEARCH_LOOKUP",
@@ -23112,7 +23154,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "currency-code",
                     "position": 7,
                     "span": 3,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "delivery"
                   },
                   {
@@ -23283,12 +23325,13 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "currency-code",
             "entityKey": "procurement.requisitions",
             "label": "Currency",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "currency-ref",
             "writePermission": "procurement:requisitions:manage",
             "defaultValue": "USD"
           },
@@ -23395,6 +23438,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         ],
         "relationships": [],
         "references": [
+          {
+            "referenceKey": "currency-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "platform-currencies"
+          },
           {
             "referenceKey": "requisition-statuses",
             "referenceType": "VALUE_LIST",
@@ -23568,7 +23616,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "currency-code",
                     "position": 5,
                     "span": 3,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "terms"
                   },
                   {
@@ -23794,12 +23842,13 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "currency-code",
             "entityKey": "procurement.vendor-bills",
             "label": "Currency",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "currency-ref",
             "writePermission": "procurement:bills:manage",
             "defaultValue": "USD"
           },
@@ -23894,6 +23943,11 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
         ],
         "relationships": [],
         "references": [
+          {
+            "referenceKey": "currency-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "platform-currencies"
+          },
           {
             "referenceKey": "vendor-ref",
             "referenceType": "SEARCH_LOOKUP",
@@ -24062,7 +24116,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "currency-code",
                     "position": 5,
                     "span": 3,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "terms"
                   },
                   {

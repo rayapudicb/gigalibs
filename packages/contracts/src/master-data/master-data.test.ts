@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PLATFORM_LOOKUPS } from '../configuration/platform-lookups.js';
 import { MASTER_DATA_GROUP_LABELS, MASTER_DATA_GROUPS, MASTER_DATA_REGISTRY } from './index.js';
 
 // WI-OI-152: the generated registry (scripts/module-manifests.mjs validates the manifests; this guards the output).
@@ -23,9 +24,15 @@ describe('master data registry', () => {
         expect(entry.count.entity).toMatch(/^[a-z-]+\.[a-z-]+$/);
       } else {
         expect(entry.count.basePath).toBe('/api/control');
-        expect(['organization-units', 'workspace-members', 'workspace-sites']).toContain(entry.count.resolver);
+        expect(Object.keys(PLATFORM_LOOKUPS)).toContain(entry.count.resolver);
       }
     }
+  });
+
+  it('marks reference data as platform reference (WI-OI-153)', () => {
+    const reference = MASTER_DATA_REGISTRY.filter((entry) => entry.group === 'reference-data');
+    expect(reference.map((entry) => entry.label).sort()).toEqual(['Countries', 'Currencies', 'Languages', 'Time zones']);
+    for (const entry of reference) expect(entry.level).toBe('PLATFORM_REFERENCE');
   });
 
   it('keeps the groups in the area order', () => {

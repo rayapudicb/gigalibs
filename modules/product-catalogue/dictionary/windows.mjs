@@ -28,6 +28,8 @@ export function windowSource(builderFor) {
   const UOM_REF = lookup('uom-ref', 'catalogue-uoms');
   const PRODUCT_REF = lookup('product-ref', 'catalogue-products');
   const CATEGORY_REF = lookup('category-ref', 'catalogue-categories');
+  // WI-OI-153 (ADR-0038 §1): currencies come from platform reference data; the stored value stays the ISO code.
+  const CURRENCY_REF = lookup('currency-ref', 'platform-currencies');
   const CATALOGUE_REF = lookup('catalogue-ref', 'catalogue-catalogues');
   const PRICE_LIST_REF = lookup('price-list-ref', 'catalogue-price-lists');
   const windows = {};
@@ -169,7 +171,7 @@ export function windowSource(builderFor) {
   const LV = 'catalogue.price-list-versions';
   const lf = [
     field(L, 'code', 'Code', 'TEXT', { help: 'A short unique code, used in imports, reports and integrations.', required: true }), field(L, 'name', 'Name', 'TEXT', { help: 'The name people see in lists and pickers.', required: true }), field(L, 'description', 'Description', 'TEXTAREA'),
-    field(L, 'currency-code', 'Currency', 'TEXT', { required: true, help: 'Three-letter code, for example USD.' }),
+    field(L, 'currency-code', 'Currency', 'REFERENCE', { ref: 'currency-ref', required: true, help: 'Three-letter code, for example USD.' }),
     field(L, 'is-tax-included', 'Prices include tax', 'BOOLEAN'), field(L, 'enforce-price-limit', 'Enforce the limit price', 'BOOLEAN'),
     field(L, 'price-precision', 'Decimal places', 'INTEGER'), field(L, 'audience', 'Audience'), field(L, 'is-active', 'Active', 'BOOLEAN', { readOnly: true }),
     field(LV, 'price-list-id', 'Price list', 'REFERENCE', { ref: 'price-list-ref' }), field(LV, 'version-number', 'Version', 'INTEGER', { readOnly: true }),
@@ -178,7 +180,7 @@ export function windowSource(builderFor) {
   ];
   windows['catalogue-price-lists'] = window('catalogue-price-lists', 'Price lists', 'Price lists', 'Price lists and their versions.', 'pricing:read',
     dictionary('catalogue-price-lists', 'Price lists', L, [entity(L, 'Price lists'), entity(LV, 'Versions')], lf,
-      [relationship('price-list-versions', L, LV, 'price-list-id')], [values('price-statuses', PRICE_STATUSES), PRICE_LIST_REF], [
+      [relationship('price-list-versions', L, LV, 'price-list-id')], [values('price-statuses', PRICE_STATUSES), PRICE_LIST_REF, CURRENCY_REF], [
         view('price-lists', 'Price lists', [
           tab('price-list', 'Price list', 0, L, [
             ['code', 3], ['name', 6], ['currency-code', 3], ['price-precision', 3], ['is-tax-included', 3], ['enforce-price-limit', 3], ['is-active', 3],

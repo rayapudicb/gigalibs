@@ -1,6 +1,6 @@
 'use client';
 
-import { holdsPermission } from '@gigalibs/contracts';
+import { holdsPermission, PLATFORM_LOOKUP_BASE_PATHS } from '@gigalibs/contracts';
 import { EmptyState, ModulePage } from '@gigalibs/web-sdk';
 import { createRecordClient, type LookupOption, MetadataWindow, type RecordClient, usePublishedManifest } from '@gigalibs/configuration-react';
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
@@ -72,7 +72,8 @@ function holds(permissions: readonly string[], permission: string): boolean {
 export function ProductCatalogueWorkspace({ permissions = [], section = 'products' }: ProductCatalogueWorkspaceProps = {}) {
   const screen = PRODUCT_CATALOGUE_SECTIONS[section];
   const tab = screen.view;
-  const client = useMemo(() => createRecordClient({ basePath: BASE_PATH }), []);
+  // WI-OI-153: platform lookups (the price list currency picker) are answered by the control plane.
+  const client = useMemo(() => createRecordClient({ basePath: BASE_PATH, lookupBasePaths: PLATFORM_LOOKUP_BASE_PATHS }), []);
   const canTransfer = holds(permissions, 'products:import') || holds(permissions, 'products:export');
   return (
     <ModulePage title={screen.title}>

@@ -218,3 +218,8 @@ spec:
   masters:
     - { label: Organization units, group: organization-and-people, route: /settings/organization, lookup: organization-units, readPermission: 'users:read', catalogKey: tenant-access }
     - { label: Members and logins, group: organization-and-people, route: /settings, lookup: workspace-members, readPermission: 'users:read', catalogKey: tenant-access }
+    # WI-OI-153 (ADR-0038 §1): platform reference data, read-only to every workspace; "Empty" until the operator loads it.
+    - { label: Countries, group: reference-data, level: PLATFORM_REFERENCE, route: /settings/general, lookup: platform-countries, readPermission: 'users:read', catalogKey: tenant-access }
+    - { label: Currencies, group: reference-data, level: PLATFORM_REFERENCE, route: /settings/general, lookup: platform-currencies, readPermission: 'users:read', catalogKey: tenant-access }
+    - { label: Languages, group: reference-data, level: PLATFORM_REFERENCE, route: /settings/general, lookup: platform-languages, readPermission: 'users:read', catalogKey: tenant-access }
+    - { label: Time zones, group: reference-data, level: PLATFORM_REFERENCE, route: /settings/general, lookup: platform-time-zones, readPermission: 'users:read', catalogKey: tenant-access }

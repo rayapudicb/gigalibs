@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // generated ICU data + canonicalReferenceString are the genuine ones (the checksum re-verification is exercised).
 const database = vi.hoisted(() => {
   const tx = {
-    platformReferenceVersion: { updateMany: vi.fn(), create: vi.fn() },
+    platformReferenceVersion: { updateMany: vi.fn(), create: vi.fn(), findFirst: vi.fn() },
     platformReferenceEntry: { createMany: vi.fn() },
     auditLog: { create: vi.fn() },
   };
@@ -53,6 +53,16 @@ describe('PlatformReferenceService', () => {
     const usd = createMany.data.find((e: { code: string }) => e.code === 'USD');
     expect(usd.payload).toEqual({ minorUnits: 2 });
     expect(database.tx.auditLog.create).toHaveBeenCalled();
+  });
+
+  it('changes nothing when the live version already has the same checksum (WI-OI-153)', async () => {
+    const { GENERATED_CURRENCIES } = await import('@gigalibs/contracts');
+    database.tx.platformReferenceVersion.findFirst.mockResolvedValue({ id: 'live-1', checksum: GENERATED_CURRENCIES.checksum });
+    const result = await service.loadGeneratedSet('op-1', 'CURRENCIES', 'reload');
+    expect(result).toMatchObject({ versionId: 'live-1', unchanged: true });
+    expect(database.tx.platformReferenceVersion.updateMany).not.toHaveBeenCalled();
+    expect(database.tx.platformReferenceEntry.createMany).not.toHaveBeenCalled();
+    expect(database.tx.auditLog.create).not.toHaveBeenCalled();
   });
 
   it('refuses a set with no sourced dataset yet', async () => {

@@ -103,6 +103,8 @@ export function windowSource(builderFor) {
   const CUSTOMER_REF = lookup('customer-ref', 'business-partners-parties', { fills: { name: 'customer-name' } });
   const CUSTOMER_ONLY_REF = lookup('customer-ref', 'business-partners-parties');
   const UOM_REF = lookup('uom-ref', 'catalogue-uoms');
+  // WI-OI-153 (ADR-0038 §1): currencies come from platform reference data; the stored value stays the ISO code.
+  const CURRENCY_REF = lookup('currency-ref', 'platform-currencies');
   // Retest 2026-11-03: a credit memo line picks its product too; it has no code, name or unit fields to fill.
   const PRODUCT_ONLY_REF = lookup('product-ref', 'catalogue-products');
 
@@ -114,7 +116,7 @@ export function windowSource(builderFor) {
     field(SO, 'customer-name', 'Customer name', 'TEXT', { required: true, writePermission: 'orders:manage' }),
     field(SO, 'order-type', 'Order type', 'SELECT', { ref: 'order-types', defaultValue: 'STANDARD', writePermission: 'orders:manage' }),
     field(SO, 'warehouse-id', 'Fulfillment warehouse', 'REFERENCE', { required: true, ref: 'warehouse-ref', writePermission: 'orders:manage' }),
-    field(SO, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'orders:manage' }),
+    field(SO, 'currency-code', 'Currency', 'REFERENCE', { ref: 'currency-ref', defaultValue: 'USD', writePermission: 'orders:manage' }),
     field(SO, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'order-statuses' }),
     field(SO, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
     field(SO, 'customer-po-reference', 'Customer PO reference', 'TEXT', { writePermission: 'orders:manage' }),
@@ -133,7 +135,7 @@ export function windowSource(builderFor) {
     field(SQ, 'org-unit-id', 'Organization unit', 'REFERENCE', { required: true, ref: 'org-unit-ref', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'customer-id', 'Customer', 'REFERENCE', { required: true, ref: 'customer-ref', help: 'The customer, chosen from Business partners.', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'customer-name', 'Customer name', 'TEXT', { required: true, writePermission: 'orders:quotes:manage' }),
-    field(SQ, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'orders:quotes:manage' }),
+    field(SQ, 'currency-code', 'Currency', 'REFERENCE', { ref: 'currency-ref', defaultValue: 'USD', writePermission: 'orders:quotes:manage' }),
     field(SQ, 'valid-until', 'Valid until', 'DATETIME', { required: true, writePermission: 'orders:quotes:manage' }),
     field(SQ, 'payment-term-days', 'Payment term (days)', 'INTEGER', { defaultValue: 30, writePermission: 'orders:quotes:manage' }),
     field(SQ, 'notes', 'Notes', 'TEXT', { writePermission: 'orders:quotes:manage' }),
@@ -165,7 +167,7 @@ export function windowSource(builderFor) {
     field(CM, 'customer-id', 'Customer', 'REFERENCE', { required: true, ref: 'customer-ref', help: 'The customer, chosen from Business partners.', writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'order-id', 'Sales order', 'REFERENCE', { ref: 'sales-order-ref', help: 'Filled from the invoice when you pick one.', writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'invoice-id', 'Customer invoice', 'REFERENCE', { ref: 'invoice-ref', help: 'The invoice this credit corrects; its order and customer fill in.', writePermission: 'orders:credit-memos:manage' }),
-    field(CM, 'currency-code', 'Currency', 'TEXT', { defaultValue: 'USD', writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'currency-code', 'Currency', 'REFERENCE', { ref: 'currency-ref', defaultValue: 'USD', writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'reason', 'Reason', 'TEXT', { required: true, writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'credit-memo-statuses' }),
     field(CM, 'total-amount', 'Total (minor units)', 'TEXT', { readOnly: true }),
@@ -195,6 +197,7 @@ export function windowSource(builderFor) {
       'Create and review customer sales quotations.',
       'orders:read',
       dictionary('orders-sales-quotes', 'Sales quotes', SQ, [entity(SQ, 'Sales quotes')], sqFields, [], [
+        CURRENCY_REF,
         values('quote-statuses', QUOTE_STATUS),
         ORG_UNIT_REF,
         CUSTOMER_REF,
@@ -256,6 +259,7 @@ export function windowSource(builderFor) {
       'Create and review customer sales orders.',
       'orders:read',
       dictionary('orders-sales-orders', 'Sales orders', SO, [entity(SO, 'Sales orders')], soFields, [], [
+        CURRENCY_REF,
         values('order-types', ORDER_TYPES),
         values('order-statuses', ORDER_STATUS),
         ORG_UNIT_REF,
@@ -369,6 +373,7 @@ export function windowSource(builderFor) {
       'Issue customer credit memos for returns and billing adjustments.',
       'orders:read',
       dictionary('orders-customer-credit-memos', 'Credit memos', CM, [entity(CM, 'Customer credit memos')], cmFields, [], [
+        CURRENCY_REF,
         CUSTOMER_ONLY_REF,
         values('credit-memo-statuses', CREDIT_MEMO_STATUS),
         SALES_ORDER_REF,

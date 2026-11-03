@@ -488,5 +488,77 @@ export const MASTER_DATA_REGISTRY: readonly MasterDataEntryV1[] = [
     },
     "importable": false,
     "packSection": null
+  },
+  {
+    "key": "platform-countries",
+    "label": "Countries",
+    "group": "reference-data",
+    "level": "PLATFORM_REFERENCE",
+    "moduleKey": "core",
+    "catalogKey": "tenant-access",
+    "moduleLabel": "Workspace settings",
+    "route": "/settings/general",
+    "readPermission": "users:read",
+    "count": {
+      "kind": "lookup",
+      "basePath": "/api/control",
+      "resolver": "platform-countries"
+    },
+    "importable": false,
+    "packSection": null
+  },
+  {
+    "key": "platform-currencies",
+    "label": "Currencies",
+    "group": "reference-data",
+    "level": "PLATFORM_REFERENCE",
+    "moduleKey": "core",
+    "catalogKey": "tenant-access",
+    "moduleLabel": "Workspace settings",
+    "route": "/settings/general",
+    "readPermission": "users:read",
+    "count": {
+      "kind": "lookup",
+      "basePath": "/api/control",
+      "resolver": "platform-currencies"
+    },
+    "importable": false,
+    "packSection": null
+  },
+  {
+    "key": "platform-languages",
+    "label": "Languages",
+    "group": "reference-data",
+    "level": "PLATFORM_REFERENCE",
+    "moduleKey": "core",
+    "catalogKey": "tenant-access",
+    "moduleLabel": "Workspace settings",
+    "route": "/settings/general",
+    "readPermission": "users:read",
+    "count": {
+      "kind": "lookup",
+      "basePath": "/api/control",
+      "resolver": "platform-languages"
+    },
+    "importable": false,
+    "packSection": null
+  },
+  {
+    "key": "platform-time-zones",
+    "label": "Time zones",
+    "group": "reference-data",
+    "level": "PLATFORM_REFERENCE",
+    "moduleKey": "core",
+    "catalogKey": "tenant-access",
+    "moduleLabel": "Workspace settings",
+    "route": "/settings/general",
+    "readPermission": "users:read",
+    "count": {
+      "kind": "lookup",
+      "basePath": "/api/control",
+      "resolver": "platform-time-zones"
+    },
+    "importable": false,
+    "packSection": null
   }
 ];

@@ -36,6 +36,9 @@ const GENERATED: Partial<
   UNITS_OF_MEASURE: GENERATED_UNITS_OF_MEASURE,
 };
 
+/** The sets that have generated data and can be loaded (WI-OI-153 slice A load command). */
+export const LOADABLE_REFERENCE_SETS = Object.keys(GENERATED) as ReferenceSetKey[];
+
 @Injectable()
 export class PlatformReferenceService {
   /** The live version's entries for a set, each flattened to code + name + its set-specific payload fields. */
@@ -103,6 +106,13 @@ export class PlatformReferenceService {
 
     return prisma.$transaction(
       async (tx) => {
+        // WI-OI-153: loading the same data again changes nothing (idempotent by checksum); new data is a new version.
+        const live = await tx.platformReferenceVersion.findFirst({
+          where: { setKey, retiredAt: null },
+          select: { id: true, checksum: true },
+        });
+        if (live?.checksum === generated.checksum)
+          return { setKey, versionId: live.id, entryCount: generated.entryCount, unchanged: true };
         await tx.platformReferenceVersion.updateMany({
           where: { setKey, retiredAt: null },
           data: { retiredAt: new Date() },
@@ -150,7 +160,7 @@ export class PlatformReferenceService {
             metadata: { reason },
           },
         });
-        return { setKey, versionId: version.id, entryCount: generated.entryCount };
+        return { setKey, versionId: version.id, entryCount: generated.entryCount, unchanged: false };
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );

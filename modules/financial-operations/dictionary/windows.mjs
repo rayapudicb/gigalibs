@@ -29,6 +29,8 @@ export function windowSource(builderFor) {
   const act = (entityKey, key, label, permission, condition, prompt, parameters) =>
     action(entityKey, key, label, permission, condition, prompt, parameters, { parametersLast: true });
   const BOOK_REF = lookup('book-ref', 'finance-books');
+  // WI-OI-153 (ADR-0038 §1): currencies come from platform reference data; the stored value stays the ISO code.
+  const CURRENCY_REF = lookup('currency-ref', 'platform-currencies');
   const ACCOUNT_REF = lookup('account-ref', 'finance-accounts');
   const windows = {};
 
@@ -38,13 +40,13 @@ export function windowSource(builderFor) {
     // QA-031 (retest 2026-11-03): every field of the book explains itself.
     field(B, 'book-code', 'Code', 'TEXT', { help: 'A short code for the book, for example MAIN or IFRS.' }),
     field(B, 'book-name', 'Name', 'TEXT', { help: 'The name people see, for example Main ledger.' }),
-    field(B, 'currency-code', 'Currency', 'TEXT', { help: 'The currency the book is kept in, for example INR or USD.' }),
+    field(B, 'currency-code', 'Currency', 'REFERENCE', { ref: 'currency-ref', help: 'The currency the book is kept in, for example INR or USD.' }),
     field(B, 'costing-method', 'Costing method', 'SELECT', { ref: 'costing', help: 'How stock is valued in this book.' }),
     field(B, 'is-primary', 'Primary book', 'BOOLEAN', { help: 'The book used when a document names none.' }),
     field(B, 'status', 'Status', 'SELECT', { ref: 'book-statuses', help: 'Inactive books take no new postings.' }),
   ];
   windows['finance-books'] = window('finance-books', 'Accounting books', 'Books', 'The books your organization keeps its ledger in.', 'finance:read',
-    dictionary('finance-books', 'Accounting books', B, [entity(B, 'Books')], bf, [], [values('costing', COSTING), values('book-statuses', BOOK_STATUSES)], [
+    dictionary('finance-books', 'Accounting books', B, [entity(B, 'Books')], bf, [], [values('costing', COSTING), values('book-statuses', BOOK_STATUSES), CURRENCY_REF], [
       view('books', 'Accounting books', [
         tab('book', 'Book', 0, B, [['book-code', 3], ['book-name', 6], ['currency-code', 3], ['costing-method', 4], ['is-primary', 4], ['status', 4]], bf),
       ], { search: ['book-code', 'book-name'], sort: 'book-code' }),

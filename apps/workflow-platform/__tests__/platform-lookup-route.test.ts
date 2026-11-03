@@ -182,4 +182,37 @@ describe('platform lookup route', () => {
     expect(places).not.toHaveBeenCalled();
     expect(upstream).not.toHaveBeenCalled();
   });
+
+  // WI-OI-153 (ADR-0038 §1): platform reference data as pickers, the same for every workspace.
+  it('lists currencies from the loaded reference set as code and name, and finds one by its code', async () => {
+    upstream.mockResolvedValue(
+      json({ setKey: 'CURRENCIES', provenance: null, entries: [
+        { code: 'INR', name: 'Indian Rupee', minorUnits: 2 },
+        { code: 'JPY', name: 'Japanese Yen', minorUnits: 0 },
+      ] }),
+    );
+    const response = await call('platform-currencies', '?search=yen');
+    expect(upstream).toHaveBeenCalledWith('control', '/api/v1/platform-reference/CURRENCIES');
+    expect(await response.json()).toEqual([{ value: 'JPY', label: 'JPY — Japanese Yen' }]);
+  });
+
+  it('names time zones by their IANA code, slashes and plus signs included', async () => {
+    upstream.mockResolvedValue(
+      json({ setKey: 'TIME_ZONES', provenance: null, entries: [
+        { code: 'Asia/Kolkata', name: 'Asia/Kolkata' },
+        { code: 'Etc/GMT+1', name: 'Etc/GMT+1' },
+      ] }),
+    );
+    const response = await call('platform-time-zones', '?ids=Asia/Kolkata,Etc/GMT%2B1');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      { value: 'Asia/Kolkata', label: 'Asia/Kolkata' },
+      { value: 'Etc/GMT+1', label: 'Etc/GMT+1' },
+    ]);
+  });
+
+  it('answers an empty list while a reference set is not loaded yet', async () => {
+    upstream.mockResolvedValue(json({ setKey: 'COUNTRIES', provenance: null, entries: [] }));
+    expect(await (await call('platform-countries')).json()).toEqual([]);
+  });
 });
