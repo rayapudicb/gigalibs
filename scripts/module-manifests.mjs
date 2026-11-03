@@ -1230,9 +1230,10 @@ function hostOverlay(entries) {
       '      PROJECT_OPERATIONS_FINANCE_RELAY_URL: http://127.0.0.1:4790',
       '      PROJECT_OPERATIONS_FINANCE_RELAY_PRIVATE_KEY_BASE64: ${PROJECT_OPERATIONS_FINANCE_RELAY_PRIVATE_KEY_BASE64:-}',
       '      FINANCE_PROJECTS_INBOX_PUBLIC_KEY_BASE64: ${FINANCE_PROJECTS_INBOX_PUBLIC_KEY_BASE64:-}',
-      '      PROJECT_OPERATIONS_AR_RELAY_URL: http://127.0.0.1:3400',
+      // WI-OI-160: Accounts receivable runs as its own ar-api service; 127.0.0.1 here would be the module host itself,
+      // and AR's inbox key is set on ar-api (compose.modules.local.yaml).
+      '      PROJECT_OPERATIONS_AR_RELAY_URL: http://ar-api:3400',
       '      PROJECT_OPERATIONS_AR_RELAY_PRIVATE_KEY_BASE64: ${PROJECT_OPERATIONS_AR_RELAY_PRIVATE_KEY_BASE64:-}',
-      '      AR_PROJECTS_INBOX_RELAY_PUBLIC_KEY_BASE64: ${AR_PROJECTS_INBOX_RELAY_PUBLIC_KEY_BASE64:-}',
     ] : []),
     ...(entries.some(([name]) => name === 'universal-returns') ? [
       '      UNIVERSAL_RETURNS_INVENTORY_RELAY_URL: http://127.0.0.1:4790',

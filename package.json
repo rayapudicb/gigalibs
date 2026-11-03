@@ -48,6 +48,7 @@
     "module:conformance": "node scripts/module-conformance.mjs",
     "audit:anti-duplication": "node scripts/verify-anti-duplication.mjs",
     "audit:sdlc": "node scripts/verify-sdlc-governance.mjs",
+    "audit:relays": "node scripts/verify-relay-wiring.mjs",
     "audit:design-tokens": "node scripts/verify-design-tokens.mjs",
     "audit:ui-shell": "node scripts/verify-ui-shell.mjs",
     "e2e:uat": "GIGALIBS_E2E_NONINTERACTIVE=1 bash e2e/run-uat-walkthrough.sh",
