@@ -140,24 +140,39 @@ belongs to the card that names it. When one agent's session ends, the next agent
 
 | # | Item | Notes |
 |---|---|---|
-| 0 | Retest of the deploy `38aa9017` (retest fixes) | Not a card. After the owner's deploy: `e2e/specs/uat-retest-wi146-150.spec.ts`, the dry journeys and the bench (commands in `.pi/work/WI-OI-151.md`), update `e2e/ux-benchmark/workbook-content.mjs` and regenerate the workbook |
-| 1 | WI-OI-152 Master data hub | Phase 0 |
-| 2 | WI-OI-153 Reference data and workspace profile (slices A, B, C) | Phase 0 |
-| 3 | WI-OI-160 Relay wiring from manifests | Phase 0 |
-| 4 | WI-OI-156 slice A — product and master events | Phase 0 → **milestone A** |
-| 5 | WI-OI-163 Record-level available actions (CMMS first) | From the mobile review; one answer for web and mobile |
-| 6 | WI-OI-164 Mobile CMMS work: read, execute and complete, sign-off | Needs 163; no parts or stock flows |
-| 7 | WI-OI-165 Frontline journeys 133–143 proven on a device against UAT | Includes the contractor feature key and profiles |
-| 8 | WI-OI-154 Packs: generic baseline, India, manufacturing industry | Phase 1 |
-| 9 | WI-OI-155 Import and export kit | Phase 1 |
-| 10 | WI-OI-156 slices B–C — reference replicas and validation | Phase 1 → **milestone B** (new module cards may start) |
-| 11 | WI-OI-159 Model-first entities and service factory | Confirm with the owner first |
-| 12 | WI-OI-158 Classic masters | Confirm first |
-| 13 | WI-OI-157 Overlapping masters, including stock (slice 5) | Confirm first; mobile parts flows wait for slice 5 |
-| 14 | WI-OI-166 One service request, several work orders | Confirm first |
-| 15 | WI-OI-154 remaining country packs: JP, US, AE and SA, EU and UK, CN, RU, ZA, NG and KE | One slice each, in this order |
-| 16 | WI-OI-161 Workflow steps with compensation | Confirm first |
-| 17 | WI-OI-162 Simple metadata UI and Additional details | Confirm first; low priority |
+| 0 | Retest of the deploy `38aa9017` (retest fixes) | Done (2026-11-03): `.pi/work/WI-OI-151.md` |
+| 1 | WI-OI-152 Master data hub | Built |
+| 2 | WI-OI-153 Reference data and workspace profile (slices A, B, C) | Built |
+| 3 | WI-OI-160 Relay wiring from manifests | Built (slice A; generation moved to item 13) |
+| 4 | WI-OI-156 slice A — product and master events | Built → **milestone A** (`bd852946`, deployed by the owner 2026-11-03) |
+| 4a | Retest of milestone A on UAT | Not a card. After the owner's deploy and reference load: hub, reference pickers, workspace profile, standard units, read-only e2e, journeys and bench (commands in `.pi/work/WI-OI-151.md`); workbook updated |
+| 5 | WI-OI-167 Workforce scope completion (security) | **Next card** (owner 2026-11-03, `docs/plans/all-modules-completion-plan.md`); finishes WI-OI-120ho |
+| 6 | WI-OI-168 Status truth on UAT for modules already running | Read-only; relabels rows by evidence; removes stale deploy instructions |
+| 7 | WI-OI-163 Record-level available actions (CMMS first) | From the mobile review; one answer for web and mobile |
+| 8 | WI-OI-169 A booked technician can execute the work order | Needs 163; needed by 164 |
+| 9 | WI-OI-164 Mobile CMMS work: read, execute and complete, sign-off | Needs 163 and 169; no parts or stock flows |
+| 10 | WI-OI-165 Frontline journeys 133–143 proven on a device against UAT | Includes the contractor feature key and profiles |
+| 11 | WI-OI-154 Packs: generic baseline, India, manufacturing industry | Phase 1 |
+| 12 | WI-OI-155 Import and export kit | Phase 1 |
+| 13 | WI-OI-156 slices B–C — reference replicas, validation, Compose relay generation | Phase 1 → **milestone B** (new module cards may start) |
+| 14 | WI-OI-170 Mobile Workforce: my shifts, clock in and out, my time; supervisor tablet | Confirm first; needs 167 and 163 |
+| 15 | WI-OI-171 Rosters: shift templates, repeating shifts, demand from any module | Confirm first |
+| 16 | WI-OI-159 Model-first entities and service factory | Confirm first |
+| 17 | WI-OI-158 Classic masters | Confirm first |
+| 18 | WI-OI-157 Overlapping masters, including people and stock (slice 5) | Confirm first; mobile parts flows wait for slice 5 |
+| 19 | WI-OI-172 Customer and rate on demand; one time path to Projects billing | Confirm first; needs 171, 157, 156 B |
+| 20 | WI-OI-166 One service request, several work orders | Confirm first |
+| 21 | WI-OI-174 Reporting lines and approval routing | Confirm first |
+| 22 | WI-OI-175 Asset ownership and hire; driver and vehicle checks | Confirm first |
+| 23 | WI-OI-154 remaining country packs: JP, US, AE and SA, EU and UK, CN, RU, ZA, NG and KE | One slice each, in this order |
+| 24 | WI-OI-161 Workflow steps with compensation | Confirm first |
+| 25 | WI-OI-173 Pay by worksite and allowances | Confirm first; needs the country packs and 172 |
+| 26 | WI-OI-162 Simple metadata UI and Additional details | Confirm first; low priority |
+| 27 | Module completion stages C1–C11, one card per module | `docs/plans/all-modules-completion-plan.md` §7; each card written at claim from its §8 template and shown to the owner |
+
+**Not in the queue yet (owner decides where):** WI-OI-131 Analytics is In Progress outside this queue, with
+uncommitted work in `~/dev/gigalibs` that only its own session may touch (completion stage C9); WI-OI-144 work-order
+chat (stage C10); WI-OI-120cg SPEED Deploy Group 10 (stage C8); WI-OI-120p enterprise onboarding (plan v3 Phase 3).
 
 **How a card is taken, so two agents can never build at once:**
 1. Take the first item not yet Built. Read `.pi/NOW.md` and the card; if it says "confirm first", ask the owner.

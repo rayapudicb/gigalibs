@@ -7,6 +7,10 @@ from day one.
 
 ## Read first (in this order)
 
+> **2026-11-03:** the queue now also holds the module completion cards WI-OI-167–175; start from
+> [`ALL-MODULES-COMPLETION-HANDOFF-2026-11-03.md`](ALL-MODULES-COMPLETION-HANDOFF-2026-11-03.md), which links back here for
+> the rules and the Definition of Done.
+
 1. `AGENTS.md` (mandatory reading order, Definition of Done, verification) and `CLAUDE.md`.
 2. `docs/plans/master-data-foundation-execution-plan.md` — the three levels, the final reference data list, the packs,
    what happens at workspace creation, phases, dependencies and rules.

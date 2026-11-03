@@ -72,6 +72,9 @@ No timelines. Work goes top to bottom.
 
 ## 3. Where we stand (2026-10-13)
 
+> **Superseded for module status (owner, 2026-11-03):** the current register is
+> [`all-modules-completion-plan.md`](all-modules-completion-plan.md) §3. This section is kept as history.
+
 | Milestone (v2) | State |
 | --- | --- |
 | M0 Decisions | Partly done. D1, D4 (places) and D5 (ADR-0006) are decided. D2, D3, D6, D7, D8 and D9 are open. ADR-0003 and ADR-0016 are still Proposed. |
@@ -401,6 +404,15 @@ India, Japan, USA, Middle East, Europe, China, Russia, Africa; import kit; refer
 new module cards (the frontline modules, M-NEW) and module enhancement cards start after its milestone B. Phases 2–3
 (model-first entities, classic masters, overlap reconciliation, workflow steps, simple metadata UI) follow, card by card.
 
+### Module completion (owner, 2026-11-03): every module, web and mobile
+
+The owner asked for every module in the system to be consolidated, planned to completion with its mobile scope, and
+handed over so any agent can continue: [`all-modules-completion-plan.md`](all-modules-completion-plan.md) holds the
+module register, the corrections to earlier assessments, the mobile scope of every module and the completion stages
+C1–C11. New cards WI-OI-167–175 joined the one ordered queue (master data plan §6a); WI-OI-167 (Workforce scope) is
+the next card after the retest of milestone A. Phases 5 and 6 above keep their card definitions; their module order
+is the C stages.
+
 ### Future modules (a standing rule, not a phase)
 
 A new module:
@@ -454,6 +466,10 @@ here.
 4. Only then does `NOW.md` move to the next step.
 
 ## 7. Module inventory: everything this plan covers
+
+> **Superseded for module status (owner, 2026-11-03):** see
+> [`all-modules-completion-plan.md`](all-modules-completion-plan.md) §3 (31 manifests, what runs on UAT, mobile scope).
+> This inventory (2026-10-13) is kept as history; its tier rules (§8) still apply.
 
 Sources, as of 2026-10-13:
 - the 37 entries of the generated catalogue (`packages/contracts/src/modules/catalog.generated.ts`);
