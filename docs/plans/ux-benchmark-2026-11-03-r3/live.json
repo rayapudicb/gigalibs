@@ -1,0 +1,4287 @@
+[
+ {
+  "route": "/modules",
+  "status": 200,
+  "domMs": 356,
+  "readyMs": 1040,
+  "calls": 1,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 63
+  },
+  "crumb": "Home",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 300,
+  "form": null
+ },
+ {
+  "route": "/dashboard",
+  "status": 200,
+  "domMs": 192,
+  "readyMs": 893,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/workforce/resources",
+   "status": 200,
+   "ms": 169
+  },
+  "crumb": "Executive Control Tower",
+  "tabs": 1,
+  "viewTabs": 5,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Sync",
+   "Levers unavailable",
+   "Executive Radar",
+   "Cash Velocity & DSO Aging",
+   "OEE & Asset Telemetry",
+   "Workforce Deployment",
+   "Cross-Suite Integrity Ledger"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 1414,
+  "form": null
+ },
+ {
+  "route": "/products",
+  "status": 200,
+  "domMs": 391,
+  "readyMs": 1364,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/records/catalogue.products",
+   "status": 200,
+   "ms": 170
+  },
+  "crumb": "Operations › Products › Products",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 9,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Name ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 1155,
+  "form": {
+   "dialog": false,
+   "controls": 12,
+   "required": 4,
+   "pickers": 2,
+   "selects": 3,
+   "dates": 0,
+   "labels": [
+    "Code *",
+    "Name *",
+    "Status",
+    "Type *",
+    "Base unit *",
+    "Category",
+    "Sold",
+    "Purchased",
+    "Stocked",
+    "Display name",
+    "Data classification",
+    "Description"
+   ],
+   "grew": 11,
+   "openMs": 951
+  }
+ },
+ {
+  "route": "/products/units",
+  "status": 200,
+  "domMs": 484,
+  "readyMs": 1826,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/records/catalogue.uoms",
+   "status": 200,
+   "ms": 557
+  },
+  "crumb": "Operations › Products › Units",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 8,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Code ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 442,
+  "form": {
+   "dialog": false,
+   "controls": 8,
+   "required": 4,
+   "pickers": 0,
+   "selects": 1,
+   "dates": 0,
+   "labels": [
+    "Code *",
+    "Name *",
+    "Symbol *",
+    "Dimension *",
+    "Decimal places",
+    "Costing decimal places",
+    "ISO code",
+    "UCUM code"
+   ],
+   "grew": 7,
+   "openMs": 962
+  }
+ },
+ {
+  "route": "/products/categories",
+  "status": 200,
+  "domMs": 420,
+  "readyMs": 1262,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/records/catalogue.categories",
+   "status": 200,
+   "ms": 214
+  },
+  "crumb": "Operations › Products › Categories",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 2,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Name ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 112,
+  "form": {
+   "dialog": false,
+   "controls": 5,
+   "required": 2,
+   "pickers": 1,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Code *",
+    "Name *",
+    "Default category",
+    "Parent category",
+    "Description"
+   ],
+   "grew": 4,
+   "openMs": 940
+  }
+ },
+ {
+  "route": "/products/attributes",
+  "status": 200,
+  "domMs": 297,
+  "readyMs": 948,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/records/catalogue.attributes",
+   "status": 200,
+   "ms": 89
+  },
+  "crumb": "Operations › Products › Attributes",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 73,
+  "form": {
+   "dialog": false,
+   "controls": 9,
+   "required": 3,
+   "pickers": 0,
+   "selects": 1,
+   "dates": 0,
+   "labels": [
+    "Code *",
+    "Name *",
+    "Value type *",
+    "Required",
+    "Unit",
+    "Minimum",
+    "Maximum",
+    "Allowed values",
+    "Description"
+   ],
+   "grew": 8,
+   "openMs": 943
+  }
+ },
+ {
+  "route": "/products/catalogues",
+  "status": 200,
+  "domMs": 284,
+  "readyMs": 1022,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/records/catalogue.catalogues",
+   "status": 200,
+   "ms": 130
+  },
+  "crumb": "Operations › Products › Catalogues",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Name ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 110,
+  "form": {
+   "dialog": false,
+   "controls": 5,
+   "required": 2,
+   "pickers": 0,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Code *",
+    "Name *",
+    "Purpose",
+    "Audience",
+    "Description"
+   ],
+   "grew": 4,
+   "openMs": 949
+  }
+ },
+ {
+  "route": "/products/catalogue-versions",
+  "status": 200,
+  "domMs": 364,
+  "readyMs": 2374,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/records/catalogue.catalogue-versions",
+   "status": 200,
+   "ms": 851
+  },
+  "crumb": "Operations › Products › Catalogue versions",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Version ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 350,
+  "form": {
+   "dialog": false,
+   "controls": 4,
+   "required": 1,
+   "pickers": 1,
+   "selects": 0,
+   "dates": 2,
+   "labels": [
+    "Catalogue *",
+    "Effective from",
+    "Effective to",
+    "Notes"
+   ],
+   "grew": 3,
+   "openMs": 962
+  }
+ },
+ {
+  "route": "/products/price-lists",
+  "status": 200,
+  "domMs": 275,
+  "readyMs": 955,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/records/catalogue.price-lists",
+   "status": 200,
+   "ms": 86
+  },
+  "crumb": "Operations › Products › Price lists",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Name ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 166,
+  "form": {
+   "dialog": false,
+   "controls": 8,
+   "required": 3,
+   "pickers": 0,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Code *",
+    "Name *",
+    "Currency *",
+    "Decimal places",
+    "Prices include tax",
+    "Enforce the limit price",
+    "Audience",
+    "Description"
+   ],
+   "grew": 7,
+   "openMs": 930
+  }
+ },
+ {
+  "route": "/products/price-list-versions",
+  "status": 200,
+  "domMs": 319,
+  "readyMs": 1111,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/records/catalogue.price-list-versions",
+   "status": 200,
+   "ms": 137
+  },
+  "crumb": "Operations › Products › Price-list versions",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 3,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Version ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 457,
+  "form": {
+   "dialog": false,
+   "controls": 4,
+   "required": 2,
+   "pickers": 1,
+   "selects": 0,
+   "dates": 2,
+   "labels": [
+    "Price list *",
+    "Effective from *",
+    "Effective to",
+    "Notes"
+   ],
+   "grew": 3,
+   "openMs": 955
+  }
+ },
+ {
+  "route": "/products/price-resolver",
+  "status": 200,
+  "domMs": 413,
+  "readyMs": 1389,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/lookups/catalogue-products",
+   "status": 200,
+   "ms": 214
+  },
+  "crumb": "Operations › Products › Price resolver",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "Resolve price"
+  ],
+  "fieldsOnPage": 7,
+  "textLength": 801,
+  "form": null
+ },
+ {
+  "route": "/products/import-export",
+  "status": 200,
+  "domMs": 336,
+  "readyMs": 1366,
+  "calls": 1,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 191
+  },
+  "crumb": "Operations › Products › Import & export",
+  "tabs": 10,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Export CSV",
+   "Check 0 rows",
+   "Import"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 360,
+  "form": null
+ },
+ {
+  "route": "/inventory",
+  "status": 200,
+  "domMs": 416,
+  "readyMs": 1370,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/runtime/manifest/current",
+   "status": 200,
+   "ms": 297
+  },
+  "crumb": "Operations › Inventory › Warehouses",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 5,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "Open scanner",
+   "New",
+   "Code ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 312,
+  "form": {
+   "dialog": false,
+   "controls": 6,
+   "required": 4,
+   "pickers": 1,
+   "selects": 1,
+   "dates": 0,
+   "labels": [
+    "Code *",
+    "Name *",
+    "Type *",
+    "Owning organization unit *",
+    "Description",
+    "Address"
+   ],
+   "grew": 5,
+   "openMs": 955
+  }
+ },
+ {
+  "route": "/iot",
+  "status": 200,
+  "domMs": 891,
+  "readyMs": 1974,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/iot/v1/dashboard/summary",
+   "status": 200,
+   "ms": 504
+  },
+  "crumb": "Operations › IoT Gateway › Overview",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 55,
+  "form": null
+ },
+ {
+  "route": "/iot/devices",
+  "status": 200,
+  "domMs": 264,
+  "readyMs": 1092,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/iot/v1/devices",
+   "status": 200,
+   "ms": 314
+  },
+  "crumb": "Operations › IoT Gateway › Devices",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "+ New Device"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 59,
+  "form": {
+   "dialog": false,
+   "controls": 1,
+   "required": 0,
+   "pickers": 0,
+   "selects": 0,
+   "dates": 0,
+   "labels": [],
+   "grew": 0,
+   "openMs": 932
+  }
+ },
+ {
+  "route": "/iot/protocols",
+  "status": 200,
+  "domMs": 347,
+  "readyMs": 1116,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/iot/v1/protocols",
+   "status": 200,
+   "ms": 192
+  },
+  "crumb": "Operations › IoT Gateway › Protocols",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 5,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 120,
+  "form": null
+ },
+ {
+  "route": "/iot/rules",
+  "status": 200,
+  "domMs": 777,
+  "readyMs": 1601,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/iot/v1/rules",
+   "status": 200,
+   "ms": 261
+  },
+  "crumb": "Operations › IoT Gateway › Rules",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 36,
+  "form": null
+ },
+ {
+  "route": "/iot/discovery",
+  "status": 200,
+  "domMs": 296,
+  "readyMs": 1047,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 128
+  },
+  "crumb": "Operations › IoT Gateway › Discovery",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Start Scan"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 131,
+  "form": null
+ },
+ {
+  "route": "/iot/alerts",
+  "status": 200,
+  "domMs": 171,
+  "readyMs": 902,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/iot/v1/alerts",
+   "status": 200,
+   "ms": 84
+  },
+  "crumb": "Operations › IoT Gateway › Alerts",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 34,
+  "form": null
+ },
+ {
+  "route": "/cmms",
+  "status": 200,
+  "domMs": 314,
+  "readyMs": 1195,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "POST /api/cmms/v1/work-orders/search",
+   "status": 200,
+   "ms": 377
+  },
+  "crumb": "Operations › Asset maintenance › Overview",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 365,
+  "form": null
+ },
+ {
+  "route": "/gigaops",
+  "status": 200,
+  "domMs": 406,
+  "readyMs": 1321,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/workforce/resources",
+   "status": 200,
+   "ms": 376
+  },
+  "crumb": "Operations › Workforce › Overview",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "no workforce records yet",
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 380,
+  "form": null
+ },
+ {
+  "route": "/gigaops/resources",
+  "status": 200,
+  "domMs": 452,
+  "readyMs": 1268,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/runtime/manifest/current",
+   "status": 200,
+   "ms": 197
+  },
+  "crumb": "Operations › Workforce › People",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 68,
+  "form": {
+   "dialog": false,
+   "controls": 4,
+   "required": 3,
+   "pickers": 1,
+   "selects": 1,
+   "dates": 0,
+   "labels": [
+    "Reference code *",
+    "Display name *",
+    "Type *",
+    "Linked login"
+   ],
+   "grew": 3,
+   "openMs": 935
+  }
+ },
+ {
+  "route": "/gigaops/jobs",
+  "status": 200,
+  "domMs": 533,
+  "readyMs": 1706,
+  "calls": 7,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/workforce/resources",
+   "status": 200,
+   "ms": 333
+  },
+  "crumb": "Operations › Workforce › Jobs & positions",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "New profile",
+   "New position"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 418,
+  "form": {
+   "dialog": false,
+   "controls": 7,
+   "required": 3,
+   "pickers": 0,
+   "selects": 1,
+   "dates": 2,
+   "labels": [
+    "View as of",
+    "Code",
+    "Effective from",
+    "Title",
+    "Worker category",
+    "Description",
+    "Vacant only"
+   ],
+   "grew": 5,
+   "openMs": 971
+  }
+ },
+ {
+  "route": "/gigaops/capabilities",
+  "status": 200,
+  "domMs": 442,
+  "readyMs": 1540,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/workforce/resources",
+   "status": 200,
+   "ms": 587
+  },
+  "crumb": "Operations › Workforce › Skills & qualifications",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Create definition"
+  ],
+  "fieldsOnPage": 3,
+  "textLength": 244,
+  "form": null
+ },
+ {
+  "route": "/gigaops/availability",
+  "status": 200,
+  "domMs": 407,
+  "readyMs": 1319,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 313
+  },
+  "crumb": "Operations › Workforce › Availability",
+  "tabs": 11,
+  "viewTabs": 7,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "Absence requests",
+   "My absences",
+   "Working weeks",
+   "Who is available",
+   "Absence types",
+   "Site calendars",
+   "Closures",
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 213,
+  "form": {
+   "dialog": false,
+   "controls": 5,
+   "required": 4,
+   "pickers": 2,
+   "selects": 0,
+   "dates": 2,
+   "labels": [
+    "Person *",
+    "Absence type *",
+    "From *",
+    "Until *",
+    "Note"
+   ],
+   "grew": 4,
+   "openMs": 946
+  }
+ },
+ {
+  "route": "/gigaops/bookings",
+  "status": 200,
+  "domMs": 424,
+  "readyMs": 1140,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/workforce/v1/records/wf.bookings",
+   "status": 200,
+   "ms": 113
+  },
+  "crumb": "Operations › Workforce › Bookings",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [],
+  "fieldsOnPage": 1,
+  "textLength": 68,
+  "form": null
+ },
+ {
+  "route": "/gigaops/scheduling",
+  "status": 200,
+  "domMs": 336,
+  "readyMs": 1649,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/workforce/work-requirements",
+   "status": 200,
+   "ms": 618
+  },
+  "crumb": "Operations › Workforce › Scheduling & dispatch",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No demand yet",
+  "search": false,
+  "buttons": [
+   "New requirement"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 262,
+  "form": {
+   "dialog": false,
+   "controls": 5,
+   "required": 3,
+   "pickers": 0,
+   "selects": 1,
+   "dates": 2,
+   "labels": [
+    "Title",
+    "Site",
+    "People needed",
+    "Starts",
+    "Ends"
+   ],
+   "grew": 5,
+   "openMs": 935
+  }
+ },
+ {
+  "route": "/gigaops/time",
+  "status": 200,
+  "domMs": 274,
+  "readyMs": 1109,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/workforce/time-exceptions",
+   "status": 200,
+   "ms": 213
+  },
+  "crumb": "Operations › Workforce › Time & attendance",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "Nothing is waiting",
+  "search": false,
+  "buttons": [
+   "Add a missed punch…"
+  ],
+  "fieldsOnPage": 2,
+  "textLength": 614,
+  "form": null
+ },
+ {
+  "route": "/gigaops/pay",
+  "status": 200,
+  "domMs": 378,
+  "readyMs": 1333,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/workforce/pay-runs",
+   "status": 200,
+   "ms": 392
+  },
+  "crumb": "Operations › Workforce › Pay-ready outputs",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Set rate",
+   "Calculate"
+  ],
+  "fieldsOnPage": 6,
+  "textLength": 610,
+  "form": null
+ },
+ {
+  "route": "/gigaops/logbook",
+  "status": 200,
+  "domMs": 334,
+  "readyMs": 1104,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/workforce/v1/logbooks",
+   "status": 200,
+   "ms": 172
+  },
+  "crumb": "Operations › Workforce › Shift logbook",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No logbooks yet",
+  "search": false,
+  "buttons": [
+   "Logbook",
+   "Bypass register",
+   "Create logbook"
+  ],
+  "fieldsOnPage": 4,
+  "textLength": 94,
+  "form": null
+ },
+ {
+  "route": "/gigaops/analytics",
+  "status": 200,
+  "domMs": 421,
+  "readyMs": 1945,
+  "calls": 7,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/analytics/v1/module-sources",
+   "status": 200,
+   "ms": 434
+  },
+  "crumb": "Operations › Workforce › Analytics & trends",
+  "tabs": 11,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 2,
+  "textLength": 176,
+  "form": null
+ },
+ {
+  "route": "/maps",
+  "status": 200,
+  "domMs": 358,
+  "readyMs": 1057,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/maps/node-types",
+   "status": 200,
+   "ms": 210
+  },
+  "crumb": "Operations › Places & maps",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No places yet",
+  "search": true,
+  "buttons": [
+   "Import",
+   "Place type",
+   "Place",
+   "Search"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 185,
+  "form": null
+ },
+ {
+  "route": "/universal-manufacturing",
+  "status": 200,
+  "domMs": 340,
+  "readyMs": 1183,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-manufacturing/v1/boms",
+   "status": 200,
+   "ms": 280
+  },
+  "crumb": "Operations › Manufacturing › Overview",
+  "tabs": 4,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 91,
+  "form": null
+ },
+ {
+  "route": "/project-operations",
+  "status": 200,
+  "domMs": 245,
+  "readyMs": 1037,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/project-operations/v1/projects",
+   "status": 200,
+   "ms": 152
+  },
+  "crumb": "Operations › Projects",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Timesheet approvals"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 28,
+  "form": null
+ },
+ {
+  "route": "/operator-rounds",
+  "status": 200,
+  "domMs": 205,
+  "readyMs": 1047,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/operator-rounds/v1/assignments/board",
+   "status": 200,
+   "ms": 333
+  },
+  "crumb": "Operations › Inspection rounds › Routes",
+  "tabs": 4,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Create draft",
+   "Enter an identifier instead"
+  ],
+  "fieldsOnPage": 9,
+  "textLength": 269,
+  "form": null
+ },
+ {
+  "route": "/operator-rounds/board",
+  "status": 200,
+  "domMs": 412,
+  "readyMs": 1139,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/operator-rounds/v1/skips",
+   "status": 200,
+   "ms": 196
+  },
+  "crumb": "Operations › Inspection rounds › Live board",
+  "tabs": 4,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No assignments yet",
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 108,
+  "form": null
+ },
+ {
+  "route": "/operator-rounds/exceptions",
+  "status": 200,
+  "domMs": 359,
+  "readyMs": 1221,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/operator-rounds/v1/exceptions",
+   "status": 200,
+   "ms": 306
+  },
+  "crumb": "Operations › Inspection rounds › Exceptions",
+  "tabs": 4,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 42,
+  "form": null
+ },
+ {
+  "route": "/operator-rounds/skips",
+  "status": 200,
+  "domMs": 541,
+  "readyMs": 1341,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/operator-rounds/v1/exceptions",
+   "status": 200,
+   "ms": 237
+  },
+  "crumb": "Operations › Inspection rounds › Skip approvals",
+  "tabs": 4,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 218,
+  "form": null
+ },
+ {
+  "route": "/safety-operations",
+  "status": 200,
+  "domMs": 260,
+  "readyMs": 1035,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/safety-operations/v1/stop-work",
+   "status": 200,
+   "ms": 265
+  },
+  "crumb": "Operations › Safety › Stop work",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Report a hazard"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 58,
+  "form": null
+ },
+ {
+  "route": "/ap",
+  "status": 200,
+  "domMs": 376,
+  "readyMs": 1109,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/ap/invoices",
+   "status": 200,
+   "ms": 171
+  },
+  "crumb": "Finance › Invoice matching",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Invoice approvals",
+   "Refresh",
+   "All",
+   "Exception",
+   "Pending approval",
+   "Approved for payment",
+   "Matched",
+   "Rejected"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 125,
+  "form": null
+ },
+ {
+  "route": "/actions",
+  "status": 200,
+  "domMs": 219,
+  "readyMs": 860,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/ap/actions",
+   "status": 200,
+   "ms": 67
+  },
+  "crumb": "Finance › Invoice approvals",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No approval actions found",
+  "search": false,
+  "buttons": [
+   "Refresh Queue",
+   "Spend Approvals →",
+   "Spend Approvals →",
+   "Pending approval",
+   "Proposed",
+   "Succeeded",
+   "Rejected",
+   "Failed",
+   "All"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 166,
+  "form": null
+ },
+ {
+  "route": "/procurement",
+  "status": 200,
+  "domMs": 213,
+  "readyMs": 1223,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-procurement/v1/records/procurement.requisitions",
+   "status": 200,
+   "ms": 402
+  },
+  "crumb": "Finance › Procurement › Requisitions",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 152,
+  "form": {
+   "dialog": false,
+   "controls": 9,
+   "required": 7,
+   "pickers": 3,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Organization unit *",
+    "Description",
+    "Currency",
+    "Line product *",
+    "Line product code *",
+    "Line product name *",
+    "Line quantity *",
+    "Line unit of measure *",
+    "Line estimated unit price *"
+   ],
+   "grew": 8,
+   "openMs": 951
+  }
+ },
+ {
+  "route": "/procurement/purchase-orders",
+  "status": 200,
+  "domMs": 249,
+  "readyMs": 1168,
+  "calls": 8,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/lookups/inventory-warehouses",
+   "status": 200,
+   "ms": 353
+  },
+  "crumb": "Finance › Procurement › Purchase orders",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 185,
+  "form": {
+   "dialog": false,
+   "controls": 12,
+   "required": 10,
+   "pickers": 6,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Organization unit *",
+    "Vendor *",
+    "Vendor name *",
+    "Ship-to warehouse *",
+    "Currency",
+    "Line product *",
+    "Line product code *",
+    "Line product name *",
+    "Line quantity *",
+    "Line unit of measure *",
+    "Line unit price *",
+    "Line ship-to warehouse"
+   ],
+   "grew": 11,
+   "openMs": 963
+  }
+ },
+ {
+  "route": "/procurement/vendor-bills",
+  "status": 200,
+  "domMs": 334,
+  "readyMs": 1214,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/lookups/catalogue-uoms",
+   "status": 200,
+   "ms": 1275
+  },
+  "crumb": "Finance › Procurement › Vendor bills",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 127,
+  "form": {
+   "dialog": false,
+   "controls": 11,
+   "required": 8,
+   "pickers": 4,
+   "selects": 0,
+   "dates": 2,
+   "labels": [
+    "Vendor invoice # *",
+    "Vendor *",
+    "Purchase order",
+    "Currency",
+    "Invoice date *",
+    "Due date *",
+    "Line description *",
+    "Line product",
+    "Line quantity *",
+    "Line unit of measure *",
+    "Line unit price *"
+   ],
+   "grew": 10,
+   "openMs": 990
+  }
+ },
+ {
+  "route": "/procurement/debit-memos",
+  "status": 200,
+  "domMs": 1349,
+  "readyMs": 2707,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/runtime/manifest/current",
+   "status": 200,
+   "ms": 466
+  },
+  "crumb": "Finance › Procurement › Debit memos",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 100,
+  "form": {
+   "dialog": false,
+   "controls": 10,
+   "required": 6,
+   "pickers": 2,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Vendor *",
+    "Vendor bill",
+    "Purchase order",
+    "Currency",
+    "Reason *",
+    "Line description *",
+    "Line product",
+    "Line quantity *",
+    "Line unit price *",
+    "Line reason *"
+   ],
+   "grew": 9,
+   "openMs": 940
+  }
+ },
+ {
+  "route": "/procurement/landed-cost",
+  "status": 200,
+  "domMs": 228,
+  "readyMs": 892,
+  "calls": 1,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 38
+  },
+  "crumb": "Finance › Procurement › Landed cost",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Continue to receipt layers"
+  ],
+  "fieldsOnPage": 3,
+  "textLength": 261,
+  "form": null
+ },
+ {
+  "route": "/orders",
+  "status": 200,
+  "domMs": 248,
+  "readyMs": 1062,
+  "calls": 7,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/lookups/catalogue-products",
+   "status": 200,
+   "ms": 263
+  },
+  "crumb": "Finance › Orders › Quotes",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 156,
+  "form": {
+   "dialog": false,
+   "controls": 13,
+   "required": 10,
+   "pickers": 4,
+   "selects": 0,
+   "dates": 1,
+   "labels": [
+    "Organization unit *",
+    "Customer *",
+    "Customer name *",
+    "Currency",
+    "Valid until *",
+    "Payment term (days)",
+    "Notes",
+    "Line product *",
+    "Line product code *",
+    "Line product name *",
+    "Line quantity *",
+    "Line unit of measure *",
+    "Line unit price *"
+   ],
+   "grew": 12,
+   "openMs": 963
+  }
+ },
+ {
+  "route": "/finance",
+  "status": 200,
+  "domMs": 223,
+  "readyMs": 1092,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/runtime/manifest/current",
+   "status": 200,
+   "ms": 218
+  },
+  "crumb": "Finance › General ledger › Journal entries",
+  "tabs": 8,
+  "viewTabs": 0,
+  "rows": 6,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Last changed ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 1418,
+  "form": {
+   "dialog": false,
+   "controls": 4,
+   "required": 3,
+   "pickers": 1,
+   "selects": 1,
+   "dates": 1,
+   "labels": [
+    "Description *",
+    "Kind",
+    "Book *",
+    "Posting date *"
+   ],
+   "grew": 3,
+   "openMs": 956
+  }
+ },
+ {
+  "route": "/finance/posted-journals",
+  "status": 200,
+  "domMs": 408,
+  "readyMs": 1482,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/financial-operations/v1/records/finance.journals",
+   "status": 200,
+   "ms": 275
+  },
+  "crumb": "Finance › General ledger › Posted journals",
+  "tabs": 8,
+  "viewTabs": 0,
+  "rows": 6,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "Posting date ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 1140,
+  "form": null
+ },
+ {
+  "route": "/finance/accounts",
+  "status": 200,
+  "domMs": 313,
+  "readyMs": 1200,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/financial-operations/v1/records/finance.accounts",
+   "status": 200,
+   "ms": 192
+  },
+  "crumb": "Finance › General ledger › Chart of accounts",
+  "tabs": 8,
+  "viewTabs": 0,
+  "rows": 22,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Code ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 2173,
+  "form": {
+   "dialog": false,
+   "controls": 10,
+   "required": 6,
+   "pickers": 2,
+   "selects": 3,
+   "dates": 0,
+   "labels": [
+    "Code *",
+    "Name *",
+    "Active",
+    "Book *",
+    "Class *",
+    "Normal balance *",
+    "Subtype *",
+    "Parent account",
+    "Reconciled with a bank or statement",
+    "Subledger control account"
+   ],
+   "grew": 9,
+   "openMs": 947
+  }
+ },
+ {
+  "route": "/finance/periods",
+  "status": 200,
+  "domMs": 254,
+  "readyMs": 1096,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 199
+  },
+  "crumb": "Finance › General ledger › Periods",
+  "tabs": 8,
+  "viewTabs": 0,
+  "rows": 12,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "Starts ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 879,
+  "form": null
+ },
+ {
+  "route": "/finance/books",
+  "status": 200,
+  "domMs": 398,
+  "readyMs": 1231,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/financial-operations/v1/records/finance.books",
+   "status": 200,
+   "ms": 172
+  },
+  "crumb": "Finance › General ledger › Books",
+  "tabs": 8,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Code ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 132,
+  "form": {
+   "dialog": false,
+   "controls": 6,
+   "required": 0,
+   "pickers": 0,
+   "selects": 2,
+   "dates": 0,
+   "labels": [
+    "Code",
+    "Name",
+    "Currency",
+    "Costing method",
+    "Primary book",
+    "Status"
+   ],
+   "grew": 5,
+   "openMs": 945
+  }
+ },
+ {
+  "route": "/finance/standard-costs",
+  "status": 200,
+  "domMs": 651,
+  "readyMs": 1564,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/financial-operations/v1/records/finance.product-standard-costs",
+   "status": 200,
+   "ms": 263
+  },
+  "crumb": "Finance › General ledger › Standard costs",
+  "tabs": 8,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 89,
+  "form": {
+   "dialog": false,
+   "controls": 6,
+   "required": 4,
+   "pickers": 0,
+   "selects": 0,
+   "dates": 2,
+   "labels": [
+    "Cost profile *",
+    "Product *",
+    "Standard unit cost *",
+    "Effective from *",
+    "Effective to",
+    "Change reason"
+   ],
+   "grew": 5,
+   "openMs": 942
+  }
+ },
+ {
+  "route": "/finance/reports",
+  "status": 200,
+  "domMs": 387,
+  "readyMs": 1181,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/financial-operations/v1/books",
+   "status": 200,
+   "ms": 186
+  },
+  "crumb": "Finance › General ledger › Reports",
+  "tabs": 8,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Run report"
+  ],
+  "fieldsOnPage": 3,
+  "textLength": 194,
+  "form": null
+ },
+ {
+  "route": "/finance/set-up",
+  "status": 200,
+  "domMs": 361,
+  "readyMs": 1094,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/financial-operations/v1/books",
+   "status": 200,
+   "ms": 170
+  },
+  "crumb": "Finance › General ledger › Set up a book",
+  "tabs": 8,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Set up the book",
+   "Add the year"
+  ],
+  "fieldsOnPage": 8,
+  "textLength": 783,
+  "form": null
+ },
+ {
+  "route": "/business-partners",
+  "status": 200,
+  "domMs": 314,
+  "readyMs": 1142,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/business-partners/v1/records/business-partners.partners",
+   "status": 200,
+   "ms": 220
+  },
+  "crumb": "Finance › Business partners",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 9,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "Name ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 553,
+  "form": null
+ },
+ {
+  "route": "/universal-returns",
+  "status": 200,
+  "domMs": 352,
+  "readyMs": 1083,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-returns/v1/rmas",
+   "status": 200,
+   "ms": 189
+  },
+  "crumb": "Finance › Returns",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": "No returns yet",
+  "search": false,
+  "buttons": [
+   "Refresh"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 113,
+  "form": null
+ },
+ {
+  "route": "/value",
+  "status": 200,
+  "domMs": 160,
+  "readyMs": 885,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/operational-intelligence/environments",
+   "status": 200,
+   "ms": 213
+  },
+  "crumb": "Intelligence › Business value",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Refresh",
+   "Create Definition",
+   "Publish Immutable Version"
+  ],
+  "fieldsOnPage": 19,
+  "textLength": 876,
+  "form": null
+ },
+ {
+  "route": "/analytics",
+  "status": 200,
+  "domMs": 387,
+  "readyMs": 2075,
+  "calls": 8,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/analytics/v1/module-sources/6cdfa18f-14b1-4751-88f0-1ae17ba3cb28/catalog",
+   "status": 200,
+   "ms": 510
+  },
+  "crumb": "Intelligence › Analytics › Overview",
+  "tabs": 6,
+  "viewTabs": 2,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Refresh",
+   "Place drill-down",
+   "Record a decision",
+   "Trends",
+   "Saved charts",
+   "Refresh sources",
+   "Preview"
+  ],
+  "fieldsOnPage": 3,
+  "textLength": 705,
+  "form": null
+ },
+ {
+  "route": "/speed",
+  "status": 200,
+  "domMs": 600,
+  "readyMs": 1788,
+  "calls": 7,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/speed/v1/records/speed.projects",
+   "status": 200,
+   "ms": 358
+  },
+  "crumb": "Intelligence › Process safety (SPEED)",
+  "tabs": 7,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Project code ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 248,
+  "form": {
+   "dialog": false,
+   "controls": 5,
+   "required": 3,
+   "pickers": 2,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Project code *",
+    "Name *",
+    "Site *",
+    "Owner",
+    "Notes"
+   ],
+   "grew": 4,
+   "openMs": 948
+  }
+ },
+ {
+  "route": "/speed/projects",
+  "status": 200,
+  "domMs": 321,
+  "readyMs": 1187,
+  "calls": 7,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/speed/v1/lookups/speed-sites",
+   "status": 200,
+   "ms": 188
+  },
+  "crumb": "Intelligence › Process safety (SPEED) › Projects",
+  "tabs": 7,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Project code ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 248,
+  "form": {
+   "dialog": false,
+   "controls": 5,
+   "required": 3,
+   "pickers": 2,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Project code *",
+    "Name *",
+    "Site *",
+    "Owner",
+    "Notes"
+   ],
+   "grew": 4,
+   "openMs": 937
+  }
+ },
+ {
+  "route": "/speed/routes",
+  "status": 200,
+  "domMs": 247,
+  "readyMs": 1307,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/speed/v1/lookups/speed-projects",
+   "status": 200,
+   "ms": 314
+  },
+  "crumb": "Intelligence › Process safety (SPEED) › Routes",
+  "tabs": 7,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Route ↑"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 179,
+  "form": {
+   "dialog": false,
+   "controls": 2,
+   "required": 2,
+   "pickers": 1,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Project *",
+    "Route *"
+   ],
+   "grew": 1,
+   "openMs": 945
+  }
+ },
+ {
+  "route": "/speed/substances",
+  "status": 200,
+  "domMs": 607,
+  "readyMs": 1373,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/speed/v1/records/speed.substances",
+   "status": 200,
+   "ms": 118
+  },
+  "crumb": "Intelligence › Process safety (SPEED) › Substances",
+  "tabs": 7,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 73,
+  "form": {
+   "dialog": false,
+   "controls": 6,
+   "required": 2,
+   "pickers": 1,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Name *",
+    "CAS number",
+    "Formula *",
+    "Density (g/mL)",
+    "Library material",
+    "Notes"
+   ],
+   "grew": 5,
+   "openMs": 953
+  }
+ },
+ {
+  "route": "/speed/library",
+  "status": 200,
+  "domMs": 381,
+  "readyMs": 1434,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/speed/v1/criteria-sets",
+   "status": 200,
+   "ms": 383
+  },
+  "crumb": "Intelligence › Process safety (SPEED) › Screening library",
+  "tabs": 7,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": "No library is in force yet",
+  "search": true,
+  "buttons": [
+   "Download as Excel",
+   "Import",
+   "Download a blank Excel template",
+   "Version ↑"
+  ],
+  "fieldsOnPage": 2,
+  "textLength": 1357,
+  "form": null
+ },
+ {
+  "route": "/speed/criteria",
+  "status": 200,
+  "domMs": 314,
+  "readyMs": 1193,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/speed/v1/criteria-sets",
+   "status": 200,
+   "ms": 185
+  },
+  "crumb": "Intelligence › Process safety (SPEED) › Screening criteria",
+  "tabs": 7,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": "No criteria set is in force yet",
+  "search": true,
+  "buttons": [
+   "Download as Excel",
+   "Import",
+   "Download a blank Excel template",
+   "Version ↑"
+  ],
+  "fieldsOnPage": 2,
+  "textLength": 1204,
+  "form": null
+ },
+ {
+  "route": "/speed/outcomes",
+  "status": 200,
+  "domMs": 366,
+  "readyMs": 1177,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/speed/v1/outcomes",
+   "status": 200,
+   "ms": 235
+  },
+  "crumb": "Intelligence › Process safety (SPEED) › Outcomes",
+  "tabs": 7,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 1172,
+  "form": null
+ },
+ {
+  "route": "/speed/audit",
+  "status": 200,
+  "domMs": 192,
+  "readyMs": 969,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/speed/v1/audit-events",
+   "status": 200,
+   "ms": 163
+  },
+  "crumb": "Intelligence › Process safety (SPEED) › Audit trail",
+  "tabs": 7,
+  "viewTabs": 0,
+  "rows": 15,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Apply filters",
+   "Clear",
+   "Previous",
+   "Next"
+  ],
+  "fieldsOnPage": 5,
+  "textLength": 2080,
+  "form": null
+ },
+ {
+  "route": "/settings",
+  "status": 200,
+  "domMs": 858,
+  "readyMs": 2033,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/tenants/current/roles",
+   "status": 200,
+   "ms": 440
+  },
+  "crumb": "Settings › Workspace settings › Team & access",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 7,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Create invitation",
+   "Select all",
+   "Create role",
+   "Clear",
+   "Save role",
+   "Delete",
+   "Add role",
+   "Save change",
+   "×"
+  ],
+  "fieldsOnPage": 47,
+  "textLength": 39752,
+  "form": null
+ },
+ {
+  "route": "/settings/people",
+  "status": 200,
+  "domMs": 442,
+  "readyMs": 1191,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 237
+  },
+  "crumb": "Settings › Workspace settings › People",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Off-board selected"
+  ],
+  "fieldsOnPage": 2,
+  "textLength": 412,
+  "form": null
+ },
+ {
+  "route": "/settings/organization",
+  "status": 200,
+  "domMs": 258,
+  "readyMs": 1131,
+  "calls": 14,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/tenants/current/members",
+   "status": 200,
+   "ms": 201
+  },
+  "crumb": "Settings › Workspace settings › Organization & hierarchy",
+  "tabs": 6,
+  "viewTabs": 4,
+  "rows": 6,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Structure",
+   "Units",
+   "Unit types",
+   "Access",
+   "Add rollup tree",
+   "Start a draft",
+   "Send to modules again",
+   "View",
+   "Turn on spatial scope"
+  ],
+  "fieldsOnPage": 2,
+  "textLength": 1414,
+  "form": null
+ },
+ {
+  "route": "/settings/plan",
+  "status": 200,
+  "domMs": 450,
+  "readyMs": 1519,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/tenants/current/module-requests",
+   "status": 200,
+   "ms": 301
+  },
+  "crumb": "Settings › Workspace settings › Plan & entitlements",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 3105,
+  "form": null
+ },
+ {
+  "route": "/settings/general",
+  "status": 200,
+  "domMs": 578,
+  "readyMs": 1787,
+  "calls": 2,
+  "failed": [
+   "GET /api/control/configuration/runtime/manifest/current → 404"
+  ],
+  "slowest": {
+   "path": "GET /api/control/configuration/runtime/manifest/current",
+   "status": 404,
+   "ms": 613
+  },
+  "crumb": "Settings › Workspace settings › General & localization",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Save Changes"
+  ],
+  "fieldsOnPage": 3,
+  "textLength": 937,
+  "form": null
+ },
+ {
+  "route": "/settings/security",
+  "status": 200,
+  "domMs": 371,
+  "readyMs": 1272,
+  "calls": 9,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/tenants/current/domain",
+   "status": 200,
+   "ms": 288
+  },
+  "crumb": "Settings › Workspace settings › Security & SSO",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Create challenge",
+   "Save OIDC",
+   "Save MFA policy",
+   "Request recovery",
+   "Generate export"
+  ],
+  "fieldsOnPage": 13,
+  "textLength": 1881,
+  "form": null
+ },
+ {
+  "route": "/connections",
+  "status": 200,
+  "domMs": 458,
+  "readyMs": 1827,
+  "calls": 6,
+  "failed": [
+   "GET /api/workflow-studio/workflows → 503"
+  ],
+  "slowest": {
+   "path": "GET /api/connectors-hub/journal",
+   "status": 200,
+   "ms": 709
+  },
+  "crumb": "Settings › Connections › Connections",
+  "tabs": 2,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Refresh",
+   "Connected apps",
+   "Connected apps",
+   "New Connection",
+   "Active Connections 0",
+   "Connector Catalog 7",
+   "Ingestion Journal 0",
+   "Webhook Simulator",
+   "All Categories",
+   "CRM Systems",
+   "Procure-to-Pay",
+   "Corporate Banking"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 438,
+  "form": null
+ },
+ {
+  "route": "/connections/credentials",
+  "status": 200,
+  "domMs": 300,
+  "readyMs": 1028,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/operational-intelligence/environments",
+   "status": 200,
+   "ms": 221
+  },
+  "crumb": "Settings › Connections › Credentials",
+  "tabs": 2,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Refresh",
+   "Register Reference"
+  ],
+  "fieldsOnPage": 5,
+  "textLength": 886,
+  "form": null
+ },
+ {
+  "route": "/connections/oauth-studio",
+  "status": 200,
+  "domMs": 229,
+  "readyMs": 955,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/connectors-hub/connections",
+   "status": 200,
+   "ms": 180
+  },
+  "crumb": "Settings › Connected apps",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": "No active connections configured yet",
+  "search": false,
+  "buttons": [
+   "Refresh",
+   "1-Click Handshake"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 1575,
+  "form": null
+ },
+ {
+  "route": "/workflows",
+  "status": 200,
+  "domMs": 162,
+  "readyMs": 969,
+  "calls": 4,
+  "failed": [
+   "GET /api/workflow-studio/workflows → 503",
+   "GET /api/workflow-studio/runs → 503",
+   "GET /api/workflow-studio/stats → 503"
+  ],
+  "slowest": {
+   "path": "GET /api/workflow-studio/stats",
+   "status": 503,
+   "ms": 244
+  },
+  "crumb": "Settings › Workflows › Workflows",
+  "tabs": 3,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No Orchestration Pipelines Found",
+  "search": false,
+  "buttons": [
+   "Reload Pipelines",
+   "Refresh",
+   "New Pipeline",
+   "New Pipeline",
+   "Active Pipelines 0",
+   "Live Pipeline Runner",
+   "Durable Run History 0",
+   "Architecture Handshake 7 Modules",
+   "All Categories",
+   "Order-to-Cash",
+   "Procure-to-Pay",
+   "Treasury & FX",
+   "New Pipeline",
+   "Clear Filters"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 628,
+  "form": {
+   "dialog": false,
+   "controls": 5,
+   "required": 2,
+   "pickers": 0,
+   "selects": 2,
+   "dates": 0,
+   "labels": [],
+   "grew": 4,
+   "openMs": 946
+  }
+ },
+ {
+  "route": "/workflows/templates",
+  "status": 200,
+  "domMs": 258,
+  "readyMs": 907,
+  "calls": 2,
+  "failed": [
+   "GET /api/workflow-studio/workflows → 503"
+  ],
+  "slowest": {
+   "path": "GET /api/workflow-studio/workflows",
+   "status": 503,
+   "ms": 78
+  },
+  "crumb": "Settings › Workflows › Templates",
+  "tabs": 3,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "+ New Pipeline"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 367,
+  "form": {
+   "dialog": false,
+   "controls": 5,
+   "required": 2,
+   "pickers": 0,
+   "selects": 2,
+   "dates": 0,
+   "labels": [],
+   "grew": 5,
+   "openMs": 936
+  }
+ },
+ {
+  "route": "/workflows/api-keys",
+  "status": 200,
+  "domMs": 407,
+  "readyMs": 1156,
+  "calls": 2,
+  "failed": [
+   "GET /api/workflow-studio/api-keys → 503"
+  ],
+  "slowest": {
+   "path": "GET /api/workflow-studio/api-keys",
+   "status": 503,
+   "ms": 164
+  },
+  "crumb": "Settings › Workflows › API keys",
+  "tabs": 3,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "+ New API Key"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 207,
+  "form": {
+   "dialog": false,
+   "controls": 8,
+   "required": 0,
+   "pickers": 0,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Read workflows workflows:read",
+    "Execute workflows workflows:execute",
+    "Create/edit workflows workflows:write",
+    "Read run history runs:read",
+    "Read statistics stats:read",
+    "Read connectors connectors:read",
+    "Manage connectors connectors:write"
+   ],
+   "grew": 8,
+   "openMs": 964
+  }
+ },
+ {
+  "route": "/runs",
+  "status": 200,
+  "domMs": 291,
+  "readyMs": 1051,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 60
+  },
+  "crumb": "Settings › Run history",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No execution runs found",
+  "search": false,
+  "buttons": [
+   "Refresh Runs",
+   "Workflow Studio →",
+   "Workflow Studio →",
+   "all",
+   "succeeded",
+   "running",
+   "queued",
+   "failed",
+   "Action required",
+   "cancelled"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 182,
+  "form": null
+ },
+ {
+  "route": "/exceptions",
+  "status": 200,
+  "domMs": 173,
+  "readyMs": 814,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 105
+  },
+  "crumb": "Settings › Processing exceptions",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Refresh Exceptions",
+   "Recovery Studio →",
+   "Recovery Studio →",
+   "Open",
+   "Assigned",
+   "Retry scheduled",
+   "Resolved",
+   "All"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 190,
+  "form": null
+ },
+ {
+  "route": "/configuration",
+  "status": 200,
+  "domMs": 514,
+  "readyMs": 1572,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/surfaces",
+   "status": 200,
+   "ms": 540
+  },
+  "crumb": "Settings › Forms & apps",
+  "tabs": 1,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Template Library 24",
+   "Industry packs",
+   "Active Tenant Applications 0",
+   "Registered Extension Surfaces 71",
+   "Application Dictionary",
+   "Create Blank Form",
+   "All Categories (24)",
+   "Lead Generation (1)",
+   "Survey (1)",
+   "Request (1)",
+   "Remote Working (1)",
+   "Contact (1)",
+   "Poll (1)",
+   "Business (1)"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 5241,
+  "form": null
+ },
+ {
+  "route": "/settings/profile",
+  "status": 200,
+  "domMs": 389,
+  "readyMs": 1249,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/auth/activity",
+   "status": 200,
+   "ms": 190
+  },
+  "crumb": "Settings › My profile & security",
+  "tabs": 1,
+  "viewTabs": 6,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Profile",
+   "Password",
+   "Activity",
+   "Sign-in methods",
+   "Two-step sign-in & recovery",
+   "My permissions",
+   "Save Profile Changes"
+  ],
+  "fieldsOnPage": 4,
+  "textLength": 724,
+  "form": null
+ },
+ {
+  "route": "/inventory/items",
+  "status": 200,
+  "domMs": 349,
+  "readyMs": 1164,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/records/inventory.items",
+   "status": 200,
+   "ms": 156
+  },
+  "crumb": "Operations › Inventory › Items",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 8,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Open scanner",
+   "New"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 913,
+  "form": {
+   "dialog": false,
+   "controls": 10,
+   "required": 1,
+   "pickers": 3,
+   "selects": 1,
+   "dates": 0,
+   "labels": [
+    "Product *",
+    "Valuation",
+    "Default warehouse",
+    "Default location",
+    "Reorder point",
+    "Safety stock",
+    "Shelf life (days)",
+    "Standard cost",
+    "Lot tracked",
+    "Serial tracked"
+   ],
+   "grew": 10,
+   "openMs": 945
+  }
+ },
+ {
+  "route": "/inventory/lots",
+  "status": 200,
+  "domMs": 418,
+  "readyMs": 1171,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/runtime/manifest/current",
+   "status": 200,
+   "ms": 143
+  },
+  "crumb": "Operations › Inventory › Lots",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "Open scanner",
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 112,
+  "form": {
+   "dialog": false,
+   "controls": 6,
+   "required": 2,
+   "pickers": 1,
+   "selects": 0,
+   "dates": 2,
+   "labels": [
+    "Lot number *",
+    "Product *",
+    "Batch code",
+    "Supplier lot number",
+    "Manufactured",
+    "Expires"
+   ],
+   "grew": 5,
+   "openMs": 943
+  }
+ },
+ {
+  "route": "/inventory/receipts",
+  "status": 200,
+  "domMs": 305,
+  "readyMs": 1189,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/runtime/manifest/current",
+   "status": 200,
+   "ms": 237
+  },
+  "crumb": "Operations › Inventory › Receipts",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 2,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "Open scanner",
+   "New",
+   "Created ↓"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 333,
+  "form": {
+   "dialog": false,
+   "controls": 3,
+   "required": 1,
+   "pickers": 1,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Warehouse *",
+    "Supplier document",
+    "Notes"
+   ],
+   "grew": 2,
+   "openMs": 946
+  }
+ },
+ {
+  "route": "/inventory/balances",
+  "status": 200,
+  "domMs": 409,
+  "readyMs": 1346,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/records/inventory.balances",
+   "status": 200,
+   "ms": 191
+  },
+  "crumb": "Operations › Inventory › Balances",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 3,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Open scanner",
+   "Last movement ↓"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 552,
+  "form": null
+ },
+ {
+  "route": "/inventory/reservations",
+  "status": 200,
+  "domMs": 608,
+  "readyMs": 1530,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/records/inventory.reservations",
+   "status": 200,
+   "ms": 247
+  },
+  "crumb": "Operations › Inventory › Reservations",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "Open scanner"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 89,
+  "form": null
+ },
+ {
+  "route": "/inventory/ledger",
+  "status": 200,
+  "domMs": 1233,
+  "readyMs": 2496,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 472
+  },
+  "crumb": "Operations › Inventory › Stock ledger",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 3,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Open scanner",
+   "Posted ↓"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 637,
+  "form": null
+ },
+ {
+  "route": "/inventory/movement-costs",
+  "status": 200,
+  "domMs": 276,
+  "readyMs": 937,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/records/inventory.cost-layers",
+   "status": 200,
+   "ms": 83
+  },
+  "crumb": "Operations › Inventory › Movement costs",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": false,
+  "buttons": [
+   "Open scanner"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 90,
+  "form": null
+ },
+ {
+  "route": "/inventory/posted-receipt-costs",
+  "status": 200,
+  "domMs": 175,
+  "readyMs": 889,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/records/inventory.posted-receipt-costs",
+   "status": 200,
+   "ms": 120
+  },
+  "crumb": "Operations › Inventory › Posted receipt costs",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": false,
+  "buttons": [
+   "Open scanner"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 105,
+  "form": null
+ },
+ {
+  "route": "/inventory/warehouse-map",
+  "status": 200,
+  "domMs": 292,
+  "readyMs": 1067,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/warehouses/90da79d2-fdfa-4a17-b0e3-151edea3cb60/location-map",
+   "status": 200,
+   "ms": 178
+  },
+  "crumb": "Operations › Inventory › Warehouse map",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Open scanner"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 183,
+  "form": null
+ },
+ {
+  "route": "/inventory/transfers",
+  "status": 200,
+  "domMs": 223,
+  "readyMs": 1123,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/transfers",
+   "status": 200,
+   "ms": 325
+  },
+  "crumb": "Operations › Inventory › Transfers",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "Nothing here",
+  "search": false,
+  "buttons": [
+   "Open scanner",
+   "Refresh"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 186,
+  "form": null
+ },
+ {
+  "route": "/inventory/replenishment",
+  "status": 200,
+  "domMs": 398,
+  "readyMs": 1204,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/warehouses",
+   "status": 200,
+   "ms": 176
+  },
+  "crumb": "Operations › Inventory › Replenishment",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Open scanner",
+   "Generate POs"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 340,
+  "form": null
+ },
+ {
+  "route": "/inventory/availability",
+  "status": 200,
+  "domMs": 282,
+  "readyMs": 1138,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/warehouses",
+   "status": 200,
+   "ms": 302
+  },
+  "crumb": "Operations › Inventory › Availability",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Open scanner",
+   "Watch ATP"
+  ],
+  "fieldsOnPage": 4,
+  "textLength": 376,
+  "form": null
+ },
+ {
+  "route": "/inventory/valuation",
+  "status": 200,
+  "domMs": 607,
+  "readyMs": 1526,
+  "calls": 1,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 172
+  },
+  "crumb": "Operations › Inventory › Valuation setup",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Open scanner",
+   "Load current setting",
+   "Save valuation setting"
+  ],
+  "fieldsOnPage": 3,
+  "textLength": 448,
+  "form": null
+ },
+ {
+  "route": "/inventory/barcode",
+  "status": 200,
+  "domMs": 326,
+  "readyMs": 941,
+  "calls": 1,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 42
+  },
+  "crumb": "Operations › Inventory › Barcode lookup",
+  "tabs": 15,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Open scanner",
+   "Look up"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 118,
+  "form": null
+ },
+ {
+  "route": "/cmms/requests",
+  "status": 200,
+  "domMs": 178,
+  "readyMs": 1211,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/records/cmms.maintenance-requests",
+   "status": 200,
+   "ms": 272
+  },
+  "crumb": "Operations › Asset maintenance › Requests",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 2,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New",
+   "Request number ↑",
+   "Accept into work order"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 447,
+  "form": {
+   "dialog": false,
+   "controls": 7,
+   "required": 2,
+   "pickers": 1,
+   "selects": 1,
+   "dates": 0,
+   "labels": [
+    "Title *",
+    "Priority *",
+    "Asset",
+    "Requester name",
+    "Description",
+    "Requester email",
+    "Requester phone"
+   ],
+   "grew": 6,
+   "openMs": 940
+  }
+ },
+ {
+  "route": "/cmms/work-orders",
+  "status": 200,
+  "domMs": 434,
+  "readyMs": 1229,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "POST /api/cmms/v1/assets/search",
+   "status": 200,
+   "ms": 277
+  },
+  "crumb": "Operations › Asset maintenance › Work orders",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "New work order"
+  ],
+  "fieldsOnPage": 2,
+  "textLength": 368,
+  "form": {
+   "dialog": false,
+   "controls": 11,
+   "required": 1,
+   "pickers": 0,
+   "selects": 4,
+   "dates": 1,
+   "labels": [
+    "Title",
+    "Type",
+    "Priority",
+    "Asset",
+    "Due",
+    "Estimated hours",
+    "Description",
+    "Checklist (one required task per line)",
+    "Search work orders",
+    "Status"
+   ],
+   "grew": 9,
+   "openMs": 946
+  }
+ },
+ {
+  "route": "/cmms/assets",
+  "status": 200,
+  "domMs": 323,
+  "readyMs": 1178,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/spaces/tree",
+   "status": 200,
+   "ms": 299
+  },
+  "crumb": "Operations › Asset maintenance › Assets",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "Register asset"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 243,
+  "form": null
+ },
+ {
+  "route": "/cmms/spaces",
+  "status": 200,
+  "domMs": 494,
+  "readyMs": 1684,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/spaces/tree",
+   "status": 200,
+   "ms": 374
+  },
+  "crumb": "Operations › Asset maintenance › Spaces",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Refresh",
+   "New Top-Level Site",
+   "Add Child",
+   "▼",
+   "Edit",
+   "Delete",
+   "Update CAD Layer"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 761,
+  "form": {
+   "dialog": false,
+   "controls": 8,
+   "required": 3,
+   "pickers": 0,
+   "selects": 2,
+   "dates": 0,
+   "labels": [
+    "Space Code *",
+    "Space Type *",
+    "Space Name *",
+    "Parent Space",
+    "Floor Number",
+    "Gross Area (m²)",
+    "Net Area (m²)",
+    "BIM IFC GUID"
+   ],
+   "grew": 8,
+   "openMs": 978
+  }
+ },
+ {
+  "route": "/cmms/classifications",
+  "status": 200,
+  "domMs": 510,
+  "readyMs": 1317,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/records/cmms.classifications",
+   "status": 200,
+   "ms": 177
+  },
+  "crumb": "Operations › Asset maintenance › Classifications",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New",
+   "Start with the common asset classes (9)"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 197,
+  "form": {
+   "dialog": false,
+   "controls": 4,
+   "required": 2,
+   "pickers": 1,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Classification code *",
+    "Classification name *",
+    "Parent classification",
+    "Description"
+   ],
+   "grew": 3,
+   "openMs": 934
+  }
+ },
+ {
+  "route": "/cmms/schedules",
+  "status": 200,
+  "domMs": 295,
+  "readyMs": 1179,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/pm-schedules",
+   "status": 200,
+   "ms": 311
+  },
+  "crumb": "Operations › Asset maintenance › Preventive maintenance",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "New schedule",
+   "Generate due work",
+   "Pause"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 380,
+  "form": {
+   "dialog": false,
+   "controls": 12,
+   "required": 4,
+   "pickers": 0,
+   "selects": 3,
+   "dates": 1,
+   "labels": [
+    "Schedule name",
+    "Asset",
+    "Every",
+    "Interval unit",
+    "First due",
+    "Time zone",
+    "Work priority",
+    "Work order title (defaults to the name)",
+    "Estimated hours",
+    "Instructions",
+    "Checklist (one required task per line)"
+   ],
+   "grew": 12,
+   "openMs": 932
+  }
+ },
+ {
+  "route": "/cmms/inventory",
+  "status": 200,
+  "domMs": 439,
+  "readyMs": 1470,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/maps/nodes",
+   "status": 200,
+   "ms": 323
+  },
+  "crumb": "Operations › Asset maintenance › Parts",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": true,
+  "buttons": [
+   "Add part"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 292,
+  "form": null
+ },
+ {
+  "route": "/cmms/meters",
+  "status": 200,
+  "domMs": 375,
+  "readyMs": 1355,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/meters",
+   "status": 200,
+   "ms": 424
+  },
+  "crumb": "Operations › Asset maintenance › Meters",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Add meter"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 360,
+  "form": null
+ },
+ {
+  "route": "/cmms/calibration",
+  "status": 200,
+  "domMs": 318,
+  "readyMs": 1015,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/calibration/instruments",
+   "status": 200,
+   "ms": 167
+  },
+  "crumb": "Operations › Asset maintenance › Calibration",
+  "tabs": 17,
+  "viewTabs": 4,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No calibrated instruments yet",
+  "search": false,
+  "buttons": [
+   "Instruments due",
+   "Records & approval",
+   "Profiles",
+   "Master standards"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 294,
+  "form": null
+ },
+ {
+  "route": "/cmms/commissioning",
+  "status": 200,
+  "domMs": 201,
+  "readyMs": 975,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/commissioning/requests",
+   "status": 200,
+   "ms": 258
+  },
+  "crumb": "Operations › Asset maintenance › Commissioning",
+  "tabs": 17,
+  "viewTabs": 3,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Commissioning requests",
+   "Floor-walk audits",
+   "Tag lookup"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 227,
+  "form": null
+ },
+ {
+  "route": "/cmms/spares",
+  "status": 200,
+  "domMs": 622,
+  "readyMs": 1484,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "POST /api/cmms/v1/assets/search",
+   "status": 200,
+   "ms": 186
+  },
+  "crumb": "Operations › Asset maintenance › Visual spares",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Open diagrams"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 138,
+  "form": null
+ },
+ {
+  "route": "/cmms/sop",
+  "status": 200,
+  "domMs": 340,
+  "readyMs": 1148,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/sop/executions",
+   "status": 200,
+   "ms": 271
+  },
+  "crumb": "Operations › Asset maintenance › Work instructions",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "New procedure"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 186,
+  "form": {
+   "dialog": false,
+   "controls": 9,
+   "required": 5,
+   "pickers": 0,
+   "selects": 2,
+   "dates": 0,
+   "labels": [
+    "Code",
+    "Title",
+    "Safety-critical",
+    "Key",
+    "Title",
+    "Answer",
+    "Instruction",
+    "Then",
+    "Needs a second person’s countersign"
+   ],
+   "grew": 9,
+   "openMs": 925
+  }
+ },
+ {
+  "route": "/cmms/fleet",
+  "status": 200,
+  "domMs": 471,
+  "readyMs": 1380,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/fleet/readiness",
+   "status": 200,
+   "ms": 335
+  },
+  "crumb": "Operations › Asset maintenance › Fleet readiness",
+  "tabs": 17,
+  "viewTabs": 5,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Readiness",
+   "Red tags",
+   "Enrol assets",
+   "Checks",
+   "History"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 294,
+  "form": null
+ },
+ {
+  "route": "/cmms/request-links",
+  "status": 200,
+  "domMs": 476,
+  "readyMs": 1474,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/portal/submissions",
+   "status": 200,
+   "ms": 453
+  },
+  "crumb": "Operations › Asset maintenance › QR request links",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Create labels"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 360,
+  "form": null
+ },
+ {
+  "route": "/cmms/permits",
+  "status": 200,
+  "domMs": 460,
+  "readyMs": 1274,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/cmms/v1/permits",
+   "status": 200,
+   "ms": 239
+  },
+  "crumb": "Operations › Asset maintenance › Permits & LOTO",
+  "tabs": 17,
+  "viewTabs": 3,
+  "rows": 0,
+  "alerts": [],
+  "empty": "Nothing isolated",
+  "search": false,
+  "buttons": [
+   "Isolation board",
+   "Request a permit",
+   "Isolation procedures"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 253,
+  "form": null
+ },
+ {
+  "route": "/cmms/analytics",
+  "status": 200,
+  "domMs": 383,
+  "readyMs": 1560,
+  "calls": 6,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/analytics/v1/module-sources/23fbcffa-b28e-461f-946f-faebf45ad8d0/catalog",
+   "status": 200,
+   "ms": 189
+  },
+  "crumb": "Operations › Asset maintenance › Reliability",
+  "tabs": 17,
+  "viewTabs": 0,
+  "rows": 1,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 2,
+  "textLength": 167,
+  "form": null
+ },
+ {
+  "route": "/universal-manufacturing/boms",
+  "status": 200,
+  "domMs": 271,
+  "readyMs": 1151,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-manufacturing/v1/boms",
+   "status": 200,
+   "ms": 177
+  },
+  "crumb": "Operations › Manufacturing › BOMs",
+  "tabs": 4,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Remove",
+   "Add component",
+   "Save BOM",
+   "Where used",
+   "Add work center",
+   "Create routing"
+  ],
+  "fieldsOnPage": 15,
+  "textLength": 188,
+  "form": null
+ },
+ {
+  "route": "/universal-manufacturing/production",
+  "status": 200,
+  "domMs": 388,
+  "readyMs": 1134,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-manufacturing/v1/production-orders",
+   "status": 200,
+   "ms": 199
+  },
+  "crumb": "Operations › Manufacturing › Production",
+  "tabs": 4,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Create order"
+  ],
+  "fieldsOnPage": 5,
+  "textLength": 82,
+  "form": null
+ },
+ {
+  "route": "/universal-manufacturing/mrp",
+  "status": 200,
+  "domMs": 316,
+  "readyMs": 1092,
+  "calls": 1,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/apps",
+   "status": 200,
+   "ms": 99
+  },
+  "crumb": "Operations › Manufacturing › MRP preview",
+  "tabs": 4,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Run preview"
+  ],
+  "fieldsOnPage": 5,
+  "textLength": 35,
+  "form": null
+ },
+ {
+  "route": "/safety-operations/triage",
+  "status": 200,
+  "domMs": 302,
+  "readyMs": 1047,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/safety-operations/v1/hazards",
+   "status": 200,
+   "ms": 232
+  },
+  "crumb": "Operations › Safety › Triage",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "Nothing here",
+  "search": false,
+  "buttons": [
+   "Report a hazard"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 39,
+  "form": null
+ },
+ {
+  "route": "/safety-operations/reports",
+  "status": 200,
+  "domMs": 237,
+  "readyMs": 969,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/safety-operations/v1/hazards",
+   "status": 200,
+   "ms": 199
+  },
+  "crumb": "Operations › Safety › Reports",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "Nothing here",
+  "search": false,
+  "buttons": [
+   "Report a hazard",
+   "Export CSV"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 51,
+  "form": null
+ },
+ {
+  "route": "/safety-operations/insights",
+  "status": 200,
+  "domMs": 127,
+  "readyMs": 749,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/safety-operations/v1/hazards/insights",
+   "status": 200,
+   "ms": 97
+  },
+  "crumb": "Operations › Safety › Insights",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Report a hazard"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 100,
+  "form": null
+ },
+ {
+  "route": "/safety-operations/contractors",
+  "status": 200,
+  "domMs": 353,
+  "readyMs": 1089,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/safety-operations/v1/stop-work",
+   "status": 200,
+   "ms": 223
+  },
+  "crumb": "Operations › Safety › Contractors",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Report a hazard",
+   "Add company",
+   "Refresh roster"
+  ],
+  "fieldsOnPage": 3,
+  "textLength": 188,
+  "form": null
+ },
+ {
+  "route": "/orders/sales-orders",
+  "status": 200,
+  "domMs": 674,
+  "readyMs": 1420,
+  "calls": 8,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/product-catalogue/v1/lookups/catalogue-products",
+   "status": 200,
+   "ms": 399
+  },
+  "crumb": "Finance › Orders › Sales orders",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 185,
+  "form": {
+   "dialog": false,
+   "controls": 14,
+   "required": 10,
+   "pickers": 6,
+   "selects": 1,
+   "dates": 0,
+   "labels": [
+    "Organization unit *",
+    "Customer *",
+    "Customer name *",
+    "Order type",
+    "Fulfillment warehouse *",
+    "Currency",
+    "Customer PO reference",
+    "Line product *",
+    "Line product code *",
+    "Line product name *",
+    "Line quantity *",
+    "Line unit of measure *",
+    "Line unit price *",
+    "Line warehouse"
+   ],
+   "grew": 13,
+   "openMs": 952
+  }
+ },
+ {
+  "route": "/orders/fulfillment",
+  "status": 200,
+  "domMs": 558,
+  "readyMs": 1313,
+  "calls": 5,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/universal-inventory/v1/lookups/inventory-warehouses",
+   "status": 200,
+   "ms": 165
+  },
+  "crumb": "Finance › Orders › Fulfillment",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 136,
+  "form": {
+   "dialog": false,
+   "controls": 6,
+   "required": 4,
+   "pickers": 2,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Sales order *",
+    "Ship-from warehouse *",
+    "Carrier",
+    "Tracking number",
+    "Order line *",
+    "Shipped quantity *"
+   ],
+   "grew": 5,
+   "openMs": 958
+  }
+ },
+ {
+  "route": "/orders/invoices",
+  "status": 200,
+  "domMs": 246,
+  "readyMs": 954,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/runtime/manifest/current",
+   "status": 200,
+   "ms": 106
+  },
+  "crumb": "Finance › Orders › Invoices",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 108,
+  "form": {
+   "dialog": false,
+   "controls": 3,
+   "required": 2,
+   "pickers": 1,
+   "selects": 0,
+   "dates": 1,
+   "labels": [
+    "Sales order *",
+    "Due date *",
+    "Notes"
+   ],
+   "grew": 2,
+   "openMs": 936
+  }
+ },
+ {
+  "route": "/orders/credit-memos",
+  "status": 200,
+  "domMs": 409,
+  "readyMs": 1170,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/business-partners/v1/lookups/business-partners-parties",
+   "status": 200,
+   "ms": 233
+  },
+  "crumb": "Finance › Orders › Credit memos",
+  "tabs": 5,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No records yet",
+  "search": true,
+  "buttons": [
+   "New"
+  ],
+  "fieldsOnPage": 1,
+  "textLength": 104,
+  "form": {
+   "dialog": false,
+   "controls": 9,
+   "required": 5,
+   "pickers": 4,
+   "selects": 0,
+   "dates": 0,
+   "labels": [
+    "Customer *",
+    "Sales order",
+    "Customer invoice",
+    "Currency",
+    "Reason *",
+    "Line quantity *",
+    "Line unit price *",
+    "Line reason *",
+    "Line product"
+   ],
+   "grew": 8,
+   "openMs": 944
+  }
+ },
+ {
+  "route": "/analytics/places",
+  "status": 200,
+  "domMs": 291,
+  "readyMs": 1237,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/control/configuration/catalogues",
+   "status": 200,
+   "ms": 175
+  },
+  "crumb": "Intelligence › Analytics › Places",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "not set up yet: an administrator activates the Operations metric catalogue in Configuration Studio → Catalogues",
+  "search": false,
+  "buttons": [
+   "Refresh",
+   "Estate"
+  ],
+  "fieldsOnPage": 2,
+  "textLength": 570,
+  "form": null
+ },
+ {
+  "route": "/analytics/explore",
+  "status": 200,
+  "domMs": 229,
+  "readyMs": 1217,
+  "calls": 3,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/analytics/v1/chart-views",
+   "status": 200,
+   "ms": 451
+  },
+  "crumb": "Intelligence › Analytics › Explore",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 1,
+  "textLength": 272,
+  "form": null
+ },
+ {
+  "route": "/analytics/dashboards",
+  "status": 200,
+  "domMs": 449,
+  "readyMs": 1280,
+  "calls": 2,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/analytics/v1/dashboards",
+   "status": 200,
+   "ms": 278
+  },
+  "crumb": "Intelligence › Analytics › Dashboards",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No dashboards yet",
+  "search": false,
+  "buttons": [],
+  "fieldsOnPage": 0,
+  "textLength": 221,
+  "form": null
+ },
+ {
+  "route": "/analytics/reports",
+  "status": 200,
+  "domMs": 304,
+  "readyMs": 1235,
+  "calls": 4,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/analytics/v1/dashboards",
+   "status": 200,
+   "ms": 391
+  },
+  "crumb": "Intelligence › Analytics › Reports",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 0,
+  "alerts": [],
+  "empty": "No reports yet",
+  "search": false,
+  "buttons": [
+   "Create report"
+  ],
+  "fieldsOnPage": 2,
+  "textLength": 557,
+  "form": null
+ },
+ {
+  "route": "/analytics/sources",
+  "status": 200,
+  "domMs": 431,
+  "readyMs": 2741,
+  "calls": 75,
+  "failed": [],
+  "slowest": {
+   "path": "GET /api/analytics/v1/datasets/by-mapping/518124f8-3ca0-495d-b4b8-973f1909dd7b",
+   "status": 200,
+   "ms": 1448
+  },
+  "crumb": "Intelligence › Analytics › Sources",
+  "tabs": 6,
+  "viewTabs": 0,
+  "rows": 71,
+  "alerts": [],
+  "empty": null,
+  "search": false,
+  "buttons": [
+   "Map fields",
+   "Schedule",
+   "Build now"
+  ],
+  "fieldsOnPage": 0,
+  "textLength": 9013,
+  "form": null
+ }
+]

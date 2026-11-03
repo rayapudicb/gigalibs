@@ -58,3 +58,18 @@ dialog and cancels (`e2e/specs/uat-retest-wi146-150.spec.ts`). Runs, screenshots
 Tracker after the retest: 50 bugs — 35 fixed on UAT, 7 fixed in branch, 4 retest (need data or an operator login),
 2 owner actions (load the starter absence types and asset classes: one click each), 1 open (QA-038 journey times),
 1 closed.
+
+## 2026-11-03 — retest and regression on UAT `38aa9017` (owner deploy of the retest fixes)
+
+| Suite | Result |
+|---|---|
+| Retest (22 checks) | 19 pass, 0 fail; 3 not testable read-only (QA-022 dialogs: no quote, requisition or fulfillment on UAT) |
+| Screen bench (129) | failing screens 8 → 5; nothing left that never settles. Remaining: four Workflows screens answer 503 by design while Workflow Studio is not in the UAT stack (QA-009, owner decision), Settings › General configured-field manifest 404 handled on screen (QA-011) |
+| Journeys, dry (27) | 15 meet (A4 now meets), 3 over (A1, T1, S2 — QA-038), 5 too slow (B1, B2, B4, C1, C2), 1 blocked (T4 until the starter absence types are loaded — owner action QA-026), 3 not run |
+| Read-only e2e (50 tests) | 50 pass (Analytics pilot and the tour included) |
+
+Verified on UAT: QA-012 (Analytics catalog 200 on all three screens), QA-013 (Connections settles in 1.3 s), QA-048
+(5 unit options), QA-049, QA-050, QA-031 (books help 6 of 6). Logs on 38aa9017 clean. Tracker: 50 bugs — 42 fixed on
+UAT, 4 retest (need records or an operator login), 2 owner actions, 1 open (QA-038), 1 closed. Runs and screenshots:
+`Claude outputs/UX journeys 2026-11-02/` (`retest-38aa9017/`, `regression-38aa9017/`, `screenshots-2026-11-03-r3/`);
+bench `docs/plans/ux-benchmark-2026-11-03-r3/`. Queue item 0 is complete.

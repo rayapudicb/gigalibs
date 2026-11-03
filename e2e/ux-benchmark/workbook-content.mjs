@@ -2,7 +2,7 @@
 // the modules, the QA bug tracker and the UX user stories. Everything measured comes from the data files instead.
 
 /** The release each benchmark folder (docs/plans/ux-benchmark-<date>) measured on UAT. */
-export const BENCH_RELEASES = { '2026-11-02': 'c88a88d4', '2026-11-03': '213fde2d', '2026-11-03-r2': '02b3353a' };
+export const BENCH_RELEASES = { '2026-11-02': 'c88a88d4', '2026-11-03': '213fde2d', '2026-11-03-r2': '02b3353a', '2026-11-03-r3': '38aa9017' };
 
 /** route | persona | I want to … | so that … */
 const SCREEN_LINES = `
@@ -958,9 +958,9 @@ export const BUGS = [
     fix: "The pipeline principal also holds the source's module read permission (the person's own permission is still checked first); regression test in dataset.spec.ts.",
     files: "modules/analytics-studio/apps/api/src/datasets/dataset.service.ts; module-measure-compiler.service.ts; dataset.spec.ts",
     wi: 'WI-OI-146 / WI-OI-147',
-    status: "Fixed - in branch",
-    retestResult: "Retest 2026-11-03 on 02b3353a: still refused on /analytics, /cmms/analytics and /gigaops/analytics (catalog 403). The admin session holds 290 permissions covering cmms.analytics.read and workforce.positions.read; the new log showed the refused principal carried 2 permissions — the module fact pipeline, not the person.",
-    fixedIn: "branch (retest fixes after 02b3353a, awaiting deploy)",
+    status: "Fixed - on UAT",
+    retestResult: "Retest 2026-11-03 on 38aa9017: the Analytics catalog answers 200 on /analytics, /cmms/analytics and /gigaops/analytics for the workspace admin; no \"Module source refused\" in the log.",
+    fixedIn: "38aa9017 (on UAT since 2026-11-03)",
     retest: 'Open the three screens as the workspace admin.',
   },
   {
@@ -979,9 +979,9 @@ export const BUGS = [
     fix: "Connections reads the answer, refused or not.",
     files: "apps/workflow-platform/app/(app)/connections/page.tsx",
     wi: 'WI-OI-146 / WI-OI-149',
-    status: "Fixed - in branch",
-    retestResult: "Retest 2026-11-03 on 02b3353a: still never settles; one request stays open: GET /api/workflow-studio/workflows. It answers 503 in about 1 s, but the screen never read the refusal, and the browser keeps an unread answer open (proven on UAT: the same call settles once its body is read).",
-    fixedIn: "branch (retest fixes after 02b3353a, awaiting deploy)",
+    status: "Fixed - on UAT",
+    retestResult: "Retest 2026-11-03 on 38aa9017: Connections settles in 1.3 s; the Workflow Studio refusal is read and no request stays open.",
+    fixedIn: "38aa9017 (on UAT since 2026-11-03)",
     retest: 'Bench the four screens after the deploy.',
   },
   {
@@ -1214,9 +1214,9 @@ export const BUGS = [
     fix: "Warehouse owning unit is a picker over the organization (and takes the only unit automatically).",
     files: '—',
     wi: 'WI-OI-149',
-    status: "Fixed - in branch",
-    retestResult: "Retest 2026-11-03 on 02b3353a: the Owning organization unit is a picker but offered nothing: Inventory asked its own API for the organization lookup (404), blocking journey A4 — QA-048, fixed in branch.",
-    fixedIn: "branch (retest fixes after 02b3353a, awaiting deploy)",
+    status: "Fixed - on UAT",
+    retestResult: "Retest 2026-11-03 on 38aa9017: the Owning organization unit picker offers the 5 workspace units (QA-048 fixed).",
+    fixedIn: "38aa9017 (on UAT since 2026-11-03)",
     retest: 'New warehouse shows my unit.',
   },
   {
@@ -1373,9 +1373,9 @@ export const BUGS = [
     fix: "Help text on every required field of AR customers and invoices, standard costs, SPEED routes, catalogue masters and lots.",
     files: 'modules/*/dictionary',
     wi: 'WI-OI-150',
-    status: "Fixed - in branch",
-    retestResult: "Static scan 02b3353a: seven of the eight windows have help; Accounting books still had none — added in branch. Windows without any help 24 → 17 (the rest are read-only lists).",
-    fixedIn: "branch (retest fixes after 02b3353a, awaiting deploy)",
+    status: "Fixed - on UAT",
+    retestResult: "Static scan 38aa9017: Accounting books has help on all 6 fields; all eight windows now have help (windows without any help 24 → 16, the rest read-only lists).",
+    fixedIn: "38aa9017 (on UAT since 2026-11-03)",
     retest: 'Hover each required field.',
   },
   {
@@ -1515,7 +1515,7 @@ export const BUGS = [
     files: '—',
     wi: 'WI-OI-149',
     status: "Open",
-    retestResult: "Journeys 02b3353a (dry run): A5 meets (29.6 s); A1 25.2 s (target 20), T1 18.6 s (target 15) and S2 11.1 s (target 10) are still over.",
+    retestResult: "Journeys 38aa9017 (dry run): A5 meets (29.6 s → still meets); A1 25.8 s (target 20), T1 18.8 s (target 15) and S2 11.0 s (target 10) are still over.",
     fixedIn: "02b3353a (on UAT since 2026-11-03)",
     retest: 'Journeys A1, A5, T1, S2.',
   },
@@ -1727,9 +1727,9 @@ export const BUGS = [
     files: 'modules/universal-inventory/web/src/UniversalInventoryWorkspace.tsx',
     wi: 'WI-OI-149',
     found: '2026-11-03 · 02b3353a',
-    status: 'Fixed - in branch',
-    retestResult: 'Found by the retest of QA-024 (journey A4 blocked).',
-    fixedIn: 'branch (retest fixes after 02b3353a, awaiting deploy)',
+    status: "Fixed - on UAT",
+    retestResult: "Retest 2026-11-03 on 38aa9017: the warehouse owning unit picker offers 5 units; no organization lookup 404.",
+    fixedIn: "38aa9017 (on UAT since 2026-11-03)",
     retest: 'Journey A4: the unit picker lists the units.',
   },
   {
@@ -1748,9 +1748,9 @@ export const BUGS = [
     files: 'modules/universal-orders/dictionary/windows.mjs',
     wi: 'WI-OI-149',
     found: '2026-11-03 · 02b3353a',
-    status: 'Fixed - in branch',
-    retestResult: 'Found by the retest of QA-023.',
-    fixedIn: 'branch (retest fixes after 02b3353a, awaiting deploy)',
+    status: "Fixed - on UAT",
+    retestResult: "Retest 2026-11-03 on 38aa9017: a new credit memo picks its Line product.",
+    fixedIn: "38aa9017 (on UAT since 2026-11-03)",
     retest: 'New credit memo: Line product is a picker.',
   },
   {
@@ -1769,9 +1769,9 @@ export const BUGS = [
     files: 'modules/universal-orders/dictionary/windows.mjs; modules/universal-orders/apps/api/src/orders/orders-record-adapters.ts',
     wi: 'WI-OI-149',
     found: '2026-11-03 · 02b3353a',
-    status: 'Fixed - in branch',
-    retestResult: 'Found by the retest of QA-022 (dictionary review).',
-    fixedIn: 'branch (retest fixes after 02b3353a, awaiting deploy)',
+    status: "Fixed - on UAT",
+    retestResult: "Retest 2026-11-03 on 38aa9017: a new fulfillment picks its Sales order and no longer mentions a UUID; Order line is filled from the order picked.",
+    fixedIn: "38aa9017 (on UAT since 2026-11-03)",
     retest: 'New fulfillment: pick the sales order; Order line fills.',
   },
 ];
@@ -1787,6 +1787,10 @@ export const REGRESSION_RUNS = [
   { release: '02b3353a', date: '2026-11-03', suite: 'module-analytics-pilot', checks: 1, passed: 0, failed: 1, result: 'Fail', notes: 'ANALYTICS_SOURCE_PERMISSION on the CMMS pilot source: the QA-012 cause (fixed in branch).', bugs: 'QA-012' },
   { release: '02b3353a', date: '2026-11-03', suite: 'uat-tour-automate-intelligence', checks: 1, passed: 0, failed: 1, result: 'Fail', notes: 'Test fault, not a screen: 8 steps × 9 s pauses could never fit the 60 s timeout. Timeout sized to the steps in branch; passes on UAT (1.4 min).', bugs: '' },
   { release: '02b3353a', date: '2026-11-03', suite: 'Retest of the fixes (uat-retest-wi146-150)', checks: 19, passed: 14, failed: 2, result: 'Partly', notes: '2 fail (QA-012, QA-013, both fixed in branch); 3 not testable read-only (no quote, requisition or fulfillment on UAT to open).', bugs: 'QA-012, QA-013, QA-022' },
+  { release: '38aa9017', date: '2026-11-03', suite: 'Screen benchmark (bench.mjs)', checks: 129, passed: 124, failed: 5, result: 'Partly', notes: 'Fixed since 02b3353a: Inventory (QA-048), Analytics, CMMS reliability and Workforce analytics (QA-012); Connections now settles (QA-013) — nothing left that never settles. Remaining: the four Workflows screens answer 503 by design while Workflow Studio is not in the UAT stack (QA-009, owner decision: start it or hide the entries), and Settings › General asks for an absent configured-field manifest (404 handled on screen, QA-011).', bugs: 'QA-009, QA-011' },
+  { release: '38aa9017', date: '2026-11-03', suite: 'Persona journeys, dry (27)', checks: 27, passed: 15, failed: 9, result: 'Partly', notes: '15 meet (A4 now meets), 3 over target (A1, T1, S2), 5 too slow (B1, B2, B4, C1, C2: 10+ required fields), 1 blocked (T4: no absence types until the starter set is loaded — owner action QA-026), 3 not run (operator login; nothing to request).', bugs: 'QA-038, QA-026' },
+  { release: '38aa9017', date: '2026-11-03', suite: 'Read-only e2e (5 specs, 50 tests)', checks: 50, passed: 50, failed: 0, result: 'Pass', notes: 'cross-tenant-isolation 4, uat-preview-modules 43, uat-screen-inventory 1, uat-tour-automate-intelligence 1, module-analytics-pilot 1 — all pass.', bugs: '' },
+  { release: '38aa9017', date: '2026-11-03', suite: 'Retest of the fixes (uat-retest-wi146-150)', checks: 22, passed: 19, failed: 0, result: 'Pass', notes: 'All six retest fixes verified (QA-012, QA-013, QA-048, QA-049, QA-050; QA-031 by static scan). 3 not testable read-only: QA-022 dialogs need a quote, requisition and fulfillment on UAT.', bugs: 'QA-022' },
 ];
 
 /** Journey → the bugs behind its verdict, and the plan's estimate after the work (seconds). */

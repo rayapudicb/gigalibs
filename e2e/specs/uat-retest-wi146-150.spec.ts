@@ -188,6 +188,43 @@ test.describe('WI-OI-146–150 retest (read-only)', () => {
   test('QA-024/025 warehouse owning unit is a picker', async ({ page }) => {
     await formPickers(page, newCheck('warehouse-new', 'QA-024', '/inventory'), [/organization unit/i]);
   });
+  test('QA-049 credit memo line product is a picker', async ({ page }) => {
+    await formPickers(page, newCheck('credit-memo-product', 'QA-049', '/orders/credit-memos'), [/Line product/]);
+  });
+  test('QA-050 a new fulfillment picks the sales order and asks for no line UUID', async ({ page }) => {
+    const check = newCheck('fulfillment-new', 'QA-050', '/orders/fulfillment');
+    await formPickers(page, check, [/Sales order/]);
+    // formPickers cancelled the form; open it again to read the help text the person sees.
+    const scope = await openNew(page);
+    const text = scope ? ((await scope.textContent().catch(() => '')) ?? '') : '';
+    if (/UUID/i.test(text)) record(check, false, 'The form still mentions a UUID.');
+    await cancel(page);
+  });
+  test('QA-048 the warehouse owning unit picker lists the units', async ({ page }) => {
+    const check = newCheck('warehouse-unit-options', 'QA-048', '/inventory');
+    await open(page, check);
+    const scope = await openNew(page);
+    if (!scope) {
+      check.observed.push('No New button on the screen.');
+      await shot(page, check);
+      return;
+    }
+    const picker = scope.getByRole('combobox', { name: /organization unit/i }).first();
+    let options = 0;
+    if (await picker.count()) {
+      await picker.click();
+      options = await page
+        .locator('[role=listbox] [role=option], [role=option]')
+        .first()
+        .waitFor({ state: 'visible', timeout: 5000 })
+        .then(() => page.locator('[role=listbox] [role=option], [role=option]').count())
+        .catch(() => 0);
+    }
+    await shot(page, check);
+    const lookup404 = check.failedCalls.some((call) => /lookups\/organization-units → 404/.test(call));
+    record(check, options > 0 && !lookup404, `Unit options offered: ${options}; organization lookup 404: ${lookup404}`);
+    await cancel(page);
+  });
   test('QA-025 organization unit options answer for a member', async ({ page }) => {
     const check = newCheck('unit-options', 'QA-025', '/api/control/v1/lookups/organization-units');
     const response = await page.request.get('/api/control/v1/lookups/organization-units');
