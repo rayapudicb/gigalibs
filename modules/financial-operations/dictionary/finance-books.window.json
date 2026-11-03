@@ -41,7 +41,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "A short code for the book, for example MAIN or IFRS."
         },
         {
           "fieldKey": "book-name",
@@ -52,7 +53,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "The name people see, for example Main ledger."
         },
         {
           "fieldKey": "currency-code",
@@ -63,7 +65,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "The currency the book is kept in, for example INR or USD."
         },
         {
           "fieldKey": "costing-method",
@@ -75,7 +78,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "referenceKey": "costing"
+          "referenceKey": "costing",
+          "helpText": "How stock is valued in this book."
         },
         {
           "fieldKey": "is-primary",
@@ -86,7 +90,8 @@
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
-          "maskOnDisplay": false
+          "maskOnDisplay": false,
+          "helpText": "The book used when a document names none."
         },
         {
           "fieldKey": "status",
@@ -98,7 +103,8 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "referenceKey": "book-statuses"
+          "referenceKey": "book-statuses",
+          "helpText": "Inactive books take no new postings."
         }
       ],
       "relationships": [],

@@ -308,18 +308,23 @@ export class DatasetService {
     return result.rows.map((r: any) => this.toDatasetSummary(r));
   }
 
-  /** WI-OI-131 B8: rebuild without user principal (module fact pipeline). */
+  /**
+   * WI-OI-131 B8: rebuild without user principal (module fact pipeline). The build re-checks source access, so the
+   * pipeline also holds the source's module read permission (QA-012: without it every module catalog answered 403,
+   * whoever asked); the caller has already checked that permission against the person.
+   */
   async buildModuleDataset(
     tenantId: string,
     mappingId: string,
     mappingVersion: number,
+    sourceReadPermission: string,
   ): Promise<{ id: string }> {
     const principal: AnalyticsPrincipal = {
       tenantId,
       subject: 'module-measure-compiler',
       sessionId: 'module-pipeline',
       authVersion: 0,
-      permissions: ['analytics:mappings:write', 'analytics:datasets:write'],
+      permissions: ['analytics:mappings:write', 'analytics:datasets:write', sourceReadPermission],
       roles: [],
       persona: 'PLATFORM_OPERATOR',
       orgScope: { mode: 'FLAT_TENANT' },

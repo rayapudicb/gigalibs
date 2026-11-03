@@ -19,6 +19,7 @@ import {
   JOURNEY_AFTER,
   JOURNEY_BUGS,
   MODULES,
+  REGRESSION_RUNS,
   SCREENS,
   UNMEASURED,
   UX_STORIES,
@@ -46,10 +47,11 @@ const git = (args) => {
 
 // ---------------------------------------------------------------- data
 // The first benchmark folder is the baseline (with the KLM plan and the before journey run); the newest is "now".
+// A second run on the same day is `ux-benchmark-<date>-r2`, which sorts after `ux-benchmark-<date>`.
 const BENCH_RUNS = readdirSync(join(ROOT, 'docs/plans'))
   .filter(
     (name) =>
-      /^ux-benchmark-\d{4}-\d{2}-\d{2}$/.test(name) &&
+      /^ux-benchmark-\d{4}-\d{2}-\d{2}(-r\d+)?$/.test(name) &&
       existsSync(join(ROOT, 'docs/plans', name, 'live.json')),
   )
   .sort();
@@ -582,6 +584,12 @@ add(
   'QA bug tracker',
   'Cross-module',
   'Every defect and gap found, one row per module, with reproduction, root cause, fix, status and retest.',
+  'FFC0392B',
+);
+add(
+  'Regression & retest',
+  'Cross-module',
+  'Each regression suite run on UAT per release, and every read-only retest check of the fixes with what was seen.',
   'FFC0392B',
 );
 add(
@@ -1463,6 +1471,8 @@ for (const module of MODULES) {
     'Change log',
     `Branch ${BRANCH}; fixes in ${FIX_COMMIT}; this workbook generated at ${HEAD}.`,
   );
+  // Every commit the running release contains is on UAT (the release the newest bench ran on).
+  const onUat = new Set(git(`log --format=%h 268384f8^..${CURRENT_RELEASE}`).split('\n').filter(Boolean));
   const commits = git('log --date=short --format=%h%x09%ad%x09%s 268384f8^..HEAD')
     .split('\n')
     .filter(Boolean)
@@ -1480,11 +1490,7 @@ for (const module of MODULES) {
       hash,
       date,
       subject,
-      ['268384f8', 'c88a88d4'].includes(hash)
-        ? 'On UAT'
-        : ['59c0fe7f', '88e493d7'].includes(hash)
-          ? 'On UAT (88e493d7)'
-          : "In branch, awaiting the owner's deploy",
+      onUat.has(hash) ? `On UAT (${CURRENT_RELEASE})` : "In branch, awaiting the owner's deploy",
     ]),
   );
   const NOTES = [
@@ -1601,6 +1607,79 @@ for (const module of MODULES) {
   );
   ws.getColumn(1).width = 70;
   SHEETS['Change log'].rows = { first: commitTable.first, last: start + fileRows.length };
+}
+
+// ---------------------------------------------------------------- regression and retest
+{
+  const ws = SHEETS['Regression & retest'].ws;
+  title(
+    ws,
+    'Regression & retest',
+    `Suites run on UAT per release, then the read-only retest of each fix (latest run: ${CURRENT_RELEASE}). Nothing here saved data on UAT.`,
+  );
+  const suites = table(
+    ws,
+    4,
+    [
+      { header: 'Release', width: 11 },
+      { header: 'Date', width: 11 },
+      { header: 'Suite', width: 34 },
+      { header: 'Checks', width: 9 },
+      { header: 'Passed', width: 9 },
+      { header: 'Failed', width: 9 },
+      { header: 'Result', width: 16 },
+      { header: 'What failed and why', width: 90 },
+      { header: 'Bugs', width: 16 },
+    ],
+    REGRESSION_RUNS.map((run) => [
+      run.release,
+      run.date,
+      run.suite,
+      run.checks,
+      run.passed,
+      run.failed,
+      run.result,
+      run.notes,
+      run.bugs ?? '',
+    ]),
+  );
+  colorize(ws, `G${suites.first}:G${suites.last}`);
+  // The newest full retest run (diagnostic single-check runs stay on disk next to it).
+  const retestDirectory = join(ROOT, 'e2e/artifacts/retest');
+  const retestRuns = existsSync(retestDirectory)
+    ? readdirSync(retestDirectory)
+        .filter((file) => file.endsWith('.json'))
+        .sort()
+        .map((file) => ({ file, ...readJson(join(retestDirectory, file)) }))
+        .filter((run) => run.checks.length >= 10)
+    : [];
+  const retest = retestRuns.at(-1);
+  const at = suites.last + 3;
+  put(ws, at - 1, 1, retest ? `Retest checks: e2e/artifacts/retest/${retest.file}` : 'No retest run yet.', { bold: true, wrap: false });
+  const checks = table(
+    ws,
+    at,
+    [
+      { header: 'Bug', width: 11 },
+      { header: 'Check', width: 22 },
+      { header: 'Where', width: 34 },
+      { header: 'Verdict', width: 16 },
+      { header: 'What was seen', width: 90 },
+      { header: 'Failing calls', width: 50 },
+      { header: 'Screenshot', width: 40 },
+    ],
+    (retest?.checks ?? []).map((check) => [
+      check.bug,
+      check.id,
+      check.route,
+      check.verdict,
+      check.observed.join(' | '),
+      [...new Set(check.failedCalls)].join('; '),
+      check.shot ? `e2e/artifacts/retest/${check.shot}` : '',
+    ]),
+  );
+  colorize(ws, `D${checks.first}:D${checks.last}`);
+  SHEETS['Regression & retest'].rows = { first: suites.first, last: checks.last };
 }
 
 // ---------------------------------------------------------------- screen inventory

@@ -162,8 +162,13 @@ export default function ConnectionsPage() {
         fetch('/api/connectors-hub/stats').then(safeJson),
       ]);
 
+      // QA-013: read the answer even when it is a refusal; an unread body keeps the request open and the screen never
+      // settles.
       fetch('/api/workflow-studio/workflows')
-        .then(async (res) => (res.ok ? res.json() : null))
+        .then(async (res) => {
+          const body = await res.json().catch(() => null);
+          return res.ok ? body : null;
+        })
         .then((body) => setWorkflowTargets(Array.isArray(body?.workflows) ? body.workflows : null))
         .catch(() => setWorkflowTargets(null));
       if (connRes.connections) setConnections(connRes.connections);

@@ -35,9 +35,13 @@ export function windowSource(builderFor) {
   // 1. Books (set up from the Finance page's set-up panel)
   const B = 'finance.books';
   const bf = [
-    field(B, 'book-code', 'Code'), field(B, 'book-name', 'Name'), field(B, 'currency-code', 'Currency'),
-    field(B, 'costing-method', 'Costing method', 'SELECT', { ref: 'costing' }), field(B, 'is-primary', 'Primary book', 'BOOLEAN'),
-    field(B, 'status', 'Status', 'SELECT', { ref: 'book-statuses' }),
+    // QA-031 (retest 2026-11-03): every field of the book explains itself.
+    field(B, 'book-code', 'Code', 'TEXT', { help: 'A short code for the book, for example MAIN or IFRS.' }),
+    field(B, 'book-name', 'Name', 'TEXT', { help: 'The name people see, for example Main ledger.' }),
+    field(B, 'currency-code', 'Currency', 'TEXT', { help: 'The currency the book is kept in, for example INR or USD.' }),
+    field(B, 'costing-method', 'Costing method', 'SELECT', { ref: 'costing', help: 'How stock is valued in this book.' }),
+    field(B, 'is-primary', 'Primary book', 'BOOLEAN', { help: 'The book used when a document names none.' }),
+    field(B, 'status', 'Status', 'SELECT', { ref: 'book-statuses', help: 'Inactive books take no new postings.' }),
   ];
   windows['finance-books'] = window('finance-books', 'Accounting books', 'Books', 'The books your organization keeps its ledger in.', 'finance:read',
     dictionary('finance-books', 'Accounting books', B, [entity(B, 'Books')], bf, [], [values('costing', COSTING), values('book-statuses', BOOK_STATUSES)], [

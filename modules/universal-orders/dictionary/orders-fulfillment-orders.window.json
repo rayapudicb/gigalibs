@@ -116,7 +116,7 @@
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
-          "helpText": "Sales order line UUID to ship.",
+          "helpText": "Filled from the sales order you pick (its first line).",
           "writePermission": "orders:fulfill"
         },
         {
@@ -183,7 +183,10 @@
         {
           "referenceKey": "sales-order-ref",
           "referenceType": "SEARCH_LOOKUP",
-          "resolverKey": "orders-sales-orders"
+          "resolverKey": "orders-sales-orders",
+          "fills": {
+            "line-id": "line-order-line-id"
+          }
         }
       ],
       "validationRules": [],

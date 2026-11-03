@@ -42,6 +42,9 @@ const pause = Number(process.env.UAT_TOUR_PAUSE_MS ?? 9000);
 
 test('Automate & Run, Intelligence, Value and Data Contracts', async ({ page, baseURL }) => {
   test.skip(!hasUatLogin, 'Set E2E_UAT_ADMIN_EMAIL and E2E_UAT_ADMIN_PASSWORD.');
+  // Eight captioned steps of `pause` each, plus up to 10 s for each page to settle and the sign-in: the default 60 s
+  // timeout could never cover them (the tour failed on time, not on a screen).
+  test.setTimeout(STEPS.length * (pause + 10_000) + 30_000);
   await signInToUat(page, new URL(baseURL ?? 'http://127.0.0.1:5180').origin);
   for (const [index, step] of STEPS.entries()) {
     await page.goto(step.route);

@@ -30,7 +30,7 @@ export const JOURNEYS: readonly JourneyDefinition[] = [
   { id: 'P2', persona: 'Platform operator', module: 'Platform Control Tower', outcome: 'Enable a module for a workspace', targetSeconds: 10, route: '/platform-admin', kind: 'not-run', reason: 'Needs a platform operator login.' },
   { id: 'A1', persona: 'Workspace admin', module: 'Settings', outcome: 'Invite a person with a role', targetSeconds: 20, route: '/settings', kind: 'inline-form' },
   { id: 'A2', persona: 'Workspace admin', module: 'Settings', outcome: 'Add an organization unit', targetSeconds: 30, route: '/settings/organization', kind: 'view' },
-  { id: 'A3', persona: 'Workspace admin', module: 'Settings', outcome: 'Turn on a module for the workspace', targetSeconds: 10, route: '/settings/plan', kind: 'not-run', reason: 'Not possible today: only a platform operator can enable modules (WI-OI-147).' },
+  { id: 'A3', persona: 'Workspace admin', module: 'Settings', outcome: 'Turn on a module for the workspace', targetSeconds: 10, route: '/settings/plan', kind: 'not-run', reason: 'A workspace admin requests a module on Plan & entitlements and a platform operator turns it on (QA-035); the walkthrough workspace already has every module on, so there is nothing to request.' },
   { id: 'A4', persona: 'Workspace admin', module: 'Inventory', outcome: 'Create a warehouse', targetSeconds: 30, route: '/inventory', kind: 'create' },
   { id: 'A5', persona: 'Workspace admin', module: 'Products', outcome: 'Create a product with its unit', targetSeconds: 30, route: '/products', kind: 'create' },
   { id: 'A6', persona: 'Workspace admin', module: 'Asset maintenance', outcome: 'Register an asset', targetSeconds: 30, route: '/cmms/assets', kind: 'create' },

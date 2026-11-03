@@ -132,7 +132,7 @@ function salesQuoteToWindow(quote: SalesQuoteV1): RecordValues {
   return values;
 }
 
-function salesOrderToWindow(order: SalesOrderV1): RecordValues {
+export function salesOrderToWindow(order: SalesOrderV1): RecordValues {
   const line = order.lines?.[0];
   const values: Record<string, unknown> = {
     id: order.id,
@@ -156,6 +156,8 @@ function salesOrderToWindow(order: SalesOrderV1): RecordValues {
     values['line-uom-id'] = line.uomId;
     values['line-unit-price-minor'] = line.unitPriceMinor;
     values['line-warehouse-id'] = line.warehouseId;
+    // The first line's id, for the sales order picker on a fulfillment (not a window field, so screens never get it).
+    values['line-id'] = line.id;
   }
   return values;
 }
@@ -707,7 +709,7 @@ function documentLookup(key: string, adapter: RecordAdapter, numberField: string
         const number = typeof record[numberField] === 'string' ? (record[numberField] as string) : String(record.id);
         const customer = typeof record['customer-name'] === 'string' ? (record['customer-name'] as string) : '';
         const attributes: Record<string, string> = {};
-        for (const field of ['order-id', 'customer-id', 'customer-name']) {
+        for (const field of ['order-id', 'customer-id', 'customer-name', 'line-id']) {
           if (typeof record[field] === 'string' && record[field]) attributes[field] = record[field] as string;
         }
         return { value: String(record.id), label: customer ? `${number} (${customer})` : number, attributes };

@@ -140,13 +140,13 @@ export class ModuleMeasureCompilerService {
         contract,
         compiled,
       });
-      await this.datasets.buildModuleDataset(tenantId, mappingId, mappingVersion);
+      await this.datasets.buildModuleDataset(tenantId, mappingId, mappingVersion, contract.requiredReadPermission);
       await this.datasets.pointModelAtLatestDataset(tenantId, existing.rows[0].id, mappingId);
       return { mappingId, semanticModelId: existing.rows[0].id };
     }
 
     const mappingId = await this.createPublishedMapping(tenantId, connectionId, contract, compiled);
-    await this.datasets.buildModuleDataset(tenantId, mappingId, 1);
+    await this.datasets.buildModuleDataset(tenantId, mappingId, 1, contract.requiredReadPermission);
     const datasetId = await this.datasets.latestDatasetVersionId(tenantId, mappingId);
     if (!datasetId) throw new Error('Module dataset build did not produce a version.');
     const model = await this.datasets.createModuleSemanticModel({

@@ -90,6 +90,8 @@ export function windowSource(builderFor) {
   const WAREHOUSE_REF = lookup('warehouse-ref', 'inventory-warehouses');
   // WI-OI-149 (QA-023): documents picked by number and customer; an invoice fills its order and customer.
   const SALES_ORDER_REF = lookup('sales-order-ref', 'orders-sales-orders');
+  // Retest 2026-11-03: a fulfillment's order line comes from the sales order picked, never a typed line UUID.
+  const FULFILLMENT_ORDER_REF = lookup('sales-order-ref', 'orders-sales-orders', { fills: { 'line-id': 'line-order-line-id' } });
   const INVOICE_REF = lookup('invoice-ref', 'orders-customer-invoices', {
     fills: { 'order-id': 'order-id', 'customer-id': 'customer-id' },
   });
@@ -101,6 +103,8 @@ export function windowSource(builderFor) {
   const CUSTOMER_REF = lookup('customer-ref', 'business-partners-parties', { fills: { name: 'customer-name' } });
   const CUSTOMER_ONLY_REF = lookup('customer-ref', 'business-partners-parties');
   const UOM_REF = lookup('uom-ref', 'catalogue-uoms');
+  // Retest 2026-11-03: a credit memo line picks its product too; it has no code, name or unit fields to fill.
+  const PRODUCT_ONLY_REF = lookup('product-ref', 'catalogue-products');
 
   const SO = 'orders.sales-orders';
   const soFields = [
@@ -151,7 +155,7 @@ export function windowSource(builderFor) {
     field(FO, 'carrier', 'Carrier', 'TEXT', { writePermission: 'orders:fulfill' }),
     field(FO, 'tracking-number', 'Tracking number', 'TEXT', { writePermission: 'orders:fulfill' }),
     field(FO, 'status', 'Status', 'SELECT', { readOnly: true, ref: 'fulfillment-statuses' }),
-    field(FO, 'line-order-line-id', 'Order line', 'TEXT', { required: true, help: 'Sales order line UUID to ship.', writePermission: 'orders:fulfill' }),
+    field(FO, 'line-order-line-id', 'Order line', 'TEXT', { required: true, help: 'Filled from the sales order you pick (its first line).', writePermission: 'orders:fulfill' }),
     field(FO, 'line-shipped-quantity', 'Shipped quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'orders:fulfill' }),
   ];
 
@@ -168,7 +172,7 @@ export function windowSource(builderFor) {
     field(CM, 'line-quantity', 'Line quantity', 'NUMBER', { required: true, scale: 6, defaultValue: '1.000000', writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'line-unit-price-minor', 'Line unit price (minor)', 'INTEGER', { required: true, writePermission: 'orders:credit-memos:manage' }),
     field(CM, 'line-reason', 'Line reason', 'TEXT', { required: true, writePermission: 'orders:credit-memos:manage', help: 'Defaults to the header reason when empty.' }),
-    field(CM, 'line-product-id', 'Line product', 'TEXT', { writePermission: 'orders:credit-memos:manage' }),
+    field(CM, 'line-product-id', 'Line product', 'REFERENCE', { ref: 'product-ref', help: 'The product credited, chosen from Products.', writePermission: 'orders:credit-memos:manage' }),
   ];
 
   const CI = 'orders.customer-invoices';
@@ -325,7 +329,7 @@ export function windowSource(builderFor) {
       dictionary('orders-fulfillment-orders', 'Fulfillment orders', FO, [entity(FO, 'Fulfillment orders')], foFields, [], [
         values('fulfillment-statuses', FULFILLMENT_STATUS),
         WAREHOUSE_REF,
-        SALES_ORDER_REF,
+        FULFILLMENT_ORDER_REF,
       ], [
         view('fulfillment-orders', 'Fulfillment orders', [
           tab('fo-header', 'Shipment', 0, FO, [
@@ -369,6 +373,7 @@ export function windowSource(builderFor) {
         values('credit-memo-statuses', CREDIT_MEMO_STATUS),
         SALES_ORDER_REF,
         INVOICE_REF,
+        PRODUCT_ONLY_REF,
       ], [
         view('customer-credit-memos', 'Credit memos', [
           tab('cm-header', 'Credit memo', 0, CM, [

@@ -1,6 +1,10 @@
-# NOW: where the work stands (2026-11-02)
+# NOW: where the work stands (2026-11-03)
 
 ## Active task
+
+**Master Data Foundation and Platform Kit — approved (owner, 2026-11-03).** Before further modules: ADR-0037–0040, [execution plan](../docs/plans/master-data-foundation-execution-plan.md), cards WI-OI-152–162, [hand-over](handoff/MASTER-DATA-FOUNDATION-HANDOFF-2026-11-03.md). **Next:** phase 0 — WI-OI-152 hub, WI-OI-153 reference data and workspace profile, WI-OI-160 relay wiring, WI-OI-156 slice A product events. New module cards wait for milestone B.
+
+**WI-OI-146–151 P1–P3 batch:** `02b3353a` on UAT 5180; retest and regression done 2026-11-03 (bench failing screens 15 → 8; 48 of 50 read-only e2e; retest 14 pass, 2 fail, 3 not testable). Six retest fixes in branch (QA-012 Analytics pipeline permission, QA-013 Connections, QA-048 Inventory unit picker, QA-049, QA-050, QA-031), `pnpm verify` PASS; awaiting the owner's "commit" and one deploy. Evidence `.pi/work/WI-OI-151.md`; workbook sheet "Regression & retest".
 
 **Frontline Mobile Suite — module gate 100% (owner, 2026-11-02):** **11/11 Built** (WI-OI-133 … WI-OI-143); **144 parked.** Commits: platform `62b580b3`, mobile `3a0a3d2`. Tracker: [FRONTLINE-SUITE-100-CHECKLIST.md](work/FRONTLINE-SUITE-100-CHECKLIST.md). **Owner next:** [FRONTLINE-SUITE-100-DEPLOY-2026-11-02.md](handoff/FRONTLINE-SUITE-100-DEPLOY-2026-11-02.md) (release worktree deploy + UAT → **Done**). Agents do not deploy.
 

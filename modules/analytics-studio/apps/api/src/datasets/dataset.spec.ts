@@ -243,6 +243,17 @@ describe('DatasetService — build lifecycle', () => {
       ),
     ).rejects.toMatchObject({ message: expect.stringContaining('not PUBLISHED') });
   });
+
+  // QA-012: the module fact pipeline re-checks source access, so its principal must hold the module's read permission.
+  test('module pipeline build carries the source read permission into the source access check', async () => {
+    const db = makeDb([{ raw_payload: { amount: 42 }, source_pk_hash: 'source-1' }]);
+    const sourceAccess = { assertAnalyticsSourceAccess: jest.fn().mockResolvedValue(undefined) };
+    const svc = new DatasetService(db as any, sourceAccess as never);
+    await svc.buildModuleDataset('tenant-A', 'map-1', 1, 'cmms.analytics.read');
+    const [principal] = sourceAccess.assertAnalyticsSourceAccess.mock.calls[0] as [{ permissions: readonly string[] }];
+    expect(principal.permissions).toContain('cmms.analytics.read');
+    expect(principal.permissions).toContain('analytics:datasets:write');
+  });
 });
 
 // ─── 3. Tenant isolation ──────────────────────────────────────────────────────

@@ -103,3 +103,8 @@ checked).
 - QA-033: `InventoryReceiptPostingReconciliationJob` is `@Injectable` with `@Inject(DatabaseService)` (test checks the
   Nest metadata).
 `pnpm verify` PASS (2026-11-03, all steps that ran).
+
+## 2026-11-03 — retest on `02b3353a`
+
+QA-012 cause found and fixed in branch (Analytics module pipeline principal lacked the source read permission; see
+WI-OI-151 evidence); QA-013 fixed in branch (Connections reads refused answers); QA-008, QA-009, QA-033 verified on UAT.

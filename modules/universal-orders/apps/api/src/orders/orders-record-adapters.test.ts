@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SalesOrderV1 } from '@gigalibs/contracts';
 import {
   salesOrderToAllocateFirstLineInput,
+  salesOrderToWindow,
   windowValuesToCreateCustomerCreditMemoInput,
   windowValuesToCreateCustomerInvoiceInput,
   windowValuesToCreateFulfillmentOrderInput,
@@ -111,5 +112,16 @@ describe('salesOrderToAllocateFirstLineInput', () => {
     expect(input.orderLineId).toBe('660e8400-e29b-41d4-a716-446655440001');
     expect(input.warehouseId).toBe('550e8400-e29b-41d4-a716-446655440000');
     expect(input.allocatedQuantity).toBe('3.000000');
+  });
+});
+
+describe('salesOrderToWindow', () => {
+  // Retest 2026-11-03: the sales order picker on a fulfillment fills the order line from the order's first line.
+  it("carries the first line's id for the fulfillment picker", () => {
+    const order = {
+      id: '880e8400-e29b-41d4-a716-446655440003',
+      lines: [{ id: '660e8400-e29b-41d4-a716-446655440001', productId: '990e8400-e29b-41d4-a716-446655440004' }],
+    } as SalesOrderV1;
+    expect(salesOrderToWindow(order)['line-id']).toBe('660e8400-e29b-41d4-a716-446655440001');
   });
 });

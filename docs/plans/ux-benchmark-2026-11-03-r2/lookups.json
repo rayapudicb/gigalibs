@@ -1,0 +1,110 @@
+{
+ "finance-books": {
+  "base": "/api/financial-operations",
+  "options": 1
+ },
+ "finance-accounts": {
+  "base": "/api/financial-operations",
+  "options": 22
+ },
+ "wf-resources": {
+  "base": "/api/workforce",
+  "options": 0
+ },
+ "wf-absence-types": {
+  "base": "/api/workforce",
+  "options": 0
+ },
+ "workspace-sites": {
+  "base": "/api/control",
+  "options": 0
+ },
+ "wf-calendars": {
+  "base": "/api/workforce",
+  "options": 0
+ },
+ "workspace-members": {
+  "base": "/api/control",
+  "options": 5
+ },
+ "wf-capabilities": {
+  "base": "/api/workforce",
+  "options": 0
+ },
+ "cmms-assets": {
+  "base": "/api/cmms",
+  "options": 1
+ },
+ "cmms-spaces": {
+  "base": "/api/cmms",
+  "options": 2
+ },
+ "cmms-classifications": {
+  "base": "/api/cmms",
+  "options": 0
+ },
+ "cmms-parts": {
+  "base": "/api/cmms",
+  "options": 1
+ },
+ "speed-sites": {
+  "base": "/api/speed",
+  "options": 2
+ },
+ "speed-projects": {
+  "base": "/api/speed",
+  "options": 1
+ },
+ "speed-library-materials": {
+  "base": "/api/speed",
+  "options": 0
+ },
+ "catalogue-catalogues": {
+  "base": "/api/product-catalogue",
+  "options": 1
+ },
+ "catalogue-products": {
+  "base": "/api/product-catalogue",
+  "options": 9
+ },
+ "catalogue-categories": {
+  "base": "/api/product-catalogue",
+  "options": 2
+ },
+ "catalogue-price-lists": {
+  "base": "/api/product-catalogue",
+  "options": 1
+ },
+ "catalogue-uoms": {
+  "base": "/api/product-catalogue",
+  "options": 8
+ },
+ "inventory-warehouses": {
+  "base": "/api/universal-inventory",
+  "options": 5
+ },
+ "inventory-locations": {
+  "base": "/api/universal-inventory",
+  "options": 4
+ },
+ "organization-units": {
+  "base": "/api/control",
+  "options": 5
+ },
+ "business-partners-parties": {
+  "base": "/api/business-partners",
+  "options": 9
+ },
+ "orders-sales-orders": {
+  "base": "/api/universal-orders",
+  "options": 0
+ },
+ "orders-customer-invoices": {
+  "base": "/api/universal-orders",
+  "options": 0
+ },
+ "procurement-purchase-orders": {
+  "base": "/api/universal-procurement",
+  "options": 0
+ }
+}

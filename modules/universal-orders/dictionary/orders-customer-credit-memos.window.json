@@ -176,12 +176,14 @@
           "fieldKey": "line-product-id",
           "entityKey": "orders.customer-credit-memos",
           "label": "Line product",
-          "type": "TEXT",
+          "type": "REFERENCE",
           "required": false,
           "readOnly": false,
           "isSystemLocked": false,
           "classification": "INTERNAL",
           "maskOnDisplay": false,
+          "referenceKey": "product-ref",
+          "helpText": "The product credited, chosen from Products.",
           "writePermission": "orders:credit-memos:manage"
         }
       ],
@@ -230,6 +232,16 @@
           "fills": {
             "order-id": "order-id",
             "customer-id": "customer-id"
+          }
+        },
+        {
+          "referenceKey": "product-ref",
+          "referenceType": "SEARCH_LOOKUP",
+          "resolverKey": "catalogue-products",
+          "createWith": {
+            "moduleKey": "product-catalogue",
+            "surfaceKey": "catalogue-products",
+            "permission": "products:create"
           }
         }
       ],
@@ -372,7 +384,7 @@
                   "fieldKey": "line-product-id",
                   "position": 11,
                   "span": 6,
-                  "componentKey": "text-input",
+                  "componentKey": "lookup",
                   "sectionKey": "first-line"
                 }
               ]

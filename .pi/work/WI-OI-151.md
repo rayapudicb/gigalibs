@@ -29,3 +29,32 @@ Copied to `docs/plans/ux-benchmark-2026-11-02/journeys-e2e-before.json`.
 
 Write mode on the isolated test stack with seeded masters; the platform operator journeys; budgets as a gate
 (`pnpm e2e:journeys`); the "after" run once the owner deploys the WI-OI-146/149 fixes.
+
+## 2026-11-03 — retest and regression on UAT `02b3353a` (owner deploy of the P1–P3 batch)
+
+All read-only: dry journeys, screen bench, read-only e2e specs and a new retest spec that opens each changed form and
+dialog and cancels (`e2e/specs/uat-retest-wi146-150.spec.ts`). Runs, screenshots and logs:
+`Claude outputs/UX journeys 2026-11-02/` (`journey-runs/`, `retest-02b3353a/`, `regression-02b3353a/`,
+`screenshots-2026-11-03-r2/`); bench `docs/plans/ux-benchmark-2026-11-03-r2/`; workbook sheet "Regression & retest".
+
+| Suite | Result |
+|---|---|
+| Screen bench (129) | failing screens 15 → 8; never settles 1 (Connections); fixed since `213fde2d`: Jobs, Scheduling, Time, Places & maps, Settings › Organization, Work orders, Assets, CMMS inventory |
+| Journeys, dry (27) | 14 meet, 3 over (A1, T1, S2), 5 too slow but no longer blocked (B1, B2, B4, C1, C2), 2 blocked (A4 — QA-048; T4 — no absence types until the starter set is loaded), 3 not run |
+| Read-only e2e (50 tests) | 48 pass; `module-analytics-pilot` fails on QA-012; `uat-tour-automate-intelligence` failed on its own timeout (8 × 9 s pauses > 60 s) — sized to its steps, passes on UAT |
+| Retest (19 checks) | 14 pass, 2 fail (QA-012, QA-013), 3 not testable read-only (no quote, requisition or fulfillment to open) |
+
+**Fixed in branch from the retest** (after `02b3353a`, awaiting deploy):
+- QA-012 — cause found: the Analytics module fact pipeline rebuilt each dataset as an internal principal without the
+  module's read permission, and the build re-checks source access, so every module catalog answered 403 to everyone
+  (the admin holds 290 permissions). The pipeline principal now also holds the source's read permission.
+- QA-013 — Connections never read a refused Workflow Studio answer; the browser keeps an unread answer open (proven on
+  UAT). The page reads the answer.
+- QA-048 — the warehouse owning unit picker asked Inventory for the organization lookup (404, journey A4 blocked);
+  Inventory now sends platform lookups to the control plane.
+- QA-049 — credit memo line product is a picker. QA-050 — a new fulfillment's order line fills from the picked sales
+  order (no typed line UUID). QA-031 — Accounting books fields have help.
+
+Tracker after the retest: 50 bugs — 35 fixed on UAT, 7 fixed in branch, 4 retest (need data or an operator login),
+2 owner actions (load the starter absence types and asset classes: one click each), 1 open (QA-038 journey times),
+1 closed.

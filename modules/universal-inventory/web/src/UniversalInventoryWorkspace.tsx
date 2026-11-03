@@ -5,7 +5,7 @@ import {
   createRecordClient,
   usePublishedManifest,
 } from '@gigalibs/configuration-react';
-import type { BarcodeResolutionResultV1 } from '@gigalibs/contracts';
+import { type BarcodeResolutionResultV1, PLATFORM_LOOKUP_BASE_PATHS } from '@gigalibs/contracts';
 import { ModulePage } from '@gigalibs/web-sdk';
 import { Button } from '@medusajs/ui';
 import { type FormEvent, useMemo, useState } from 'react';
@@ -22,8 +22,10 @@ import { WarehouseMapPanel } from './WarehouseMapPanel.js';
 
 const BASE_PATH = '/api/universal-inventory';
 const CATALOGUE_PATH = '/api/product-catalogue';
-// Product and unit pickers are served by the Product Catalogue through its own gateway.
+// Product and unit pickers are served by the Product Catalogue through its own gateway; the organization-unit picker
+// (warehouse owning unit, QA-024) by the control plane, like every platform lookup.
 const LOOKUP_BASE_PATHS = {
+  ...PLATFORM_LOOKUP_BASE_PATHS,
   'catalogue-products': CATALOGUE_PATH,
   'catalogue-uoms': CATALOGUE_PATH,
 };

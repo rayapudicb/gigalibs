@@ -11,7 +11,7 @@ export const PLATFORM_LOOKUPS = {
   'workspace-members':
     'The workspace members, as name and email (tenants/current/members, users:read).',
   'organization-units':
-    'The organization units, as name and code (tenants/current/organization/units, organization:read).',
+    'The organization units, as name and code (tenants/current/organization/unit-options, users:read; QA-025).',
   // WI-OI-120u Slice 2 (owner D2a): sites and other places, read from Geospatial through its signed proxy.
   'workspace-sites': 'The active places, as name and code (Geospatial v1/nodes, maps.nodes.read).',
 } as const;

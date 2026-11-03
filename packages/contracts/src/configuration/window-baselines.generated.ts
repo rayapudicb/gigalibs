@@ -2143,7 +2143,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "A short code for the book, for example MAIN or IFRS."
           },
           {
             "fieldKey": "book-name",
@@ -2154,7 +2155,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The name people see, for example Main ledger."
           },
           {
             "fieldKey": "currency-code",
@@ -2165,7 +2167,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The currency the book is kept in, for example INR or USD."
           },
           {
             "fieldKey": "costing-method",
@@ -2177,7 +2180,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "referenceKey": "costing"
+            "referenceKey": "costing",
+            "helpText": "How stock is valued in this book."
           },
           {
             "fieldKey": "is-primary",
@@ -2188,7 +2192,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
-            "maskOnDisplay": false
+            "maskOnDisplay": false,
+            "helpText": "The book used when a document names none."
           },
           {
             "fieldKey": "status",
@@ -2200,7 +2205,8 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "referenceKey": "book-statuses"
+            "referenceKey": "book-statuses",
+            "helpText": "Inactive books take no new postings."
           }
         ],
         "relationships": [],
@@ -20295,12 +20301,14 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fieldKey": "line-product-id",
             "entityKey": "orders.customer-credit-memos",
             "label": "Line product",
-            "type": "TEXT",
+            "type": "REFERENCE",
             "required": false,
             "readOnly": false,
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
+            "referenceKey": "product-ref",
+            "helpText": "The product credited, chosen from Products.",
             "writePermission": "orders:credit-memos:manage"
           }
         ],
@@ -20349,6 +20357,16 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "fills": {
               "order-id": "order-id",
               "customer-id": "customer-id"
+            }
+          },
+          {
+            "referenceKey": "product-ref",
+            "referenceType": "SEARCH_LOOKUP",
+            "resolverKey": "catalogue-products",
+            "createWith": {
+              "moduleKey": "product-catalogue",
+              "surfaceKey": "catalogue-products",
+              "permission": "products:create"
             }
           }
         ],
@@ -20491,7 +20509,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
                     "fieldKey": "line-product-id",
                     "position": 11,
                     "span": 6,
-                    "componentKey": "text-input",
+                    "componentKey": "lookup",
                     "sectionKey": "first-line"
                   }
                 ]
@@ -20908,7 +20926,7 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
             "isSystemLocked": false,
             "classification": "INTERNAL",
             "maskOnDisplay": false,
-            "helpText": "Sales order line UUID to ship.",
+            "helpText": "Filled from the sales order you pick (its first line).",
             "writePermission": "orders:fulfill"
           },
           {
@@ -20975,7 +20993,10 @@ export const MODULE_WINDOW_BASELINE_SOURCES: readonly unknown[] = [
           {
             "referenceKey": "sales-order-ref",
             "referenceType": "SEARCH_LOOKUP",
-            "resolverKey": "orders-sales-orders"
+            "resolverKey": "orders-sales-orders",
+            "fills": {
+              "line-id": "line-order-line-id"
+            }
           }
         ],
         "validationRules": [],

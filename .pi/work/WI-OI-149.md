@@ -43,3 +43,9 @@ PO → receipt → bill); one-click approvals.
 - QA-024: warehouse owning unit is a picker.
 - QA-038: a required picker with exactly one option takes it; parameterless record actions run from the list row.
 `pnpm verify` PASS (2026-11-03).
+
+## 2026-11-03 — retest on `02b3353a`
+
+QA-023, QA-025, QA-028 verified on UAT. Fixed in branch from the retest: QA-048 (Inventory platform lookups → control
+plane; warehouse owning unit had no options), QA-049 (credit memo line product picker), QA-050 (fulfillment order line
+filled from the picked sales order). QA-022 dialogs not testable read-only on UAT (no records to open).
