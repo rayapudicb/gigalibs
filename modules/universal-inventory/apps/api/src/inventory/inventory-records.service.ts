@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { OrganizationReplica, assertOrganizationWrite, organizationAccess, type ModulePrincipal } from '@gigalibs/module-sdk';
+import { OrganizationReplica, assertOrganizationWrite, organizationAccess, recordMasterFact, type ModulePrincipal } from '@gigalibs/module-sdk';
 import type pg from 'pg';
 import { SCHEMA, TOPIC } from '../config.js';
 import { DatabaseService } from '../database.service.js';
@@ -21,6 +21,7 @@ import {
   mapLot,
   mapReceipt,
   mapWarehouse,
+  warehouseMasterFact,
 } from './inventory.service.js';
 
 // WI-OI-120f (F0.5, ADR-0033 D1): the reads and the few commands Inventory's metadata windows need, beside the
@@ -342,7 +343,9 @@ export class InventoryRecordsService {
             JSON.stringify({ warehouseId: id, updatedBy: principal.subject }),
           ],
         );
-        return { ...mapWarehouse(result.rows[0]) };
+        const warehouse = mapWarehouse(result.rows[0]);
+        await recordMasterFact(client, { schema: SCHEMA, topic: TOPIC }, { principal, correlationId: id }, warehouseMasterFact(warehouse, 'UPDATED'));
+        return { ...warehouse };
       }
       const exists = await client.query(`SELECT 1 FROM ${SCHEMA}.warehouses WHERE tenant_id = $1 AND id = $2`, [principal.tenantId, id]);
       if (exists.rowCount === 0) throw new NotFoundException('Warehouse not found.');

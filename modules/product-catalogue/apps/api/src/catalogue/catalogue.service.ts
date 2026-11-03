@@ -25,6 +25,7 @@ import {
   assertOwningUnit,
   moduleErrors,
   organizationAccess,
+  recordMasterFact,
   recordMutation,
 } from '@gigalibs/module-sdk';
 import {
@@ -206,6 +207,7 @@ export class CatalogueService {
           action: 'PRODUCT_CREATED', aggregateType: 'product', aggregateId: id, aggregateVersion: 1,
           payload: safeProductFact(product),
         });
+        await recordMasterFact(client, { schema: SCHEMA, topic: TOPIC }, context, productMasterFact(product, 'CREATED'));
         await this.saveReplay(client, context, 'CREATE_PRODUCT', key, input, product, 201);
         return { result: product, replayed: false };
       } catch (error) {
@@ -255,6 +257,12 @@ export class CatalogueService {
         action: 'PRODUCT_UPDATED', aggregateType: 'product', aggregateId: id, aggregateVersion: product.version,
         payload: safeProductFact(product),
       });
+      await recordMasterFact(
+        client,
+        { schema: SCHEMA, topic: TOPIC },
+        context,
+        productMasterFact(product, product.status === 'ARCHIVED' ? 'ARCHIVED' : 'UPDATED'),
+      );
       return product;
     });
   }
@@ -280,6 +288,12 @@ export class CatalogueService {
         action: restore ? 'PRODUCT_RESTORED' : 'PRODUCT_ARCHIVED', aggregateType: 'product', aggregateId: id,
         aggregateVersion: product.version, payload: { reason, status },
       });
+      await recordMasterFact(
+        client,
+        { schema: SCHEMA, topic: TOPIC },
+        context,
+        productMasterFact(product, restore ? 'UPDATED' : 'ARCHIVED'),
+      );
       return product;
     });
   }
@@ -310,7 +324,14 @@ export class CatalogueService {
           [platformUnitId(context.principal.tenantId, unit.code), context.principal.tenantId, unit.code, unit.name, unit.symbol,
             unit.dimension, unit.dimension === 'COUNT' ? 0 : 2, context.principal.subject],
         );
-        if (inserted.rowCount) added.push(unit.code);
+        if (inserted.rowCount) {
+          added.push(unit.code);
+          await recordMasterFact(client, { schema: SCHEMA, topic: TOPIC }, context, {
+            entity: 'catalogue.uoms', change: 'CREATED', id: platformUnitId(context.principal.tenantId, unit.code),
+            code: unit.code, name: unit.name, status: 'ACTIVE', version: 1,
+            attributes: { symbol: unit.symbol, dimension: unit.dimension, platformReference: true },
+          });
+        }
       }
       if (added.length > 0)
         await recordMutation(client, { schema: SCHEMA, topic: TOPIC }, context, {
@@ -341,6 +362,7 @@ export class CatalogueService {
           action: 'UOM_CREATED', aggregateType: 'uom', aggregateId: id, aggregateVersion: 1,
           payload: { code: input.code, dimension: input.dimension },
         });
+        await recordMasterFact(client, { schema: SCHEMA, topic: TOPIC }, context, uomMasterFact(uom, 'CREATED'));
         await this.saveReplay(client, context, 'CREATE_UOM', key, input, uom, 201);
         return { result: uom, replayed: false };
       } catch (error) {
@@ -427,6 +449,7 @@ export class CatalogueService {
           action: 'CATEGORY_CREATED', aggregateType: 'product_category', aggregateId: id, aggregateVersion: 1,
           payload: { code: input.code, parentCategoryId: input.parentCategoryId ?? null },
         });
+        await recordMasterFact(client, { schema: SCHEMA, topic: TOPIC }, context, categoryMasterFact(category, 'CREATED'));
         await this.saveReplay(client, context, 'CREATE_CATEGORY', key, input, category, 201);
         return { result: category, replayed: false };
       } catch (error) {
@@ -469,6 +492,7 @@ export class CatalogueService {
         action: 'CATEGORY_UPDATED', aggregateType: 'product_category', aggregateId: id,
         aggregateVersion: category.version, payload: { parentCategoryId: category.parentCategoryId },
       });
+      await recordMasterFact(client, { schema: SCHEMA, topic: TOPIC }, context, categoryMasterFact(category, 'UPDATED'));
       return category;
     });
   }
@@ -1125,5 +1149,28 @@ export function platformUnitId(tenantId: string, code: string): string {
   bytes[8] = (bytes[8]! & 0x3f) | 0x80;
   const hex = bytes.toString('hex');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+// WI-OI-156 slice A (ADR-0039 §1): the standard master facts Products writes for its references (products, units,
+// categories), so other modules can keep a replica and refuse an unknown or archived one.
+type MasterChange = 'CREATED' | 'UPDATED' | 'ARCHIVED';
+export function productMasterFact(product: ReturnType<typeof mapProduct>, change: MasterChange) {
+  return {
+    entity: 'catalogue.products', change, id: product.id, code: product.code, name: product.name, status: product.status,
+    version: product.version, attributes: { baseUomId: product.baseUomId ?? null, productType: product.productType ?? null },
+  };
+}
+export function uomMasterFact(uom: ReturnType<typeof mapUom>, change: MasterChange) {
+  return {
+    entity: 'catalogue.uoms', change, id: uom.id, code: uom.code, name: uom.name, status: uom.isActive ? 'ACTIVE' : 'INACTIVE',
+    version: uom.version, attributes: { symbol: uom.symbol, dimension: uom.dimension, platformReference: uom.uomType === 'PLATFORM_REFERENCE' },
+  };
+}
+export function categoryMasterFact(category: ReturnType<typeof mapCategory>, change: MasterChange, now: Date = new Date()) {
+  const ended = category.effectiveTo !== null && new Date(category.effectiveTo) <= now;
+  return {
+    entity: 'catalogue.categories', change, id: category.id, code: category.code, name: category.name,
+    status: ended ? 'EXPIRED' : 'ACTIVE', version: category.version, attributes: { parentCategoryId: category.parentCategoryId ?? null },
+  };
 }
 

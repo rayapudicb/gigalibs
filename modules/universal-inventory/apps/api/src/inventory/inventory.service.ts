@@ -47,6 +47,7 @@ import {
   assertOrganizationWrite,
   organizationAccess,
   moduleErrors,
+  recordMasterFact,
 } from '@gigalibs/module-sdk';
 import { validateDictionaryRules } from '@gigalibs/configuration-core';
 import type { DictionaryValidationRuleV1, RmaReturnReceiptCommandV1 } from '@gigalibs/contracts';
@@ -239,7 +240,10 @@ export class InventoryService {
           now,
         ],
       );
-      return mapWarehouse(res.rows[0]);
+      // WI-OI-156 slice A (ADR-0039 §1): the standard master fact, so other modules can keep a warehouse replica.
+      const warehouse = mapWarehouse(res.rows[0]);
+      await recordMasterFact(client, { schema: SCHEMA, topic: TOPIC }, { principal, correlationId: id }, warehouseMasterFact(warehouse, 'CREATED'));
+      return warehouse;
     });
   }
 
@@ -2835,6 +2839,15 @@ export function mapWarehouse(row: any): InventoryWarehouseV1 {
     updatedAt: row.updated_at.toISOString ? row.updated_at.toISOString() : row.updated_at,
     createdBy: row.created_by,
     updatedBy: row.updated_by,
+  };
+}
+
+/** WI-OI-156 slice A (ADR-0039 §1): a warehouse as the standard master fact other modules keep a replica from. */
+export function warehouseMasterFact(warehouse: InventoryWarehouseV1, change: 'CREATED' | 'UPDATED') {
+  return {
+    entity: 'inventory.warehouses', change, id: warehouse.id, code: warehouse.code, name: warehouse.name,
+    status: warehouse.isActive === false ? 'INACTIVE' : 'ACTIVE', version: warehouse.version,
+    attributes: { warehouseType: warehouse.warehouseType ?? null, placeId: warehouse.placeId ?? null },
   };
 }
 

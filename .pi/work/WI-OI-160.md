@@ -63,3 +63,11 @@ control plane (api) → business-partners (module-host); operator-rounds (module
 
 Remaining: slice B (generate the Compose relay settings from the register), and the owner decision on the six
 not-wired relays (keys, and a look at the waiting events first).
+
+## Owner decision (2026-11-03, "continue")
+
+WI-OI-160 is Built with slice A. Slice B (generating the Compose relay settings from the register) moves into
+WI-OI-156 slice B, where the reference-replica relays are added: existing and new relays then move to generated
+settings in one Compose change, proven by comparing the rendered Compose configuration before and after. The audit
+already blocks a relay on the wrong service in the meantime.
+

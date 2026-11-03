@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { MASTER_FACT_EVENT_TYPE, type MasterFactV1, MasterFactV1Schema } from '@gigalibs/contracts';
 import type { ModuleCommandContext } from './signed-context.js';
 
 // WI-OI-085a: command helpers for new modules, following the certified CMMS helpers (WI-OI-038): validated input,
@@ -136,3 +137,38 @@ export async function recordMutation(
     ],
   );
 }
+
+/**
+ * WI-OI-156 slice A (ADR-0039 §1): the standard fact of a master's change — entity, id, code, name, status, version —
+ * written to the module's outbox in the caller's transaction, next to the module's own fact. Consumers keep reference
+ * replicas from it (slice B).
+ */
+export async function recordMasterFact(
+  client: Queryable,
+  options: MutationRecordOptions,
+  /** A command context, or just the tenant and a correlation id for services that write their own outbox. */
+  context: { readonly principal: { readonly tenantId: string }; readonly correlationId?: string | null },
+  fact: MasterFactV1,
+): Promise<void> {
+  if (!SCHEMA_PATTERN.test(options.schema)) throw new Error('schema must be a lower-case identifier.');
+  if (!TOPIC_PATTERN.test(options.topic)) throw new Error('topic must look like <module>.facts.v1.');
+  const parsed = MasterFactV1Schema.parse(fact);
+  await client.query(
+    `INSERT INTO ${options.schema}.outbox_events
+       (id, tenant_id, topic, event_type, aggregate_type, aggregate_id, aggregate_version,
+        correlation_id, schema_version, payload)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1, $9::jsonb)`,
+    [
+      randomUUID(),
+      context.principal.tenantId,
+      options.topic,
+      MASTER_FACT_EVENT_TYPE,
+      parsed.entity,
+      parsed.id,
+      parsed.version,
+      context.correlationId ?? null,
+      JSON.stringify(parsed),
+    ],
+  );
+}
+

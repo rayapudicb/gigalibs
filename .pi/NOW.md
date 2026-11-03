@@ -6,8 +6,10 @@
 - **Done (item 0):** `38aa9017` on UAT; retest 19/19, bench failing screens 8 → 5, journeys 15 meet, 50/50 read-only e2e (evidence `.pi/work/WI-OI-151.md`).
 - **Done (item 1):** WI-OI-152 Master data hub — Built, `pnpm verify` PASS (evidence `.pi/work/WI-OI-152.md`); On UAT after the owner's deploy.
 - **Done (item 2):** WI-OI-153 Reference data and workspace profile — Built, `pnpm verify` PASS (evidence `.pi/work/WI-OI-153.md`); On UAT after the owner's deploy and the reference load command.
-- **Now (item 3):** WI-OI-160 Relay wiring — **claimed by Claude** (in the active slot). Slice A built (relay register `config/relay-wiring.json`, `pnpm audit:relays` in verify; two wiring mistakes fixed; six relays not wired on UAT, incl. Inventory → General ledger, await the owner's decision). Next: slice B (generate Compose relay settings). If Claude stops, read `.pi/work/WI-OI-160.md`.
-- **Next (item 4):** WI-OI-156 slice A — product and master events.
+- **Done (item 3):** WI-OI-160 Relay wiring — Built (slice A, 4c3bb597): relay register and `pnpm audit:relays`; generation moved to WI-OI-156 slice B (owner). Six relays not wired on UAT await the owner's decision (`.pi/work/WI-OI-160.md`).
+- **Done (item 4):** WI-OI-156 slice A — master facts (`MASTER_FACT_V1`) from Products (products, units, categories), Inventory (warehouses) and General ledger (accounts); parties are the partner facts. `pnpm verify` PASS; evidence `.pi/work/WI-OI-156.md`. Slot freed; the row stays In Progress (slices B–C are item 10). **Milestone A (items 1–4) is built.**
+- **Now:** the owner deploys milestone A to UAT 5180 (one deploy, plus the platform reference load command once), then Claude retests it. Agents do not deploy.
+- **Next (item 5):** WI-OI-163 Record-level available actions (claim the slot first).
 - Cards WI-OI-152–166 (163–166 from the mobile atlas review: record-level actions, mobile CMMS work, frontline device proof, request → several work orders); ADR-0037–0040 (0037 now also makes Inventory the owner of stock).
 
 **WI-OI-146–151 P1–P3 batch:** `02b3353a` on UAT 5180; retest and regression done 2026-11-03 (bench failing screens 15 → 8; 48 of 50 read-only e2e; retest 14 pass, 2 fail, 3 not testable). Six retest fixes in branch (QA-012 Analytics pipeline permission, QA-013 Connections, QA-048 Inventory unit picker, QA-049, QA-050, QA-031), `pnpm verify` PASS; awaiting the owner's "commit" and one deploy. Evidence `.pi/work/WI-OI-151.md`; workbook sheet "Regression & retest".

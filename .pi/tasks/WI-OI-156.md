@@ -35,6 +35,9 @@ ADR-0039; `packages/module-sdk/src/organization-replica.ts`, `outbox-relay.ts`, 
    price lists, partners, warehouses and locations, accounts.
 2. **B — replicas.** Replica table (id, code, name, status, version, small payload) per referenced entity; signed relay
    into an idempotent, version-ordered inbox; a backfill job from the owner's list API.
+   Also (moved from WI-OI-160, owner 2026-11-03): generate the Compose relay settings from `config/relay-wiring.json`
+   for the existing and the new relays in one change, proven by comparing the rendered Compose configuration before
+   and after (no difference for the existing relays).
 3. **C — validation.** `spec.references` (field → entity, `onArchive: BLOCK_NEW` by default); the dispatcher checks
    new and changed values; module flags: shadow (log `REFERENCE_VIOLATION`) then enforce (plain refusal, for example
    "This product is archived"); the hub shows replica lag and count against the owner.

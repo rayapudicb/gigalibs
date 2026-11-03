@@ -25,7 +25,8 @@ import {
 } from '@gigalibs/contracts';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { PoolClient } from 'pg';
-import { SCHEMA } from '../config.js';
+import { SCHEMA, TOPIC } from '../config.js';
+import { recordMasterFact } from '@gigalibs/module-sdk';
 import { DatabaseService } from '../database.service.js';
 import { appendOutboxEvent } from '../outbox.js';
 import { appendFiscalPeriodStateChanged } from '../subledger/finance-inventory-outbox.js';
@@ -149,6 +150,12 @@ export class FinanceService {
       );
 
       const account = this.mapAccount(res.rows[0]);
+      // WI-OI-156 slice A (ADR-0039 §1): the standard master fact, so other modules can keep an account replica.
+      await recordMasterFact(client, { schema: SCHEMA, topic: TOPIC }, { principal: { tenantId }, correlationId: account.id }, {
+        entity: 'finance.accounts', change: 'CREATED', id: account.id, code: account.accountCode, name: account.accountName,
+        status: account.active ? 'ACTIVE' : 'INACTIVE', version: account.version,
+        attributes: { accountingBookId: account.accountingBookId, accountClass: account.accountClass ?? null },
+      });
       await this.writeAudit(client, tenantId, 'chart_of_accounts', account.id, 'CREATE', actorId, input);
       return account;
     });
@@ -217,6 +224,12 @@ export class FinanceService {
       );
 
       const account = this.mapAccount(res.rows[0]);
+      // WI-OI-156 slice A (ADR-0039 §1): the standard master fact, so other modules can keep an account replica.
+      await recordMasterFact(client, { schema: SCHEMA, topic: TOPIC }, { principal: { tenantId }, correlationId: account.id }, {
+        entity: 'finance.accounts', change: 'UPDATED', id: account.id, code: account.accountCode, name: account.accountName,
+        status: account.active ? 'ACTIVE' : 'INACTIVE', version: account.version,
+        attributes: { accountingBookId: account.accountingBookId, accountClass: account.accountClass ?? null },
+      });
       await this.writeAudit(client, tenantId, 'chart_of_accounts', accountId, 'UPDATE', actorId, input);
       return account;
     });

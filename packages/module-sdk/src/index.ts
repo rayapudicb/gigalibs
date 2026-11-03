@@ -50,6 +50,7 @@ export {
 } from './signed-context.js';
 export {
   moduleErrors,
+  recordMasterFact,
   recordMutation,
   type ModuleErrors,
   type MutationRecordOptions,

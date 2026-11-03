@@ -53,3 +53,4 @@ export interface MasterDataEntryV1 {
 export const MASTER_DATA_LOOKUP_CAP = 50;
 
 export { MASTER_DATA_REGISTRY } from './registry.generated.js';
+export * from './master-fact.js';
