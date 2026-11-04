@@ -39,6 +39,14 @@ describe('pack.apply jobs', () => {
       lists: { placeTypes: [{ code: 'FARM', label: 'Farm' }, { code: 'FIELD', label: 'Field' }, { code: 'BLOCK', label: 'Block' }] },
     });
     expect(packApplication(agriculture, VERSION, agriculture.checksum, 'analytics-studio')).toBeNull();
+    expect(packApplication(agriculture, VERSION, agriculture.checksum, 'product-catalogue')).toBeNull();
+    const manufacturing = compiled('INDUSTRY_PACK', 'manufacturing');
+    expect(packApplication(manufacturing, VERSION, manufacturing.checksum, 'product-catalogue')!.section).toEqual(
+      SHIPPED_INDUSTRY_PACKS.find((pack) => pack.slug === 'manufacturing')!.modules['product-catalogue'],
+    );
+    expect(packApplication(manufacturing, VERSION, manufacturing.checksum, 'physical-operations-cmms')!.section).toEqual(
+      SHIPPED_INDUSTRY_PACKS.find((pack) => pack.slug === 'manufacturing')!.modules['physical-operations-cmms'],
+    );
     const us = compiled('COUNTRY_PACK', 'us');
     expect(packApplication(us, VERSION, us.checksum, 'gigaops')).toMatchObject({ kind: 'COUNTRY', key: 'US', section: { rules: { weeklyOtThreshold: 40 } } });
     expect(packApplication(us, VERSION, us.checksum, 'geospatial')).toBeNull();

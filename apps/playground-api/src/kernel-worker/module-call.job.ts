@@ -44,7 +44,7 @@ interface Operation {
   readonly path: (payload: ModuleCallPayload) => string;
   readonly body: (payload: ModuleCallPayload, jobId: string) => Record<string, unknown>;
   /** Pack applications read their body from the published pack instead: this module's section (its manifest name). */
-  readonly packSection?: 'gigaops' | 'geospatial';
+  readonly packSection?: 'gigaops' | 'geospatial' | 'product-catalogue' | 'physical-operations-cmms';
   /** Organization syncs send a published version in pages, then complete it (WI-OI-109e2). */
   readonly organizationVersion?: true;
 }
@@ -57,7 +57,14 @@ export type ModuleCallPayload =
   /** Chained after a dataset build (never scheduled directly). */
   | { readonly operation: 'analytics.summaries-build'; readonly datasetVersionId: string }
   /** WI-OI-107: queued when a tenant activates an industry or country pack (never scheduled directly). */
-  | { readonly operation: 'workforce.pack-apply' | 'geospatial.pack-apply'; readonly publishedVersionId: string }
+  | {
+      readonly operation:
+        | 'workforce.pack-apply'
+        | 'geospatial.pack-apply'
+        | 'product-catalogue.pack-apply'
+        | 'physical-operations-cmms.pack-apply';
+      readonly publishedVersionId: string;
+    }
   | {
       readonly operation:
         | 'workforce.organization-sync'
@@ -82,6 +89,8 @@ export type ModuleCallPayload =
 export const PACK_APPLY_OPERATIONS = {
   gigaops: { operation: 'workforce.pack-apply', entitlementKey: 'gigaops' },
   geospatial: { operation: 'geospatial.pack-apply', entitlementKey: 'geospatial-studio' },
+  'product-catalogue': { operation: 'product-catalogue.pack-apply', entitlementKey: 'product-catalogue' },
+  'physical-operations-cmms': { operation: 'physical-operations-cmms.pack-apply', entitlementKey: 'asset-maintenance' },
 } as const;
 
 /** WI-OI-109e2: the modules that keep a copy of activated organization versions, by catalogue key. */
@@ -173,6 +182,26 @@ export const MODULE_CALL_OPERATIONS: Readonly<Record<ModuleCallPayload['operatio
     path: () => 'v1/pack/apply',
     body: () => ({}),
     packSection: 'geospatial',
+  },
+  'product-catalogue.pack-apply': {
+    moduleKey: 'product-catalogue',
+    audience: 'gigalibs-product-catalogue-api',
+    baseUrlEnvironment: 'PRODUCT_CATALOGUE_API_URL',
+    privateKeyEnvironment: 'PRODUCT_CATALOGUE_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'uoms:manage',
+    path: () => 'product-catalogue/v1/pack/apply',
+    body: () => ({}),
+    packSection: 'product-catalogue',
+  },
+  'physical-operations-cmms.pack-apply': {
+    moduleKey: 'asset-maintenance',
+    audience: 'gigalibs-cmms-api',
+    baseUrlEnvironment: 'CMMS_API_URL',
+    privateKeyEnvironment: 'CMMS_PLATFORM_CONTEXT_PRIVATE_KEY_BASE64',
+    permission: 'cmms.assets.write',
+    path: () => 'v1/pack/apply',
+    body: () => ({}),
+    packSection: 'physical-operations-cmms',
   },
   'workforce.organization-sync': {
     moduleKey: 'gigaops',
@@ -315,7 +344,10 @@ export function parseModuleCallPayload(value: unknown): ModuleCallPayload {
   }
   // Configuration Studio's published version ids are cuids, not UUIDs.
   if (
-    (input.operation === 'workforce.pack-apply' || input.operation === 'geospatial.pack-apply') &&
+    (input.operation === 'workforce.pack-apply' ||
+      input.operation === 'geospatial.pack-apply' ||
+      input.operation === 'product-catalogue.pack-apply' ||
+      input.operation === 'physical-operations-cmms.pack-apply') &&
     typeof input.publishedVersionId === 'string' &&
     /^[A-Za-z0-9_-]{8,64}$/.test(input.publishedVersionId)
   ) {
@@ -352,6 +384,8 @@ export function moduleCallPayload(operation: ModuleCallPayload['operation'], tar
     'analytics.summaries-build': { datasetVersionId: targetId },
     'workforce.pack-apply': { publishedVersionId: targetId },
     'geospatial.pack-apply': { publishedVersionId: targetId },
+    'product-catalogue.pack-apply': { publishedVersionId: targetId },
+    'physical-operations-cmms.pack-apply': { publishedVersionId: targetId },
     'workforce.organization-sync': { versionId: targetId },
     'analytics.organization-sync': { versionId: targetId },
     'product-catalogue.organization-sync': { versionId: targetId },
@@ -383,6 +417,8 @@ export function moduleCallTarget(payload: ModuleCallPayload): string {
       return payload.datasetVersionId;
     case 'workforce.pack-apply':
     case 'geospatial.pack-apply':
+    case 'product-catalogue.pack-apply':
+    case 'physical-operations-cmms.pack-apply':
       return payload.publishedVersionId;
     case 'workforce.organization-sync':
     case 'analytics.organization-sync':

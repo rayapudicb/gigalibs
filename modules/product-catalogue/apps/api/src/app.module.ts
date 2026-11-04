@@ -17,6 +17,8 @@ import { runtimeConfigProvider } from './config.js';
 import { DatabaseService } from './database.service.js';
 import { HealthController } from './health.controller.js';
 import { OrganizationController } from './organization/organization.controller.js';
+import { ProductCataloguePackController } from './pack/pack.controller.js';
+import { ProductCataloguePackService } from './pack/pack.service.js';
 
 // WI-OI-120f/g (F0.5, U7): record routes behind the Catalogue's metadata windows, and the product and unit lookups
 // other modules' windows use.
@@ -25,12 +27,13 @@ const CatalogueRecordController = createRecordController({ guard: AuthorizationG
 @Module({
   controllers: [HealthController, ProductsController, CategoriesController, UomsController,
     UomConversionsController, AttributesController, CataloguesController, PriceListsController,
-    PricesController, OrganizationController, CatalogueRecordController],
+    PricesController, OrganizationController, ProductCataloguePackController, CatalogueRecordController],
   providers: [
     runtimeConfigProvider,
     DatabaseService,
     AuthorizationGuard,
     CatalogueService,
+    ProductCataloguePackService,
     CatalogueRecordsService,
     {
       provide: RECORD_DISPATCHER,

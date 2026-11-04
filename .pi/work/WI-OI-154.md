@@ -8,8 +8,16 @@
 - **Manufacturing** industry pack: units, categories, asset classes, work order types, absence types.
 - **India** country pack: fiscal year (April–March), starter chart slice, payment terms, GST structure (rates null pending owner tax review), GSTIN format.
 
-**Not built yet (card steps 2–5):**
-- Kernel `pack.apply` handlers in each module API (idempotent create, pack key on rows, skip edited).
+**Slice 2 — product-catalogue `pack.apply` (2026-11-04):**
+- Migration `000003_product_catalogue_pack_sections.up.sql`, `POST product-catalogue/v1/pack/apply`, kernel `product-catalogue.pack-apply` job.
+- Applies industry pack units/categories by code (skips existing); audit `CATALOGUE_PACK_APPLIED`.
+
+**Slice 2b — CMMS `pack.apply` (2026-11-04):**
+- Migration `000035_cmms_pack_sections.up.sql`, `POST v1/pack/apply`, kernel `physical-operations-cmms.pack-apply` job.
+- Applies industry asset classes by code; stores work order types in `pack_sections`; audit `CMMS_PACK_APPLIED`.
+
+**Not built yet (card steps 2–5, remainder):**
+- Handlers for financial-operations, tax-configuration, gigaops absence types; pack key columns on rows.
 - Generic baseline country pack; remaining countries in §4.3 order.
 - UI: "Load from pack" replacing hard-coded `STARTER_CHART` / `STARTERS`; hub pack column.
 

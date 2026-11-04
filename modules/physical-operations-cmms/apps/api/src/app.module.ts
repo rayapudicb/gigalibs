@@ -56,6 +56,8 @@ import { ClassificationsService } from './classifications/classifications.servic
 import { ReliabilityModule } from './reliability/reliability.module.js';
 import { DowntimesController } from './downtimes/downtimes.controller.js';
 import { DowntimesService } from './downtimes/downtimes.service.js';
+import { CmmsPackController } from './pack/pack.controller.js';
+import { CmmsPackService } from './pack/pack.service.js';
 
 import {
   createRecordController,
@@ -107,6 +109,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     RoundsInboxController,
     RoundsMeterContextController,
     CmmsRecordController,
+    CmmsPackController,
   ],
   providers: [
     CalibrationService,
@@ -123,6 +126,7 @@ const CmmsRecordController = createRecordController({ guard: CmmsAuthorizationGu
     DowntimesService,
     EamSpacesService,
     ClassificationsService,
+    CmmsPackService,
     WorkOrdersService,
     RequestsService,
     PmSchedulesService,
