@@ -5,7 +5,13 @@ import { EmptyState, ModulePage, PageTabs } from '@gigalibs/web-sdk';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { countMaster, type MasterCount, masterGroups } from '@/lib/master-data';
+import {
+  countMaster,
+  type MasterCount,
+  masterGroups,
+  masterUnavailableReason,
+  type ModuleAccessContext,
+} from '@/lib/master-data';
 
 // WI-OI-152 (ADR-0037 §3): every master the person may read, by group, with how many records it holds. Each master
 // opens on its own module's screen; nothing is edited here.
@@ -19,11 +25,14 @@ const STATE_STYLE = {
   unavailable: 'bg-ui-bg-subtle text-ui-fg-subtle',
 } as const;
 
-function stateOf(count: MasterCount | undefined): { label: string; style: string; records: string } {
+function stateOf(
+  entry: MasterDataEntryV1,
+  count: MasterCount | undefined,
+): { label: string; style: string; records: string } {
   if (!count) return { label: 'Counting…', style: STATE_STYLE.counting, records: '…' };
   if (count.state === 'unavailable')
     return {
-      label: count.reason === 'no-access' ? 'No access' : 'Unavailable',
+      label: masterUnavailableReason(entry, count),
       style: STATE_STYLE.unavailable,
       records: '—',
     };
@@ -36,9 +45,11 @@ function stateOf(count: MasterCount | undefined): { label: string; style: string
 export function MasterDataHub({
   masters,
   group,
+  accessContext,
 }: {
   masters: readonly MasterDataEntryV1[];
   group: GroupTab;
+  accessContext: ModuleAccessContext;
 }) {
   const router = useRouter();
   const [counts, setCounts] = useState<Readonly<Record<string, MasterCount>>>({});
@@ -48,7 +59,7 @@ export function MasterDataHub({
   useEffect(() => {
     let cancelled = false;
     for (const entry of shown) {
-      void countMaster(entry).then((count) => {
+      void countMaster(entry, fetch, 2_000, accessContext).then((count) => {
         if (!cancelled) setCounts((current) => ({ ...current, [entry.key]: count }));
       });
     }
@@ -102,7 +113,7 @@ export function MasterDataHub({
               </thead>
               <tbody>
                 {shown.map((entry) => {
-                  const state = stateOf(counts[entry.key]);
+                  const state = stateOf(entry, counts[entry.key]);
                   return (
                     <tr key={entry.key} className="border-b border-ui-border-base last:border-0">
                       <td className="px-3 py-2 font-medium text-ui-fg-base">{entry.label}</td>

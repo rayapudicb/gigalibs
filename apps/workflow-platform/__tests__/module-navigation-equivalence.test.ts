@@ -220,6 +220,7 @@ describe('manifest-declared navigation equals the former sidebar tables', () => 
     'platform-control': [
       m('overview', 'Platform Control Tower', '/platform-admin', 'server'),
       m('users', 'Platform users', '/platform-admin/users', 'users'),
+      m('reference', 'Reference data', '/platform-admin/reference', 'globe'),
     ],
     'universal-inventory': [
       m('warehouses', 'Warehouses', '/inventory', 'building'),

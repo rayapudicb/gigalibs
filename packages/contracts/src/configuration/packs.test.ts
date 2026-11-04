@@ -45,6 +45,14 @@ describe('shipped industry and country packs', () => {
           { slug: 'forklift-license', label: 'Forklift License', required: false },
           { slug: 'first-aid', label: 'First Aid', required: false },
         ],
+        absenceTypes: [
+          { code: 'VACATION', name: 'Vacation', paid: true, requiresApproval: true },
+          { code: 'SICK', name: 'Sick leave', paid: true, requiresApproval: false },
+          { code: 'PERSONAL', name: 'Personal leave', paid: false, requiresApproval: true },
+          { code: 'TRAINING', name: 'Training', paid: true, requiresApproval: true },
+          { code: 'PARENTAL', name: 'Parental leave', paid: true, requiresApproval: true },
+          { code: 'UNPAID', name: 'Unpaid leave', paid: false, requiresApproval: true },
+        ],
       },
       capabilities: {
         defaultPayTypeCode: '10ST',

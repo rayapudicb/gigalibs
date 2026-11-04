@@ -11,7 +11,7 @@ import {
 } from '@gigalibs/contracts';
 import { GENERATED_REGIONS, GENERATED_TAX_JURISDICTIONS } from '@gigalibs/contracts/platform-reference/regions.js';
 import { Prisma, prisma } from '@gigalibs/db';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 
 // WI-OI-120av (Phase 5A): load and serve platform reference data. A set is loaded WHOLE — its checksum re-verified
 // against the canonical serialization before anything is written — the previous live version retired (never deleted),
@@ -47,6 +47,21 @@ export const LOADABLE_REFERENCE_SETS = Object.keys(GENERATED) as ReferenceSetKey
 
 @Injectable()
 export class PlatformReferenceService {
+  /** WI-OI-176: only platform operators may list versions or load a set from the UI. */
+  async assertPlatformOperator(userId: string): Promise<void> {
+    const now = new Date();
+    const assignment = await prisma.platformRoleAssignment.findFirst({
+      where: {
+        userId,
+        status: 'ACTIVE',
+        revokedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+      select: { id: true },
+    });
+    if (!assignment) throw new ForbiddenException('Platform operator authority is required.');
+  }
+
   /** The live version's entries for a set, each flattened to code + name + its set-specific payload fields. */
   async lookup(setKey: ReferenceSetKey) {
     const version = await prisma.platformReferenceVersion.findFirst({

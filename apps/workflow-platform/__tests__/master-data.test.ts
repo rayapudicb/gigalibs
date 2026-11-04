@@ -48,6 +48,26 @@ describe('readable masters', () => {
     expect(readableMasters({ ...context, tenant: { features: [] } }, [products])).toEqual([]);
   });
 
+  it('shows platform reference masters with tenant:read even when the settings module is closed (WI-OI-176)', () => {
+    const countries: MasterDataEntryV1 = {
+      key: 'platform-countries',
+      label: 'Countries',
+      group: 'reference-data',
+      level: 'PLATFORM_REFERENCE',
+      moduleKey: 'core',
+      catalogKey: 'tenant-access',
+      moduleLabel: 'Workspace settings',
+      route: '/master-data/reference/COUNTRIES',
+      readPermission: 'tenant:read',
+      count: { kind: 'lookup', basePath: '/api/control', resolver: 'platform-countries' },
+      importable: false,
+      packSection: null,
+    };
+    expect(
+      readableMasters({ tenant: { features: [] }, permissions: ['tenant:read'], platformRoles: [] }, [countries]),
+    ).toEqual([countries]);
+  });
+
   it('orders groups as the area does and knows its group keys', () => {
     expect(masterGroups([products, units])).toEqual(['organization-and-people', 'products-and-stock']);
     expect(isMasterDataGroup('finance')).toBe(true);

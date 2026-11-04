@@ -11,5 +11,11 @@ export async function MasterDataScreen({ group }: { group: MasterDataGroup | 'al
   const session = await verifiedSession(false);
   if (session.response) return <ErrorState message="Your access could not be checked. Reload the page or sign in again." />;
   const masters = readableMasters({ ...session.context, uatPreview: uatPreviewEnabled() });
-  return <MasterDataHub masters={masters} group={group} />;
+  return (
+    <MasterDataHub
+      masters={masters}
+      group={group}
+      accessContext={{ ...session.context, uatPreview: uatPreviewEnabled() }}
+    />
+  );
 }

@@ -27,6 +27,9 @@ spec:
     - durable-bulk-import-export
     - catalogue-syndication
     - advanced-matrix-pricing
+  # WI-OI-154 (ADR-0038): industry units and categories from packs.
+  pack:
+    industry: [lists]
   ui:
     basePath: /products
     package: '@gigalibs/product-catalogue-web'

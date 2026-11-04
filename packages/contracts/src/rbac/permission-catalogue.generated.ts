@@ -320,8 +320,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.audits.execute",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -345,8 +344,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.bom.read",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -358,8 +356,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.calibration.execute",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -395,8 +392,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.commissioning.submit",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -420,15 +416,13 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.fleet.certify",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
     "code": "cmms.fleet.inspect",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -482,8 +476,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.parts.reserve",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -507,8 +500,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.permits.lock",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -520,8 +512,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.permits.request",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -564,8 +555,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.requests.report",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -589,15 +579,13 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "cmms.sop.execute",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
     "code": "cmms.sop.read",
     "entries": [
-      "asset-maintenance",
-      "platform"
+      "asset-maintenance"
     ]
   },
   {
@@ -1277,8 +1265,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "operator-rounds.board.read",
     "entries": [
-      "operator-rounds",
-      "platform"
+      "operator-rounds"
     ]
   },
   {
@@ -1314,8 +1301,7 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "operator-rounds.runs.execute",
     "entries": [
-      "operator-rounds",
-      "platform"
+      "operator-rounds"
     ]
   },
   {
@@ -1762,28 +1748,24 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "safety-operations.contractors.escort",
     "entries": [
-      "platform",
       "safety-operations"
     ]
   },
   {
     "code": "safety-operations.contractors.gate",
     "entries": [
-      "platform",
       "safety-operations"
     ]
   },
   {
     "code": "safety-operations.contractors.roster",
     "entries": [
-      "platform",
       "safety-operations"
     ]
   },
   {
     "code": "safety-operations.contractors.worker",
     "entries": [
-      "platform",
       "safety-operations"
     ]
   },
@@ -1796,7 +1778,6 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "safety-operations.hazards.report",
     "entries": [
-      "platform",
       "safety-operations"
     ]
   },
@@ -1827,7 +1808,6 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "safety-operations.stop-work.acknowledge",
     "entries": [
-      "platform",
       "safety-operations"
     ]
   },
@@ -2425,15 +2405,13 @@ export const modulePermissionCatalogue: readonly ModulePermissionCatalogueEntry[
   {
     "code": "workforce.logbook.read",
     "entries": [
-      "gigaops",
-      "platform"
+      "gigaops"
     ]
   },
   {
     "code": "workforce.logbook.write",
     "entries": [
-      "gigaops",
-      "platform"
+      "gigaops"
     ]
   },
   {

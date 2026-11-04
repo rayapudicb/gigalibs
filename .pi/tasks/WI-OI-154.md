@@ -1,6 +1,6 @@
 # WI-OI-154: Governed master data packs — country and industry, in the owner's order
 
-- **Status:** Approved (owner, 2026-11-03, execution plan approval). Phase 1; starts after WI-OI-153 slice B.
+- **Status:** In Progress (2026-11-04). Phase 1; starts after WI-OI-153 slice B.
 - **Work item:** WI-OI-154. Evidence goes in `.pi/work/WI-OI-154.md`.
 - **Size:** L, one slice per country after the format slice. **Decisions:** ADR-0038 §2–5. **Plan:** §4, §5.
 

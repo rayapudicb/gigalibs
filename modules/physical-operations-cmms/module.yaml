@@ -13,6 +13,9 @@ spec:
   requiredModules: []
   optionalModules:
     - geospatial
+  # WI-OI-154 (ADR-0038): industry asset classes and work order types from packs.
+  pack:
+    industry: [lists]
   # Mounted in the canonical runtime (signed context, least-privilege RLS, db/runtime-manifest.txt).
   capabilities:
     - asset-registry

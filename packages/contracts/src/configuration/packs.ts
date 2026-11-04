@@ -34,12 +34,34 @@ export const WorkforcePackVocabularyV1Schema = z
   })
   .strict();
 
-/** Workforce, layer 3: the certifications the industry expects. */
+/** Statutory or pack entry provenance (WI-OI-154, ADR-0038 §3). */
+export const PackStatutoryProvenanceV1Schema = z
+  .object({
+    source: z.string().trim().min(3).max(240),
+    sourceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    reviewedBy: z.string().trim().min(1).max(120),
+  })
+  .strict();
+
+/** Workforce, layer 3: the certifications the industry expects; optional absence types (WI-OI-154). */
 export const WorkforcePackListsV1Schema = z
   .object({
     certifications: z
       .array(z.object({ slug: z.string().regex(/^[a-z][a-z0-9_-]{0,62}$/), label: LabelSchema, required: z.boolean() }).strict())
       .max(50),
+    absenceTypes: z
+      .array(
+        z
+          .object({
+            code: z.string().regex(/^[A-Z][A-Z0-9_]{0,31}$/),
+            name: LabelSchema,
+            paid: z.boolean(),
+            requiresApproval: z.boolean(),
+          })
+          .strict(),
+      )
+      .max(30)
+      .optional(),
   })
   .strict();
 
@@ -63,6 +85,134 @@ export const WorkforcePackCapabilitiesV1Schema = z
 
 /** Geospatial, layer 3: the place levels from the top of the estate down (seeded as place types). */
 export const GeospatialPackListsV1Schema = z.object({ placeTypes: z.array(DemoPlaceTypeV1Schema).min(1).max(6) }).strict();
+
+const UomDimensionSchema = z.enum(['COUNT', 'LENGTH', 'MASS', 'VOLUME', 'AREA', 'TIME', 'OTHER']);
+
+/** Product catalogue, layer 3: typical units and categories (WI-OI-154). */
+export const ProductCataloguePackListsV1Schema = z
+  .object({
+    units: z
+      .array(
+        z
+          .object({
+            code: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,15}$/),
+            name: LabelSchema,
+            symbol: z.string().trim().min(1).max(12),
+            dimension: UomDimensionSchema,
+            stdPrecision: z.number().int().min(0).max(6),
+            costingPrecision: z.number().int().min(0).max(6),
+          })
+          .strict(),
+      )
+      .max(80),
+    categories: z
+      .array(
+        z
+          .object({
+            code: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,31}$/),
+            name: LabelSchema,
+            parentCode: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,31}$/).optional(),
+          })
+          .strict(),
+      )
+      .max(120),
+  })
+  .strict();
+
+/** General ledger, layer 3: chart template, fiscal calendar and payment terms (WI-OI-154). */
+export const FinancialOperationsCountryListsV1Schema = z
+  .object({
+    fiscalYear: z
+      .object({
+        startMonth: z.number().int().min(1).max(12),
+        startDay: z.number().int().min(1).max(28),
+        label: LabelSchema,
+      })
+      .strict(),
+    chartAccounts: z
+      .array(
+        z
+          .object({
+            accountCode: z.string().regex(/^[0-9A-Z]{2,12}$/),
+            accountName: LabelSchema,
+            accountClass: z.enum(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']),
+            accountSubtype: z.string().regex(/^[A-Z][A-Z0-9_]{0,31}$/),
+            normalBalance: z.enum(['DEBIT', 'CREDIT']),
+            provenance: PackStatutoryProvenanceV1Schema.optional(),
+          })
+          .strict(),
+      )
+      .max(200),
+    paymentTerms: z
+      .array(
+        z
+          .object({
+            code: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,15}$/),
+            name: LabelSchema,
+            netDays: z.number().int().min(0).max(365),
+            provenance: PackStatutoryProvenanceV1Schema.optional(),
+          })
+          .strict(),
+      )
+      .max(40)
+      .optional(),
+  })
+  .strict();
+
+/** CMMS, layer 3: asset classes and work order types (WI-OI-154). */
+export const CmmsPackListsV1Schema = z
+  .object({
+    assetClasses: z.array(z.object({ code: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,15}$/), name: LabelSchema }).strict()).max(40),
+    workOrderTypes: z
+      .array(z.object({ code: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,15}$/), name: LabelSchema }).strict())
+      .max(20)
+      .optional(),
+  })
+  .strict();
+
+/** Tax configuration, layer 3: types, codes and registration formats (WI-OI-154; rates require provenance). */
+export const TaxConfigurationCountryListsV1Schema = z
+  .object({
+    taxTypes: z
+      .array(
+        z
+          .object({
+            code: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,15}$/),
+            name: LabelSchema,
+            provenance: PackStatutoryProvenanceV1Schema,
+          })
+          .strict(),
+      )
+      .max(20),
+    taxCodes: z
+      .array(
+        z
+          .object({
+            code: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,15}$/),
+            name: LabelSchema,
+            taxTypeCode: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,15}$/),
+            ratePercent: z.number().min(0).max(100).nullable(),
+            validFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            provenance: PackStatutoryProvenanceV1Schema,
+          })
+          .strict(),
+      )
+      .max(80),
+    registrationFormats: z
+      .array(
+        z
+          .object({
+            code: z.string().regex(/^[A-Z0-9][A-Z0-9_-]{0,15}$/),
+            label: LabelSchema,
+            pattern: z.string().trim().min(3).max(120),
+            provenance: PackStatutoryProvenanceV1Schema,
+          })
+          .strict(),
+      )
+      .max(20)
+      .optional(),
+  })
+  .strict();
 
 // ─── Module sections: country packs ──────────────────────────────────────────
 
@@ -104,9 +254,13 @@ export const PACK_SECTION_SCHEMAS = {
       capabilities: WorkforcePackCapabilitiesV1Schema,
     },
     geospatial: { lists: GeospatialPackListsV1Schema },
+    'product-catalogue': { lists: ProductCataloguePackListsV1Schema },
+    'physical-operations-cmms': { lists: CmmsPackListsV1Schema },
   },
   country: {
     gigaops: { rules: WorkforceCountryRulesV1Schema },
+    'financial-operations': { lists: FinancialOperationsCountryListsV1Schema },
+    'tax-configuration': { lists: TaxConfigurationCountryListsV1Schema },
   },
 } as const;
 
@@ -129,11 +283,33 @@ export const WorkforceIndustrySectionV1Schema = z
 export const GeospatialIndustrySectionV1Schema = z.object({ lists: GeospatialPackListsV1Schema }).partial().strict();
 export const WorkforceCountrySectionV1Schema = z.object({ rules: WorkforceCountryRulesV1Schema }).partial().strict();
 
-const IndustryPackModulesSchema = z
-  .object({ gigaops: WorkforceIndustrySectionV1Schema.optional(), geospatial: GeospatialIndustrySectionV1Schema.optional() })
+export const ProductCatalogueIndustrySectionV1Schema = z.object({ lists: ProductCataloguePackListsV1Schema }).partial().strict();
+export const CmmsIndustrySectionV1Schema = z.object({ lists: CmmsPackListsV1Schema }).partial().strict();
+export const FinancialOperationsCountrySectionV1Schema = z
+  .object({ lists: FinancialOperationsCountryListsV1Schema })
+  .partial()
+  .strict();
+export const TaxConfigurationCountrySectionV1Schema = z
+  .object({ lists: TaxConfigurationCountryListsV1Schema })
+  .partial()
   .strict();
 
-const CountryPackModulesSchema = z.object({ gigaops: WorkforceCountrySectionV1Schema.optional() }).strict();
+const IndustryPackModulesSchema = z
+  .object({
+    gigaops: WorkforceIndustrySectionV1Schema.optional(),
+    geospatial: GeospatialIndustrySectionV1Schema.optional(),
+    'product-catalogue': ProductCatalogueIndustrySectionV1Schema.optional(),
+    'physical-operations-cmms': CmmsIndustrySectionV1Schema.optional(),
+  })
+  .strict();
+
+const CountryPackModulesSchema = z
+  .object({
+    gigaops: WorkforceCountrySectionV1Schema.optional(),
+    'financial-operations': FinancialOperationsCountrySectionV1Schema.optional(),
+    'tax-configuration': TaxConfigurationCountrySectionV1Schema.optional(),
+  })
+  .strict();
 
 /** One industry: a header, one section per module, and the synthetic Demo Lab profile (never live reporting). */
 export const IndustryPackV2Schema = z

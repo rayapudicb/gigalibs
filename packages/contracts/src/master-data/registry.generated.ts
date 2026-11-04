@@ -497,8 +497,8 @@ export const MASTER_DATA_REGISTRY: readonly MasterDataEntryV1[] = [
     "moduleKey": "core",
     "catalogKey": "tenant-access",
     "moduleLabel": "Workspace settings",
-    "route": "/settings/general",
-    "readPermission": "users:read",
+    "route": "/master-data/reference/COUNTRIES",
+    "readPermission": "tenant:read",
     "count": {
       "kind": "lookup",
       "basePath": "/api/control",
@@ -515,8 +515,8 @@ export const MASTER_DATA_REGISTRY: readonly MasterDataEntryV1[] = [
     "moduleKey": "core",
     "catalogKey": "tenant-access",
     "moduleLabel": "Workspace settings",
-    "route": "/settings/general",
-    "readPermission": "users:read",
+    "route": "/master-data/reference/CURRENCIES",
+    "readPermission": "tenant:read",
     "count": {
       "kind": "lookup",
       "basePath": "/api/control",
@@ -533,8 +533,8 @@ export const MASTER_DATA_REGISTRY: readonly MasterDataEntryV1[] = [
     "moduleKey": "core",
     "catalogKey": "tenant-access",
     "moduleLabel": "Workspace settings",
-    "route": "/settings/general",
-    "readPermission": "users:read",
+    "route": "/master-data/reference/LANGUAGES",
+    "readPermission": "tenant:read",
     "count": {
       "kind": "lookup",
       "basePath": "/api/control",
@@ -551,8 +551,8 @@ export const MASTER_DATA_REGISTRY: readonly MasterDataEntryV1[] = [
     "moduleKey": "core",
     "catalogKey": "tenant-access",
     "moduleLabel": "Workspace settings",
-    "route": "/settings/general",
-    "readPermission": "users:read",
+    "route": "/master-data/reference/TIME_ZONES",
+    "readPermission": "tenant:read",
     "count": {
       "kind": "lookup",
       "basePath": "/api/control",

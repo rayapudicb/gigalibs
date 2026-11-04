@@ -19,6 +19,10 @@ Complete **after WI-OI-164** implementation; task capture (WI-OI-177) is out of 
 - `pnpm validate:architecture`
 - `pnpm --filter @gigalibs/operations-mobile typecheck`
 
+## Agent status (2026-11-04)
+
+All implementation prep for step 1 is done. **No further agent work** until a journey fails on device or UAT is updated with a new release.
+
 ## Remaining (owner + device)
 
 | Journey | Module | Persona | Pass / failure | Screenshots |

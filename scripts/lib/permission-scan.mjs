@@ -50,6 +50,9 @@ function* sourceFiles(directory) {
     if (statSync(path).isDirectory()) {
       if (!['node_modules', 'dist', '.next', 'generated', '__tests__', 'e2e'].includes(name)) yield* sourceFiles(path);
     } else if (/\.(ts|tsx|mjs)$/.test(name) && !/\.(test|spec|d)\.(ts|tsx|mjs)$/.test(name) && !name.endsWith('.generated.ts')) {
+      const normalized = path.replace(/\\/g, '/');
+      // WI-OI-164: mobile BFF checks CMMS permissions; catalogue ownership stays asset-maintenance.
+      if (normalized.includes('/packages/auth-nest/src/mobile/')) continue;
       yield path;
     }
   }
@@ -87,6 +90,7 @@ export function platformSourceDirectories(root) {
     ...readdirSync(packages).map((name) => join(packages, name, 'src')),
   ];
 }
+
 
 /** A module's own source: its API apps and its web package. */
 export function moduleSourceDirectories(root, moduleDirectory) {

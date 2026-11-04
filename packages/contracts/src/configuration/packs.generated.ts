@@ -598,6 +598,44 @@ export const SHIPPED_INDUSTRY_PACKS: readonly IndustryPackV2[] = [
               "label": "First Aid",
               "required": false
             }
+          ],
+          "absenceTypes": [
+            {
+              "code": "VACATION",
+              "name": "Vacation",
+              "paid": true,
+              "requiresApproval": true
+            },
+            {
+              "code": "SICK",
+              "name": "Sick leave",
+              "paid": true,
+              "requiresApproval": false
+            },
+            {
+              "code": "PERSONAL",
+              "name": "Personal leave",
+              "paid": false,
+              "requiresApproval": true
+            },
+            {
+              "code": "TRAINING",
+              "name": "Training",
+              "paid": true,
+              "requiresApproval": true
+            },
+            {
+              "code": "PARENTAL",
+              "name": "Parental leave",
+              "paid": true,
+              "requiresApproval": true
+            },
+            {
+              "code": "UNPAID",
+              "name": "Unpaid leave",
+              "paid": false,
+              "requiresApproval": true
+            }
           ]
         },
         "capabilities": {
@@ -627,6 +665,126 @@ export const SHIPPED_INDUSTRY_PACKS: readonly IndustryPackV2[] = [
             {
               "code": "LINE",
               "label": "Line"
+            }
+          ]
+        }
+      },
+      "product-catalogue": {
+        "lists": {
+          "units": [
+            {
+              "code": "EACH",
+              "name": "Each",
+              "symbol": "ea",
+              "dimension": "COUNT",
+              "stdPrecision": 0,
+              "costingPrecision": 4
+            },
+            {
+              "code": "KG",
+              "name": "Kilogram",
+              "symbol": "kg",
+              "dimension": "MASS",
+              "stdPrecision": 3,
+              "costingPrecision": 4
+            },
+            {
+              "code": "M",
+              "name": "Metre",
+              "symbol": "m",
+              "dimension": "LENGTH",
+              "stdPrecision": 3,
+              "costingPrecision": 4
+            },
+            {
+              "code": "L",
+              "name": "Litre",
+              "symbol": "l",
+              "dimension": "VOLUME",
+              "stdPrecision": 3,
+              "costingPrecision": 4
+            },
+            {
+              "code": "HR",
+              "name": "Hour",
+              "symbol": "h",
+              "dimension": "TIME",
+              "stdPrecision": 2,
+              "costingPrecision": 4
+            }
+          ],
+          "categories": [
+            {
+              "code": "RAW",
+              "name": "Raw materials"
+            },
+            {
+              "code": "WIP",
+              "name": "Work in progress"
+            },
+            {
+              "code": "FG",
+              "name": "Finished goods"
+            },
+            {
+              "code": "MRO",
+              "name": "Maintenance, repair and operations"
+            }
+          ]
+        }
+      },
+      "physical-operations-cmms": {
+        "lists": {
+          "assetClasses": [
+            {
+              "code": "PUMP",
+              "name": "Pumps"
+            },
+            {
+              "code": "MOTOR",
+              "name": "Electric motors"
+            },
+            {
+              "code": "HVAC",
+              "name": "Heating, ventilation and air conditioning"
+            },
+            {
+              "code": "ELEC",
+              "name": "Electrical panels and switchgear"
+            },
+            {
+              "code": "CONV",
+              "name": "Conveyors"
+            },
+            {
+              "code": "COMP",
+              "name": "Compressors"
+            },
+            {
+              "code": "VEH",
+              "name": "Vehicles and mobile equipment"
+            },
+            {
+              "code": "BLDG",
+              "name": "Buildings and structures"
+            },
+            {
+              "code": "IT",
+              "name": "IT and control equipment"
+            }
+          ],
+          "workOrderTypes": [
+            {
+              "code": "CORR",
+              "name": "Corrective maintenance"
+            },
+            {
+              "code": "PREV",
+              "name": "Preventive maintenance"
+            },
+            {
+              "code": "EMER",
+              "name": "Emergency breakdown"
             }
           ]
         }
@@ -1117,6 +1275,148 @@ export const SHIPPED_COUNTRY_PACKS: readonly CountryPackV2[] = [
     "subdivisions": [],
     "dataRetentionMonths": 60,
     "modules": {
+      "financial-operations": {
+        "lists": {
+          "fiscalYear": {
+            "startMonth": 4,
+            "startDay": 1,
+            "label": "April–March"
+          },
+          "chartAccounts": [
+            {
+              "accountCode": "1000",
+              "accountName": "Cash at bank",
+              "accountClass": "ASSET",
+              "accountSubtype": "BANK",
+              "normalBalance": "DEBIT",
+              "provenance": {
+                "source": "WI-OI-154 India manufacturing baseline (structure only)",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner finance review"
+              }
+            },
+            {
+              "accountCode": "2000",
+              "accountName": "Accounts payable",
+              "accountClass": "LIABILITY",
+              "accountSubtype": "ACCOUNTS_PAYABLE",
+              "normalBalance": "CREDIT",
+              "provenance": {
+                "source": "WI-OI-154 India manufacturing baseline (structure only)",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner finance review"
+              }
+            },
+            {
+              "accountCode": "4000",
+              "accountName": "Sales revenue",
+              "accountClass": "REVENUE",
+              "accountSubtype": "OPERATING_REVENUE",
+              "normalBalance": "CREDIT",
+              "provenance": {
+                "source": "WI-OI-154 India manufacturing baseline (structure only)",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner finance review"
+              }
+            }
+          ],
+          "paymentTerms": [
+            {
+              "code": "NET30",
+              "name": "Net 30 days",
+              "netDays": 30,
+              "provenance": {
+                "source": "WI-OI-154 India commercial baseline",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner finance review"
+              }
+            }
+          ]
+        }
+      },
+      "tax-configuration": {
+        "lists": {
+          "taxTypes": [
+            {
+              "code": "CGST",
+              "name": "Central GST",
+              "provenance": {
+                "source": "GST structure (India); rates require owner review before UAT",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner tax review"
+              }
+            },
+            {
+              "code": "SGST",
+              "name": "State GST",
+              "provenance": {
+                "source": "GST structure (India); rates require owner review before UAT",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner tax review"
+              }
+            },
+            {
+              "code": "IGST",
+              "name": "Integrated GST",
+              "provenance": {
+                "source": "GST structure (India); rates require owner review before UAT",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner tax review"
+              }
+            }
+          ],
+          "taxCodes": [
+            {
+              "code": "CGST-STD",
+              "name": "CGST standard",
+              "taxTypeCode": "CGST",
+              "ratePercent": null,
+              "validFrom": "2026-04-01",
+              "provenance": {
+                "source": "GST structure placeholder; rate to be sourced and reviewed",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner tax review"
+              }
+            },
+            {
+              "code": "SGST-STD",
+              "name": "SGST standard",
+              "taxTypeCode": "SGST",
+              "ratePercent": null,
+              "validFrom": "2026-04-01",
+              "provenance": {
+                "source": "GST structure placeholder; rate to be sourced and reviewed",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner tax review"
+              }
+            },
+            {
+              "code": "IGST-STD",
+              "name": "IGST standard",
+              "taxTypeCode": "IGST",
+              "ratePercent": null,
+              "validFrom": "2026-04-01",
+              "provenance": {
+                "source": "GST structure placeholder; rate to be sourced and reviewed",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner tax review"
+              }
+            }
+          ],
+          "registrationFormats": [
+            {
+              "code": "GSTIN",
+              "label": "GST identification number",
+              "pattern": "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$",
+              "provenance": {
+                "source": "GSTIN format (15 characters)",
+                "sourceDate": "2026-11-04",
+                "reviewedBy": "Pending owner tax review"
+              }
+            }
+          ]
+        }
+      },
       "gigaops": {
         "rules": {
           "weeklyOtThreshold": 48,

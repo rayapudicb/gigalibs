@@ -46,12 +46,22 @@ describe('Master data area in the sidebar (WI-OI-152)', () => {
       <AppSidebar session={session(['TENANT_ADMIN'], ['products:read', 'inventory:read', 'finance:read', 'tenant:read'])} uatPreview />,
     );
     expect(markup).toContain('Master data');
-    expect(hrefs(markup)).toEqual(['/master-data', '/master-data/products-and-stock', '/master-data/finance']);
+    expect(hrefs(markup)).toEqual([
+      '/master-data',
+      '/master-data/products-and-stock',
+      '/master-data/finance',
+      '/master-data/reference-data',
+    ]);
   });
 
   it('shows nothing to an administrator who can read no master', () => {
-    const markup = renderToStaticMarkup(<AppSidebar session={session(['TENANT_ADMIN'], ['tenant:read'])} uatPreview />);
+    const markup = renderToStaticMarkup(<AppSidebar session={session(['TENANT_ADMIN'], [])} uatPreview />);
     expect(hrefs(markup)).toEqual([]);
+  });
+
+  it('shows reference data when tenant:read is the only master permission (WI-OI-176)', () => {
+    const markup = renderToStaticMarkup(<AppSidebar session={session(['TENANT_ADMIN'], ['tenant:read'])} uatPreview />);
+    expect(hrefs(markup)).toEqual(['/master-data', '/master-data/reference-data']);
   });
 
   it('leaves the area out for a frontline worker, who reaches masters from the module', () => {

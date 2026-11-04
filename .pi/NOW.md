@@ -15,8 +15,17 @@
 - **Done (item 7):** WI-OI-163 Record-level available actions — Built, `pnpm verify` PASS (evidence `.pi/work/WI-OI-163.md`).
 - **Done (item 8):** WI-OI-169 A booked technician can execute the work order — Built, `pnpm verify` PASS (evidence `.pi/work/WI-OI-169.md`).
 - **Deployed (owner, 2026-11-04):** release `ef8d7dad` on UAT 5180 (WI-OI-167, 163, 169, 164 server side; Workforce migration 30, CMMS 34). Read-only retest and the independent Security review still to do.
-- **Now (item 9–10):** **WI-OI-164** — implementation done except owner deploy + device proof; **task capture deferred** (owner will decide WI-OI-177 later). **WI-OI-165** — step 1 (contractor in profiles) done; eleven UAT device journeys remain (`.pi/work/WI-OI-165.md`). **Not agent-done:** `ef8d7dad` retest (163/167/169) and Security review. Then 9a WI-OI-176.
+- **Done (item 9a):** **WI-OI-176 Reference data viewer** — **Built**, `pnpm verify` PASS (2026-11-04, `.pi/work/WI-OI-176.md`); On UAT after owner deploy + journey checks.
+- **Now (item 11):** **WI-OI-154** packs — **In Progress** (format slice started, `.pi/work/WI-OI-154.md`). **WI-OI-165** — agent prep done; **you** run 11 device journeys when testing (matrix in `.pi/work/WI-OI-165.md`). **WI-OI-164** — Built pending deploy + device proof. **Not agent-done:** `ef8d7dad` retest + Security review.
 - Cards WI-OI-152–166 (163–166 from the mobile atlas review: record-level actions, mobile CMMS work, frontline device proof, request → several work orders); ADR-0037–0040 (0037 now also makes Inventory the owner of stock).
+- **Priority closure (owner, 2026-11-04):** full tier list P0–P4 in [`.pi/PRIORITY_CLOSURE_PLAN_2026-11-04.md`](PRIORITY_CLOSURE_PLAN_2026-11-04.md). Nothing is **Done** without owner acceptance; Wave 0 = Security + retest + decisions on relays, Workflow Studio, WI-OI-131.
+
+## Open decisions (unblocks Wave 0)
+
+1. Six relays on UAT — wire now, defer, or partial? (WI-OI-160)
+2. Workflow Studio — start stack or hide four screens? (QA-009)
+3. WI-OI-131 Analytics — queue-only, merge, or park?
+4. Active slot — stay on WI-OI-164 until device proof, or move to WI-OI-176?
 
 ## Status of everything on UAT (WI-OI-168, 2026-11-03)
 

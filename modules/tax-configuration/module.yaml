@@ -9,6 +9,9 @@ metadata:
 spec:
   standalone: true
   category: capability
+  # WI-OI-154 (ADR-0038): country tax types, codes and registration formats from packs.
+  pack:
+    country: [lists]
   requiredModules: []
   optionalModules:
     - accounts-receivable

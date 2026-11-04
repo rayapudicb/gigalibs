@@ -183,6 +183,7 @@ spec:
       menu:
         - { key: overview, label: Platform Control Tower, path: /platform-admin, icon: server }
         - { key: users, label: Platform users, path: /platform-admin/users, icon: users }
+        - { key: reference, label: Reference data, path: /platform-admin/reference, icon: globe }
     - key: solution-packs
       name: Solution Packs
       navigationLabel: Solution Packs
@@ -214,12 +215,20 @@ spec:
       platformInspection: false
       reason: The tenant's plan and modules, from the kernel's entitlements (Settings, Plan). Platform operators enable modules in Platform Control. No purchasing or billing (ADR-0013).
       navigationOrder: 200
+  ui:
+    application: apps/workflow-platform
+    pages:
+      - route: /master-data/reference/COUNTRIES
+      - route: /master-data/reference/CURRENCIES
+      - route: /master-data/reference/LANGUAGES
+      - route: /master-data/reference/TIME_ZONES
+      - route: /platform-admin/reference
   # WI-OI-152 (ADR-0037 §3): masters kept in the control plane, counted through platform lookups.
   masters:
     - { label: Organization units, group: organization-and-people, route: /settings/organization, lookup: organization-units, readPermission: 'users:read', catalogKey: tenant-access }
     - { label: Members and logins, group: organization-and-people, route: /settings, lookup: workspace-members, readPermission: 'users:read', catalogKey: tenant-access }
     # WI-OI-153 (ADR-0038 §1): platform reference data, read-only to every workspace; "Empty" until the operator loads it.
-    - { label: Countries, group: reference-data, level: PLATFORM_REFERENCE, route: /settings/general, lookup: platform-countries, readPermission: 'users:read', catalogKey: tenant-access }
-    - { label: Currencies, group: reference-data, level: PLATFORM_REFERENCE, route: /settings/general, lookup: platform-currencies, readPermission: 'users:read', catalogKey: tenant-access }
-    - { label: Languages, group: reference-data, level: PLATFORM_REFERENCE, route: /settings/general, lookup: platform-languages, readPermission: 'users:read', catalogKey: tenant-access }
-    - { label: Time zones, group: reference-data, level: PLATFORM_REFERENCE, route: /settings/general, lookup: platform-time-zones, readPermission: 'users:read', catalogKey: tenant-access }
+    - { label: Countries, group: reference-data, level: PLATFORM_REFERENCE, route: /master-data/reference/COUNTRIES, lookup: platform-countries, readPermission: 'tenant:read', catalogKey: tenant-access }
+    - { label: Currencies, group: reference-data, level: PLATFORM_REFERENCE, route: /master-data/reference/CURRENCIES, lookup: platform-currencies, readPermission: 'tenant:read', catalogKey: tenant-access }
+    - { label: Languages, group: reference-data, level: PLATFORM_REFERENCE, route: /master-data/reference/LANGUAGES, lookup: platform-languages, readPermission: 'tenant:read', catalogKey: tenant-access }
+    - { label: Time zones, group: reference-data, level: PLATFORM_REFERENCE, route: /master-data/reference/TIME_ZONES, lookup: platform-time-zones, readPermission: 'tenant:read', catalogKey: tenant-access }

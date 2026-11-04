@@ -367,6 +367,12 @@ export const generatedModuleMenus: Readonly<Record<string, readonly GeneratedMod
       "label": "Platform users",
       "path": "/platform-admin/users",
       "icon": "users"
+    },
+    {
+      "key": "reference",
+      "label": "Reference data",
+      "path": "/platform-admin/reference",
+      "icon": "globe"
     }
   ],
   "analytics-studio": [

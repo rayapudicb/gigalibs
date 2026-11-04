@@ -32,6 +32,13 @@ modules:
         - slug: first-aid
           label: First Aid
           required: false
+      absenceTypes:
+        - { code: VACATION, name: Vacation, paid: true, requiresApproval: true }
+        - { code: SICK, name: Sick leave, paid: true, requiresApproval: false }
+        - { code: PERSONAL, name: Personal leave, paid: false, requiresApproval: true }
+        - { code: TRAINING, name: Training, paid: true, requiresApproval: true }
+        - { code: PARENTAL, name: Parental leave, paid: true, requiresApproval: true }
+        - { code: UNPAID, name: Unpaid leave, paid: false, requiresApproval: true }
     capabilities:
       defaultPayTypeCode: 10ST
       features:
@@ -51,6 +58,47 @@ modules:
           label: Plant
         - code: LINE
           label: Line
+  product-catalogue:
+    lists:
+      units:
+        - { code: EACH, name: Each, symbol: ea, dimension: COUNT, stdPrecision: 0, costingPrecision: 4 }
+        - { code: KG, name: Kilogram, symbol: kg, dimension: MASS, stdPrecision: 3, costingPrecision: 4 }
+        - { code: M, name: Metre, symbol: m, dimension: LENGTH, stdPrecision: 3, costingPrecision: 4 }
+        - { code: L, name: Litre, symbol: l, dimension: VOLUME, stdPrecision: 3, costingPrecision: 4 }
+        - { code: HR, name: Hour, symbol: h, dimension: TIME, stdPrecision: 2, costingPrecision: 4 }
+      categories:
+        - { code: RAW, name: Raw materials }
+        - { code: WIP, name: Work in progress }
+        - { code: FG, name: Finished goods }
+        - { code: MRO, name: 'Maintenance, repair and operations' }
+  physical-operations-cmms:
+    lists:
+      assetClasses:
+        - code: PUMP
+          name: Pumps
+        - code: MOTOR
+          name: Electric motors
+        - code: HVAC
+          name: Heating, ventilation and air conditioning
+        - code: ELEC
+          name: Electrical panels and switchgear
+        - code: CONV
+          name: Conveyors
+        - code: COMP
+          name: Compressors
+        - code: VEH
+          name: Vehicles and mobile equipment
+        - code: BLDG
+          name: Buildings and structures
+        - code: IT
+          name: IT and control equipment
+      workOrderTypes:
+        - code: CORR
+          name: Corrective maintenance
+        - code: PREV
+          name: Preventive maintenance
+        - code: EMER
+          name: Emergency breakdown
 demo:
   currency: USD
   regions: 3

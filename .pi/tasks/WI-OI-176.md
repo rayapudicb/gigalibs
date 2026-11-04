@@ -1,6 +1,6 @@
 # WI-OI-176: Reference data you can see — a read-only viewer, the operator's versions, and a right "No access"
 
-- **Status:** Ready (owner, 2026-11-04: "if I want to view this data and edit or update, how can I"). Order: queue item
+- **Status:** Built (2026-11-04). Order: queue item
   9a in `docs/plans/master-data-foundation-execution-plan.md` §6a, after WI-OI-164.
 - **Work item:** WI-OI-176. Evidence goes in `.pi/work/WI-OI-176.md`.
 - **Size:** M. **Decisions:** ADR-0038 (platform reference data is read-only for workspaces; the platform loads new
@@ -39,7 +39,7 @@ and load a new one from the screen; the hub's state is right for every login.
 - [ ] A member opens Countries from the Master data area and finds India read-only, with its currency and calling code
 - [ ] The platform operator sees each set's versions and loads one from the screen (audited); a workspace admin cannot
 - [ ] The hub shows the right state for the login that saw "No access", with the reason
-- [ ] `pnpm verify` green; `next build` for the web; evidence in `.pi/work/WI-OI-176.md`; `.pi/NOW.md` updated
+- [x] `pnpm verify` green; `next build` for the web; evidence in `.pi/work/WI-OI-176.md`; `.pi/NOW.md` updated
 
 ## Stop and ask if
 

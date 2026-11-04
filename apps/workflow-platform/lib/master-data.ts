@@ -9,6 +9,8 @@ import {
 } from '@gigalibs/contracts';
 import { canOpenPlatformModule, hasPermission, type ModuleAccessContext } from './module-access';
 
+export type { ModuleAccessContext };
+
 // WI-OI-152 (ADR-0037 §3): the Master data area. The registry is generated from the module manifests; a person sees a
 // master when its module is open to them (entitlement, readiness) and they hold the master's read permission — the
 // same permission the master's own screen asks for. Counts come from the module's own APIs, as the person.
@@ -25,8 +27,11 @@ export function readableMasters(
   registry: readonly MasterDataEntryV1[] = MASTER_DATA_REGISTRY,
 ): readonly MasterDataEntryV1[] {
   return registry.filter((entry) => {
+    if (!hasPermission(context.permissions, entry.readPermission)) return false;
+    // WI-OI-176 (ADR-0038): platform reference sets are read-only standards for every workspace member.
+    if (entry.level === 'PLATFORM_REFERENCE') return true;
     const module = platformModuleCatalog.find((candidate) => candidate.key === entry.catalogKey);
-    return module !== undefined && canOpenPlatformModule(module, context) && hasPermission(context.permissions, entry.readPermission);
+    return module !== undefined && canOpenPlatformModule(module, context);
   });
 }
 
@@ -41,7 +46,10 @@ export function isMasterDataGroup(value: string): value is MasterDataGroup {
 
 export type MasterCount =
   | { readonly state: 'ready'; readonly count: number; readonly capped: boolean }
-  | { readonly state: 'unavailable'; readonly reason: 'no-access' | 'not-answering' };
+  | {
+      readonly state: 'unavailable';
+      readonly reason: 'no-access' | 'not-answering' | 'module-not-open';
+    };
 
 /** The request that counts a master: a one-row page of its record list, or its platform lookup. */
 export function masterCountUrl(entry: MasterDataEntryV1): string {
@@ -54,11 +62,25 @@ export function masterCountUrl(entry: MasterDataEntryV1): string {
  * Counts one master within `timeoutMs`; a module that is stopped or slow is "not answering", never an error page.
  * The answer is always read, refusals included, so no request is left open (QA-013).
  */
+export function masterUnavailableReason(entry: MasterDataEntryV1, count: MasterCount): string {
+  if (count.state === 'ready') return count.count === 0 ? 'Empty' : 'In use';
+  if (count.reason === 'module-not-open') return 'Module not enabled';
+  if (count.reason === 'no-access') return 'No access';
+  return 'Unavailable';
+}
+
+/** Counts one master; skips the network call when the module is not open (WI-OI-176). */
 export async function countMaster(
   entry: MasterDataEntryV1,
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 2_000,
+  context?: ModuleAccessContext,
 ): Promise<MasterCount> {
+  if (entry.level !== 'PLATFORM_REFERENCE' && context) {
+    const module = platformModuleCatalog.find((candidate) => candidate.key === entry.catalogKey);
+    if (!module || !canOpenPlatformModule(module, context))
+      return { state: 'unavailable', reason: 'module-not-open' };
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

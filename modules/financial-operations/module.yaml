@@ -11,6 +11,9 @@ spec:
   category: business
   requiredModules: [accounts-receivable, universal-procurement, universal-orders, universal-inventory]
   optionalModules: [universal-connector-hub, analytics-studio, tax-configuration, multi-currency]
+  # WI-OI-154 (ADR-0038): country chart template, fiscal year and payment terms from packs.
+  pack:
+    country: [lists]
   capabilities:
     - accounting-books
     - chart-of-accounts
