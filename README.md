@@ -45,13 +45,20 @@ pnpm audit:navigation
 pnpm audit:sdlc
 ```
 
-## Branches
+## Repositories and branches
 
-- `master` is the protected, releasable branch.
-- `dev` is the integration branch created from `master`.
-- Implementation uses short-lived `feat/WI-OI-NNN-description` branches and pull requests into `dev`.
-- A reviewed release pull request promotes `dev` to `master`; environments receive immutable artifacts,
-  not different source branches.
+Platform code lives in **this** repo; the native app lives in
+**[gigaops_mobile](https://github.com/rayapudicb/gigaops_mobile)**.
+
+For clones, worktrees, which local folder to use, and why `master` on GitHub is not always “latest product”,
+read **[docs/DEVELOPER_REPOSITORY_GUIDE.md](docs/DEVELOPER_REPOSITORY_GUIDE.md)**.
+
+Summary for implementers (2026-11-04):
+
+- Build on branch **`feat/frontline-suite`** until SDLC promotes a newer default.
+- Use short-lived **`feat/WI-OI-NNN-*`** branches and pull requests into that integration line.
+- Build UAT from **`release/*`** worktrees at a **named commit** (see `.pi/NOW.md`).
+- Long-term **`master` / `dev`** promotion rules remain in `AGENTS.md` and the SDLC guide.
 
 ## License
 
