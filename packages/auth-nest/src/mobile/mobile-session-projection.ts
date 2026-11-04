@@ -137,7 +137,27 @@ export function projectMobileSession(source: MobileSessionSource, binding: Mobil
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.read')) ? ['workforce.logbook.read'] : []),
     ...(projected.some((assignment) => holdsPermission(assignment.permissions,'workforce.logbook.write')) ? ['workforce.logbook.write'] : []),
   ] : [];
+  // WI-OI-164: my work orders, execute/complete and the supervisor sign-off queue (capabilities mirror permissions).
+  const cmmsWorkCapabilities = entitlements.includes('asset-maintenance') ? [
+    ...(projected.some((assignment) =>
+      holdsPermission(assignment.permissions, 'cmms.work-orders.read') ||
+      holdsPermission(assignment.permissions, 'cmms.work-orders.execute-own') ||
+      holdsPermission(assignment.permissions, 'cmms.work-orders.write'),
+    ) ? ['cmms.my-work.read'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions, 'cmms.work-orders.execute-own'))
+      ? ['cmms.work-orders.execute-own'] : []),
+    ...(projected.some((assignment) => holdsPermission(assignment.permissions, 'cmms.work-orders.write'))
+      ? ['cmms.work-orders.write'] : []),
+  ] : [];
   const modules = [
+    ...(cmmsWorkCapabilities.includes('cmms.my-work.read') ? [{
+      key: 'cmms',
+      enabled: true,
+      navigationOrder: 360,
+      capabilities: cmmsWorkCapabilities,
+      presentationRevision: 'cmms.v1',
+      requiredDeviceCapabilities: [],
+    }] : []),
     ...(roundsEnabled ? [{
       key:'operator-rounds',enabled:true,navigationOrder:370,
       capabilities:[

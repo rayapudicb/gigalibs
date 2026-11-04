@@ -15,7 +15,7 @@
 - **Done (item 7):** WI-OI-163 Record-level available actions — Built, `pnpm verify` PASS (evidence `.pi/work/WI-OI-163.md`).
 - **Done (item 8):** WI-OI-169 A booked technician can execute the work order — Built, `pnpm verify` PASS (evidence `.pi/work/WI-OI-169.md`).
 - **Deployed (owner, 2026-11-04):** release `ef8d7dad` on UAT 5180 (WI-OI-167, 163, 169, 164 server side; Workforce migration 30, CMMS 34). Read-only retest and the independent Security review still to do.
-- **Now (item 9):** **WI-OI-164 Mobile CMMS work** — slot held, **Claude stopped (2026-11-04); the next agent (Codex or Cursor) continues** from `.pi/work/WI-OI-164.md` "Remaining". Prompt: `.pi/handoff/PROMPT-2026-11-04-NEXT-AGENT.md`. Then 9a WI-OI-176 (reference data viewer), 10 WI-OI-165.
+- **Now (item 9–10):** **WI-OI-164** — implementation done except owner deploy + device proof; **task capture deferred** (owner will decide WI-OI-177 later). **WI-OI-165** — step 1 (contractor in profiles) done; eleven UAT device journeys remain (`.pi/work/WI-OI-165.md`). **Not agent-done:** `ef8d7dad` retest (163/167/169) and Security review. Then 9a WI-OI-176.
 - Cards WI-OI-152–166 (163–166 from the mobile atlas review: record-level actions, mobile CMMS work, frontline device proof, request → several work orders); ADR-0037–0040 (0037 now also makes Inventory the owner of stock).
 
 ## Status of everything on UAT (WI-OI-168, 2026-11-03)

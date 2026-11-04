@@ -25,19 +25,22 @@ actions with the version and reason, conflicts, the sign-off queue, lens windows
 query, refusals, query still dropped elsewhere; 19 pass); database proof that "mine" lists the booked technician's work
 only (`booked-execute.pg.test.ts`, 4 of 4 on the throwaway CMMS database).
 
-**Remaining (for the next agent, in this order):**
-1. **Task recording on mobile** needs the app's form manifests on the server (`GET /mobile/v1/forms/manifests/...`,
-   manifest version and checksum, `mobile-form-submission.v1` → `MobileFormSubmissionResultV1`). No such server route
-   exists yet; until it does, the detail answer offers no task capture. Propose it to the owner as its own slice or card.
-2. **App side (`~/dev/gigalibs_mobile`)** — started: the contracts (`CmmsWorkOrderActionOffersV1`,
-   `CmmsWorkOrderActionInputV1`, the list `lens`) and the client calls (`getCmmsWorkOrderActions`,
-   `runCmmsWorkOrderAction`, `listCmmsWorkOrdersAwaitingSignOff`) with tests; mobile lint, typecheck, architecture
-   validation and 242 tests in the affected packages pass. Still to do: project a `cmms` module with its capabilities
-   in the mobile session (`packages/auth-nest/src/mobile/mobile-session-projection.ts`, shipped together with the
-   app's compile step so neither side runs ahead), compile the `cmms` feature (release containment and both app profiles:
-   feature `cmms`, capabilities for my work, execute and sign-off), the routes in
-   `apps/operations/app/(authenticated)/cmms/work-orders/` over the existing `WorkOrdersScreen` and
-   `WorkOrderDetailScreen`, the offers contract and client calls (`/actions`, `/actions/{action}`, the sign-off
-   queue), the lens on the list, offered actions and their reasons on the detail, and the supervisor queue; then the
-   repository's lint, typecheck, tests, profile and architecture validation.
-3. **Device proof** on UAT with a technician and a supervisor login (owner provides), after the owner's deploy.
+**Owner (2026-11-04):** finish **164 then 165** implementation in order; **task capture / WI-OI-177 decided later**
+(out of scope for 164 "100% implementation").
+
+**Implementation — complete except deploy and device proof:**
+1. **Task capture (deferred):** server form manifests not built; detail stays without task capture until a future card
+   (tentative WI-OI-177). Not blocking 164 closure for list/detail/actions/sign-off.
+2. **App side (`~/dev/gigalibs_mobile`) — built (2026-11-04):** session projection + compile; lens; actions panel;
+   sign-off queue; `?selected=` deep link; **Home Today** registers `cmms.work-order.detail` and routes work items
+   (`apps/operations/src/home/destinations.ts`); module shortcuts from compiled features on Today.
+3. **Deploy + device proof (owner):** ship platform projection and mobile binary together; technician + supervisor
+   journeys on UAT (screenshots). Agents do not deploy 5180.
+
+## 2026-11-04 — app compile + session projection (Cursor)
+
+**Platform (`gigalibs-rounds`):** `mobile-session-projection.ts` — `cmms` module at navigation order 360;
+capabilities from `cmms.work-orders.read|execute-own|write`; spec WI-OI-164 (16/16 projection tests).
+
+**Mobile (`gigalibs_mobile`):** see item 2 above; evidence commands: `pnpm exec vitest run packages/features/cmms`,
+`pnpm --filter @gigalibs/operations-mobile typecheck`, `node --import tsx tooling/validate-architecture/src/index.ts`.

@@ -248,6 +248,59 @@ describe('mobile session v3 projection', () => {
     expect(projectMobileSession(withPermissions(['cmms.permits.read']),binding).modules).toEqual([]);
   });
 
+  it('projects CMMS work when asset-maintenance is entitled and the member may read or execute work (WI-OI-164)', () => {
+    const base = source();
+    const withPermissions = (permissions: string[]) =>
+      projectMobileSession(
+        {
+          ...base,
+          tenant: {
+            ...base.tenant!,
+            entitlements: [...base.tenant!.entitlements, { moduleKey: 'asset-maintenance', version: '2026-11-04' }],
+          },
+          assignments: base.assignments!.map((assignment, index) =>
+            index === 1 ? { ...assignment, permissions: [...assignment.permissions, ...permissions] } : assignment,
+          ),
+        },
+        binding,
+      );
+    expect(withPermissions(['cmms.work-orders.read']).modules).toEqual([
+      {
+        key: 'cmms',
+        enabled: true,
+        navigationOrder: 360,
+        capabilities: ['cmms.my-work.read'],
+        presentationRevision: 'cmms.v1',
+        requiredDeviceCapabilities: [],
+      },
+    ]);
+    expect(withPermissions(['cmms.work-orders.execute-own', 'cmms.work-orders.write']).modules).toEqual([
+      {
+        key: 'cmms',
+        enabled: true,
+        navigationOrder: 360,
+        capabilities: ['cmms.my-work.read', 'cmms.work-orders.execute-own', 'cmms.work-orders.write'],
+        presentationRevision: 'cmms.v1',
+        requiredDeviceCapabilities: [],
+      },
+    ]);
+    expect(
+      projectMobileSession(
+        {
+          ...base,
+          tenant: {
+            ...base.tenant!,
+            entitlements: [...base.tenant!.entitlements, { moduleKey: 'asset-maintenance', version: '2026-11-04' }],
+          },
+          assignments: base.assignments!.map((assignment, index) =>
+            index === 1 ? { ...assignment, permissions: ['mobile:session:read'] } : assignment,
+          ),
+        },
+        binding,
+      ).modules,
+    ).toEqual([]);
+  });
+
   it('changes the authorization revision with a permission, and the configuration revision with an entitlement', () => {
     const before = projectMobileSession(source(), binding);
     const granted = source();
