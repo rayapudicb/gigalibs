@@ -14,7 +14,8 @@
 - **Done (item 6):** WI-OI-168 status truth on UAT — Built (evidence and owner list `.pi/work/WI-OI-168.md`).
 - **Done (item 7):** WI-OI-163 Record-level available actions — Built, `pnpm verify` PASS (evidence `.pi/work/WI-OI-163.md`).
 - **Done (item 8):** WI-OI-169 A booked technician can execute the work order — Built, `pnpm verify` PASS (evidence `.pi/work/WI-OI-169.md`).
-- **Now (item 9):** **WI-OI-164 Mobile CMMS work** — In Progress (Claude, slot held): platform side built and verified; mobile contracts and client calls built. **Next agent continues here:** the remaining list in `.pi/work/WI-OI-164.md` (session projection with the app compile step, app routes and copy, task capture needs server form manifests, device proof). Then 10 WI-OI-165.
+- **Deployed (owner, 2026-11-04):** release `ef8d7dad` on UAT 5180 (WI-OI-167, 163, 169, 164 server side; Workforce migration 30, CMMS 34). Read-only retest and the independent Security review still to do.
+- **Now (item 9):** **WI-OI-164 Mobile CMMS work** — slot held, **Claude stopped (2026-11-04); the next agent (Codex or Cursor) continues** from `.pi/work/WI-OI-164.md` "Remaining". Prompt: `.pi/handoff/PROMPT-2026-11-04-NEXT-AGENT.md`. Then 9a WI-OI-176 (reference data viewer), 10 WI-OI-165.
 - Cards WI-OI-152–166 (163–166 from the mobile atlas review: record-level actions, mobile CMMS work, frontline device proof, request → several work orders); ADR-0037–0040 (0037 now also makes Inventory the owner of stock).
 
 ## Status of everything on UAT (WI-OI-168, 2026-11-03)

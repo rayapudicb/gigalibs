@@ -4,6 +4,25 @@ Date: 2026-11-03. For Claude, Codex, Cursor or any other agent continuing the wo
 be consolidated into one plan with their mobile scope, the earlier assessments corrected, and the work handed over so
 any agent can finish it. This brief tells you where to start and how not to repeat the old mistakes.
 
+## Start here (state on 2026-11-04, Claude stopped)
+
+- **UAT runs `ef8d7dad`** (owner deploy, 2026-11-04): milestone A, WI-OI-167 Workforce scope, WI-OI-163 record
+  offers, WI-OI-169 booked technicians, WI-OI-164's server side. Migrations: Workforce 30, CMMS 34.
+- **Not yet done for that release:** the read-only retest (`e2e/specs/uat-milestone-a.spec.ts`, the bench, journeys and
+  read-only e2e as in `.pi/work/WI-OI-151.md`, plus checks for 163, 167 and 169 below) and the independent Security
+  review of 167, 169 and the 164 mobile routes (record it in their evidence files).
+- **The active slot holds WI-OI-164** and its owner stopped: continue it (do not claim anything else). Its remaining
+  list, in order, is in `.pi/work/WI-OI-164.md` → "Remaining": (1) task capture needs server form manifests — propose
+  to the owner first; (2) the app side: session projection of a `cmms` module, compile the `cmms` feature (release
+  containment and both app profiles), routes over the existing screens, copy, offered actions and reasons, the lens and
+  the supervisor queue; (3) the device proof with the owner's logins.
+- **Then the queue:** 9a WI-OI-176 (reference data viewer, operator versions, a right "No access"), 10 WI-OI-165, 11
+  WI-OI-154, 12 WI-OI-155, 13 WI-OI-156 B–C, and on (§6a).
+- **Retest checks for `ef8d7dad`:** WI-OI-163 — on a work order you completed, Sign off is not offered and the reason
+  shows; another supervisor is offered it. WI-OI-169 — a technician booked through Workforce (execute-own only) can
+  start the work order. WI-OI-167 — a supervisor limited to one unit sees and books only that unit's people (needs a
+  limited login from the owner; the candidate list answers pages with `nextOffset`).
+
 ## Read first, in this order
 
 1. `AGENTS.md`: the mandatory reading order, the Done checklist and the verification commands.

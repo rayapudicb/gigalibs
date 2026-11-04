@@ -151,6 +151,7 @@ belongs to the card that names it. When one agent's session ends, the next agent
 | 7 | WI-OI-163 Record-level available actions (CMMS first) | From the mobile review; one answer for web and mobile |
 | 8 | WI-OI-169 A booked technician can execute the work order | Needs 163; needed by 164 |
 | 9 | WI-OI-164 Mobile CMMS work: read, execute and complete, sign-off | Needs 163 and 169; no parts or stock flows |
+| 9a | WI-OI-176 Reference data viewer, operator versions, a right "No access" | Owner 2026-11-04; after 164 |
 | 10 | WI-OI-165 Frontline journeys 133–143 proven on a device against UAT | Includes the contractor feature key and profiles |
 | 11 | WI-OI-154 Packs: generic baseline, India, manufacturing industry | Phase 1 |
 | 12 | WI-OI-155 Import and export kit | Phase 1 |
